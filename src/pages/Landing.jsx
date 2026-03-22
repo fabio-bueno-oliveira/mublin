@@ -43,7 +43,10 @@ export default function Landing() {
         style={{ alignItems: 'center' }}
       >
         <Container size="sm" py={50}>
-          <Stack gap="xl" align="center">
+          <Stack gap="lg" align="center">
+            <Badge fw='500' color="amber" variant="light" size="md">
+              The professional network for musicians
+            </Badge>
             <Title
               order={1}
               ta='center'
@@ -112,7 +115,7 @@ export default function Landing() {
               </Text>
             </Stack>
             <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="lg" w="100%">
-              {FEATURES.map(({ icon: Icon, label }) => (
+              {FEATURES.map(({ icon: Icon, label }) => ( // eslint-disable-line
                 <Flex
                   key={label}
                   gap="md"

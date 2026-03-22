@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { supabase } from '../lib/supabaseClient'
 import {
   Container, Center, Box, Stack, Title, Text, TextInput,
   PasswordInput, Button, Anchor, Divider, Group
@@ -12,35 +13,52 @@ import {
   IconBrandGoogle, IconBrandSpotify
 } from '@tabler/icons-react'
 
-export default function Login() {
+export default function Signup() {
   const navigate = useNavigate()
-  const { signInWithEmail, signInWithGoogle, signInWithSpotify } = useAuth()
+  const { signUpWithEmail, signInWithGoogle, signInWithSpotify } = useAuth()
   const [loading, setLoading] = useState(false)
   const [loadingGoogle, setLoadingGoogle] = useState(false)
   const [loadingSpotify, setLoadingSpotify] = useState(false)
 
   const form = useForm({
-    initialValues: { email: '', password: '' },
+    initialValues: {
+      full_name: '',
+      email: '',
+      password: '',
+      password_confirm: '',
+    },
     validate: {
+      full_name: (v) => (v.trim().length < 2 ? 'Informe seu nome completo' : null),
       email: (v) => (/^\S+@\S+$/.test(v) ? null : 'E-mail inválido'),
       password: (v) => (v.length < 6 ? 'Mínimo de 6 caracteres' : null),
+      password_confirm: (v, values) =>
+        v !== values.password ? 'As senhas não coincidem' : null,
     },
   })
 
   async function handleSubmit(values) {
     setLoading(true)
-    const { error } = await signInWithEmail(values.email, values.password)
+    const { error } = await signUpWithEmail(values.email, values.password)
     if (error) {
       setLoading(false)
       notifications.show({
         position: 'top-center',
         color: 'red',
         title: 'Ops...',
-        message: 'E-mail ou senha incorretos. Verifique e tente novamente',
+        message: error.message.includes('already registered')
+          ? 'Este e-mail já está cadastrado. Tente entrar na sua conta.'
+          : 'Não foi possível criar sua conta. Tente novamente.',
       })
       return
     }
-    navigate('/home')
+    notifications.show({
+      position: 'top-center',
+      color: 'green',
+      title: 'Conta criada!',
+      message: 'Verifique seu e-mail para confirmar o cadastro.',
+    })
+    setLoading(false)
+    navigate('/login')
   }
 
   async function handleGoogle() {
@@ -51,11 +69,10 @@ export default function Login() {
         position: 'top-center',
         color: 'red',
         title: 'Ops...',
-        message: 'Não foi possível entrar com o Google. Tente novamente.',
+        message: 'Não foi possível continuar com o Google. Tente novamente.',
       })
       setLoadingGoogle(false)
     }
-    // sucesso: o Supabase redireciona automaticamente para /auth/callback
   }
 
   async function handleSpotify() {
@@ -66,26 +83,26 @@ export default function Login() {
         position: 'top-center',
         color: 'red',
         title: 'Ops...',
-        message: 'Não foi possível entrar com o Spotify. Tente novamente.',
+        message: 'Não foi possível continuar com o Spotify. Tente novamente.',
       })
       setLoadingSpotify(false)
     }
-    // sucesso: o Supabase redireciona automaticamente para /auth/callback
   }
 
   return (
     <Container size={420} py={30}>
       <Stack gap="xl">
 
+        {/* Header */}
         <Stack gap={4} align="center">
           <Center>
             <IconCircuitResistor size={38} />
           </Center>
           <Title order={2} ta="center" fw={700} lts="-0.02em" mt={8}>
-            Boas-vindas de volta
+            Crie sua conta
           </Title>
           <Text c="dimmed" size="sm" ta="center">
-            Entre na sua conta para continuar
+            Junte-se à rede profissional da música
           </Text>
         </Stack>
 
@@ -102,29 +119,41 @@ export default function Login() {
             <Stack gap="md">
 
               <TextInput
+                label="Nome completo"
+                placeholder="Seu nome"
+                radius="md"
+                {...form.getInputProps('full_name')}
+              />
+              <TextInput
                 label="E-mail"
                 placeholder="seu@email.com"
                 radius="md"
                 {...form.getInputProps('email')}
               />
-
               <PasswordInput
                 label="Senha"
-                placeholder="Sua senha"
+                placeholder="Mínimo 6 caracteres"
                 radius="md"
                 {...form.getInputProps('password')}
               />
+              <PasswordInput
+                label="Confirmar senha"
+                placeholder="Repita a senha"
+                radius="md"
+                {...form.getInputProps('password_confirm')}
+              />
 
-              <Anchor
-                size="xs"
-                c="dimmed"
-                ta="right"
-                component={Link}
-                to="/forgot-password"
-                underline="hover"
-              >
-                Esqueci minha senha
-              </Anchor>
+              <Text size="xs" c="dimmed" lh={1.5}>
+                Ao criar sua conta, você concorda com nossos{' '}
+                <Anchor component={Link} to="/terms" size="xs" c="indigo" underline="hover">
+                  Termos de uso
+                </Anchor>
+                {' '}e{' '}
+                <Anchor component={Link} to="/privacy" size="xs" c="indigo" underline="hover">
+                  Política de privacidade
+                </Anchor>
+                .
+              </Text>
 
               <Button
                 type="submit"
@@ -136,12 +165,12 @@ export default function Login() {
                 fullWidth
                 mt={4}
               >
-                Entrar
+                Criar conta
               </Button>
 
               <Divider label="ou continue com" labelPosition="center" />
 
-              {/* Login social */}
+              {/* Social signup */}
               <Group grow gap="sm">
                 <Button
                   variant="default"
@@ -169,10 +198,11 @@ export default function Login() {
           </form>
         </Box>
 
+        {/* Link para login */}
         <Text ta="center" size="sm" c="dimmed">
-          Ainda não tem conta?{' '}
-          <Anchor component={Link} to="/signup" c="indigo" fw={600} underline="hover">
-            Criar conta grátis
+          Já tem uma conta?{' '}
+          <Anchor component={Link} to="/login" c="indigo" fw={600} underline="hover">
+            Entrar
           </Anchor>
         </Text>
 

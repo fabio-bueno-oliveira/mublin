@@ -229,6 +229,7 @@ export default function NewProject() {
       const n = response.filePath.lastIndexOf('/')
       setProjectImage(response.filePath.substring(n + 1))
       setUploadProgress(0)
+    // eslint-disable-next-line no-unused-vars
     } catch (err) {
       notifications.show({
         color: 'red',
@@ -273,8 +274,8 @@ export default function NewProject() {
         project_id: newProject.id,
         profile_id: user.id,
         role_id: Number(values.main_role_id),
-        founder: true,
-        admin: true,
+        is_founder: true,
+        is_admin: true,
         joined_at: `${values.foundation_year}-01-01`,
       })
 

@@ -5,7 +5,7 @@ import {
   useComputedColorScheme, useMantineColorScheme 
 } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
-import { IconMicrofrontends, IconMoon, IconSun } from '@tabler/icons-react'
+import { IconCircuitResistor, IconMoon, IconSun } from '@tabler/icons-react'
 import MublinLogoBlack from '../assets/svg/mublin-logo-black.svg'
 import MublinLogoWhite from '../assets/svg/mublin-logo-white.svg'
 
@@ -31,7 +31,7 @@ export default function PublicNavbar() {
             style={{ cursor: 'pointer' }}
             onClick={() => navigate('/')}
           >
-            <IconMicrofrontends size={30} stroke={2} />
+            <IconCircuitResistor size={30} stroke={2} />
             <Image src={colorScheme === 'light' ? MublinLogoBlack : MublinLogoWhite} h={22} />
           </Flex>
 
@@ -79,7 +79,7 @@ export default function PublicNavbar() {
             <Button
               radius="xl"
               size="sm"
-              color="amber"
+              color="indigo"
               onClick={() => navigate('/signup')}
             >
               Criar conta
@@ -122,7 +122,7 @@ export default function PublicNavbar() {
               onClick={() => { navigate('/login'); toggle() }}>
               Entrar
             </Button>
-            <Button color="amber" radius="xl" size="sm"
+            <Button color="indigo" radius="xl" size="sm"
               onClick={() => { navigate('/signup'); toggle() }}>
               Criar conta
             </Button>

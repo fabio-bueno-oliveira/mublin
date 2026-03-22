@@ -17,8 +17,11 @@ export default function AuthCallback() {
         .eq('id', session.user.id)
         .single()
         .then(({ data }) => {
-          if (data?.username) navigate('/home')      // perfil completo → app
-          else navigate('/onboarding')              // novo usuário → onboarding
+          if (!data.onboarding_completed) {
+            navigate('/onboarding')
+          } else {
+            navigate('/home')
+          }
         })
     })
   // eslint-disable-next-line react-hooks/exhaustive-deps

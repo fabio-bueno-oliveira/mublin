@@ -7,12 +7,14 @@ import AuthCallback from './pages/AuthCallback'
 import Landing from './pages/Landing'
 import NotFound from './pages/NotFound'
 import Login from './pages/Login'
+import Signup from './pages/Signup'
 
 // Authenticated pages
 import Home from './pages/Home'
 import Profile from './pages/Profile'
 import Gigs from './pages/Gigs'
 import NewProject from './pages/NewProject'
+import Onboarding from './pages/Onboarding'
 
 export const router = createBrowserRouter([
   // ── Rotas públicas ──────────────────────────────
@@ -22,11 +24,12 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <Landing /> },
       { path: 'login', element: <Login /> },
+      { path: 'signup', element: <Signup /> },
       { path: 'profile/:username', element: <Profile /> },
       { path: 'auth/callback', element: <AuthCallback /> },
     ],
   },
-
+  { path: 'onboarding', element: <Onboarding /> },
   // ── Rotas autenticadas ──────────────────────────
   {
     element: <AppLayout />,

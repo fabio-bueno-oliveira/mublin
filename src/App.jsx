@@ -10,7 +10,7 @@ import '@mantine/notifications/styles.css'
 import './styles.scss'
 
 const theme = createTheme({
-  primaryColor: 'amber',
+  primaryColor: 'indigo',
   primaryShade: { light: 6, dark: 5 },
 
   colors: {
