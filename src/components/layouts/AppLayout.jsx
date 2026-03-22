@@ -5,7 +5,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import AppNavbar from '../AppNavbar'
 import AppSidebar from '../AppSidebar'
 
-export default function AppLayout() {
+export default function AppLayout({ children }) {
   const [opened, { toggle }] = useDisclosure()
   const { session, loading } = useAuth()
 
@@ -41,7 +41,7 @@ export default function AppLayout() {
         <AppSidebar />
       </AppShell.Navbar>
       <AppShell.Main>
-        <Outlet />
+        {children ?? <Outlet />}
       </AppShell.Main>
     </AppShell>
   )

@@ -1,5 +1,5 @@
 import {
-  Modal, Stack, Center, Avatar, Text, NativeSelect,
+  Drawer, Stack, Center, Avatar, Text, NativeSelect,
   NumberInput, Alert, Group, Button
 } from '@mantine/core'
 import { IconAlertCircle } from '@tabler/icons-react'
@@ -21,13 +21,11 @@ export default function JoinProjectModal({
   if (!project) return null
 
   return (
-    <Modal
+    <Drawer
+      position='right'
       title={`Ingressar em ${project.name}`}
       opened={opened}
       onClose={onClose}
-      size="sm"
-      radius="md"
-      centered
     >
       <Stack gap="md">
         <Center>
@@ -86,6 +84,6 @@ export default function JoinProjectModal({
           </Button>
         </Group>
       </Stack>
-    </Modal>
+    </Drawer>
   )
 }

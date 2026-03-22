@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useQuery } from '@tanstack/react-query'
 import { fetchAllProjects } from '../queries/projects'
@@ -111,15 +111,14 @@ export default function Home() {
 
           <ScrollArea w="100%" type="never">
             <Flex gap={18}>
-
               <Flex direction="column" align="center" gap={10}>
                 <Avatar
                   h={98} w={65}
                   color="amber"
                   radius="md"
                   variant="light"
-                  component='a'
-                  href='/new/project'
+                  component={Link}
+                  to='/new/project'
                 >
                   <IconHexagonPlus size="1.5rem" stroke={1} />
                 </Avatar>
@@ -139,8 +138,9 @@ export default function Home() {
                   direction="column"
                   align="center"
                   gap={8}
-                  style={{ cursor: 'pointer' }}
-                  onClick={() => navigate(`/project/${project.slug ?? project.id}`)}
+                  component={Link}
+                  to={`/project/${project.slug ?? project.id}`}
+                  style={{ cursor: 'pointer', textDecoration: 'none', color: 'inherit' }}
                 >
                   <Image
                     radius="md"

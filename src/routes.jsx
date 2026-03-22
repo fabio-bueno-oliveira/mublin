@@ -12,6 +12,7 @@ import Signup from './pages/Signup'
 // Authenticated pages
 import Home from './pages/Home'
 import Profile from './pages/Profile'
+import ProjectRouter from './components/ProjectRouter'
 import Gigs from './pages/Gigs'
 import NewProject from './pages/NewProject'
 import Onboarding from './pages/Onboarding'
@@ -29,7 +30,16 @@ export const router = createBrowserRouter([
       { path: 'auth/callback', element: <AuthCallback /> },
     ],
   },
+
+  // ── Projeto ────────────────────────────────────
+  {
+    path: 'project/:slug',
+    element: <ProjectRouter />,  // gerencia layout internamente
+  },
+
+  // ── Onboarding ──────────────────────────────────
   { path: 'onboarding', element: <Onboarding /> },
+
   // ── Rotas autenticadas ──────────────────────────
   {
     element: <AppLayout />,
