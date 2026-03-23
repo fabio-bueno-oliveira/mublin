@@ -1,5 +1,5 @@
 import { useNavigate, Navigate } from 'react-router-dom'
-import { useAuth } from '../contexts/AuthContext'
+import { useAuth } from '../hooks/useAuth'
 import { useQuery } from '@tanstack/react-query'
 import { fetchRandomRoles } from '../queries/roles'
 import {
@@ -67,12 +67,12 @@ export default function Landing() {
               Mublin é a rede profissional para músicos, produtores, roadies
               e todos que fazem a música acontecer.
             </Text>
-            <Group gap="sm">
-              <Button size="lg" radius="xl" fw='700' color="indigo" onClick={() => navigate('/signup')}>
+            <Group gap="sm" justify="center">
+              <Button size="md" radius="xl" fw='700' color="indigo" onClick={() => navigate('/signup')}>
                 Criar conta grátis
               </Button>
               <Button
-                size="lg" radius="xl" variant="subtle" color="gray"
+                size="md" radius="xl" variant="subtle" color="gray"
                 rightSection={<IconArrowRight size={16} />}
                 onClick={() => navigate('/login')}
               >
@@ -86,7 +86,7 @@ export default function Landing() {
                 ))}
               </Group>
             ) : (
-              <Marquee gap="md" duration={26000}>
+              <Marquee gap="md" mt="md" duration={26000}>
                 {roles.map(role => (
                   <Badge
                     key={role.id}

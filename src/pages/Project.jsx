@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { useAuth } from '../contexts/AuthContext'
+import { useAuth } from '../hooks/useAuth'
 import { supabase } from '../lib/supabaseClient'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { fetchProjectProfile, cancelParticipationRequest  } from '../queries/projects'

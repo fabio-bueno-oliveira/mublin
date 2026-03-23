@@ -1,7 +1,7 @@
 import { useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { fetchBasicProfile } from '../queries/profiles'
-import { useAuth } from '../contexts/AuthContext'
+import { useAuth } from '../hooks/useAuth'
 import {
   Container, Modal, Center,
   Avatar, Title, Text, Group, Flex, Stack,

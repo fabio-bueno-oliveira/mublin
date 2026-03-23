@@ -1,18 +1,21 @@
 import { Link } from 'react-router-dom'
-import { useAuth } from '../contexts/AuthContext'
 import { useQuery } from '@tanstack/react-query'
 import { fetchAllProjects } from '../queries/projects'
 import {
-  Box, Container, Grid, Stack, Group, Text, Title,
-  Avatar, Badge, Button, Paper, Divider, Flex, 
-  ScrollArea, ActionIcon, ThemeIcon, Skeleton, Image
+  Box, Container, Grid, Stack, Group, Text,
+  Avatar, Badge, Button, Paper, Divider, Flex, Tabs, 
+  ScrollArea, ActionIcon, ThemeIcon, Skeleton, Image,
+  useMantineColorScheme
 } from '@mantine/core'
+import { useMediaQuery } from '@mantine/hooks'
 import {
-  IconCalendarEvent, IconTarget, IconBell,
+  IconCircuitResistor, IconCalendarEvent, IconTarget, IconBell,
   IconUsers, IconLayoutList, IconChevronRight,
   IconHexagonPlus, IconStar, 
   IconMusic, IconDots
 } from '@tabler/icons-react'
+import MublinLogoBlack from '../assets/svg/mublin-logo-black.svg'
+import MublinLogoWhite from '../assets/svg/mublin-logo-white.svg'
 
 // ── Mock data ────────────────────────────────────────────
 
@@ -68,11 +71,8 @@ function SectionCard({ title, icon: Icon, action, children }) {
 // ── Página principal ─────────────────────────────────────
 
 export default function Home() {
-  const { profile } = useAuth()
-  const firstName = profile?.full_name?.split(' ')[0] ?? 'Músico'
-  const hour = new Date().getHours()
-  const greeting = hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite'
-
+  const isMobile = useMediaQuery('(max-width: 48em)')
+  const { colorScheme } = useMantineColorScheme()
   const { data: projects = [], isLoading: loadingProjects } = useQuery({
     queryKey: ['home-projects'],
     queryFn: fetchAllProjects,
@@ -80,23 +80,55 @@ export default function Home() {
   })
 
   return (
-    <Box py="sm">
-      <Container size="xl">
+    <>
+      {isMobile && // Logo + header para mobile
+        <Flex
+          gap={8}
+          align='flex-end'
+          justify='center'
+          component={Link}
+          to="/home"
+          style={{ cursor: 'pointer', textDecoration: 'none' }}
+          mb={10}
+        >
+          <IconCircuitResistor size={22} stroke={2} color={colorScheme === 'light' ? 'black' : 'white'} />
+          <Image src={colorScheme === 'light' ? MublinLogoBlack : MublinLogoWhite} w={96} />
+        </Flex>
+      }
+      <Container size="xl" py="sm">
         <Stack gap="xl">
-
-          {/* ── Saudação ── */}
-          <Stack gap={2}>
-            <Title order={3} fw={700} lts="-0.02em">
-              {greeting}, {firstName} 👋
-            </Title>
-          </Stack>
-
+          <Tabs variant="pills" radius="xl" color='indigo.9' defaultValue="gallery">
+            <Tabs.List>
+              <Tabs.Tab value="gallery">
+                Gallery
+              </Tabs.Tab>
+              <Tabs.Tab value="messages">
+                Messages
+              </Tabs.Tab>
+              <Tabs.Tab value="settings">
+                Settings
+              </Tabs.Tab>
+            </Tabs.List>
+            <Tabs.Panel value="gallery">
+              Gallery tab content
+            </Tabs.Panel>
+            <Tabs.Panel value="messages">
+              Messages tab content
+            </Tabs.Panel>
+            <Tabs.Panel value="settings">
+              Settings tab content
+            </Tabs.Panel>
+          </Tabs>
+          <Group gap='xs'>
+            <Button radius='xl' size='xs' color='indigo.9'>Meus projetos</Button>
+            <Button radius='xl' size='xs' variant='default'>Explorar</Button>
+          </Group>
           <ScrollArea w="100%" type="never">
             <Flex gap={18}>
               <Flex direction="column" align="center" gap={10}>
                 <Avatar
                   h={98} w={65}
-                  color="amber"
+                  color="indigo"
                   radius="md"
                   variant="light"
                   component={Link}
@@ -292,6 +324,6 @@ export default function Home() {
           </Grid>
         </Stack>
       </Container>
-    </Box>
+    </>
   )
 }

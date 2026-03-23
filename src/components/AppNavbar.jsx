@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import {
   Group, Text, TextInput, ActionIcon, Avatar, Switch,
   Menu, Box, Container, useComputedColorScheme, useMantineColorScheme
@@ -7,7 +7,7 @@ import {
   IconSearch, IconCircuitResistor,
   IconBell, IconChevronDown, IconSun, IconMoon
 } from '@tabler/icons-react'
-import { useAuth } from '../contexts/AuthContext'
+import { useAuth } from '../hooks/useAuth'
 
 const AVATAR_PATH = 'https://ik.imagekit.io/mublin/tr:h-200,c-maintain_ratio/users/avatars/'
 
@@ -34,8 +34,9 @@ export default function AppNavbar({ children }) {
             {children}
             <Group
               gap={8}
-              style={{ cursor: 'pointer' }}
-              onClick={() => navigate('/home')}
+              component={Link}
+              to="/home"
+              style={{ textDecoration: 'none', color: 'inherit' }}
             >
               <IconCircuitResistor size={30} />
               <Text fw={800} size="xl" style={{ letterSpacing: '-0.03em' }} visibleFrom="sm">
@@ -108,7 +109,7 @@ export default function AppNavbar({ children }) {
                 <Menu.Label>
                   {profile?.full_name}
                 </Menu.Label>
-                <Menu.Item onClick={() => navigate(`/profile/${profile?.username}`)}>
+                <Menu.Item onClick={() => navigate(`/${profile?.username}`)}>
                   Meu perfil
                 </Menu.Item>
                 <Menu.Item onClick={() => navigate('/settings')}>

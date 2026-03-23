@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../contexts/AuthContext'
+import { useAuth } from '../hooks/useAuth'
 import { useQuery } from '@tanstack/react-query'
 import { fetchUserProfile, fetchUserRoles, fetchUserProjects } from '../queries/user'
 import { fetchCityById } from '../queries/locations'
@@ -85,6 +85,7 @@ export default function Onboarding() {
   // ── Step 2: Perfil ────────────────────────────────────
   const [usernameChecking, setUsernameChecking] = useState(false)
   const [usernameAvailable, setUsernameAvailable] = useState(null)
+  const [usernameUnavailableReason, setUsernameUnavailableReason] = useState(null)
   const [selectedCity, setSelectedCity] = useState(null)
   const [citySearchQuery, setCitySearchQuery] = useState('')
   const [cityResults, setCityResults] = useState([])
@@ -287,18 +288,37 @@ export default function Onboarding() {
       setUsernameAvailable(null)
       return
     }
-    // Não verifica se é o mesmo username já salvo
+
     if (value === savedProfile?.username) {
       setUsernameAvailable(true)
       return
     }
+
     setUsernameChecking(true)
-    const { data } = await supabase
+
+    // 1. Verifica se é um nome reservado
+    const { data: reserved } = await supabase
+      .from('reserved_usernames')
+      .select('username')
+      .eq('username', value)
+      .maybeSingle()
+
+    if (reserved) {
+      setUsernameAvailable(false)
+      setUsernameUnavailableReason('reserved')
+      setUsernameChecking(false)
+      return
+    }
+
+    // 2. Verifica se já está em uso por outro perfil
+    const { data: taken } = await supabase
       .from('profiles')
       .select('id')
       .eq('username', value)
       .maybeSingle()
-    setUsernameAvailable(!data)
+
+    setUsernameAvailable(!taken)
+    setUsernameUnavailableReason(taken ? 'taken' : null)
     setUsernameChecking(false)
   }, 600)
 
@@ -547,7 +567,11 @@ export default function Onboarding() {
               }
               error={
                 profileForm.errors.username ||
-                (usernameAvailable === false ? 'Este username já está em uso' : undefined)
+                (usernameAvailable === false
+                  ? usernameUnavailableReason === 'reserved'
+                    ? 'Este username não está disponível'
+                    : 'Este username já está em uso'
+                  : undefined)
               }
               {...profileForm.getInputProps('username')}
               onChange={(e) => {

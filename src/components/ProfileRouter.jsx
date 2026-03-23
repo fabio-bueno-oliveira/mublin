@@ -1,4 +1,4 @@
-import { useAuth } from '../contexts/AuthContext'
+import { useAuth } from '../hooks/useAuth'
 import AppLayout from '../components/layouts/AppLayout'
 import PublicLayout from '../components/layouts/PublicLayout'
 import Profile from '../pages/Profile'

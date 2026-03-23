@@ -7,7 +7,7 @@ import {
   IconHome, IconCalendarEvent, IconMapPin,
   IconUser, IconGuitarPick,
 } from '@tabler/icons-react'
-import { useAuth } from '../contexts/AuthContext'
+import { useAuth } from '../hooks/useAuth'
 
 const NAV_ITEMS = [
   { label: 'Home',         icon: IconHome,          path: '/home' },
@@ -27,7 +27,7 @@ export default function AppSidebar() {
   const { profile } = useAuth()
 
   function getPath(item) {
-    if (item.label === 'Meu Perfil') return `/profile/${profile?.username}`
+    if (item.label === 'Meu Perfil') return profile?.username ? `/${profile.username}` : null
     return item.path
   }
 
@@ -44,7 +44,8 @@ export default function AppSidebar() {
             <NavLink
               key={item.label}
               component={Link}
-              to={getPath(item)}
+              to={getPath(item) ?? '#'}
+              disabled={!getPath(item)}
               label={item.label}
               color="gray"
               leftSection={<Icon size={20} />}

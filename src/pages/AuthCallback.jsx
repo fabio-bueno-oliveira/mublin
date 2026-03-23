@@ -13,7 +13,7 @@ export default function AuthCallback() {
       // Verifica se o perfil já tem username (cadastro completo)
       supabase
         .from('profiles')
-        .select('username')
+        .select('username, onboarding_completed')
         .eq('id', session.user.id)
         .single()
         .then(({ data }) => {

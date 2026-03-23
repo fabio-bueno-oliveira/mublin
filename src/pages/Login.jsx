@@ -1,14 +1,13 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { useAuth } from '../contexts/AuthContext'
+import { useAuth } from '../hooks/useAuth'
 import {
-  Container, Center, Box, Stack, Title, Text, TextInput,
+  Container, Paper, Stack, Title, Text, TextInput,
   PasswordInput, Button, Anchor, Divider, Group
 } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { notifications } from '@mantine/notifications'
 import {
-  IconCircuitResistor,
   IconBrandGoogle, IconBrandSpotify
 } from '@tabler/icons-react'
 
@@ -78,11 +77,8 @@ export default function Login() {
       <Stack gap="xl">
 
         <Stack gap={4} align="center">
-          <Center>
-            <IconCircuitResistor size={38} />
-          </Center>
-          <Title order={2} ta="center" fw={700} lts="-0.02em" mt={8}>
-            Boas-vindas de volta
+          <Title order={2} ta="center" fw={700} lts="-0.02em">
+            Login
           </Title>
           <Text c="dimmed" size="sm" ta="center">
             Entre na sua conta para continuar
@@ -90,31 +86,27 @@ export default function Login() {
         </Stack>
 
         {/* Form */}
-        <Box
-          p="xl"
-          style={{
-            border: '1px solid var(--mantine-color-default-border)',
-            borderRadius: 16,
-            background: 'var(--mantine-color-default)',
-          }}
+        <Paper
+          p="lg"
+          withBorder
+          radius="lg"
         >
           <form onSubmit={form.onSubmit(handleSubmit)}>
             <Stack gap="md">
-
               <TextInput
+                size="lg"
                 label="E-mail"
                 placeholder="seu@email.com"
                 radius="md"
                 {...form.getInputProps('email')}
               />
-
               <PasswordInput
+                size="lg"
                 label="Senha"
                 placeholder="Sua senha"
                 radius="md"
                 {...form.getInputProps('password')}
               />
-
               <Anchor
                 size="xs"
                 c="dimmed"
@@ -125,7 +117,6 @@ export default function Login() {
               >
                 Esqueci minha senha
               </Anchor>
-
               <Button
                 type="submit"
                 color="indigo"
@@ -167,7 +158,7 @@ export default function Login() {
 
             </Stack>
           </form>
-        </Box>
+        </Paper>
 
         <Text ta="center" size="sm" c="dimmed">
           Ainda não tem conta?{' '}

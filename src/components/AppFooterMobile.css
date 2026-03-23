@@ -1,0 +1,80 @@
+.footer-mobile {
+  position: fixed;
+  bottom: 0;
+  background-color: #fff;
+  height: 70px;
+  width: 100%;
+  z-index: 250;
+}
+
+.footer-inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 100%;
+}
+
+.nav-item {
+  -webkit-tap-highlight-color: transparent;
+  color: #3a3a3a;
+  cursor: pointer;
+  font-size: 1.6rem;
+  font-weight: 300;
+  display: flex;
+  flex-direction: column;
+  flex-basis: 100%;
+  align-items: center;
+  position: relative;
+}
+
+.nav-item svg {
+  width: 26px;
+  height: 26px;
+  stroke-width: 1.7;
+}
+
+/* ── Item ativo ── */
+.nav-item.active::before {
+  content: "";
+  display: block;
+  border-top: 2px solid #272727;
+  position: absolute;
+  top: -21px;
+  left: 0;
+  width: 100%;
+  z-index: 251;
+}
+
+.nav-item.active svg {
+  stroke-width: 2.3;
+}
+
+/* ── Botão plus ── */
+.nav-item.plus svg {
+  stroke-width: 2.3;
+  width: 48px;
+  height: 48px;
+}
+
+.nav-item.plus.active::before {
+  content: "";
+  display: block;
+  border-top: 2px solid #0977ff;
+  position: absolute;
+  top: -11px;
+  left: 0;
+  width: 100%;
+}
+
+/* ── Dark mode ── */
+[data-mantine-color-scheme='dark'] .footer-mobile {
+  background-color: #0c1319;
+}
+
+[data-mantine-color-scheme='dark'] .nav-item {
+  color: #b6b6b6;
+}
+
+[data-mantine-color-scheme='dark'] .nav-item.active::before {
+  border-top-color: #bfbfbf;
+}

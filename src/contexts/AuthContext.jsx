@@ -1,8 +1,10 @@
 // src/contexts/AuthContext.jsx
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useEffect, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
 
 const AuthContext = createContext({})
+
+export { AuthContext }
 
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(undefined)
@@ -13,7 +15,7 @@ export function AuthProvider({ children }) {
   async function fetchProfile(userId) {
     const { data, error } = await supabase
       .from('profiles')
-      .select('id, full_name, username, avatar, bio')
+      .select('id, full_name, username, avatar, bio, plan')
       .eq('id', userId)
       .single()
 
@@ -38,6 +40,18 @@ export function AuthProvider({ children }) {
 
     return () => subscription.unsubscribe()
   }, [])
+
+  async function resetPassword(email) {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    })
+    return { error }
+  }
+
+  async function updatePassword(newPassword) {
+    const { error } = await supabase.auth.updateUser({ password: newPassword })
+    return { error }
+  }
 
   async function signInWithEmail(email, password) {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password })
@@ -81,6 +95,8 @@ export function AuthProvider({ children }) {
     user,
     profile,
     loading,
+    resetPassword,
+    updatePassword,
     signInWithEmail,
     signUpWithEmail,
     signInWithGoogle,
@@ -93,10 +109,4 @@ export function AuthProvider({ children }) {
       {children}
     </AuthContext.Provider>
   )
-}
-
-export function useAuth() {
-  const context = useContext(AuthContext)
-  if (!context) throw new Error('useAuth deve ser usado dentro de <AuthProvider>')
-  return context
 }

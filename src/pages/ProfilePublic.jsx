@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { fetchBasicProfile } from '../queries/profiles'
-import { useAuth } from '../contexts/AuthContext'
+import { useAuth } from '../hooks/useAuth'
 import {
   Container, Box, Modal, Center,
   Avatar, Title, Text, Button, Group, Flex, Stack,
@@ -14,10 +14,7 @@ import styles from './Profile.module.scss'
 const AVATAR_PATH = 'https://ik.imagekit.io/mublin/tr:h-200,c-maintain_ratio/users/avatars/'
 const AVATAR_PATH_LG = 'https://ik.imagekit.io/mublin/tr:h-600,c-maintain_ratio/users/avatars/'
 
-console.log("AQUI FOI 1!")
-
 export default function ProfilePublic() {
-  console.log("AQUI FOI 2!")
   const { username } = useParams()
   const navigate = useNavigate()
   const { session, loading: authLoading } = useAuth()

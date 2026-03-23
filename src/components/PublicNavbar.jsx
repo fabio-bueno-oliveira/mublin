@@ -1,86 +1,52 @@
-import { useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { 
   Group, Flex, Button, Container, 
-  Text, Box, Burger, ActionIcon, Image,
-  useComputedColorScheme, useMantineColorScheme 
+  Box, Burger, Image,
+  useMantineColorScheme 
 } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
-import { IconCircuitResistor, IconMoon, IconSun } from '@tabler/icons-react'
+import { IconCircuitResistor } from '@tabler/icons-react'
 import MublinLogoBlack from '../assets/svg/mublin-logo-black.svg'
 import MublinLogoWhite from '../assets/svg/mublin-logo-white.svg'
 
 export default function PublicNavbar() {
-  const navigate = useNavigate()
-  const [opened, { toggle }] = useDisclosure(false)
-
-  const { setColorScheme, colorScheme } = useMantineColorScheme()
-  const computedColorScheme = useComputedColorScheme('light')
-  const isDark = computedColorScheme === 'dark'
-
-  const toggleColorScheme = () => setColorScheme(isDark ? 'light' : 'dark')
+  const [opened, { toggle, close }] = useDisclosure(false)
+  const { colorScheme } = useMantineColorScheme()
 
   return (
     <Box h='100%'>
       <Container size="lg" h="100%">
         <Group justify="space-between" align="center" h="100%">
-
           {/* Logo */}
           <Flex
             gap={8}
             align='center'
-            style={{ cursor: 'pointer' }}
-            onClick={() => navigate('/')}
+            component={Link}
+            to="/"
+            style={{ cursor: 'pointer', textDecoration: 'none' }}
           >
             <IconCircuitResistor size={30} stroke={2} />
             <Image src={colorScheme === 'light' ? MublinLogoBlack : MublinLogoWhite} h={22} />
           </Flex>
 
-          {/* Links — desktop */}
-          {/* <Group gap="lg" visibleFrom="sm">
-            <Text
-              size="sm"
-              fw={500}
-              style={{ cursor: 'pointer' }}
-              onClick={() => navigate('/#features')}
-            >
-              Funcionalidades
-            </Text>
-            <Text
-              size="sm"
-              fw={500}
-              style={{ cursor: 'pointer' }}
-              onClick={() => navigate('/#about')}
-            >
-              Sobre
-            </Text>
-          </Group> */}
-
           {/* CTAs — desktop */}
           <Group gap="sm" visibleFrom="sm">
-            <ActionIcon
-              variant="subtle"
-              color="gray"
-              radius="xl"
-              size="lg"
-              onClick={toggleColorScheme}
-              aria-label="Alternar tema"
-            >
-              {isDark ? <IconSun size={18} /> : <IconMoon size={18} />}
-            </ActionIcon>
             <Button
+              component={Link}
+              to="/login"
               variant="subtle"
               color="gray"
               radius="xl"
               size="sm"
-              onClick={() => navigate('/login')}
             >
               Entrar
             </Button>
             <Button
+              component={Link}
+              to="/signup"
               radius="xl"
               size="sm"
               color="indigo"
-              onClick={() => navigate('/signup')}
             >
               Criar conta
             </Button>
@@ -93,7 +59,6 @@ export default function PublicNavbar() {
             hiddenFrom="sm"
             size="sm"
           />
-
         </Group>
       </Container>
 
@@ -107,23 +72,45 @@ export default function PublicNavbar() {
             padding: '16px 24px',
           }}
         >
-          <Group justify="space-between" align="center" mb="md">
-            <Text size="sm" fw={500} c="dimmed" style={{ cursor: 'pointer' }}
-              onClick={() => { navigate('/#features'); toggle() }}>
+          {/* <Group justify="space-between" align="center" mb="md">
+            <Text
+              size="sm" fw={500} c="dimmed"
+              component={Link}
+              to="/#features"
+              style={{ textDecoration: 'none' }}
+              onClick={close}
+            >
               Funcionalidades
             </Text>
-            <Text size="sm" fw={500} c="dimmed" style={{ cursor: 'pointer' }}
-              onClick={() => { navigate('/#about'); toggle() }}>
+            <Text
+              size="sm" fw={500} c="dimmed"
+              component={Link}
+              to="/#about"
+              style={{ textDecoration: 'none' }}
+              onClick={close}
+            >
               Sobre
             </Text>
-          </Group>
+          </Group> */}
           <Group grow>
-            <Button variant="default" radius="xl" size="sm"
-              onClick={() => { navigate('/login'); toggle() }}>
+            <Button
+              component={Link}
+              to="/login"
+              variant="default"
+              radius="xl"
+              size="sm"
+              onClick={close}
+            >
               Entrar
             </Button>
-            <Button color="indigo" radius="xl" size="sm"
-              onClick={() => { navigate('/signup'); toggle() }}>
+            <Button
+              component={Link}
+              to="/signup"
+              color="indigo"
+              radius="xl"
+              size="sm"
+              onClick={close}
+            >
               Criar conta
             </Button>
           </Group>

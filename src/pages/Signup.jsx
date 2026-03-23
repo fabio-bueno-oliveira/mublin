@@ -1,15 +1,13 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { useAuth } from '../contexts/AuthContext'
-import { supabase } from '../lib/supabaseClient'
+import { useAuth } from '../hooks/useAuth'
 import {
-  Container, Center, Box, Stack, Title, Text, TextInput,
+  Container, Paper, Stack, Title, Text, TextInput,
   PasswordInput, Button, Anchor, Divider, Group
 } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { notifications } from '@mantine/notifications'
 import {
-  IconCircuitResistor,
   IconBrandGoogle, IconBrandSpotify
 } from '@tabler/icons-react'
 
@@ -93,12 +91,8 @@ export default function Signup() {
     <Container size={420} py={30}>
       <Stack gap="xl">
 
-        {/* Header */}
         <Stack gap={4} align="center">
-          <Center>
-            <IconCircuitResistor size={38} />
-          </Center>
-          <Title order={2} ta="center" fw={700} lts="-0.02em" mt={8}>
+          <Title order={2} ta="center" fw={700} lts="-0.02em">
             Crie sua conta
           </Title>
           <Text c="dimmed" size="sm" ta="center">
@@ -107,13 +101,10 @@ export default function Signup() {
         </Stack>
 
         {/* Form */}
-        <Box
-          p="xl"
-          style={{
-            border: '1px solid var(--mantine-color-default-border)',
-            borderRadius: 16,
-            background: 'var(--mantine-color-default)',
-          }}
+        <Paper
+          p="lg"
+          withBorder
+          radius="lg"
         >
           <form onSubmit={form.onSubmit(handleSubmit)}>
             <Stack gap="md">
@@ -196,7 +187,7 @@ export default function Signup() {
 
             </Stack>
           </form>
-        </Box>
+        </Paper>
 
         {/* Link para login */}
         <Text ta="center" size="sm" c="dimmed">

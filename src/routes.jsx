@@ -8,8 +8,11 @@ import Landing from './pages/Landing'
 import NotFound from './pages/NotFound'
 import Login from './pages/Login'
 import Signup from './pages/Signup'
+import ForgotPassword from './pages/ForgotPassword'
+import ResetPassword from './pages/ResetPassword'
 
 // Authenticated pages
+import Menu from './pages/Menu' // used only for mobile devices
 import Home from './pages/Home'
 import ProfileRouter from './components/ProfileRouter'
 import ProjectRouter from './components/ProjectRouter'
@@ -26,6 +29,8 @@ export const router = createBrowserRouter([
       { index: true, element: <Landing /> },
       { path: 'login', element: <Login /> },
       { path: 'signup', element: <Signup /> },
+      { path: 'forgot-password', element: <ForgotPassword /> },
+      { path: 'reset-password', element: <ResetPassword /> },
       { path: 'auth/callback', element: <AuthCallback /> },
     ],
   },
@@ -40,12 +45,13 @@ export const router = createBrowserRouter([
   {
     element: <AppLayout />,
     children: [
+      { path: 'menu', element: <Menu /> },
       { path: 'home', element: <Home /> },
       { path: 'gigs', element: <Gigs /> },
       { path: 'new/project', element: <NewProject /> },
     ],
   },
-  // ── Perfil — deve vir ANTES do 404, DEPOIS de tudo ──
+  // ── Perfil ──────────────────────────────────────
   {
     path: '/:username',
     element: <ProfileRouter />,
