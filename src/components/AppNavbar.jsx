@@ -1,10 +1,10 @@
 import { useNavigate } from 'react-router-dom'
 import {
-  Group, Text, TextInput, ActionIcon, Avatar,
+  Group, Text, TextInput, ActionIcon, Avatar, Switch,
   Menu, Box, Container, useComputedColorScheme, useMantineColorScheme
 } from '@mantine/core'
 import {
-  IconSearch, IconGuitarPickFilled,
+  IconSearch, IconCircuitResistor,
   IconBell, IconChevronDown, IconSun, IconMoon
 } from '@tabler/icons-react'
 import { useAuth } from '../contexts/AuthContext'
@@ -15,15 +15,15 @@ export default function AppNavbar({ children }) {
   const navigate = useNavigate()
   const { profile, signOut } = useAuth()
 
-  async function handleSignOut() {
-    await signOut()
-    navigate('/')
-  }
-
   const { setColorScheme } = useMantineColorScheme()
   const computedColorScheme = useComputedColorScheme('light')
   const isDark = computedColorScheme === 'dark'
   const toggleColorScheme = () => setColorScheme(isDark ? 'light' : 'dark')
+
+  async function handleSignOut() {
+    await signOut()
+    navigate('/')
+  }
 
   return (
     <Box h="100%" style={{ borderBottom: '1px solid var(--mantine-color-default-border)' }}>
@@ -37,8 +37,8 @@ export default function AppNavbar({ children }) {
               style={{ cursor: 'pointer' }}
               onClick={() => navigate('/home')}
             >
-              <IconGuitarPickFilled size={20} />
-              <Text fw={800} size="lg" style={{ letterSpacing: '-0.03em' }} visibleFrom="sm">
+              <IconCircuitResistor size={30} />
+              <Text fw={800} size="xl" style={{ letterSpacing: '-0.03em' }} visibleFrom="sm">
                 mublin
               </Text>
             </Group>
@@ -70,16 +70,14 @@ export default function AppNavbar({ children }) {
               <IconSearch size={18} />
             </ActionIcon>
 
-            <ActionIcon
-              variant="subtle"
-              color="gray"
-              radius="xl"
+            <Switch
               size="lg"
+              color="dark.3"
+              onLabel={<IconSun size={16} color="white" />}
+              offLabel={<IconMoon size={16} color="black" />}
               onClick={toggleColorScheme}
               aria-label="Alternar tema"
-            >
-              {isDark ? <IconSun size={18} /> : <IconMoon size={18} />}
-            </ActionIcon>
+            />
 
             {/* Notificações */}
             <ActionIcon

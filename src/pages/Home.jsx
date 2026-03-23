@@ -1,4 +1,4 @@
-import { useNavigate, Link } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useQuery } from '@tanstack/react-query'
 import { fetchAllProjects } from '../queries/projects'
@@ -10,17 +10,11 @@ import {
 import {
   IconCalendarEvent, IconTarget, IconBell,
   IconUsers, IconLayoutList, IconChevronRight,
-  IconHexagonPlus, IconStar, IconMapPin,
-  IconMusic, IconPlug, IconArrowRight, IconDots
+  IconHexagonPlus, IconStar, 
+  IconMusic, IconDots
 } from '@tabler/icons-react'
 
 // ── Mock data ────────────────────────────────────────────
-
-const UPCOMING_GIGS = [
-  { id: 1, title: 'Show Acústico', project: 'Trio Acústico SP', date: '28 Mar', weekday: 'Sex', venue: 'Bar Sagarana', city: 'São Paulo, SP', confirmed: true },
-  { id: 2, title: 'Ensaio Geral', project: 'Banda Paralela', date: '02 Abr', weekday: 'Qua', venue: 'Estúdio B', city: 'São Paulo, SP', confirmed: true },
-  { id: 3, title: 'Festival Indie', project: 'Trio Acústico SP', date: '12 Abr', weekday: 'Sáb', venue: 'Cine Joia', city: 'São Paulo, SP', confirmed: false },
-]
 
 const GOALS = [
   { id: 1, label: 'Gravar EP de estreia', progress: 65, color: 'amber' },
@@ -49,6 +43,7 @@ const FEED_POSTS = [
 
 // ── Sub-componentes ──────────────────────────────────────
 
+// eslint-disable-next-line no-unused-vars
 function SectionCard({ title, icon: Icon, action, children }) {
   return (
     <Paper p="lg" radius="md" withBorder style={{ height: '100%' }}>
@@ -73,7 +68,6 @@ function SectionCard({ title, icon: Icon, action, children }) {
 // ── Página principal ─────────────────────────────────────
 
 export default function Home() {
-  const navigate = useNavigate()
   const { profile } = useAuth()
   const firstName = profile?.full_name?.split(' ')[0] ?? 'Músico'
   const hour = new Date().getHours()
@@ -86,28 +80,16 @@ export default function Home() {
   })
 
   return (
-    <Box py="lg">
+    <Box py="sm">
       <Container size="xl">
         <Stack gap="xl">
 
           {/* ── Saudação ── */}
-          <Group justify="space-between" align="flex-end">
-            <Stack gap={2}>
-              <Text c="dimmed" size="sm">{greeting},</Text>
-              <Title order={2} fw={800} lts="-0.02em">
-                {firstName} 👋
-              </Title>
-            </Stack>
-            <Button
-              size="sm"
-              radius="xl"
-              color="amber"
-              rightSection={<IconArrowRight size={14} />}
-              onClick={() => {}}
-            >
-              Publicar gig
-            </Button>
-          </Group>
+          <Stack gap={2}>
+            <Title order={3} fw={700} lts="-0.02em">
+              {greeting}, {firstName} 👋
+            </Title>
+          </Stack>
 
           <ScrollArea w="100%" type="never">
             <Flex gap={18}>
@@ -161,48 +143,9 @@ export default function Home() {
           {/* ── Grid principal ── */}
           <Grid gutter="md">
 
-            {/* Próximas Gigs */}
+            {/* Gigs sugeridas */}
             <Grid.Col span={{ base: 12, md: 5 }}>
-              <SectionCard title="Próximas Gigs" icon={IconCalendarEvent} action>
-                <Stack gap="xs">
-                  {UPCOMING_GIGS.map((gig, i) => (
-                    <Box key={gig.id}>
-                      <Group gap="md" align="flex-start">
-                        <Box
-                          style={{
-                            minWidth: 44,
-                            textAlign: 'center',
-                            background: 'var(--mantine-color-amber-0)',
-                            borderRadius: 8,
-                            padding: '6px 4px',
-                          }}
-                        >
-                          <Text size="xs" c="dimmed" lh={1}>{gig.weekday}</Text>
-                          <Text fw={800} size="sm" c="amber" lh={1.2}>{gig.date.split(' ')[0]}</Text>
-                          <Text size="xs" c="dimmed" lh={1}>{gig.date.split(' ')[1]}</Text>
-                        </Box>
-                        <Stack gap={2} style={{ flex: 1 }}>
-                          <Group gap="xs">
-                            <Text size="sm" fw={600}>{gig.title}</Text>
-                            <Badge
-                              size="xs"
-                              variant="light"
-                              color={gig.confirmed ? 'green' : 'gray'}
-                            >
-                              {gig.confirmed ? 'Confirmado' : 'Pendente'}
-                            </Badge>
-                          </Group>
-                          <Text size="xs" c="dimmed">{gig.project}</Text>
-                          <Group gap={4}>
-                            <IconMapPin size={11} style={{ color: 'var(--mantine-color-dimmed)' }} />
-                            <Text size="xs" c="dimmed">{gig.venue} · {gig.city}</Text>
-                          </Group>
-                        </Stack>
-                      </Group>
-                      {i < UPCOMING_GIGS.length - 1 && <Divider my="xs" />}
-                    </Box>
-                  ))}
-                </Stack>
+              <SectionCard title="Gigs sugeridas" icon={IconCalendarEvent} action>
                 <Button
                   variant="subtle"
                   color="gray"
@@ -211,7 +154,7 @@ export default function Home() {
                   mt="md"
                   rightSection={<IconChevronRight size={13} />}
                 >
-                  Ver todas as gigs
+                  Ver mais gigs
                 </Button>
               </SectionCard>
             </Grid.Col>

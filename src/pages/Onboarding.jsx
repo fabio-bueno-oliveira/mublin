@@ -18,7 +18,7 @@ import { notifications } from '@mantine/notifications'
 import { upload } from '@imagekit/react'
 import {
   IconArrowLeft, IconArrowRight, IconSearch,
-  IconCheck, IconX, IconUpload,
+  IconCheck, IconX, IconUpload, IconCircuitResistor
 } from '@tabler/icons-react'
 
 // ── Queries ──────────────────────────────────────────────
@@ -458,6 +458,7 @@ export default function Onboarding() {
       <Stack gap="xl">
 
         <Stack gap={4} align="center">
+          <IconCircuitResistor size={38} />
           <Title order={2} fw={800} lts="-0.02em" ta="center">
             Vamos configurar seu perfil
           </Title>
