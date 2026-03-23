@@ -1,33 +1,37 @@
-import { useParams } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { fetchBasicProfile } from '../queries/profiles'
 import { useAuth } from '../contexts/AuthContext'
 import {
-  Container, Modal, Center,
-  Avatar, Title, Text, Group, Flex, Stack,
+  Container, Box, Modal, Center,
+  Avatar, Title, Text, Button, Group, Flex, Stack,
   Skeleton, Alert, Badge, Scroller
 } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
-import { IconMoodSad } from '@tabler/icons-react'
+import { IconMusic, IconArrowRight, IconMoodSad } from '@tabler/icons-react'
 import styles from './Profile.module.scss'
 
 const AVATAR_PATH = 'https://ik.imagekit.io/mublin/tr:h-200,c-maintain_ratio/users/avatars/'
 const AVATAR_PATH_LG = 'https://ik.imagekit.io/mublin/tr:h-600,c-maintain_ratio/users/avatars/'
 
-export default function Profile() {
+console.log("AQUI FOI 1!")
+
+export default function ProfilePublic() {
+  console.log("AQUI FOI 2!")
   const { username } = useParams()
-  const { loading: authLoading } = useAuth()
+  const navigate = useNavigate()
+  const { session, loading: authLoading } = useAuth()
   const [modalOpened, { open: openModal, close: closeModal }] = useDisclosure(false)
 
   const { data: profile, isLoading, isError } = useQuery({
     queryKey: ['profile', username],
     queryFn: () => fetchBasicProfile(username),
-    enabled: !!username && !authLoading,
+    enabled: !!username && !authLoading && !session,
     staleTime: 1000 * 60 * 5,
     retry: 1,
   })
 
-  const roles = profile?.profile_roles.sort((a, b) => b.main_activity - a.main_activity)
+  const roles = profile?.profile_roles?.sort((a, b) => b.main_activity - a.main_activity)
 
   if (authLoading) {
     return (
@@ -105,6 +109,49 @@ export default function Profile() {
               )}
             </Stack>
           </Group>
+
+          {/* CTA */}
+          <Box
+            p="lg"
+            style={{
+              borderRadius: 12,
+              border: '1px solid var(--mantine-color-default-border)',
+              background: 'var(--mantine-color-default)',
+            }}
+          >
+            <Group justify="space-between" align="center" wrap="wrap" gap="md">
+              <Stack gap={2}>
+                <Group gap={6}>
+                  <IconMusic size={16} color="var(--mantine-color-amber-6)" />
+                  <Text size="sm" fw={600}>Veja o perfil completo no Mublin</Text>
+                </Group>
+                <Text size="xs" c="dimmed">
+                  Projetos, gigs, setlists e muito mais.
+                </Text>
+              </Stack>
+              <Group gap="sm">
+                <Button
+                  variant="subtle"
+                  color="gray"
+                  size="sm"
+                  radius="xl"
+                  onClick={() => navigate('/login')}
+                >
+                  Entrar
+                </Button>
+                <Button
+                  color="amber"
+                  size="sm"
+                  radius="xl"
+                  rightSection={<IconArrowRight size={14} />}
+                  onClick={() => navigate('/signup')}
+                >
+                  Criar conta grátis
+                </Button>
+              </Group>
+            </Group>
+          </Box>
+
         </Stack>
       </Container>
 

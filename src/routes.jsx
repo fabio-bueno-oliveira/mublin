@@ -11,7 +11,7 @@ import Signup from './pages/Signup'
 
 // Authenticated pages
 import Home from './pages/Home'
-import Profile from './pages/Profile'
+import ProfileRouter from './components/ProfileRouter'
 import ProjectRouter from './components/ProjectRouter'
 import Gigs from './pages/Gigs'
 import NewProject from './pages/NewProject'
@@ -26,20 +26,16 @@ export const router = createBrowserRouter([
       { index: true, element: <Landing /> },
       { path: 'login', element: <Login /> },
       { path: 'signup', element: <Signup /> },
-      { path: 'profile/:username', element: <Profile /> },
       { path: 'auth/callback', element: <AuthCallback /> },
     ],
   },
-
   // ── Projeto ────────────────────────────────────
   {
     path: 'project/:slug',
-    element: <ProjectRouter />,  // gerencia layout internamente
+    element: <ProjectRouter />,
   },
-
   // ── Onboarding ──────────────────────────────────
   { path: 'onboarding', element: <Onboarding /> },
-
   // ── Rotas autenticadas ──────────────────────────
   {
     element: <AppLayout />,
@@ -49,7 +45,11 @@ export const router = createBrowserRouter([
       { path: 'new/project', element: <NewProject /> },
     ],
   },
-
+  // ── Perfil — deve vir ANTES do 404, DEPOIS de tudo ──
+  {
+    path: '/:username',
+    element: <ProfileRouter />,
+  },
   // ── Rota 404 ────────────────────────────────────
   {
     path: '*',
