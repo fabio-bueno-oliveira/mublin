@@ -35,14 +35,17 @@ export default function Landing() {
   if (session) return <Navigate to="/home" replace />
 
   return (
-    <Box>
+    <Box style={{ overflowX: 'hidden', width: '100%' }}>
       {/* ── Hero ───────────────────────────────────── */}
       <Box
-        display='flex'
-        mih='60vh'
-        style={{ alignItems: 'center' }}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          minHeight: '60vh',
+          width: '100%',
+        }}
       >
-        <Container size="sm" py={50}>
+        <Container size="sm" py={50} w="100%">
           <Stack gap="lg" align="center">
             <Badge fw='500' color="amber" variant="light" size="md">
               The professional network for musicians
@@ -103,8 +106,8 @@ export default function Landing() {
       </Box>
 
       {/* ── Features ───────────────────────────────── */}
-      <Box py={96}>
-        <Container size="md">
+      <Box py={96} style={{ width: '100%' }}>
+        <Container size="md" w="100%">
           <Stack gap={48} align="center">
             <Stack gap={8} align="center" ta="center">
               <Title order={2} fz={36} fw={800} lts='-0.02em'>
@@ -141,8 +144,8 @@ export default function Landing() {
       </Box>
 
       {/* ── CTA final ──────────────────────────────── */}
-      <Box py={40}>
-        <Container size="sm">
+      <Box py={40} style={{ width: '100%' }}>
+        <Container size="sm" w="100%">
           <Stack gap="xl" align="center" ta="center">
             <Title order={2} fz={36} fw={800} lts='-0.02em'>
               Pronto para começar?
