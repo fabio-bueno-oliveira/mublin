@@ -87,3 +87,31 @@ export async function fetchAllProjects() {
   if (error) throw new Error(error.message)
   return data
 }
+
+export async function fetchRandomOtherProjects(userId) {
+  // Primeiro busca os IDs dos projetos que o usuário já participa
+  const { data: memberOf, error: memberError } = await supabase
+    .from('project_members')
+    .select('project_id')
+    .eq('profile_id', userId)
+
+  if (memberError) throw new Error(memberError.message)
+
+  const excludedIds = memberOf.map((r) => r.project_id)
+
+  // Depois busca projetos excluindo esses IDs
+  const query = supabase
+    .from('projects')
+    .select('id, name, slug, picture, description')
+    .limit(20)
+
+  if (excludedIds.length > 0) {
+    query.not('id', 'in', `(${excludedIds.join(',')})`)
+  }
+
+  const { data, error } = await query
+
+  if (error) throw new Error(error.message)
+  return data
+}
+

@@ -1,6 +1,8 @@
 import { Link } from 'react-router-dom'
+import { useAuth } from '../hooks/useAuth'
 import { useQuery } from '@tanstack/react-query'
-import { fetchAllProjects } from '../queries/projects'
+import { fetchUserProjects } from '../queries/user'
+import { fetchRandomOtherProjects } from '../queries/projects'
 import {
   Box, Container, Grid, Stack, Group, Text,
   Avatar, Badge, Button, Paper, Divider, Flex, Tabs, 
@@ -68,16 +70,49 @@ function SectionCard({ title, icon: Icon, action, children }) {
   )
 }
 
+function ProjectSkeletons({ count = 10 }) {
+  return Array.from({ length: count }).map((_, i) => (
+    <Flex key={i} direction="column" align="center" gap={10}>
+      <Skeleton radius="md" width={65} height={98} />
+      <Skeleton radius="xl" width={50} height={10} />
+    </Flex>
+  ))
+}
+
 // ── Página principal ─────────────────────────────────────
 
 export default function Home() {
+  const { user } = useAuth()
   const isMobile = useMediaQuery('(max-width: 48em)')
   const { colorScheme } = useMantineColorScheme()
-  const { data: projects = [], isLoading: loadingProjects } = useQuery({
-    queryKey: ['home-projects'],
-    queryFn: fetchAllProjects,
-    staleTime: 1000 * 60 * 10,
+
+  const { data: savedProjects = [], isLoading: loadingProjects } = useQuery({
+    queryKey: ['user-home-projects', user?.id],
+    queryFn: () => fetchUserProjects(user.id),
+    enabled: !!user?.id,
+    staleTime: 1000 * 60 * 4,
   })
+
+  const { data: randomProjects = [], isLoading: loadingRandomProjects } = useQuery({
+    queryKey: ['random-projects', user?.id],
+    queryFn: () => fetchRandomOtherProjects(user.id),
+    enabled: !!user?.id,
+    staleTime: 1000 * 60 * 4,
+  })
+
+  const userProjects = savedProjects.map((r) => ({
+    id: r.projects.id,
+    name: r.projects.name,
+    slug: r.projects.slug,
+    picture: r.projects.picture,
+  }))
+
+  const randomProjectsList = randomProjects.map((r) => ({
+    id: r.id,
+    name: r.name,
+    slug: r.slug,
+    picture: r.picture,
+  }))
 
   return (
     <>
@@ -97,80 +132,106 @@ export default function Home() {
       }
       <Container size="xl" py="sm">
         <Stack gap="xl">
-          <Tabs variant="pills" radius="xl" color='indigo.9' defaultValue="gallery">
-            <Tabs.List>
-              <Tabs.Tab value="gallery">
-                Gallery
+          <Tabs variant="pills" radius="xl" color='indigo.9' defaultValue="my-projects">
+            <Tabs.List mb="lg">
+              <Tabs.Tab value="my-projects">
+                Meus projetos
               </Tabs.Tab>
-              <Tabs.Tab value="messages">
-                Messages
-              </Tabs.Tab>
-              <Tabs.Tab value="settings">
-                Settings
+              <Tabs.Tab value="explore-projects">
+                Explorar
               </Tabs.Tab>
             </Tabs.List>
-            <Tabs.Panel value="gallery">
-              Gallery tab content
+            <Tabs.Panel value="my-projects" mih='120px'>
+              <ScrollArea w="100%" type="never">
+                <Flex gap={18}>
+                  <Flex direction="column" align="center" gap={10}>
+                    <Avatar
+                      h={98} w={65}
+                      color="gray"
+                      radius="md"
+                      variant="light"
+                      component={Link}
+                      to='/new/project'
+                    >
+                      <IconHexagonPlus size="1.5rem" stroke={1} />
+                    </Avatar>
+                    <Text size="0.65rem" fw={480}>Novo projeto</Text>
+                  </Flex>
+
+                  {loadingProjects && <ProjectSkeletons />}
+
+                  {!loadingProjects && userProjects?.map(item => (
+                    <Flex
+                      key={item.id}
+                      direction="column"
+                      align="center"
+                      gap={10}
+                      component={Link}
+                      to={`/project/${item.slug ?? item.id}`}
+                      style={{ cursor: 'pointer', textDecoration: 'none', color: 'inherit' }}
+                    >
+                      <Image
+                        radius="md"
+                        h={98}
+                        w={65}
+                        fit="cover"
+                        src={`https://ik.imagekit.io/mublin/projects/tr:h-100,w-65,c-maintain_ratio/${item.picture}`}
+                        fallbackSrc="https://placehold.co/65x98?text=Sem+foto"
+                      />
+                      <Text 
+                        ta="center" 
+                        w={65}
+                        size="0.65rem" 
+                        fw={480} 
+                        truncate="end"
+                        title={item.name}
+                      >
+                        {item.name}
+                      </Text>
+                    </Flex>
+                  ))}
+                </Flex>
+              </ScrollArea>
             </Tabs.Panel>
-            <Tabs.Panel value="messages">
-              Messages tab content
-            </Tabs.Panel>
-            <Tabs.Panel value="settings">
-              Settings tab content
+            <Tabs.Panel value="explore-projects" mih='120px'>
+              <ScrollArea w="100%" type="never">
+                <Flex gap={18}>
+                  {loadingRandomProjects && <ProjectSkeletons />}
+
+                  {!loadingRandomProjects && randomProjectsList?.map(item => (
+                    <Flex
+                      key={item.id}
+                      direction="column"
+                      align="center"
+                      gap={10}
+                      component={Link}
+                      to={`/project/${item.slug ?? item.id}`}
+                      style={{ cursor: 'pointer', textDecoration: 'none', color: 'inherit' }}
+                    >
+                      <Image
+                        radius="md"
+                        h={98}
+                        w={65}
+                        fit="cover"
+                        src={`https://ik.imagekit.io/mublin/projects/tr:h-100,w-65,c-maintain_ratio/${item.picture}`}
+                        fallbackSrc="https://placehold.co/65x98?text=Sem+foto"
+                      />
+                      <Text
+                        w={65}
+                        ta="center" 
+                        size="0.65rem" 
+                        fw={480} 
+                        truncate="end"
+                        title={item.name}
+                      >
+                        {item.name}
+                      </Text>
+                    </Flex>
+                  ))}
+                </Flex>
+              </ScrollArea>
             </Tabs.Panel>
           </Tabs>
-          <Group gap='xs'>
-            <Button radius='xl' size='xs' color='indigo.9'>Meus projetos</Button>
-            <Button radius='xl' size='xs' variant='default'>Explorar</Button>
-          </Group>
-          <ScrollArea w="100%" type="never">
-            <Flex gap={18}>
-              <Flex direction="column" align="center" gap={10}>
-                <Avatar
-                  h={98} w={65}
-                  color="indigo"
-                  radius="md"
-                  variant="light"
-                  component={Link}
-                  to='/new/project'
-                >
-                  <IconHexagonPlus size="1.5rem" stroke={1} />
-                </Avatar>
-                <Text size="0.65rem" fw={480}>Novo projeto</Text>
-              </Flex>
-
-              {loadingProjects && Array.from({ length: 5 }).map((_, i) => (
-                <Flex key={i} direction="column" align="center" gap={8}>
-                  <Skeleton radius="md" width={65} height={98} />
-                  <Skeleton radius="xl" width={50} height={10} />
-                </Flex>
-              ))}
-
-              {!loadingProjects && projects.map(project => (
-                <Flex
-                  key={project.id}
-                  direction="column"
-                  align="center"
-                  gap={8}
-                  component={Link}
-                  to={`/project/${project.slug ?? project.id}`}
-                  style={{ cursor: 'pointer', textDecoration: 'none', color: 'inherit' }}
-                >
-                  <Image
-                    radius="md"
-                    h={98}
-                    w={65}
-                    fit="cover"
-                    src={`https://ik.imagekit.io/mublin/projects/tr:h-100,w-65,c-maintain_ratio/${project.picture}`}
-                    fallbackSrc="https://placehold.co/65x98?text=Sem+foto"
-                  />
-                  <Text size="0.65rem" fw={480} ta="center" w={65} lineClamp={2}>
-                    {project.name}
-                  </Text>
-                </Flex>
-              ))}
-            </Flex>
-          </ScrollArea>
 
           {/* ── Grid principal ── */}
           <Grid gutter="md">
