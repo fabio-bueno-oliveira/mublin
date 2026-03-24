@@ -4,20 +4,17 @@ import { useQuery } from '@tanstack/react-query'
 import { fetchUserProjects } from '../queries/user'
 import { fetchRandomOtherProjects } from '../queries/projects'
 import {
-  Box, Container, Grid, Stack, Group, Text,
+  Box, Container, Grid, Stack, Group, Text, Title,
   Avatar, Badge, Button, Paper, Divider, Flex, Tabs, 
-  ScrollArea, ActionIcon, ThemeIcon, Skeleton, Image,
-  useMantineColorScheme
+  ScrollArea, ActionIcon, ThemeIcon, Skeleton, Image
 } from '@mantine/core'
-import { useMediaQuery } from '@mantine/hooks'
 import {
-  IconCircuitResistor, IconCalendarEvent, IconTarget, IconBell,
-  IconUsers, IconLayoutList, IconChevronRight,
+  IconCalendarEvent, IconTarget, IconBell,
+  IconUsers, IconChevronRight,
   IconHexagonPlus, IconStar, IconClock, 
-  IconMusic, IconDots
+  IconMusic, IconDots,
+  IconWorldBolt
 } from '@tabler/icons-react'
-import MublinLogoBlack from '../assets/svg/mublin-logo-black.svg'
-import MublinLogoWhite from '../assets/svg/mublin-logo-white.svg'
 
 const AVATAR_PATH = 'https://ik.imagekit.io/mublin/tr:h-68,c-maintain_ratio/users/avatars/'
 
@@ -83,8 +80,6 @@ function ProjectSkeletons({ count = 10 }) {
 
 export default function Home() {
   const { profile, user } = useAuth()
-  const isMobile = useMediaQuery('(max-width: 48em)')
-  const { colorScheme } = useMantineColorScheme()
 
   const { data: savedProjects = [], isLoading: loadingProjects } = useQuery({
     queryKey: ['user-home-projects', user?.id],
@@ -117,23 +112,12 @@ export default function Home() {
 
   return (
     <>
-      {isMobile && // Logo + header para mobile
-        <Flex
-          gap={8}
-          align='flex-end'
-          justify='center'
-          component={Link}
-          to="/home"
-          style={{ cursor: 'pointer', textDecoration: 'none' }}
-          mb={10}
-        >
-          <IconCircuitResistor size={22} stroke={2} color={colorScheme === 'light' ? 'black' : 'white'} />
-          <Image src={colorScheme === 'light' ? MublinLogoBlack : MublinLogoWhite} w={96} />
-        </Flex>
-      }
-      <Container size="xl" py="sm">
+      {/* {isMobile && // Logo + header para mobile
+        <Text>Teste</Text>
+      } */}
+      <Container size="xl" py="xs" px={0}>
         <Stack gap="xl">
-          <Tabs variant="pills" radius="xl" color='indigo.9' defaultValue="my-projects">
+          <Tabs variant="pills" radius="xl" color='indigo.9' defaultValue="projects">
             <Flex gap="xs" align="flex-start" mb="lg">
               <Avatar
                 size={34}
@@ -143,15 +127,18 @@ export default function Home() {
                 to={`/${profile?.username}`}
               />
               <Tabs.List>
-                <Tabs.Tab value="my-projects">
-                  Meus projetos
+                <Tabs.Tab value="projects">
+                  Projetos
                 </Tabs.Tab>
-                <Tabs.Tab value="explore-projects">
-                  Explorar
+                <Tabs.Tab value="gigs">
+                  Gigs
+                </Tabs.Tab>
+                <Tabs.Tab value="feed">
+                  Feed
                 </Tabs.Tab>
               </Tabs.List>
             </Flex>
-            <Tabs.Panel value="my-projects" mih='120px'>
+            <Tabs.Panel value="projects" mih='120px'>
               <ScrollArea w="100%" type="never">
                 <Flex gap={18}>
                   <Flex direction="column" align="center" gap={10}>
@@ -224,72 +211,90 @@ export default function Home() {
                 </Flex>
               </ScrollArea>
             </Tabs.Panel>
-            <Tabs.Panel value="explore-projects" mih='120px'>
-              <ScrollArea w="100%" type="never">
-                <Flex gap={18}>
-                  {loadingRandomProjects && <ProjectSkeletons />}
-
-                  {!loadingRandomProjects && randomProjectsList?.map(item => (
-                    <Flex
-                      key={item.id}
-                      direction="column"
-                      align="center"
-                      gap={10}
-                      component={Link}
-                      to={`/project/${item.slug ?? item.id}`}
-                      style={{ cursor: 'pointer', textDecoration: 'none', color: 'inherit' }}
-                    >
-                      <Image
-                        radius="md"
-                        w={90}
-                        h={130}
-                        fit="cover"
-                        src={
-                          item.picture
-                            ? `https://ik.imagekit.io/mublin/projects/tr:h-260,w-180,c-maintain_ratio/${item.picture}`
-                            : undefined
-                        }
-                        fallbackSrc="https://placehold.co/90x130?text=Sem+foto"
-                      />
-                      <Text
-                        w={65}
-                        ta="center" 
-                        size="0.75rem" 
-                        fw={480} 
-                        truncate="end"
-                        title={item.name}
+            <Tabs.Panel value="gigs" mih='120px'>
+              <Title order={2} fz="h3" fw={700} lts="-0.02em" mb={24}>
+                Gigs
+              </Title>
+            </Tabs.Panel>
+            <Tabs.Panel value="feed" mih='120px'>
+              <Stack gap={0}>
+                {FEED_POSTS.map((post, i) => (
+                  <Box key={post.id}>
+                    <Group gap="sm" align="flex-start" py="sm">
+                      <Avatar
+                        size={36}
+                        radius="xl"
+                        style={{ background: post.color, color: '#fff', fontWeight: 700, fontSize: 13, flexShrink: 0 }}
                       >
-                        {item.name}
-                      </Text>
-                    </Flex>
-                  ))}
-                </Flex>
-              </ScrollArea>
+                        {post.initials}
+                      </Avatar>
+                      <Stack gap={4} style={{ flex: 1 }}>
+                        <Group gap="xs">
+                          <Text size="sm" fw={700}>{post.author}</Text>
+                          <Badge size="xs" variant="light" color={post.type === 'project' ? 'amber' : 'blue'}>
+                            {post.type === 'project' ? 'Projeto' : 'Músico'}
+                          </Badge>
+                          <Text size="xs" c="dimmed" ml="auto">{post.time}</Text>
+                        </Group>
+                        <Text size="sm" c="dimmed" lh={1.5}>{post.text}</Text>
+                      </Stack>
+                    </Group>
+                    {i < FEED_POSTS.length - 1 && <Divider />}
+                  </Box>
+                ))}
+              </Stack>
+              <Button variant="subtle" color="gray" size="xs" fullWidth mt="sm" rightSection={<IconChevronRight size={13} />}>
+                Ver feed completo
+              </Button>
             </Tabs.Panel>
           </Tabs>
 
           {/* ── Grid principal ── */}
           <Grid gutter="md">
-
-            {/* Gigs sugeridas */}
-            <Grid.Col span={{ base: 12, md: 5 }}>
-              <SectionCard title="Gigs sugeridas" icon={IconCalendarEvent} action>
-                <Button
-                  variant="subtle"
-                  color="gray"
-                  size="xs"
-                  fullWidth
-                  mt="md"
-                  rightSection={<IconChevronRight size={13} />}
-                >
-                  Ver mais gigs
-                </Button>
-              </SectionCard>
-            </Grid.Col>
-
             {/* Metas + Notificações */}
             <Grid.Col span={{ base: 12, md: 7 }}>
               <Stack gap="md" h="100%">
+
+                <SectionCard title="Explorar" icon={IconWorldBolt} action>
+                  <Flex gap={18}>
+                    {loadingRandomProjects && <ProjectSkeletons />}
+
+                    {!loadingRandomProjects && randomProjectsList?.map(item => (
+                      <Flex
+                        key={item.id}
+                        direction="column"
+                        align="center"
+                        gap={10}
+                        component={Link}
+                        to={`/project/${item.slug ?? item.id}`}
+                        style={{ cursor: 'pointer', textDecoration: 'none', color: 'inherit' }}
+                      >
+                        <Image
+                          radius="md"
+                          w={90}
+                          h={130}
+                          fit="cover"
+                          src={
+                            item.picture
+                              ? `https://ik.imagekit.io/mublin/projects/tr:h-260,w-180,c-maintain_ratio/${item.picture}`
+                              : undefined
+                          }
+                          fallbackSrc="https://placehold.co/90x130?text=Sem+foto"
+                        />
+                        <Text
+                          w={65}
+                          ta="center" 
+                          size="0.75rem" 
+                          fw={480} 
+                          truncate="end"
+                          title={item.name}
+                        >
+                          {item.name}
+                        </Text>
+                      </Flex>
+                    ))}
+                  </Flex>
+                </SectionCard>
 
                 {/* Metas */}
                 <SectionCard title="Metas" icon={IconTarget} action>
@@ -381,42 +386,6 @@ export default function Home() {
                 </Button>
               </SectionCard>
             </Grid.Col>
-
-            {/* Feed prévia */}
-            <Grid.Col span={{ base: 12, md: 8 }}>
-              <SectionCard title="Feed" icon={IconLayoutList} action>
-                <Stack gap={0}>
-                  {FEED_POSTS.map((post, i) => (
-                    <Box key={post.id}>
-                      <Group gap="sm" align="flex-start" py="sm">
-                        <Avatar
-                          size={36}
-                          radius="xl"
-                          style={{ background: post.color, color: '#fff', fontWeight: 700, fontSize: 13, flexShrink: 0 }}
-                        >
-                          {post.initials}
-                        </Avatar>
-                        <Stack gap={4} style={{ flex: 1 }}>
-                          <Group gap="xs">
-                            <Text size="sm" fw={700}>{post.author}</Text>
-                            <Badge size="xs" variant="light" color={post.type === 'project' ? 'amber' : 'blue'}>
-                              {post.type === 'project' ? 'Projeto' : 'Músico'}
-                            </Badge>
-                            <Text size="xs" c="dimmed" ml="auto">{post.time}</Text>
-                          </Group>
-                          <Text size="sm" c="dimmed" lh={1.5}>{post.text}</Text>
-                        </Stack>
-                      </Group>
-                      {i < FEED_POSTS.length - 1 && <Divider />}
-                    </Box>
-                  ))}
-                </Stack>
-                <Button variant="subtle" color="gray" size="xs" fullWidth mt="sm" rightSection={<IconChevronRight size={13} />}>
-                  Ver feed completo
-                </Button>
-              </SectionCard>
-            </Grid.Col>
-
           </Grid>
         </Stack>
       </Container>

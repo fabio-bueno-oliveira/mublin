@@ -86,6 +86,7 @@ export default function NewProject() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [nameValue, setNameValue] = useState('')
   const [projectImage, setProjectImage] = useState('')
+  const [projectFileId, setProjectFileId] = useState('')
   const [slugValue, setSlugValue] = useState('')
   const [slugChecking, setSlugChecking] = useState(false)
   const [slugAvailable, setSlugAvailable] = useState(null)
@@ -212,9 +213,51 @@ export default function NewProject() {
   // Upload de imagem
   const [uploadProgress, setUploadProgress] = useState(0)
 
+  async function handleRemoveImage() {
+    if (!projectFileId) return;
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/imagekit-manage`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`,
+        },
+        body: JSON.stringify({ fileId: projectFileId }),
+      });
+
+      if (!response.ok) throw new Error('Erro ao deletar no servidor');
+
+      setProjectImage('');
+      setProjectFileId('');
+      if (document.querySelector('#projectImage')) {
+        document.querySelector('#projectImage').value = null;
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
   async function handleImageUpload(file) {
     if (!file) return
     try {
+      // 1. Buscar a sessão para autenticar no seu endpoint de auth do ImageKit
+      const { data: { session } } = await supabase.auth.getSession()
+
+      // 2. Chamar seu endpoint de autenticação (mesma lógica do Onboarding)
+      const authRes = await fetch(import.meta.env.VITE_IMAGEKIT_AUTH_ENDPOINT, {
+        headers: {
+          Authorization: `Bearer ${session?.access_token}`,
+        },
+      })
+
+      if (!authRes.ok) throw new Error('Falha na autenticação do ImageKit')
+      
+      const { token: ikToken, expire, signature } = await authRes.json()
+
+      // 3. Realizar o upload passando os tokens de segurança
       const response = await upload({
         file,
         fileName: `${slugValue || 'project'}_.jpg`,
@@ -223,14 +266,19 @@ export default function NewProject() {
         useUniqueFileName: true,
         publicKey: import.meta.env.VITE_IMAGEKIT_PUBLIC_KEY,
         urlEndpoint: import.meta.env.VITE_IMAGEKIT_URL_ENDPOINT,
-        authenticationEndpoint: import.meta.env.VITE_IMAGEKIT_AUTH_ENDPOINT,
+        // PASSAR OS TOKENS ABAIXO:
+        token: ikToken,
+        expire,
+        signature,
         onProgress: (e) => setUploadProgress(Math.round((e.loaded / e.total) * 100)),
       })
+
       const n = response.filePath.lastIndexOf('/')
       setProjectImage(response.filePath.substring(n + 1))
+      setProjectFileId(response.fileId)
       setUploadProgress(0)
-    // eslint-disable-next-line no-unused-vars
     } catch (err) {
+      console.error("Erro detalhado:", err)
       notifications.show({
         color: 'red',
         title: 'Erro no upload',
@@ -257,6 +305,7 @@ export default function NewProject() {
         picture: projectImage || null,
         project_type_id: Number(values.project_type_id),
         on_tour: false,
+        city_id: selectedCity?.id || null,
       })
       .select('id')
       .single()
@@ -276,6 +325,7 @@ export default function NewProject() {
         role_id: Number(values.main_role_id),
         is_founder: true,
         is_admin: true,
+        status: 2,
         joined_at: `${values.foundation_year}-01-01`,
       })
 
@@ -406,10 +456,7 @@ export default function NewProject() {
                 color="red"
                 variant="light"
                 leftSection={<IconTrash size={14} />}
-                onClick={() => {
-                  setProjectImage('')
-                  document.querySelector('#projectImage').value = null
-                }}
+                onClick={handleRemoveImage}
               >
                 Remover
               </Button>
@@ -531,8 +578,8 @@ export default function NewProject() {
           <Textarea
             label="Bio"
             placeholder="Conte um pouco sobre o projeto (opcional)"
-            maxLength={220}
-            description={`${form.getValues().description?.length ?? 0}/220`}
+            maxLength={500}
+            description={`${form.getValues().description?.length ?? 0}/500`}
             autosize
             minRows={3}
             key={form.key('description')}
@@ -589,7 +636,6 @@ export default function NewProject() {
         onClose={closeCityModal}
         size="sm"
         radius="md"
-        centered
       >
         <Stack gap="sm">
           <TextInput

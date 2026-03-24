@@ -14,8 +14,13 @@ import {
   IconUser, IconLock, IconEye, IconAdjustmentsHorizontal,
   IconCamera, IconHeartHandshake, IconPackages, IconCalendarMonth,
   IconChevronRight, IconLogout, IconBrightnessUp, IconMoon,
-  IconEdit, IconStar, IconUpload
+  IconEdit, IconCircuitResistor, IconUpload,
+  IconMusic,
+  IconCalendarEvent,
+  IconHome
 } from '@tabler/icons-react'
+import MublinLogoBlack from '../assets/svg/mublin-logo-black.svg'
+import MublinLogoWhite from '../assets/svg/mublin-logo-white.svg'
 
 const AVATAR_BASE = 'https://ik.imagekit.io/mublin/tr:h-200,w-200,c-maintain_ratio/users/avatars/'
 const iconStyle  = { width: 17, height: 17 }
@@ -99,19 +104,34 @@ export default function Menu() {
 
   // ── Menu items ──────────────────────────────────────────
   const menuItems = [
-    { icon: IconUser,                   label: 'Ir para meu perfil',           to: `/${profile?.username}` },
-    { icon: IconEdit,                   label: 'Editar meus dados',             to: '/settings' },
-    { icon: IconStar,                   label: 'Minha assinatura',              to: '/settings/plan' },
-    { icon: IconAdjustmentsHorizontal,  label: 'Preferências musicais',         to: '/settings/preferences' },
+    { icon: IconHome, label: 'Home', to: '/home' },
+    { icon: IconCalendarEvent,          label: 'Gigs',                          to: '/gigs' },
     { icon: IconCalendarMonth,          label: 'Disponibilidade para gigs',     to: '/settings/availability' },
+    { icon: IconMusic,                  label: 'Projetos musicais',             to: '/projects' },
+    { icon: IconPackages,               label: 'Equipamentos',                  to: '/gearr' },
     { icon: IconHeartHandshake,         label: 'Parceiros e Endorsements',      to: '/settings/endorsements' },
-    { icon: IconPackages,               label: 'Meus equipamentos',             to: '/settings/my-gear' },
+    { icon: IconUser,                   label: 'Ir para meu perfil',            to: `/${profile?.username}` },
+    { icon: IconEdit,                   label: 'Editar meus dados',             to: '/settings' },
+    { icon: IconAdjustmentsHorizontal,  label: 'Preferências musicais',         to: '/settings/preferences' },
+    // { icon: IconStar,                   label: 'Minha assinatura',              to: '/settings/plan' },
     { icon: IconLock,                   label: 'Senha',                         to: '/settings/password' },
     { icon: IconEye,                    label: 'Privacidade da conta',          to: '/settings/privacy' },
   ]
 
   return (
     <>
+      <Flex
+        gap={8}
+        align='flex-end'
+        justify='center'
+        component={Link}
+        to="/home"
+        style={{ cursor: 'pointer', textDecoration: 'none' }}
+        mb={10}
+      >
+        <IconCircuitResistor size={22} stroke={2} color={colorScheme === 'light' ? 'black' : 'white'} />
+        <Image src={colorScheme === 'light' ? MublinLogoBlack : MublinLogoWhite} w={96} />
+      </Flex>
       <Container size="xs" mb={26} mt={20}>
 
         {/* ── Avatar + câmera ── */}
@@ -136,7 +156,7 @@ export default function Menu() {
         </Text>
 
         {/* ── Badge de plano ── */}
-        <Center>
+        {/* <Center>
           {profile?.plan === 'Pro' ? (
             <Badge
               color="violet"
@@ -154,7 +174,7 @@ export default function Menu() {
               </Anchor>
             </Flex>
           )}
-        </Center>
+        </Center> */}
 
         {/* ── Tema ── */}
         <Center mt={22} mb={16}>
