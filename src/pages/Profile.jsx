@@ -3,21 +3,40 @@ import { useQuery } from '@tanstack/react-query'
 import { fetchBasicProfile } from '../queries/profiles'
 import { useAuth } from '../hooks/useAuth'
 import {
-  Container, Modal, Center,
-  Avatar, Title, Text, Group, Flex, Stack,
+  Container, Grid, Avatar, Paper, Spoiler,
+  Button, Title, Text, Group, Flex, Stack, ActionIcon,
   Skeleton, Alert, Badge, Scroller
 } from '@mantine/core'
-import { useDisclosure } from '@mantine/hooks'
-import { IconMoodSad } from '@tabler/icons-react'
-import styles from './Profile.module.scss'
+import { 
+  IconMoodSad, IconRosetteDiscountCheckFilled, 
+  IconMusic, IconDots, IconAlignJustified 
+} from '@tabler/icons-react'
 
 const AVATAR_PATH = 'https://ik.imagekit.io/mublin/tr:h-200,c-maintain_ratio/users/avatars/'
-const AVATAR_PATH_LG = 'https://ik.imagekit.io/mublin/tr:h-600,c-maintain_ratio/users/avatars/'
+
+// eslint-disable-next-line no-unused-vars
+function SectionCard({ title, icon: Icon, action, children }) {
+  return (
+    <Paper p="lg" radius="md" withBorder h="100%">
+      <Group justify="space-between" mb="md">
+        <Group gap="xs">
+          <Icon size={15} />
+          <Text fw={700} size="sm">{title}</Text>
+        </Group>
+        {action && (
+          <ActionIcon variant="subtle" color="gray" size="sm" radius="xl">
+            <IconDots size={15} />
+          </ActionIcon>
+        )}
+      </Group>
+      {children}
+    </Paper>
+  )
+}
 
 export default function Profile() {
   const { username } = useParams()
-  const { loading: authLoading } = useAuth()
-  const [modalOpened, { open: openModal, close: closeModal }] = useDisclosure(false)
+  const { loading: authLoading, user } = useAuth()
 
   const { data: profile, isLoading, isError } = useQuery({
     queryKey: ['profile', username],
@@ -70,62 +89,77 @@ export default function Profile() {
 
   return (
     <>
-      <Container size="sm" py={48}>
-        <Stack gap="xl">
-          <Group align="center" gap="xl">
-            <Avatar
-              size={96}
-              src={profile.avatar ? AVATAR_PATH + profile.avatar : undefined}
-              onClick={openModal}
-            />
-            <Stack gap={1}>
-              <Flex align="center" gap={6} wrap="wrap">
-                <Title order={1} size={24} letterSpacing='-0.02em'>
-                  {profile.full_name}
-                </Title>
-                <Badge size="md" color="gray" c='dimmed' variant="light" tt='lowercase' fw='500'>
-                  @{profile.username}
-                </Badge>
-              </Flex>
-              {roles && roles.length > 0 && (
-                <Scroller>
-                  <Group gap={4} wrap="nowrap">
-                    {roles && roles.map(({ id, main_activity, roles: role }) => (
-                      <Badge key={id} variant="light" fw='500' size="sm" color={main_activity ? 'amber' : 'gray'}>
-                        {role.name_ptbr}
-                      </Badge>
-                    ))}
-                  </Group>
-                </Scroller>
-              )}
-              {profile.bio && (
-                <Text size="sm" maw={420} lh={1.6} mt={4}>
-                  {profile.bio}
-                </Text>
-              )}
-            </Stack>
-          </Group>
-        </Stack>
-      </Container>
-
-      {/* Modal avatar expandido */}
-      <Modal
-        opened={modalOpened}
-        onClose={closeModal}
-        withCloseButton={false}
-        centered
-        size="lg"
-        overlayProps={{ backgroundOpacity: 0.7, blur: 4 }}
-        classNames={{ content: styles.modalTransparent }}
-      >
-        <Center onClick={closeModal} style={{ cursor: 'pointer' }}>
+      <Container size="xl" py="sm">
+        <Group align="center" gap="md" mb="xl">
           <Avatar
-            w={240}
-            h={240}
-            src={profile.avatar ? AVATAR_PATH_LG + profile.avatar : undefined}
+            size={96}
+            src={profile.avatar ? AVATAR_PATH + profile.avatar : undefined}
           />
-        </Center>
-      </Modal>
+          <Stack gap={3}>
+            <Flex align="center" gap={2} wrap="wrap">
+              <Title order={1} size={20} lts='-0.02em' lh='1'>
+                {profile.full_name}
+              </Title>
+              {!!profile.is_verified && 
+                <IconRosetteDiscountCheckFilled 
+                  className='iconVerified'
+                  title='Usuário verificado'
+                />
+              }
+            </Flex>
+            <Flex align="center" gap={6} mt={3}>
+              <Text size="sm" c='dimmed' fw='500'>
+                @{profile.username}
+              </Text>
+              {user?.id === profile.id && (
+                <Button size="compact-xs" variant="default">Editar meu perfil</Button>
+              )}
+            </Flex>
+            {roles && roles.length > 0 && (
+              <Scroller>
+                <Group gap={4} wrap="nowrap">
+                  {roles && roles.map(({ id, main_activity, roles: role }) => (
+                    <Badge 
+                      key={id} 
+                      variant="light" 
+                      fw='500' 
+                      size="sm" 
+                      color={'gray'}
+                    >
+                      {role.name_ptbr}
+                    </Badge>
+                  ))}
+                </Group>
+              </Scroller>
+            )}
+            {profile.title && (
+              <Text size="xs" maw={420} lh={1.6} mt={4}>
+                {profile.title}
+              </Text>
+            )}
+          </Stack>
+        </Group>
+        <Grid gutter="md">
+          <Grid.Col span={{ base: 12, md: 6 }}>
+            <SectionCard title="Sobre" icon={IconAlignJustified} action>
+              <Spoiler
+                maxHeight={60}
+                showLabel={<Text fz="sm">Ver mais</Text>}
+                hideLabel={<Text fz="sm">Ver menos</Text>}
+                fz="sm"
+                pb="xs"
+              >
+                {profile.bio}
+              </Spoiler>
+            </SectionCard>
+          </Grid.Col>
+          <Grid.Col span={{ base: 12, md: 6 }}>
+            <SectionCard title="Gigs sugeridas" icon={IconMusic} action>
+              <Text>Lorem ipsum dolor</Text>
+            </SectionCard>
+          </Grid.Col>
+        </Grid>
+      </Container>
     </>
   )
 }

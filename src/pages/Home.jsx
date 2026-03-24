@@ -19,7 +19,7 @@ import {
 import MublinLogoBlack from '../assets/svg/mublin-logo-black.svg'
 import MublinLogoWhite from '../assets/svg/mublin-logo-white.svg'
 
-const AVATAR_PATH = 'https://ik.imagekit.io/mublin/tr:h-200,c-maintain_ratio/users/avatars/'
+const AVATAR_PATH = 'https://ik.imagekit.io/mublin/tr:h-68,c-maintain_ratio/users/avatars/'
 
 // ── Mock data ────────────────────────────────────────────
 
@@ -136,9 +136,11 @@ export default function Home() {
           <Tabs variant="pills" radius="xl" color='indigo.9' defaultValue="my-projects">
             <Flex gap="xs" align="flex-start" mb="lg">
               <Avatar
-                size={36}
+                size={34}
                 src={profile?.avatar ? AVATAR_PATH + profile.avatar : undefined}
                 radius="xl"
+                component={Link}
+                to={`/${profile?.username}`}
               />
               <Tabs.List>
                 <Tabs.Tab value="my-projects">
@@ -164,7 +166,7 @@ export default function Home() {
                     >
                       <IconHexagonPlus size="1.5rem" color="gray" stroke={1.5} />
                     </Avatar>
-                    <Text size="0.65rem" fw={480}>Novo projeto</Text>
+                    <Text size="0.75rem" fw={480}>Novo projeto</Text>
                   </Flex>
 
                   {loadingProjects && <ProjectSkeletons />}
@@ -209,7 +211,7 @@ export default function Home() {
                       <Text
                         ta="center"
                         w={65}
-                        size="0.65rem"
+                        size="0.75rem"
                         fw={480}
                         truncate="end"
                         title={item.status === 1 ? `${item.name} (pendente de aprovação)` : item.name}
@@ -252,7 +254,7 @@ export default function Home() {
                       <Text
                         w={65}
                         ta="center" 
-                        size="0.65rem" 
+                        size="0.75rem" 
                         fw={480} 
                         truncate="end"
                         title={item.name}

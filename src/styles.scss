@@ -11,3 +11,17 @@
   --mantine-color-anchor: #c9c9c9;
   --mantine-color-text: #ffffff;
 }
+
+.iconVerified {
+  color: #0977ff;
+  width: calc(1.15rem);
+  height: calc(1.15rem);
+  margin-left: 5px;
+
+  &.small {
+    width: calc(1rem);
+    height: calc(1rem);
+    margin-left: 2px;
+    cursor: default;
+  }
+}

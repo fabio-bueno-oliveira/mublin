@@ -8,7 +8,9 @@ export async function fetchBasicProfile(profileUsername) {
       full_name,
       username,
       avatar,
+      title,
       bio,
+      is_verified,
       profile_roles (
         id,
         main_activity,
