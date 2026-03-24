@@ -1,0 +1,13 @@
+:root[data-mantine-color-scheme='dark'] {
+  body {
+    // background-color: #090e12;
+
+    .mublinLogo {
+      h1,h2,h3,h4 {
+        color: white;
+      }
+    }
+  }
+  --mantine-color-anchor: #c9c9c9;
+  --mantine-color-text: #ffffff;
+}

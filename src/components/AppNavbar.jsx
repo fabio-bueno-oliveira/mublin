@@ -73,9 +73,9 @@ export default function AppNavbar({ children }) {
 
             <Switch
               size="lg"
-              color="dark.3"
+              color={isDark ? "dark.4" : "gray.6"}
               onLabel={<IconSun size={16} color="white" />}
-              offLabel={<IconMoon size={16} color="black" />}
+              offLabel={<IconMoon size={16} color="gray" />}
               onClick={toggleColorScheme}
               aria-label="Alternar tema"
             />

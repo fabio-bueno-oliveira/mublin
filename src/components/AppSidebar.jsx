@@ -1,18 +1,19 @@
 import { useLocation, Link } from 'react-router-dom'
 import { 
   Stack, Box, NavLink, ScrollArea,
-  Badge, Group, Text, Divider
+  Badge, Group, Text, Divider,
+  Marquee, Image, Center, Loader, useComputedColorScheme
 } from '@mantine/core'
 import {
-  IconHome, IconCalendarEvent, IconMapPin,
-  IconUser, IconGuitarPick,
+  IconHome, IconCalendarEvent, IconGuitarPick, IconMusic
 } from '@tabler/icons-react'
-import { useAuth } from '../hooks/useAuth'
+import { useQuery } from '@tanstack/react-query'
+import { fetchRandomBrands } from '../queries/gear'
 
 const NAV_ITEMS = [
   { label: 'Home',         icon: IconHome,          path: '/home' },
-  { label: 'Gigs',         icon: IconCalendarEvent, path: '/gigs', badge: 'Novo' },
-  { label: 'Meu Perfil',   icon: IconUser,          path: null },
+  { label: 'Gigs',         icon: IconCalendarEvent, path: '/gigs' },
+  { label: 'Projetos', icon: IconMusic,    path: '/projects', extra: 'Associados a mim', badge: 3 },
   { label: 'Equipamentos', icon: IconGuitarPick,    path: '/gear' },
 ]
 
@@ -24,16 +25,18 @@ const UPCOMING_GIGS = [
 
 export default function AppSidebar() {
   const location = useLocation()
-  const { profile } = useAuth()
+  const computedColorScheme = useComputedColorScheme('light')
+  const isDark = computedColorScheme === 'dark'
 
-  function getPath(item) {
-    if (item.label === 'Meu Perfil') return profile?.username ? `/${profile.username}` : null
-    return item.path
+  function isActive(path) {
+    return location.pathname === path
   }
 
-  function isActive(item) {
-    return location.pathname === getPath(item)
-  }
+  const { data: randomBrands = [], isLoading: loadingRandomBrands } = useQuery({
+    queryKey: ['random-brands'],
+    queryFn: fetchRandomBrands,
+    staleTime: 1000 * 60 * 30,
+  })
 
   return (
     <Box p="md" h="100%">
@@ -44,26 +47,27 @@ export default function AppSidebar() {
             <NavLink
               key={item.label}
               component={Link}
-              to={getPath(item) ?? '#'}
-              disabled={!getPath(item)}
+              to={item.path}
+              disabled={!item.path}
               label={item.label}
+              description={item.extra}
               color="gray"
               leftSection={<Icon size={20} />}
               rightSection={item.badge && (
-                <Badge size="xs" color="amber" variant="light">
+                <Badge size="xs" color="gray" variant="light">
                   {item.badge}
                 </Badge>
               )}
               variant="light"
-              active={isActive(item)}
+              active={isActive(item.path)}
             />
           )
         })}
       </Stack>
-      <Text fw={600} size="sm" mt="lg">
+      <Text fw={600} size="sm" mt="md" c="dimmed">
         Minhas próximas gigs:
       </Text>
-      <ScrollArea h={250} type="always" offsetScrollbars mt="md">
+      <ScrollArea h={180} type="hover" offsetScrollbars mt="md">
         <Stack gap="xs">
           {UPCOMING_GIGS.map((gig, i) => (
             <Box key={gig.id}>
@@ -83,10 +87,11 @@ export default function AppSidebar() {
                 </Box>
                 <Stack gap={2} style={{ flex: 1 }}>
                   <Group gap="xs">
-                    <Text size="sm" fw={600}>{gig.title}</Text>
+                    <Text size="xs" fw={400} lh="0.8em">{gig.title}</Text>
                     <Badge
                       size="xs"
                       variant="light"
+                      fw="400"
                       color={gig.confirmed ? 'green' : 'gray'}
                     >
                       {gig.confirmed ? 'Confirmado' : 'Pendente'}
@@ -94,8 +99,9 @@ export default function AppSidebar() {
                   </Group>
                   <Text size="xs" c="dimmed">{gig.project}</Text>
                   <Group gap={4}>
-                    <IconMapPin size={11} style={{ color: 'var(--mantine-color-dimmed)' }} />
-                    <Text size="xs" c="dimmed">{gig.venue} · {gig.city}</Text>
+                    <Text size="xs" c="dimmed" truncate="end">
+                      {gig.venue} · {gig.city}
+                    </Text>
                   </Group>
                 </Stack>
               </Group>
@@ -104,6 +110,28 @@ export default function AppSidebar() {
           ))}
         </Stack>
       </ScrollArea>
+      <Marquee duration={48000} gap="xs" mt="xl">
+        {!loadingRandomBrands && randomBrands.length > 0 ? (
+          randomBrands.map(brand => (
+            <Link key={brand.id} to={`/brand/${brand.slug}`}>
+            <Image
+              src={brand.logo ? `https://ik.imagekit.io/mublin/products/brands/tr:w-130,h-130,cm-pad_resize,bg-FFFFFF,fo-x/${brand.logo}` : undefined}
+              h={65}
+              w='auto'
+              fit='contain'
+              style={{
+                filter: isDark ? 'invert(1) opacity(0.85)' : 'none',
+                transition: 'filter 0.3s',
+              }}
+            />
+            </Link>
+          ))
+        ) : (
+          <Center>
+            <Loader size="sm" />
+          </Center>
+        )}
+      </Marquee>
     </Box>
   )
 }

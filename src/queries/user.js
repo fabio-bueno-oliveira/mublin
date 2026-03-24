@@ -22,7 +22,7 @@ export async function fetchUserRoles(userId) {
 export async function fetchUserProjects(userId) {
   const { data, error } = await supabase
     .from('project_members')
-    .select('project_id, projects(id, name, slug, picture, description)')
+    .select('project_id, status, projects(id, name, slug, picture, description)')
     .eq('profile_id', userId)
   if (error) throw new Error(error.message)
   return data

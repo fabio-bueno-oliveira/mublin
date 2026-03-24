@@ -13,11 +13,13 @@ import { useMediaQuery } from '@mantine/hooks'
 import {
   IconCircuitResistor, IconCalendarEvent, IconTarget, IconBell,
   IconUsers, IconLayoutList, IconChevronRight,
-  IconHexagonPlus, IconStar, 
+  IconHexagonPlus, IconStar, IconClock, 
   IconMusic, IconDots
 } from '@tabler/icons-react'
 import MublinLogoBlack from '../assets/svg/mublin-logo-black.svg'
 import MublinLogoWhite from '../assets/svg/mublin-logo-white.svg'
+
+const AVATAR_PATH = 'https://ik.imagekit.io/mublin/tr:h-200,c-maintain_ratio/users/avatars/'
 
 // ── Mock data ────────────────────────────────────────────
 
@@ -54,9 +56,7 @@ function SectionCard({ title, icon: Icon, action, children }) {
     <Paper p="lg" radius="md" withBorder style={{ height: '100%' }}>
       <Group justify="space-between" mb="md">
         <Group gap="xs">
-          <ThemeIcon size={28} radius="md" color="amber" variant="light">
-            <Icon size={15} />
-          </ThemeIcon>
+          <Icon size={15} />
           <Text fw={700} size="sm">{title}</Text>
         </Group>
         {action && (
@@ -73,7 +73,7 @@ function SectionCard({ title, icon: Icon, action, children }) {
 function ProjectSkeletons({ count = 10 }) {
   return Array.from({ length: count }).map((_, i) => (
     <Flex key={i} direction="column" align="center" gap={10}>
-      <Skeleton radius="md" width={65} height={98} />
+      <Skeleton radius="md" width={90} height={130} />
       <Skeleton radius="xl" width={50} height={10} />
     </Flex>
   ))
@@ -82,7 +82,7 @@ function ProjectSkeletons({ count = 10 }) {
 // ── Página principal ─────────────────────────────────────
 
 export default function Home() {
-  const { user } = useAuth()
+  const { profile, user } = useAuth()
   const isMobile = useMediaQuery('(max-width: 48em)')
   const { colorScheme } = useMantineColorScheme()
 
@@ -105,6 +105,7 @@ export default function Home() {
     name: r.projects.name,
     slug: r.projects.slug,
     picture: r.projects.picture,
+    status: r.status,
   }))
 
   const randomProjectsList = randomProjects.map((r) => ({
@@ -133,27 +134,35 @@ export default function Home() {
       <Container size="xl" py="sm">
         <Stack gap="xl">
           <Tabs variant="pills" radius="xl" color='indigo.9' defaultValue="my-projects">
-            <Tabs.List mb="lg">
-              <Tabs.Tab value="my-projects">
-                Meus projetos
-              </Tabs.Tab>
-              <Tabs.Tab value="explore-projects">
-                Explorar
-              </Tabs.Tab>
-            </Tabs.List>
+            <Flex gap="xs" align="flex-start" mb="lg">
+              <Avatar
+                size={36}
+                src={profile?.avatar ? AVATAR_PATH + profile.avatar : undefined}
+                radius="xl"
+              />
+              <Tabs.List>
+                <Tabs.Tab value="my-projects">
+                  Meus projetos
+                </Tabs.Tab>
+                <Tabs.Tab value="explore-projects">
+                  Explorar
+                </Tabs.Tab>
+              </Tabs.List>
+            </Flex>
             <Tabs.Panel value="my-projects" mih='120px'>
               <ScrollArea w="100%" type="never">
                 <Flex gap={18}>
                   <Flex direction="column" align="center" gap={10}>
                     <Avatar
-                      h={98} w={65}
+                      w={90}
+                      h={130}
                       color="gray"
                       radius="md"
                       variant="light"
                       component={Link}
                       to='/new/project'
                     >
-                      <IconHexagonPlus size="1.5rem" stroke={1} />
+                      <IconHexagonPlus size="1.5rem" color="gray" stroke={1.5} />
                     </Avatar>
                     <Text size="0.65rem" fw={480}>Novo projeto</Text>
                   </Flex>
@@ -170,21 +179,41 @@ export default function Home() {
                       to={`/project/${item.slug ?? item.id}`}
                       style={{ cursor: 'pointer', textDecoration: 'none', color: 'inherit' }}
                     >
-                      <Image
-                        radius="md"
-                        h={98}
+                      <Box style={{ position: 'relative', width: 90, height: 130, borderRadius: 8, overflow: 'hidden' }}>
+                        <Image
+                          w={90}
+                          h={130}
+                          fit="cover"
+                          src={
+                            item.picture
+                              ? `https://ik.imagekit.io/mublin/projects/tr:h-260,w-180,c-maintain_ratio/${item.picture}`
+                              : undefined
+                          }
+                          fallbackSrc="https://placehold.co/90x130?text=Sem+foto"
+                          style={{ opacity: item.status === 1 ? 0.4 : 1, transition: 'opacity 0.2s' }}
+                        />
+                        {item.status === 1 && (
+                          <Flex
+                            align="center"
+                            justify="center"
+                            pos='absolute'
+                            style={{
+                              inset: 0,
+                              background: 'rgba(0,0,0,0.18)',
+                            }}
+                          >
+                            <IconClock size={24} color="white" stroke={1.5} />
+                          </Flex>
+                        )}
+                      </Box>
+                      <Text
+                        ta="center"
                         w={65}
-                        fit="cover"
-                        src={`https://ik.imagekit.io/mublin/projects/tr:h-100,w-65,c-maintain_ratio/${item.picture}`}
-                        fallbackSrc="https://placehold.co/65x98?text=Sem+foto"
-                      />
-                      <Text 
-                        ta="center" 
-                        w={65}
-                        size="0.65rem" 
-                        fw={480} 
+                        size="0.65rem"
+                        fw={480}
                         truncate="end"
-                        title={item.name}
+                        title={item.status === 1 ? `${item.name} (pendente de aprovação)` : item.name}
+                        c={item.status === 1 ? 'dimmed' : 'inherit'}
                       >
                         {item.name}
                       </Text>
@@ -210,11 +239,15 @@ export default function Home() {
                     >
                       <Image
                         radius="md"
-                        h={98}
-                        w={65}
+                        w={90}
+                        h={130}
                         fit="cover"
-                        src={`https://ik.imagekit.io/mublin/projects/tr:h-100,w-65,c-maintain_ratio/${item.picture}`}
-                        fallbackSrc="https://placehold.co/65x98?text=Sem+foto"
+                        src={
+                          item.picture
+                            ? `https://ik.imagekit.io/mublin/projects/tr:h-260,w-180,c-maintain_ratio/${item.picture}`
+                            : undefined
+                        }
+                        fallbackSrc="https://placehold.co/90x130?text=Sem+foto"
                       />
                       <Text
                         w={65}

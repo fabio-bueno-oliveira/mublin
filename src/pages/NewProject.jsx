@@ -298,35 +298,62 @@ export default function NewProject() {
   const regionId = form.getValues().region_id
 
   return (
-    <Container size="xs" py={32} mb={80}>
-      <Title order={3} ta="center" fw={800} lts="-0.02em" mb={24}>
+    <Container size="xl" py="sm">
+      <Title order={1} fz="h2" ta="left" fw={700} lts="-0.02em" mb={24}>
         Cadastrar novo projeto
       </Title>
 
       <form onSubmit={form.onSubmit(handleSubmit)}>
         <Stack gap="md">
 
-          {/* Nome */}
-          <TextInput
-            withAsterisk
-            label="Nome do projeto"
-            placeholder="Ex: Viajantes do Espaço"
-            value={nameValue}
-            onChange={(e) => handleNameChange(e.target.value)}
-            onBlur={() => {
-              form.setFieldValue('name', nameValue)
-              form.validateField('name')
-            }}
-            error={form.errors.name}
-          />
-
-          <Checkbox
-            color="indigo"
-            label="Definir como um dos meus projetos principais"
-            key={form.key('featured')}
-            {...form.getInputProps('featured', { type: 'checkbox' })}
-          />
-
+          <Grid>
+            <Grid.Col span={6}>
+              {/* Nome */}
+              <TextInput
+                withAsterisk
+                label="Nome do projeto"
+                placeholder="Ex: Viajantes do Espaço"
+                description="Nome da banda, projeto solo, DJ, etc"
+                value={nameValue}
+                onChange={(e) => handleNameChange(e.target.value)}
+                onBlur={() => {
+                  form.setFieldValue('name', nameValue)
+                  form.validateField('name')
+                }}
+                error={form.errors.name}
+              />
+              <Checkbox
+                mt="xs"
+                color="indigo"
+                label="Definir como um dos meus projetos principais"
+                key={form.key('featured')}
+                {...form.getInputProps('featured', { type: 'checkbox' })}
+              />
+            </Grid.Col>
+            <Grid.Col span={6}>
+              {/* Slug */}
+              <TextInput
+                withAsterisk
+                label="URL do projeto"
+                placeholder="Ex: viajantesdoespaco"
+                description={`mublin.com/project/${slugValue}`}
+                maxLength={70}
+                rightSection={slugChecking ? <Loader size={16} /> : undefined}
+                leftSection={
+                  slugValue.length >= 2 && !slugChecking && slugAvailable === true
+                    ? <IconCheck size={18} color="green" />
+                    : undefined
+                }
+                error={
+                  slugValue.length >= 2 && !slugChecking && slugAvailable === false
+                    ? 'Username não disponível'
+                    : undefined
+                }
+                value={slugValue}
+                onChange={(e) => handleSlugChange(e.target.value)}
+              />
+            </Grid.Col>
+          </Grid>
           {/* Projetos similares */}
           {similarProjects.length > 0 && (
             <Paper withBorder p="sm" radius="md">
@@ -350,28 +377,6 @@ export default function NewProject() {
               </ScrollArea>
             </Paper>
           )}
-
-          {/* Slug */}
-          <TextInput
-            withAsterisk
-            label="URL do projeto"
-            placeholder="Ex: viajantesdoespaco"
-            description={`mublin.com/project/${slugValue}`}
-            maxLength={70}
-            rightSection={slugChecking ? <Loader size={16} /> : undefined}
-            leftSection={
-              slugValue.length >= 2 && !slugChecking && slugAvailable === true
-                ? <IconCheck size={18} color="green" />
-                : undefined
-            }
-            error={
-              slugValue.length >= 2 && !slugChecking && slugAvailable === false
-                ? 'Username não disponível'
-                : undefined
-            }
-            value={slugValue}
-            onChange={(e) => handleSlugChange(e.target.value)}
-          />
 
           <Divider label="Imagem do projeto" labelPosition="center" />
 

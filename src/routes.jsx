@@ -12,13 +12,16 @@ import ForgotPassword from './pages/ForgotPassword'
 import ResetPassword from './pages/ResetPassword'
 
 // Authenticated pages
+import Onboarding from './pages/Onboarding'
 import Menu from './pages/Menu' // used only for mobile devices
 import Home from './pages/Home'
 import ProfileRouter from './components/ProfileRouter'
 import ProjectRouter from './components/ProjectRouter'
-import Gigs from './pages/Gigs'
+import Projects from './pages/Projects'
 import NewProject from './pages/NewProject'
-import Onboarding from './pages/Onboarding'
+import Gigs from './pages/Gigs'
+import Gear from './pages/Gear'
+import Brand from './pages/Brand'
 
 export const router = createBrowserRouter([
   // ── Rotas públicas ──────────────────────────────
@@ -48,7 +51,10 @@ export const router = createBrowserRouter([
       { path: 'menu', element: <Menu /> },
       { path: 'home', element: <Home /> },
       { path: 'gigs', element: <Gigs /> },
+      { path: 'projects', element: <Projects /> },
+      { path: 'gear', element: <Gear /> },
       { path: 'new/project', element: <NewProject /> },
+      { path: 'brand/:slug', element: <Brand /> },
     ],
   },
   // ── Perfil ──────────────────────────────────────
