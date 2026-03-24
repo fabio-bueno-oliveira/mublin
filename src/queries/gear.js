@@ -51,3 +51,14 @@ export async function fetchBrandArtists(brandId) {
   if (error) throw new Error(error.message)
   return data
 }
+
+export async function fetchProductCategories() {
+  const { data, error } = await supabase
+    .from('product_categories')
+    .select('id, name_ptbr, macro_category')
+    .order('name_ptbr', { ascending: true })
+
+  if (error) throw new Error(error.message)
+
+  return data
+}

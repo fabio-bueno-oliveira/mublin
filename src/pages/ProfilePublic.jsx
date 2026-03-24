@@ -3,22 +3,18 @@ import { useQuery } from '@tanstack/react-query'
 import { fetchBasicProfile } from '../queries/profiles'
 import { useAuth } from '../hooks/useAuth'
 import {
-  Container, Box, Modal, Center,
-  Avatar, Title, Text, Button, Group, Flex, Stack,
+  Container, Box, Avatar, 
+  Title, Text, Button, Group, Flex, Stack,
   Skeleton, Alert, Badge, Scroller
 } from '@mantine/core'
-import { useDisclosure } from '@mantine/hooks'
 import { IconMusic, IconArrowRight, IconMoodSad } from '@tabler/icons-react'
-import styles from './Profile.module.scss'
 
 const AVATAR_PATH = 'https://ik.imagekit.io/mublin/tr:h-200,c-maintain_ratio/users/avatars/'
-const AVATAR_PATH_LG = 'https://ik.imagekit.io/mublin/tr:h-600,c-maintain_ratio/users/avatars/'
 
 export default function ProfilePublic() {
   const { username } = useParams()
   const navigate = useNavigate()
   const { session, loading: authLoading } = useAuth()
-  const [modalOpened, { open: openModal, close: closeModal }] = useDisclosure(false)
 
   const { data: profile, isLoading, isError } = useQuery({
     queryKey: ['profile', username],
@@ -77,7 +73,6 @@ export default function ProfilePublic() {
             <Avatar
               size={96}
               src={profile.avatar ? AVATAR_PATH + profile.avatar : undefined}
-              onClick={openModal}
             />
             <Stack gap={1}>
               <Flex align="center" gap={6} wrap="wrap">
@@ -151,25 +146,6 @@ export default function ProfilePublic() {
 
         </Stack>
       </Container>
-
-      {/* Modal avatar expandido */}
-      <Modal
-        opened={modalOpened}
-        onClose={closeModal}
-        withCloseButton={false}
-        centered
-        size="lg"
-        overlayProps={{ backgroundOpacity: 0.7, blur: 4 }}
-        classNames={{ content: styles.modalTransparent }}
-      >
-        <Center onClick={closeModal} style={{ cursor: 'pointer' }}>
-          <Avatar
-            w={240}
-            h={240}
-            src={profile.avatar ? AVATAR_PATH_LG + profile.avatar : undefined}
-          />
-        </Center>
-      </Modal>
     </>
   )
 }

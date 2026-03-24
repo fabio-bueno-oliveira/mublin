@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import {
   Group, Text, TextInput, ActionIcon, Avatar, Switch,
@@ -14,11 +15,19 @@ const AVATAR_PATH = 'https://ik.imagekit.io/mublin/tr:h-200,c-maintain_ratio/use
 export default function AppNavbar({ children }) {
   const navigate = useNavigate()
   const { profile, signOut } = useAuth()
+  const [searchQuery, setSearchQuery] = useState('')
 
   const { setColorScheme } = useMantineColorScheme()
   const computedColorScheme = useComputedColorScheme('light')
   const isDark = computedColorScheme === 'dark'
   const toggleColorScheme = () => setColorScheme(isDark ? 'light' : 'dark')
+
+  function handleSearch(e) {
+    e.preventDefault()
+    const q = searchQuery.trim()
+    if (!q) return
+    navigate(`/search?q=${encodeURIComponent(q)}`)
+  }
 
   async function handleSignOut() {
     await signOut()
@@ -45,16 +54,18 @@ export default function AppNavbar({ children }) {
             </Group>
           </Group>
 
-          {/* Centro: Busca */}
+          {/* Busca Desktop */}
           <TextInput
             placeholder="Buscar músicos, projetos, gigs..."
             leftSection={<IconSearch size={15} />}
             radius="xl"
             size="sm"
-            style={{ flex: 1, maxWidth: 400 }}
-            styles={{ input: { cursor: 'pointer' } }}
-            readOnly
+            flex={1}
             visibleFrom="sm"
+            maw={400}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleSearch(e)}
           />
 
           {/* Direita: Notificações + Perfil */}

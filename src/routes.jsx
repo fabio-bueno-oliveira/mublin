@@ -15,6 +15,7 @@ import ResetPassword from './pages/ResetPassword'
 import Onboarding from './pages/Onboarding'
 import Menu from './pages/Menu' // used only for mobile devices
 import Home from './pages/Home'
+import Search from './pages/Search'
 import ProfileRouter from './components/ProfileRouter'
 import ProjectRouter from './components/ProjectRouter'
 import Projects from './pages/Projects'
@@ -50,6 +51,7 @@ export const router = createBrowserRouter([
     children: [
       { path: 'menu', element: <Menu /> },
       { path: 'home', element: <Home /> },
+      { path: 'search', element: <Search /> },
       { path: 'gigs', element: <Gigs /> },
       { path: 'projects', element: <Projects /> },
       { path: 'gear', element: <Gear /> },
