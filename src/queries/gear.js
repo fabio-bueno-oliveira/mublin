@@ -62,3 +62,10 @@ export async function fetchProductCategories() {
 
   return data
 }
+
+export async function fetchFeaturedProducts() {
+  const { data, error } = await supabase
+    .rpc('get_featured_products')
+  if (error) throw new Error(error.message)
+  return data
+}

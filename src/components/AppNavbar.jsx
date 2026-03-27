@@ -5,7 +5,7 @@ import {
   Menu, Box, Container, useComputedColorScheme, useMantineColorScheme
 } from '@mantine/core'
 import {
-  IconSearch, IconCircuitResistor,
+  IconSearch, IconCircuitResistor, IconArrowRight, 
   IconBell, IconChevronDown, IconSun, IconMoon
 } from '@tabler/icons-react'
 import { useAuth } from '../hooks/useAuth'
@@ -25,8 +25,7 @@ export default function AppNavbar({ children }) {
   function handleSearch(e) {
     e.preventDefault()
     const q = searchQuery.trim()
-    if (!q) return
-    navigate(`/search?q=${encodeURIComponent(q)}`)
+    navigate(q ? `/search?q=${encodeURIComponent(q)}` : '/search')
   }
 
   async function handleSignOut() {
@@ -58,6 +57,17 @@ export default function AppNavbar({ children }) {
           <TextInput
             placeholder="Buscar músicos, projetos, gigs..."
             leftSection={<IconSearch size={15} />}
+            rightSection={
+              <ActionIcon
+                variant="subtle"
+                color="gray"
+                radius="xl"
+                size="sm"
+                onClick={() => navigate(searchQuery.trim() ? `/search?q=${encodeURIComponent(searchQuery.trim())}` : '/search')}
+              >
+                <IconArrowRight size={14} />
+              </ActionIcon>
+            }
             radius="xl"
             size="sm"
             flex={1}

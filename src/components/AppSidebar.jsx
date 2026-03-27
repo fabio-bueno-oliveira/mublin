@@ -1,20 +1,16 @@
 import { useLocation, Link } from 'react-router-dom'
 import { 
   Stack, Box, NavLink, ScrollArea,
-  Badge, Group, Text, Divider,
-  Marquee, Image, Center, Loader, useComputedColorScheme
+  Badge, Group, Text, Divider
 } from '@mantine/core'
 import {
-  IconHome, IconCalendarEvent, IconGuitarPick, IconMusic
+  IconHome, IconWorldSearch, IconMusic
 } from '@tabler/icons-react'
-import { useQuery } from '@tanstack/react-query'
-import { fetchRandomBrands } from '../queries/gear'
 
 const NAV_ITEMS = [
-  { label: 'Home',         icon: IconHome,          path: '/home' },
-  { label: 'Gigs',         icon: IconCalendarEvent, path: '/gigs' },
-  { label: 'Projetos', icon: IconMusic,    path: '/projects', extra: 'Associados a mim', badge: 3 },
-  { label: 'Equipamentos', icon: IconGuitarPick,    path: '/gear' },
+  { label: 'Home', icon: IconHome, path: '/home' },
+  { label: 'Meus projetos', icon: IconMusic, path: '/projects', extra: 'Associados a mim', badge: 3 },
+  { label: 'Explorar', icon: IconWorldSearch, path: '/search' },
 ]
 
 const UPCOMING_GIGS = [
@@ -25,18 +21,10 @@ const UPCOMING_GIGS = [
 
 export default function AppSidebar() {
   const location = useLocation()
-  const computedColorScheme = useComputedColorScheme('light')
-  const isDark = computedColorScheme === 'dark'
 
   function isActive(path) {
     return location.pathname === path
   }
-
-  const { data: randomBrands = [], isLoading: loadingRandomBrands } = useQuery({
-    queryKey: ['random-brands'],
-    queryFn: fetchRandomBrands,
-    staleTime: 1000 * 60 * 30,
-  })
 
   return (
     <Box p="md" h="100%">
@@ -110,28 +98,6 @@ export default function AppSidebar() {
           ))}
         </Stack>
       </ScrollArea>
-      <Marquee duration={48000} gap="xs" mt="xl">
-        {!loadingRandomBrands && randomBrands.length > 0 ? (
-          randomBrands.map(brand => (
-            <Link key={brand.id} to={`/brand/${brand.slug}`}>
-            <Image
-              src={brand.logo ? `https://ik.imagekit.io/mublin/products/brands/tr:w-130,h-130,cm-pad_resize,bg-FFFFFF,fo-x/${brand.logo}` : undefined}
-              h={65}
-              w='auto'
-              fit='contain'
-              style={{
-                filter: isDark ? 'invert(1) opacity(0.85)' : 'none',
-                transition: 'filter 0.3s',
-              }}
-            />
-            </Link>
-          ))
-        ) : (
-          <Center>
-            <Loader size="sm" />
-          </Center>
-        )}
-      </Marquee>
     </Box>
   )
 }

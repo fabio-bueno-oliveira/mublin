@@ -157,7 +157,7 @@ export default function Home() {
             </ScrollArea>
             <Box mt="xl">
               <Title order={2} fz="h3" ta="left" fw={700} lts="-0.02em" mb="lg">
-                Explorar
+                Gigs para você
               </Title>
               <Flex gap={18}>
                 {loadingRandomProjects && <ProjectSkeletons />}

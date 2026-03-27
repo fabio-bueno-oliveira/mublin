@@ -36,6 +36,7 @@ export default function Gear() {
       </Title>
 
       <Select
+        size="lg"
         label="Filtrar por categoria"
         placeholder="Escolha uma categoria"
         data={groupedData}
