@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { supabase } from '../lib/supabaseClient'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import {
@@ -39,7 +40,16 @@ export default function Login() {
       })
       return
     }
-    navigate('/home')
+
+    const { data: { session } } = await supabase.auth.getSession()
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('onboarding_completed')
+      .eq('id', session.user.id)
+      .single()
+
+    setLoading(false)
+    navigate(profile?.onboarding_completed ? '/home' : '/onboarding')
   }
 
   async function handleGoogle() {

@@ -69,3 +69,92 @@ export async function fetchFeaturedProducts() {
   if (error) throw new Error(error.message)
   return data
 }
+
+export async function fetchProductColors(productId) {
+  const { data, error } = await supabase
+    .from('product_colors')
+    .select(`
+      id,
+      picture,
+      is_main,
+      colors (
+        id,
+        name,
+        name_ptbr,
+        rgb,
+        img_sample
+      )
+    `)
+    .eq('id_product', productId)
+    .order('is_main', { ascending: false })
+  if (error) throw new Error(error.message)
+  return data
+}
+
+export async function fetchProductInfo(slug) {
+  const { data, error } = await supabase
+    .from('products')
+    .select(`
+      id,
+      name,
+      slug,
+      subtitle,
+      description,
+      description_source,
+      description_source_url,
+      year,
+      is_discontinued,
+      is_rare,
+      is_featured,
+      picture,
+      brands (
+        id,
+        name,
+        slug,
+        logo
+      ),
+      product_categories (
+        id,
+        name_ptbr,
+        macro_category
+      ),
+      product_series (
+        id,
+        name
+      )
+    `)
+    .eq('slug', slug)
+    .single()
+  if (error) throw new Error(error.message)
+  return data
+}
+
+export async function fetchProductOwners(productId) {
+  const { data, error } = await supabase
+    .from('profile_gear')
+    .select(`
+      id,
+      is_currently_using,
+      is_for_sale,
+      price,
+      photo,
+      owner_comments,
+      profiles (
+        username,
+        full_name,
+        avatar,
+        city_id,
+        region_id,
+        cities (
+          name
+        ),
+        regions (
+          name, uf
+        )
+      )
+    `)
+    .eq('id_product', productId)
+    .order('is_currently_using', { ascending: false })
+  if (error) throw new Error(error.message)
+  return data
+}

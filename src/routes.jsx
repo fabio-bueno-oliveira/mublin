@@ -22,7 +22,10 @@ import Projects from './pages/Projects'
 import NewProject from './pages/NewProject'
 import Gigs from './pages/Gigs'
 import Gear from './pages/Gear'
+import GearProduct from './pages/GearProduct'
 import Brand from './pages/Brand'
+import Post from './pages/Post'
+import NewPost from './pages/NewPost'
 
 export const router = createBrowserRouter([
   // ── Rotas públicas ──────────────────────────────
@@ -54,9 +57,12 @@ export const router = createBrowserRouter([
       { path: 'search', element: <Search /> },
       { path: 'gigs', element: <Gigs /> },
       { path: 'projects', element: <Projects /> },
-      { path: 'gear', element: <Gear /> },
       { path: 'new/project', element: <NewProject /> },
       { path: 'brand/:slug', element: <Brand /> },
+      { path: 'post/:id', element: <Post /> },
+      { path: 'new/post', element: <NewPost /> },
+      { path: 'gear', element: <Gear /> },
+      { path: 'gear/:slug', element: <GearProduct /> },
     ],
   },
   // ── Perfil ──────────────────────────────────────

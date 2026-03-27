@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { supabase } from '../lib/supabaseClient'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import {
@@ -36,6 +37,7 @@ export default function Signup() {
 
   async function handleSubmit(values) {
     setLoading(true)
+
     const { error } = await signUpWithEmail(values.email, values.password)
     if (error) {
       setLoading(false)
@@ -49,14 +51,30 @@ export default function Signup() {
       })
       return
     }
-    notifications.show({
-      position: 'top-center',
-      color: 'green',
-      title: 'Conta criada!',
-      message: 'Verifique seu e-mail para confirmar o cadastro.',
-    })
+
+    // Com confirmação desativada, a sessão já existe após o signup
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) {
+      // Fallback: confirmação ainda ativa no Supabase
+      notifications.show({
+        position: 'top-center',
+        color: 'green',
+        title: 'Conta criada!',
+        message: 'Verifique seu e-mail para confirmar o cadastro.',
+      })
+      setLoading(false)
+      navigate('/login')
+      return
+    }
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('onboarding_completed')
+      .eq('id', session.user.id)
+      .single()
+
     setLoading(false)
-    navigate('/login')
+    navigate(profile?.onboarding_completed ? '/home' : '/onboarding')
   }
 
   async function handleGoogle() {

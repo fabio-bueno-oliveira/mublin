@@ -5,19 +5,17 @@ import { supabase } from '../lib/supabaseClient'
 import { upload } from '@imagekit/react'
 import {
   Container, Center, Flex, Stack, Group,
-  Text, Anchor, Avatar, Badge, ActionIcon,
+  Text, Avatar, ActionIcon,
   Button, Modal, Image, LoadingOverlay,
   useMantineColorScheme
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import {
-  IconUser, IconLock, IconEye, IconAdjustmentsHorizontal,
+  IconCircuitResistor, IconUser, IconLock, IconEye, IconAdjustmentsHorizontal,
   IconCamera, IconHeartHandshake, IconPackages, IconCalendarMonth,
   IconChevronRight, IconLogout, IconBrightnessUp, IconMoon,
-  IconEdit, IconCircuitResistor, IconUpload,
-  IconMusic,
-  IconCalendarEvent,
-  IconHome
+  IconEdit, IconUpload,
+  IconMusic, IconCalendarEvent, IconHome
 } from '@tabler/icons-react'
 import MublinLogoBlack from '../assets/svg/mublin-logo-black.svg'
 import MublinLogoWhite from '../assets/svg/mublin-logo-white.svg'

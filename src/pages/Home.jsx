@@ -1,29 +1,31 @@
 import { Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useInfiniteQuery } from '@tanstack/react-query'
+import { fetchFeed } from '../queries/feed'
 import { fetchUserProjects } from '../queries/user'
 import { fetchRandomOtherProjects } from '../queries/projects'
 import {
-  Box, Container, Grid, Stack, Group, Text, Title,
-  Avatar, Badge, Button, Divider, Flex,
-  ScrollArea, Skeleton, Image
+  Box, Container, Grid, Stack, Group, Anchor, Text, Title, Card,
+  Avatar, Badge, Button, Flex, ActionIcon, Menu,
+  ScrollArea, Skeleton, Image, TextInput,
 } from '@mantine/core'
 import {
-  IconChevronRight,
-  IconHexagonPlus, IconClock, 
+  IconHexagonPlus, IconClock, IconArrowRight,
+  IconDots, IconMicrophone2, IconLink
 } from '@tabler/icons-react'
+import dayjs from 'dayjs'
+import relativeTime from 'dayjs/plugin/relativeTime'
+import 'dayjs/locale/pt-br'
+
+dayjs.extend(relativeTime)
+dayjs.locale('pt-br')
 
 const AVATAR_PATH = 'https://ik.imagekit.io/mublin/tr:h-68,c-maintain_ratio/users/avatars/'
+const PATH_PRODUCT_IMAGE = 'https://ik.imagekit.io/mublin/products/tr:w-64,h-64,cm-pad_resize,bg-FFFFFF/'
 
 // ── Mock data ────────────────────────────────────────────
 
-const FEED_POSTS = [
-  { id: 1, author: 'Banda Paralela', type: 'project', text: 'Acabamos de publicar nossa nova gig: precisamos de um tecladista para show em maio.', time: 'há 2h', initials: 'BP', color: '#3AC87A' },
-  { id: 2, author: 'Carlos Mota', type: 'user', text: 'Acabei de atualizar meu setup de som. Novo console Allen & Heath SQ5 disponível para gigs!', time: 'há 4h', initials: 'CM', color: '#C83A3A' },
-  { id: 3, author: 'Trio Acústico SP', type: 'project', text: 'Show confirmado no Bar Sagarana no dia 28/03. Ingressos disponíveis no link do perfil.', time: 'há 6h', initials: 'TA', color: '#C8853A' },
-]
-
-function ProjectSkeletons({ count = 10 }) {
+function ProjectSkeletons({ count = 4 }) {
   return Array.from({ length: count }).map((_, i) => (
     <Flex key={i} direction="column" align="center" gap={10}>
       <Skeleton radius="md" width={90} height={130} />
@@ -32,10 +34,89 @@ function ProjectSkeletons({ count = 10 }) {
   ))
 }
 
+function LinkedItem({ post }) {
+  console.log(post)
+  if (post.linked_gig_id) return (
+    <Card
+      component={Link}
+      to={`/gig/${post.slug}`}
+      withBorder
+      radius="md"
+      p="xs"
+      mt="xs"
+      style={{ textDecoration: 'none' }}
+    >
+      <Group gap="xs">
+        <Avatar size={32} radius="md" color="violet" variant="light">
+          <IconMicrophone2 size={16} />
+        </Avatar>
+        <Stack gap={0}>
+          <Text size="xs" c="dimmed" fw={500}>Gig vinculada</Text>
+          <Text size="sm" fw={600} truncate="end">{post.title}</Text>
+        </Stack>
+        {post.has_remuneration && (
+          <Badge size="xs" color="green" variant="light" ml="auto">
+            Remunerada
+          </Badge>
+        )}
+      </Group>
+    </Card>
+  )
+
+  if (post.linked_product_id > 0) return (
+    <>
+    {console.log("product")}
+    <Card
+      component={Link}
+      to={`/gear/${post.linked_product_slug}`}
+      withBorder
+      radius="md"
+      p="xs"
+      mt="xs"
+      style={{ textDecoration: 'none' }}
+    >
+      <Group gap="xs">
+        <Image
+          src={post.linked_product_picture
+            ? PATH_PRODUCT_IMAGE + post.linked_product_picture
+            : undefined}
+          w={32}
+          h={32}
+          radius="md"
+          fit="contain"
+        />
+        <Stack gap={0}>
+          <Text size="xs" c="dimmed" fw={500}>{post.linked_product_brand_name}</Text>
+          <Text size="sm" fw={600}>{post.linked_product_name}</Text>
+        </Stack>
+      </Group>
+    </Card>
+    </>
+  )
+
+  return null
+}
+
 // ── Página principal ─────────────────────────────────────
 
 export default function Home() {
   const { profile, user } = useAuth()
+
+  const {
+    data: feedData,
+    isLoading: loadingFeed,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery({
+    queryKey: ['feed'],
+    queryFn: ({ pageParam = 0 }) => fetchFeed(10, pageParam),
+    getNextPageParam: (lastPage, allPages) =>
+      lastPage.length === 10 ? allPages.flat().length : undefined,
+    staleTime: 1000 * 60 * 2,
+  })
+
+  const feedPosts = feedData?.pages.flat() ?? []
 
   const { data: savedProjects = [], isLoading: loadingProjects } = useQuery({
     queryKey: ['user-home-projects', user?.id],
@@ -200,36 +281,132 @@ export default function Home() {
             </Box>
           </Grid.Col>
           <Grid.Col span={{ base: 12, md: 5 }}>
-            <Title order={2} fz="h3" ta="left" fw={700} lts="-0.02em" mb="xs">
-              Feed
-            </Title>
-            {FEED_POSTS.map((post, i) => (
-              <Box key={post.id}>
-                <Group gap="sm" align="flex-start" py="sm">
-                  <Avatar
-                    size={36}
-                    radius="xl"
-                    style={{ background: post.color, color: '#fff', fontWeight: 700, fontSize: 13, flexShrink: 0 }}
+            <Flex gap={14} align="center" mb='sm' mr="xs" justify="space-between">
+              <Group>
+                <Avatar
+                  w={35}
+                  h={35}
+                  src={
+                    profile?.avatar
+                      ? `https://ik.imagekit.io/mublin/tr:h-76,w-76,r-max,c-maintain_ratio/users/avatars/${profile.avatar}`
+                      : undefined
+                  }
+                  alt={profile?.username}
+                  component={Link}
+                  to={`/${profile?.username}`}
+                />
+              </Group>
+              <Text 
+                c="dimmed" 
+                size="md" 
+                lh="0" 
+                w="100%" 
+                component={Link}
+                to={`/new/post`}
+              >
+                O que quer postar hoje?
+              </Text>
+              <ActionIcon 
+                variant="subtle" color="gray" size="sm" radius="xl"
+                component={Link}
+                to={`/new/post`}
+              >
+                <IconArrowRight size={22} color="gray" />
+              </ActionIcon>
+            </Flex>
+            {loadingFeed ? (
+              <Text>Carregando postagens...</Text>
+            ) : (
+              <>
+                <Card shadow="sm" padding="lg" radius="md" withBorder>
+                  {feedPosts.map(post => (
+                    <Card.Section key={post.id} px="xs" withBorder>
+                      <Group gap="sm" align="flex-start" pt="xs" pb="sm">
+                        <Avatar 
+                          size={36} 
+                          radius="xl" 
+                          src={post.author_avatar ? AVATAR_PATH + post.author_avatar : undefined}
+                          component={Link}
+                          to={`/${post.author_username}`}
+                          title={post.author_full_name}
+                        >
+                          {post.author_full_name}
+                        </Avatar>
+                        <Stack gap={4} style={{ flex: 1 }}>
+                          <Group gap="xs" justify="space-between" align="flex-start">
+                            <Flex gap="xs" align="center">
+                              <Anchor 
+                                component={Link}
+                                to={`/${post.author_username}`}
+                                underline='hover'  
+                                size="sm"
+                                c="var(--mantine-color-text)"
+                                fw="600"
+                              >
+                                {post.author_username}
+                              </Anchor>
+                              {post.author_project_id &&
+                                <Text span color="gray">
+                                  Projeto
+                                </Text>
+                              }
+                              <Text 
+                                c="dimmed"
+                                size="xs"
+                                lh="0" 
+                                title={dayjs(post.created_at).format('DD/MM/YYYY HH:mm:ss')}
+                                component={Link}
+                                to={`/post/${post.id}`}
+                              >
+                                {dayjs(post.created_at).fromNow()}
+                              </Text>
+                            </Flex>
+                            <Menu shadow="md" radius="md" position="bottom-end">
+                              <Menu.Target>
+                                <ActionIcon variant="subtle" color="gray" size="sm" radius="xl">
+                                  <IconDots size={15} color="gray" />
+                                </ActionIcon>
+                              </Menu.Target>
+                              <Menu.Dropdown>
+                                <Menu.Item
+                                  leftSection={<IconLink size={14} />}
+                                  onClick={
+                                    () => navigator.clipboard.writeText(
+                                      `${window.location.origin}/post/${post.id}`
+                                    )
+                                  }
+                                >
+                                  Copiar link
+                                </Menu.Item>
+                              </Menu.Dropdown>
+                            </Menu>
+                          </Group>
+                          <Text size="0.9em" lh={1.5} opacity={0.8}>
+                            {post.body}
+                          </Text>
+                          {post.linked_gig_id || post.linked_product_id && 
+                            <LinkedItem post={post} />
+                          }
+                        </Stack>
+                      </Group>
+                    </Card.Section>
+                  ))}
+                </Card>
+                {hasNextPage && (
+                  <Button
+                    variant="subtle"
+                    color="gray"
+                    size="xs"
+                    fullWidth
+                    mt="sm"
+                    loading={isFetchingNextPage}
+                    onClick={() => fetchNextPage()}
                   >
-                    {post.initials}
-                  </Avatar>
-                  <Stack gap={4} style={{ flex: 1 }}>
-                    <Group gap="xs">
-                      <Text size="sm" fw={700}>{post.author}</Text>
-                      <Badge size="xs" variant="light" color={post.type === 'project' ? 'amber' : 'blue'}>
-                        {post.type === 'project' ? 'Projeto' : 'Músico'}
-                      </Badge>
-                      <Text size="xs" c="dimmed" ml="auto">{post.time}</Text>
-                    </Group>
-                    <Text size="sm" c="dimmed" lh={1.5}>{post.text}</Text>
-                  </Stack>
-                </Group>
-                {i < FEED_POSTS.length - 1 && <Divider />}
-              </Box>
-            ))}
-            <Button variant="subtle" color="gray" size="xs" fullWidth mt="sm" rightSection={<IconChevronRight size={13} />}>
-              Ver feed completo
-            </Button>
+                    Carregar mais
+                  </Button>
+                )}
+              </>
+            )}
           </Grid.Col>
         </Grid>
       </Container>
