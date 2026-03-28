@@ -1,17 +1,18 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
-import { useQuery, useInfiniteQuery } from '@tanstack/react-query'
-import { fetchFeed } from '../queries/feed'
+import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { fetchFeed, fetchUserLikedPosts, fetchLikesCountByPosts, toggleLike } from '../queries/feed'
 import { fetchUserProjects } from '../queries/user'
 import { fetchRandomOtherProjects } from '../queries/projects'
 import {
   Box, Container, Grid, Stack, Group, Anchor, Text, Title, Card,
   Avatar, Badge, Button, Flex, ActionIcon, Menu,
-  ScrollArea, Skeleton, Image, TextInput,
+  ScrollArea, Skeleton, Image,
 } from '@mantine/core'
 import {
-  IconHexagonPlus, IconClock, IconArrowRight,
-  IconDots, IconMicrophone2, IconLink
+  IconCirclePlus, IconClock, IconRosetteDiscountCheckFilled,
+  IconDots, IconMicrophone2, IconLink, IconHeart, IconHeartFilled
 } from '@tabler/icons-react'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
@@ -23,8 +24,6 @@ dayjs.locale('pt-br')
 const AVATAR_PATH = 'https://ik.imagekit.io/mublin/tr:h-68,c-maintain_ratio/users/avatars/'
 const PATH_PRODUCT_IMAGE = 'https://ik.imagekit.io/mublin/products/tr:w-64,h-64,cm-pad_resize,bg-FFFFFF/'
 
-// ── Mock data ────────────────────────────────────────────
-
 function ProjectSkeletons({ count = 4 }) {
   return Array.from({ length: count }).map((_, i) => (
     <Flex key={i} direction="column" align="center" gap={10}>
@@ -35,7 +34,6 @@ function ProjectSkeletons({ count = 4 }) {
 }
 
 function LinkedItem({ post }) {
-  console.log(post)
   if (post.linked_gig_id) return (
     <Card
       component={Link}
@@ -64,8 +62,6 @@ function LinkedItem({ post }) {
   )
 
   if (post.linked_product_id > 0) return (
-    <>
-    {console.log("product")}
     <Card
       component={Link}
       to={`/gear/${post.linked_product_slug}`}
@@ -91,10 +87,158 @@ function LinkedItem({ post }) {
         </Stack>
       </Group>
     </Card>
-    </>
   )
 
   return null
+}
+
+function getYouTubeId(url) {
+  const match = url.match(
+    /(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/
+  )
+  return match ? match[1] : null
+}
+
+function VideoPlayer({ url, title }) {
+  const [expanded, setExpanded] = useState(false)
+  const ytId = getYouTubeId(url)
+  if (!ytId) return null
+
+  return (
+    <Box
+      mt={4}
+      style={{
+        position: 'relative',
+        paddingTop: '56.25%',
+        borderRadius: 'var(--mantine-radius-md)',
+        overflow: 'hidden',
+        cursor: expanded ? 'default' : 'pointer',
+      }}
+      onClick={() => !expanded && setExpanded(true)}
+    >
+      {expanded ? (
+        <iframe
+          src={`https://www.youtube.com/embed/${ytId}?autoplay=1&rel=0&modestbranding=1`}
+          width="100%"
+          height="100%"
+          style={{ position: 'absolute', top: 0, left: 0, border: 'none' }}
+          allowFullScreen
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          title={title ?? 'Vídeo'}
+        />
+      ) : (
+        <>
+          <img
+            src={`https://img.youtube.com/vi/${ytId}/hqdefault.jpg`}
+            alt="Thumbnail do vídeo"
+            style={{
+              position: 'absolute',
+              top: 0, left: 0,
+              width: '100%', height: '100%',
+              objectFit: 'cover',
+            }}
+          />
+          <Flex
+            align="center"
+            justify="center"
+            style={{
+              position: 'absolute',
+              inset: 0,
+              background: 'rgba(0,0,0,0.25)',
+              transition: 'background 0.2s',
+            }}
+          >
+            <Box
+              style={{
+                width: 52,
+                height: 52,
+                borderRadius: '50%',
+                background: 'rgba(255,255,255,0.92)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <svg width="30" height="30" viewBox="0 0 24 24" fill="#000000">
+                <path d="M8 5v14l11-7z"/>
+              </svg>
+            </Box>
+          </Flex>
+        </>
+      )}
+    </Box>
+  )
+}
+
+function LikeButton({ postId, userId, likedPostIds, likesCount }) {
+  const queryClient = useQueryClient()
+  const liked = likedPostIds.includes(postId)
+
+  const { mutate, isPending } = useMutation({
+    mutationFn: () => toggleLike({ postId, userId, liked }),
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: ['likedPosts', userId] })
+      await queryClient.cancelQueries({ queryKey: ['likesCount'] })
+
+      const previousLiked = queryClient.getQueryData(['likedPosts', userId])
+      const previousCount = queryClient.getQueryData(
+        queryClient.getQueryCache().findAll({ queryKey: ['likesCount'] })[0]?.queryKey
+      )
+
+      // Atualiza lista de posts curtidos
+      queryClient.setQueryData(['likedPosts', userId], (old = []) =>
+        liked ? old.filter(id => id !== postId) : [...old, postId]
+      )
+
+      // Atualiza o mapa de contagens
+      const countKey = queryClient.getQueryCache()
+        .findAll({ queryKey: ['likesCount'] })[0]?.queryKey
+      if (countKey) {
+        queryClient.setQueryData(countKey, (old = {}) => ({
+          ...old,
+          [postId]: Math.max(0, (old[postId] ?? 0) + (liked ? -1 : 1)),
+        }))
+      }
+
+      return { previousLiked, previousCount, countKey }
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previousLiked !== undefined) {
+        queryClient.setQueryData(['likedPosts', userId], context.previousLiked)
+      }
+      if (context?.countKey && context?.previousCount !== undefined) {
+        queryClient.setQueryData(context.countKey, context.previousCount)
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['likedPosts', userId] })
+      queryClient.invalidateQueries({ queryKey: ['likesCount'] })
+    },
+  })
+
+  return (
+    <Group gap={4} align="center">
+      <ActionIcon
+        variant="subtle"
+        color="gray"
+        size="md"
+        radius="md"
+        aria-label={liked ? 'Descurtir' : 'Curtir'}
+        title={liked ? 'Descurtir' : 'Curtir'}
+        loading={isPending}
+        onClick={() => mutate()}
+        style={{ cursor: isPending ? 'default' : 'pointer' }}
+      >
+        {liked
+          ? <IconHeartFilled size={18} color="red" />
+          : <IconHeart size={18} />
+        }
+      </ActionIcon>
+      {likesCount > 0 && (
+        <Text size="sm" c="dimmed" lh={0}>{likesCount}</Text>
+      )}
+    </Group>
+  )
 }
 
 // ── Página principal ─────────────────────────────────────
@@ -119,7 +263,7 @@ export default function Home() {
   const feedPosts = feedData?.pages.flat() ?? []
 
   const { data: savedProjects = [], isLoading: loadingProjects } = useQuery({
-    queryKey: ['user-home-projects', user?.id],
+    queryKey: ['user-projects', user?.id],
     queryFn: () => fetchUserProjects(user.id),
     enabled: !!user?.id,
     staleTime: 1000 * 60 * 4,
@@ -130,6 +274,22 @@ export default function Home() {
     queryFn: () => fetchRandomOtherProjects(user.id),
     enabled: !!user?.id,
     staleTime: 1000 * 60 * 4,
+  })
+
+  const feedPostIds = feedPosts.map(p => p.id)
+
+  const { data: likedPostIds = [] } = useQuery({
+    queryKey: ['likedPosts', user?.id],
+    queryFn: () => fetchUserLikedPosts(user.id, feedPostIds),
+    enabled: !!user?.id && feedPostIds.length > 0,
+    staleTime: 1000 * 60 * 2,
+  })
+
+  const { data: likesCountMap = {} } = useQuery({
+    queryKey: ['likesCount', feedPostIds],
+    queryFn: () => fetchLikesCountByPosts(feedPostIds),
+    enabled: feedPostIds.length > 0,
+    staleTime: 1000 * 60 * 2,
   })
 
   const userProjects = savedProjects.map((r) => ({
@@ -177,9 +337,9 @@ export default function Home() {
                     component={Link}
                     to='/new/project'
                   >
-                    <IconHexagonPlus size="1.5rem" color="gray" stroke={1.5} />
+                    <IconCirclePlus size="1.5rem" color="gray" stroke={1.5} />
                   </Avatar>
-                  <Text size="0.75rem" fw={480}>Novo projeto</Text>
+                  <Text size="0.75rem" fw={480}>Novo Projeto</Text>
                 </Flex>
 
                 {loadingProjects && <ProjectSkeletons />}
@@ -211,13 +371,16 @@ export default function Home() {
                         <Flex
                           align="center"
                           justify="center"
-                          pos='absolute'
-                          style={{
-                            inset: 0,
-                            background: 'rgba(0,0,0,0.18)',
-                          }}
+                          pos="absolute"
+                          direction="column"
+                          gap="xs"
+                          inset={0}
+                          bg="rgba(0,0,0,0.18)"
                         >
                           <IconClock size={24} color="white" stroke={1.5} />
+                          <Badge size="xs" variant="filled" fw="400" color="amber.6">
+                            Pendente
+                          </Badge>
                         </Flex>
                       )}
                     </Box>
@@ -281,7 +444,7 @@ export default function Home() {
             </Box>
           </Grid.Col>
           <Grid.Col span={{ base: 12, md: 5 }}>
-            <Flex gap={14} align="center" mb='sm' mr="xs" justify="space-between">
+            <Flex gap={10} align="center" mb='sm' mr="xs" justify="space-between">
               <Group>
                 <Avatar
                   w={35}
@@ -296,23 +459,16 @@ export default function Home() {
                   to={`/${profile?.username}`}
                 />
               </Group>
-              <Text 
-                c="dimmed" 
-                size="md" 
-                lh="0" 
-                w="100%" 
+              <Text
+                c="dimmed"
+                fz="16px"
+                lh="0"
+                w="100%"
                 component={Link}
                 to={`/new/post`}
               >
-                O que quer postar hoje?
+                Quais são as novidades?
               </Text>
-              <ActionIcon 
-                variant="subtle" color="gray" size="sm" radius="xl"
-                component={Link}
-                to={`/new/post`}
-              >
-                <IconArrowRight size={22} color="gray" />
-              </ActionIcon>
             </Flex>
             {loadingFeed ? (
               <Text>Carregando postagens...</Text>
@@ -334,26 +490,32 @@ export default function Home() {
                         </Avatar>
                         <Stack gap={4} style={{ flex: 1 }}>
                           <Group gap="xs" justify="space-between" align="flex-start">
-                            <Flex gap="xs" align="center">
+                            <Flex gap={post.author_is_verified ? 2 : 6} align="center">
                               <Anchor 
                                 component={Link}
                                 to={`/${post.author_username}`}
-                                underline='hover'  
+                                underline='hover'
                                 size="sm"
                                 c="var(--mantine-color-text)"
                                 fw="600"
                               >
                                 {post.author_username}
                               </Anchor>
+                              {!!post.author_is_verified && 
+                                <IconRosetteDiscountCheckFilled 
+                                  className='iconVerified'
+                                  title='Usuário verificado'
+                                />
+                              }
                               {post.author_project_id &&
                                 <Text span color="gray">
                                   Projeto
                                 </Text>
                               }
-                              <Text 
+                              <Text
                                 c="dimmed"
-                                size="xs"
-                                lh="0" 
+                                size="sm"
+                                lh="0"
                                 title={dayjs(post.created_at).format('DD/MM/YYYY HH:mm:ss')}
                                 component={Link}
                                 to={`/post/${post.id}`}
@@ -381,12 +543,27 @@ export default function Home() {
                               </Menu.Dropdown>
                             </Menu>
                           </Group>
-                          <Text size="0.9em" lh={1.5} opacity={0.8}>
+                          <Text size="0.9em" fw="480" lh={1.5} opacity={0.85}>
                             {post.body}
                           </Text>
+                          {/* Player de vídeo */}
+                          {post.video_url && (
+                            <VideoPlayer
+                              url={post.video_url}
+                              title={post.body?.slice(0, 60)}
+                            />
+                          )}
                           {post.linked_gig_id || post.linked_product_id && 
                             <LinkedItem post={post} />
                           }
+                          <Group mt={4} ml={-4}>
+                            <LikeButton
+                              postId={post.id}
+                              userId={user?.id}
+                              likedPostIds={likedPostIds}
+                              likesCount={likesCountMap[post.id] ?? 0}
+                            />
+                          </Group>
                         </Stack>
                       </Group>
                     </Card.Section>

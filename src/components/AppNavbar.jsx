@@ -62,14 +62,14 @@ export default function AppNavbar({ children }) {
                 variant="subtle"
                 color="gray"
                 radius="xl"
-                size="sm"
+                size="md"
                 onClick={() => navigate(searchQuery.trim() ? `/search?q=${encodeURIComponent(searchQuery.trim())}` : '/search')}
               >
-                <IconArrowRight size={14} />
+                <IconArrowRight size={16} />
               </ActionIcon>
             }
             radius="xl"
-            size="sm"
+            size="md"
             flex={1}
             visibleFrom="sm"
             maw={400}

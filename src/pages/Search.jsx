@@ -3,8 +3,8 @@ import { useQuery } from '@tanstack/react-query'
 import { fetchRandomBrands, fetchFeaturedProducts } from '../queries/gear'
 import { searchProfiles } from '../queries/search'
 import { 
-  Grid, NavLink, Flex, Box,
-  Container, Loader, Group, Space, Marquee, Center,
+  Grid, NavLink, Flex, Container,
+  Loader, Group, Space, Marquee, Center,
   Card, Scroller, Title, Text, Image, Avatar
 } from '@mantine/core'
 import {

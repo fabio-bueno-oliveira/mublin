@@ -115,3 +115,29 @@ export async function fetchRandomOtherProjects(userId) {
   return data
 }
 
+export async function fetchProjectBackstageInfo(projectSlug) {
+  const { data, error } = await supabase
+    .from('projects')
+    .select(`
+      id,
+      slug,
+      name,
+      description,
+      purpose,
+      picture,
+      cover_picture,
+      on_tour,
+      genres ( id, name_ptbr ),
+      cities (
+        id,
+        name,
+        regions (
+          name, uf
+        )
+      )
+    `)
+    .eq('slug', projectSlug)
+    .single()
+  if (error) throw new Error(error.message)
+  return data
+}

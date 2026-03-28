@@ -4,13 +4,13 @@ import {
   Badge, Group, Text, Divider
 } from '@mantine/core'
 import {
-  IconHome, IconWorldSearch, IconMusic
+  IconHome2, IconSparkles, IconMicrophone2
 } from '@tabler/icons-react'
 
 const NAV_ITEMS = [
-  { label: 'Home', icon: IconHome, path: '/home' },
-  { label: 'Meus projetos', icon: IconMusic, path: '/projects', extra: 'Associados a mim', badge: 3 },
-  { label: 'Explorar', icon: IconWorldSearch, path: '/search' },
+  { label: 'Home', icon: IconHome2, path: '/home' },
+  { label: 'Meus projetos', icon: IconMicrophone2, path: '/projects' },
+  { label: 'Explorar', icon: IconSparkles, path: '/search' },
 ]
 
 const UPCOMING_GIGS = [
@@ -37,7 +37,7 @@ export default function AppSidebar() {
               component={Link}
               to={item.path}
               disabled={!item.path}
-              label={item.label}
+              label={<Text size="md">{item.label}</Text>}
               description={item.extra}
               color="gray"
               leftSection={<Icon size={20} />}
@@ -73,24 +73,20 @@ export default function AppSidebar() {
                   <Text fw={800} size="sm" c="amber" lh={1.2}>{gig.date.split(' ')[0]}</Text>
                   <Text size="xs" c="dimmed" lh={1}>{gig.date.split(' ')[1]}</Text>
                 </Box>
-                <Stack gap={2} style={{ flex: 1 }}>
-                  <Group gap="xs">
-                    <Text size="xs" fw={400} lh="0.8em">{gig.title}</Text>
-                    <Badge
-                      size="xs"
-                      variant="light"
-                      fw="400"
-                      color={gig.confirmed ? 'green' : 'gray'}
-                    >
-                      {gig.confirmed ? 'Confirmado' : 'Pendente'}
-                    </Badge>
-                  </Group>
-                  <Text size="xs" c="dimmed">{gig.project}</Text>
-                  <Group gap={4}>
-                    <Text size="xs" c="dimmed" truncate="end">
-                      {gig.venue} · {gig.city}
-                    </Text>
-                  </Group>
+                <Stack gap={1} style={{ flex: 1 }}>
+                  <Text size="xs" fw={600}>{gig.title}</Text>
+                  <Text size="xs">{gig.project}</Text>
+                  <Text size="xs" c="dimmed" truncate="end">
+                    {gig.venue} · {gig.city}
+                  </Text>
+                  <Badge
+                    size="xs"
+                    variant="light"
+                    fw="400"
+                    color={gig.confirmed ? 'green' : 'gray'}
+                  >
+                    {gig.confirmed ? 'Confirmado' : 'Pendente'}
+                  </Badge>
                 </Stack>
               </Group>
               {i < UPCOMING_GIGS.length - 1 && <Divider mt="xs" />}

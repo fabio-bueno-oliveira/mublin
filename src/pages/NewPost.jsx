@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { supabase } from '../lib/supabaseClient'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { fetchUserProjects } from '../queries/user'
 import {
   Container, Stack, Title, Textarea, Button, Group,
@@ -108,6 +108,7 @@ function SearchCombobox({ onSelect, searchFn, placeholder, renderOption, renderS
 export default function NewPost() {
   const navigate = useNavigate()
   const { profile, user } = useAuth()
+  const queryClient = useQueryClient()
 
   const [body, setBody] = useState('')
   const [videoUrl, setVideoUrl] = useState('')
@@ -162,6 +163,7 @@ export default function NewPost() {
     }
 
     notifications.show({ color: 'green', message: 'Post publicado!', position: 'top-center' })
+    await queryClient.invalidateQueries({ queryKey: ['feed'] })
     navigate('/home')
   }
 

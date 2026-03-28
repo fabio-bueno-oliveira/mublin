@@ -12,3 +12,12 @@ export async function fetchRandomRoles() {
 
   return data.sort(() => Math.random() - 0.5).slice(0, 15)
 }
+
+export async function fetchRoles() {
+  const { data, error } = await supabase
+    .from('roles')
+    .select('id, name_ptbr, instrumentalist, applies_to_a_project')
+    .order('name_ptbr')
+  if (error) throw new Error(error.message)
+  return data
+}

@@ -4,35 +4,27 @@ import { useAuth } from '../hooks/useAuth'
 import { supabase } from '../lib/supabaseClient'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { fetchProjectProfile, cancelParticipationRequest  } from '../queries/projects'
+import { fetchRoles } from '../queries/roles'
 import JoinProjectModal from '../components/modals/JoinProjectModal'
 import { useDisclosure } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
 import {
   Container, Flex, Box, Button, 
-  Avatar, Image,
+  Avatar, Image, Menu,
   Title, Text, Badge,
-  Skeleton, Divider,
-  Group, Stack,
+  Skeleton, Group, Stack, Card,
   Tooltip, ActionIcon,
 } from '@mantine/core'
 import {
-  IconBrandInstagram,
-  IconBrandSpotify,
-  IconBrandSoundcloud,
-  IconMapPin,
-  IconUsers,
-  IconClock,
-  IconUserUp,
+  IconBrandInstagram, IconBrandSpotify, IconPencil,
+  IconBrandSoundcloud, IconRoad, IconSettings, IconUsers,
+  IconClock, IconUserUp, IconLogout, IconUserCog
 } from '@tabler/icons-react'
 
-  async function fetchRoles() {
-    const { data, error } = await supabase
-      .from('roles')
-      .select('id, name_ptbr, instrumentalist, applies_to_a_project')
-      .order('name_ptbr')
-    if (error) throw new Error(error.message)
-    return data
-  }
+const AVATAR_PATH = 'https://ik.imagekit.io/mublin/tr:h-240,c-maintain_ratio/users/avatars/'
+const PICTURE_AVATAR_PATH = 'https://ik.imagekit.io/mublin/projects/tr:h-200,w-200,c-maintain_ratio/'
+const PICTURE_COVER_PATH = 'https://ik.imagekit.io/mublin/projects/tr:h-140,w-800,c-maintain_ratio/'
+const DEFAULT_COVER_PICTURE = 'https://ik.imagekit.io/mublin/bg/tr:w-1920,h-140,bg-F3F3F3,fo-bottom/grey-dark.jpg'
 
 export default function Project() {
   const { user } = useAuth()
@@ -51,7 +43,6 @@ export default function Project() {
   const [modalJoinOpened, { open: openJoinModal, close: closeJoinModal }] = useDisclosure(false)
   const [joinRole, setJoinRole] = useState('')
   const [joinYear, setJoinYear] = useState(currentYear)
-  const [joiningProject, setJoiningProject] = useState(false)
 
   const { data: roles = [] } = useQuery({
     queryKey: ['roles'],
@@ -86,43 +77,51 @@ export default function Project() {
     },
   })
 
-  async function handleJoinProject() {
-    if (!joinRole || !joinYear) return
-    setJoiningProject(true)
-    const { error } = await supabase
-      .from('project_members')
-      .insert({
-        project_id: project.id,
-        profile_id: user.id,
-        role_id: Number(joinRole),
-        joined_at: `${joinYear}-01-01`,
-        is_founder: false,
-        is_admin: false,
-        status: 1, // pendente
-      })
-    if (!error) {
+  const handleCloseJoinModal = () => {
+    setJoinRole('')
+    setJoinYear(currentYear)
+    closeJoinModal()
+  }
+
+  const { mutate: joinProject, isPending: joiningProject } = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from('project_members')
+        .insert({
+          project_id: project.id,
+          profile_id: user.id,
+          role_id: Number(joinRole),
+          joined_at: `${joinYear}-01-01`,
+          is_founder: false,
+          is_admin: false,
+          status: 1,
+        })
+      if (error) throw new Error(error.message)
+    },
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['project', slug] })
-      closeJoinModal()
+      handleCloseJoinModal()
       notifications.show({
         color: 'green',
         position: 'top-center',
         message: `Solicitação enviada para ${project.name}!`,
       })
-    } else {
+    },
+    onError: () => {
       notifications.show({
         color: 'red',
         position: 'top-center',
         message: 'Erro ao enviar solicitação. Tente novamente.',
       })
-    }
-    setJoiningProject(false)
-  }
+    },
+  })
 
   const confirmedMembers = project?.members?.filter(m => m.status === 2) ?? []
   const userMembership = project?.members?.find(m => m.profile_id === user.id)
   const userHasRequestedParticipation = userMembership?.status === 1
   const userIsConfirmedMember = userMembership?.status === 2
   const userHasNoParticipation = !userMembership
+  const userIsAdmin = userMembership?.is_admin === true
 
   if (isError) {
     return (
@@ -132,24 +131,23 @@ export default function Project() {
     )
   }
 
-  const PICTURE_AVATAR_PATH = 'https://ik.imagekit.io/mublin/projects/tr:h-200,w-200,c-maintain_ratio/'
-  const PICTURE_COVER_PATH = 'https://ik.imagekit.io/mublin/projects/tr:h-140,w-800,c-maintain_ratio/'
-  const AVATAR_PATH = 'https://ik.imagekit.io/mublin/tr:h-240,c-maintain_ratio/users/avatars/'
-  const DEFAULT_COVER_PICTURE = 'https://ik.imagekit.io/mublin/bg/tr:w-1920,h-140,bg-F3F3F3,fo-bottom/open-air-concert.jpg'
-
   return (
     <>
       <Container fluid pb="lg">
 
         {/* ── Cabeçalho / Cover ── */}
-        <Box pos="relative" mb={60}>
+        <Box pos="relative" mb={44}>
 
-          {/* Imagem de capa (usa a picture do projeto em proporção paisagem) */}
+          {/* Imagem de capa */}
           {isLoading ? (
             <Skeleton height={140} radius="md" />
           ) : (
             <Image
-              src={project?.cover_picture ? PICTURE_COVER_PATH + project?.cover_picture : DEFAULT_COVER_PICTURE}
+              src={
+                project?.cover_picture
+                  ? PICTURE_COVER_PATH + project?.cover_picture 
+                  : DEFAULT_COVER_PICTURE
+              }
               fallbackSrc="https://placehold.co/800x140?text=."
               height={140}
               radius="md"
@@ -162,60 +160,25 @@ export default function Project() {
           {/* Avatar do projeto sobreposto */}
           <Box
             pos="absolute"
-            bottom={-40}
+            bottom={-30}
             left={20}
             style={{ zIndex: 1 }}
           >
-            <>
-              {isLoading ? (
-                <Skeleton height={100} width={100} />
-              ) : (
-                <Avatar
-                  src={PICTURE_AVATAR_PATH+project?.picture}
-                  size={100}
-                  radius="md"
-                  style={{ border: '3px solid var(--mantine-color-body)' }}
-                />
-              )}
-              {!isLoading && userIsConfirmedMember && (
-                <Badge size="xs" color="green" variant="light" mt={4}>
-                  Você é membro!
-                </Badge>
-              )}
-              {!isLoading && userIsConfirmedMember && (
-                <Button size="xs" mt={4} variant="light" color="indigo">
-                  Gerenciar minha participação
-                </Button>
-              )}
-              {!isLoading && userHasNoParticipation && (
-                <Button
-                  size='xs'
-                  mt={4}
-                  onClick={openJoinModal}
-                  leftSection={<IconUserUp size={16} />}
-                >
-                  Solicitar associação
-                </Button>
-              )}
-              {!isLoading && userHasRequestedParticipation && (
-                <Button
-                  size='xs'
-                  mt={4}
-                  variant="light"
-                  color="gray"
-                  onClick={() => cancelRequest()}
-                  loading={isCancelling}
-                  leftSection={<IconClock size={16} />}
-                >
-                  Cancelar solicitação
-                </Button>
-              )}
-            </>
+            {isLoading ? (
+              <Skeleton height={100} width={100} />
+            ) : (
+              <Avatar
+                src={PICTURE_AVATAR_PATH+project?.picture}
+                size={100}
+                radius="md"
+                style={{ border: '3px solid var(--mantine-color-body)' }}
+              />
+            )}
           </Box>
         </Box>
 
         {/* ── Identidade ── */}
-        <Flex justify="space-between" align="flex-start" mt="md" wrap="wrap" gap="sm">
+        <Flex justify="space-between" align="flex-start" wrap="wrap" gap="sm">
           <Stack gap={4}>
             {isLoading ? (
               <>
@@ -225,24 +188,103 @@ export default function Project() {
             ) : (
               <>
                 <Group gap={8}>
-                  <Title order={2}>{project?.name}</Title>
+                  <Group gap={8}>
+                    <Title order={1} fw={730} lts="-0.03em">
+                      {project?.name}
+                    </Title>
+                    {!isLoading && userIsConfirmedMember && (
+                      <Badge size="md" variant="default" radius="sm" fw={400}>
+                        Membro
+                      </Badge>
+                    )}
+                  </Group>
                   {project?.on_tour && (
-                    <Badge color="green" variant="light" size="sm" leftSection={<IconMapPin size={10} />}>
+                    <Badge 
+                      size="md" 
+                      variant="default"
+                      radius="sm" 
+                      fw={400}
+                      leftSection={<IconRoad size={16} />}
+                    >
                       Em turnê
                     </Badge>
                   )}
                 </Group>
                 <Group gap={6}>
                   {project?.project_type && (
-                    <Text size="sm" c="dimmed">{project.project_type}</Text>
+                    <Text size="sm" opacity={0.8}>{project.project_type}</Text>
                   )}
                   {project?.genre && (
                     <>
-                      <Text size="sm" c="dimmed">·</Text>
-                      <Text size="sm" c="dimmed">{project.genre}</Text>
+                      <Text size="sm" opacity={0.8}>·</Text>
+                      <Text size="sm" opacity={0.8}>{project.genre}</Text>
+                    </>
+                  )}
+                  {!isLoading && userIsConfirmedMember && ( 
+                    <>
+                      <Menu shadow="md" width={200} position="right-start" withArrow>
+                        <Menu.Target>
+                          <ActionIcon variant="subtle" color="gray" size="md">
+                            <IconSettings size={20} />
+                          </ActionIcon>
+                        </Menu.Target>
+                        <Menu.Dropdown>
+                          <Menu.Item leftSection={<IconPencil size={14} />}>
+                            Editar dados do projeto
+                          </Menu.Item>
+                          <Menu.Item leftSection={<IconSettings size={14} />}>
+                            Gerenciar minha participação
+                          </Menu.Item>
+                          {userIsAdmin && 
+                            <Menu.Item leftSection={<IconUserCog size={14} />}>
+                              Gerenciar pessoas
+                            </Menu.Item>
+                          }
+                          <Menu.Divider />
+                          <Menu.Item
+                            color="red"
+                            leftSection={<IconLogout size={14} />}
+                          >
+                            Sair deste projeto
+                          </Menu.Item>
+                        </Menu.Dropdown>
+                      </Menu>
+                      <Button 
+                        size="compact-xs" 
+                        color="amber.9" 
+                        variant="filled"
+                        component={Link}
+                        to={`/backstage?project=${slug}`}
+                      >
+                        Acessar Backstage
+                      </Button>
                     </>
                   )}
                 </Group>
+                {!isLoading && userHasNoParticipation && (
+                  <Button
+                    size='xs'
+                    mt={10} 
+                    onClick={openJoinModal}
+                    color="indigo"
+                    leftSection={<IconUserUp size={16} />}
+                  >
+                    Solicitar associação
+                  </Button>
+                )}
+                {!isLoading && userHasRequestedParticipation && (
+                  <Button
+                    size='xs'
+                    mt={10} 
+                    variant="light"
+                    color="red"
+                    onClick={() => cancelRequest()}
+                    loading={isCancelling}
+                    leftSection={<IconClock size={16} />}
+                  >
+                    Cancelar solicitação
+                  </Button>
+                )}
               </>
             )}
           </Stack>
@@ -258,8 +300,9 @@ export default function Project() {
                     target="_blank"
                     variant="subtle"
                     color="pink"
+                    size="lg"
                   >
-                    <IconBrandInstagram size={18} />
+                    <IconBrandInstagram size={22} />
                   </ActionIcon>
                 </Tooltip>
               )}
@@ -271,8 +314,9 @@ export default function Project() {
                     target="_blank"
                     variant="subtle"
                     color="green"
+                    size="lg"
                   >
-                    <IconBrandSpotify size={18} />
+                    <IconBrandSpotify size={22} />
                   </ActionIcon>
                 </Tooltip>
               )}
@@ -284,8 +328,9 @@ export default function Project() {
                     target="_blank"
                     variant="subtle"
                     color="orange"
+                    size="lg"
                   >
-                    <IconBrandSoundcloud size={18} />
+                    <IconBrandSoundcloud size={22} />
                   </ActionIcon>
                 </Tooltip>
               )}
@@ -296,33 +341,38 @@ export default function Project() {
         {/* ── Descrição / Purpose ── */}
         {(isLoading || project?.description || project?.purpose) && (
           <>
-            <Divider my="lg" />
-            <Stack gap={6}>
+            <Stack gap={6} mt="md">
               {isLoading ? (
                 <>
                   <Skeleton height={14} width="90%" />
                   <Skeleton height={14} width="75%" />
                 </>
               ) : (
-                <>
+                <Card shadow="sm" padding="lg" radius="md">
                   {project?.description && (
-                    <Text size="sm">{project.description}</Text>
+                    <Card.Section p="xs" withBorder>
+                      <Text size="sm">{project.description}</Text>
+                    </Card.Section>
                   )}
                   {project?.purpose && (
-                    <Text size="sm" c="dimmed" fs="italic">{project.purpose}</Text>
+                    <Card.Section p="xs" withBorder>
+                      <Text size="xs" fw={400} c="dimmed">Objetivo deste projeto</Text>
+                      <Text size="sm">{project.purpose}</Text>
+                    </Card.Section>
                   )}
-                </>
+                </Card>
               )}
             </Stack>
           </>
         )}
 
         {/* ── Integrantes confirmados ── */}
-        <Divider my="lg" />
-        <Stack gap="sm">
+        <Stack gap="sm" mt={18}>
           <Group gap={6}>
             <IconUsers size={16} />
-            <Text fw={600} size="sm">Integrantes e Staff ({confirmedMembers.length})</Text>
+            <Title order={4} fz="h5" ta="left" fw={700} lts="-0.02em">
+              Integrantes e Staff ({confirmedMembers.length})
+            </Title>
           </Group>
 
           {isLoading && (
@@ -349,7 +399,7 @@ export default function Project() {
                   align="center"
                   gap={6}
                   component={Link}
-                  to={`/u/${member.username}`}
+                  to={`/${member.username}`}
                   style={{ textDecoration: 'none', color: 'inherit', cursor: 'pointer' }}
                 >
                   <Avatar
@@ -378,7 +428,7 @@ export default function Project() {
       </Container>
       <JoinProjectModal
         opened={modalJoinOpened}
-        onClose={closeJoinModal}
+        onClose={handleCloseJoinModal}
         project={project}
         rolesProjectManagement={rolesProjectManagement}
         rolesProjectMusicians={rolesProjectMusicians}
@@ -386,7 +436,7 @@ export default function Project() {
         setJoinRole={setJoinRole}
         joinYear={joinYear}
         setJoinYear={setJoinYear}
-        onConfirm={handleJoinProject}
+        onConfirm={() => joinProject()}
         loading={joiningProject}
         currentYear={currentYear}
       />
