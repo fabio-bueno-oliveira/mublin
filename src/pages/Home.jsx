@@ -2,16 +2,19 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { fetchFeed, fetchUserLikedPosts, fetchLikesCountByPosts, toggleLike } from '../queries/feed'
+import { 
+  fetchFeed, fetchUserLikedPosts, fetchRandomFeedPhrase,
+  fetchLikesCountByPosts, toggleLike
+} from '../queries/feed'
 import { fetchUserProjects } from '../queries/user'
 import { fetchRandomOtherProjects } from '../queries/projects'
 import {
   Box, Container, Grid, Stack, Group, Anchor, Text, Title, Card,
   Avatar, Badge, Button, Flex, ActionIcon, Menu,
-  ScrollArea, Skeleton, Image,
+  ScrollArea, Skeleton, Image
 } from '@mantine/core'
 import {
-  IconCirclePlus, IconClock, IconRosetteDiscountCheckFilled,
+  IconCirclePlus, IconClock, IconRosetteDiscountCheckFilled, IconMessageCircle, 
   IconDots, IconMicrophone2, IconLink, IconHeart, IconHeartFilled
 } from '@tabler/icons-react'
 import dayjs from 'dayjs'
@@ -217,7 +220,7 @@ function LikeButton({ postId, userId, likedPostIds, likesCount }) {
   })
 
   return (
-    <Group gap={4} align="center">
+    <Group gap={2} align="center">
       <ActionIcon
         variant="subtle"
         color="gray"
@@ -235,7 +238,7 @@ function LikeButton({ postId, userId, likedPostIds, likesCount }) {
         }
       </ActionIcon>
       {likesCount > 0 && (
-        <Text size="sm" c="dimmed" lh={0}>{likesCount}</Text>
+        <Text size="sm" lh={0}>{likesCount}</Text>
       )}
     </Group>
   )
@@ -306,6 +309,12 @@ export default function Home() {
     slug: r.slug,
     picture: r.picture,
   }))
+
+  const { data: feedPhrase } = useQuery({
+    queryKey: ['feed-phrase'],
+    queryFn: fetchRandomFeedPhrase,
+    staleTime: 1000 * 60 * 10, // muda a cada 10 min ou ao recarregar
+  })
 
   return (
     <>
@@ -444,7 +453,14 @@ export default function Home() {
             </Box>
           </Grid.Col>
           <Grid.Col span={{ base: 12, md: 5 }}>
-            <Flex gap={10} align="center" mb='sm' mr="xs" justify="space-between">
+            <Flex 
+              gap={10} 
+              align="center" 
+              mt={{ base: "lg", sm: 0 }} 
+              mb={{ base: "lg", sm: "md" }} 
+              mr="xs" 
+              justify="space-between"
+            >
               <Group>
                 <Avatar
                   w={35}
@@ -467,14 +483,23 @@ export default function Home() {
                 component={Link}
                 to={`/new/post`}
               >
-                Quais são as novidades?
+                {feedPhrase ?? 'Quais são as novidades?'}
               </Text>
             </Flex>
             {loadingFeed ? (
               <Text>Carregando postagens...</Text>
             ) : (
               <>
-                <Card shadow="sm" padding="lg" radius="md" withBorder>
+                <Card
+                  shadow={{ base: 'none', sm: 'sm' }}
+                  pl={{ base: 0, sm: 3 }}
+                  pr={{ base: 0, sm: "lg" }}
+                  pb="xs"
+                  radius={{ base: 0, sm: 'md' }}
+                  withBorder={false}
+                  bg={{ base: 'transparent', sm: 'var(--mantine-color-body)' }}
+                  mt="xs"
+                >
                   {feedPosts.map(post => (
                     <Card.Section key={post.id} px="xs" withBorder>
                       <Group gap="sm" align="flex-start" pt="xs" pb="sm">
@@ -543,7 +568,13 @@ export default function Home() {
                               </Menu.Dropdown>
                             </Menu>
                           </Group>
-                          <Text size="0.9em" fw="480" lh={1.5} opacity={0.85}>
+                          <Text 
+                            size="0.9em" fw="480" lh={1.5} 
+                            opacity={0.85}
+                            component={Link}
+                            to={`/post/${post.id}`}
+                            c="var(--mantine-color-text)"
+                          >
                             {post.body}
                           </Text>
                           {/* Player de vídeo */}
@@ -563,6 +594,25 @@ export default function Home() {
                               likedPostIds={likedPostIds}
                               likesCount={likesCountMap[post.id] ?? 0}
                             />
+                            {!post.comments_disabled && 
+                              <ActionIcon
+                                component={Link}
+                                to={`/post/${post.id}`}
+                                c="var(--mantine-color-text)"
+                                variant="subtle"
+                                color="gray"
+                                size="md"
+                                radius="md"
+                                px={post.comments_count > 0 ? 23 : 12}
+                              >
+                                <Flex gap={6} align="center">
+                                  <IconMessageCircle size={18} />
+                                  {post.comments_count > 0 &&
+                                    <Text size="sm" lh={0}>{post.comments_count}</Text>
+                                  }
+                                </Flex>
+                              </ActionIcon>
+                            }
                           </Group>
                         </Stack>
                       </Group>

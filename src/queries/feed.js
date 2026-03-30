@@ -64,3 +64,42 @@ export async function toggleLike({ postId, userId, liked }) {
     if (error) throw new Error(error.message)
   }
 }
+
+export async function fetchPostComments(postId) {
+  const { data, error } = await supabase
+    .from('feed_comments')
+    .select(`
+      id,
+      body,
+      created_at,
+      updated_at,
+      profiles (
+        id,
+        username,
+        full_name,
+        avatar,
+        is_verified
+      )
+    `)
+    .eq('feed_id', postId)
+    .eq('is_active', true)
+    .order('created_at', { ascending: true })
+  if (error) throw new Error(error.message)
+  return data
+}
+
+export async function postComment({ postId, authorId, body }) {
+  const { data, error } = await supabase
+    .from('feed_comments')
+    .insert({ feed_id: postId, author_profile_id: authorId, body })
+    .select()
+    .single()
+  if (error) throw new Error(error.message)
+  return data
+}
+
+export async function fetchRandomFeedPhrase() {
+  const { data, error } = await supabase.rpc('get_random_feed_phrase')
+  if (error) throw new Error(error.message)
+  return data
+}

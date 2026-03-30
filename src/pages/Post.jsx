@@ -2,15 +2,19 @@ import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../hooks/useAuth'
-import { fetchPostById, fetchUserLikedPosts, fetchPostLikes, toggleLike } from '../queries/feed'
+import { 
+  fetchPostById, fetchUserLikedPosts, 
+  fetchPostLikes, toggleLike, 
+  fetchPostComments, postComment
+} from '../queries/feed'
 import {
   Container, Group, Flex, Stack, Box, Text, Avatar,
   Card, Badge, Image, Loader, Center,
-  ActionIcon, Menu, Anchor
+  ActionIcon, Menu, Anchor, Textarea, Button, Divider
 } from '@mantine/core'
 import {
-  IconDots, IconLink, IconRosetteDiscountCheckFilled,
-  IconMicrophone2, IconArrowLeft, IconHeart, IconHeartFilled
+  IconDots, IconLink, IconRosetteDiscountCheckFilled, IconPlus,
+  IconMicrophone2, IconArrowLeft, IconHeart, IconHeartFilled, IconMessageCircle
 } from '@tabler/icons-react'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
@@ -212,7 +216,7 @@ function LikeButton({ postId, userId, likedPostIds, likesCount }) {
         }
       </ActionIcon>
       {likesCount > 0 && (
-        <Text size="sm" c="dimmed" lh={0}>{likesCount}</Text>
+        <Text size="sm" lh={0}>{likesCount}</Text>
       )}
     </Group>
   )
@@ -221,6 +225,11 @@ function LikeButton({ postId, userId, likedPostIds, likesCount }) {
 export default function Post() {
   const { id } = useParams()
   const { user } = useAuth()
+
+  const { profile } = useAuth()
+  const queryClient = useQueryClient()
+  const [commentBody, setCommentBody] = useState('')
+  const [showNewPostSection, setShowNewPostSection] = useState(false)
 
   const { data: post, isLoading } = useQuery({
     queryKey: ['post', id],
@@ -244,6 +253,25 @@ export default function Post() {
     staleTime: 1000 * 60 * 2,
   })
 
+  const { data: comments = [], isLoading: loadingComments } = useQuery({
+    queryKey: ['post-comments', postIdNum],
+    queryFn: () => fetchPostComments(postIdNum),
+    enabled: !!postIdNum,
+    staleTime: 1000 * 60 * 2,
+  })
+
+  const { mutate: submitComment, isPending: submittingComment } = useMutation({
+    mutationFn: () => postComment({
+      postId: postIdNum,
+      authorId: user.id,
+      body: commentBody.trim(),
+    }),
+    onSuccess: () => {
+      setCommentBody('')
+      queryClient.invalidateQueries({ queryKey: ['post-comments', postIdNum] })
+    },
+  })
+
   if (isLoading) return (
     <Center h="50vh"><Loader color="amber" /></Center>
   )
@@ -254,11 +282,27 @@ export default function Post() {
   )
 
   return (
-    <Container size="sm" py="md">
-      <Anchor component={Link} to="/home" c="dimmed" size="sm" mb="md" display="inline-flex" style={{ alignItems: 'center', gap: 4 }}>
+    <Container size="sm" px={{ base: 0, sm: 'xs' }} pt={{ base:"xs", sm: "sm" }} mb="xl">
+      <Anchor 
+        component={Link} 
+        to="/home" 
+        c="dimmed" 
+        size="sm" 
+        mb={{ base: 0, sm: 'xs' }}
+        display="inline-flex" 
+        style={{ alignItems: 'center', gap: 4 }}
+      >
         <IconArrowLeft size={14} /> Voltar
       </Anchor>
-      <Card shadow="sm" px="md" pb="xs" radius="md" withBorder mt="xs">
+      <Card
+        shadow={{ base: 'none', sm: 'sm' }}
+        px={{ base: 0, sm: 'md' }}
+        pb="xs"
+        radius={{ base: 0, sm: 'md' }}
+        withBorder={false}
+        bg={{ base: 'transparent', sm: 'var(--mantine-color-body)' }}
+        mt="xs"
+      >
         <Group gap="sm" align="flex-start">
           <Avatar
             size={40}
@@ -343,8 +387,138 @@ export default function Post() {
             likedPostIds={likedPostIds}
             likesCount={likesCount}
           />
+          {!post.comments_disabled && (
+            <Group gap={10} align="center">
+              <IconMessageCircle size={18} />
+              {comments.length > 0 &&
+                <Text size="sm" lh={0}>{comments.length}</Text>
+              }
+            </Group>
+          )}
+          {!post.comments_disabled && showNewPostSection === false && (
+            <Button 
+              leftSection={<IconPlus size={16} />} 
+              variant="default"
+              size='xs'
+              onClick={() => setShowNewPostSection(true)}
+            >
+              Comentar
+            </Button>
+          )}
         </Group>
       </Card>
+      {/* Comentários */}
+      {!post.comments_disabled ? (
+        <Box mt="md">
+
+          {/* Campo de novo comentário */}
+          {showNewPostSection && 
+            <Group gap="sm" align="flex-start">
+              <Avatar
+                size={34}
+                radius="xl"
+                src={profile?.avatar ? AVATAR_PATH + profile.avatar : undefined}
+              />
+              <Stack gap={6} style={{ flex: 1 }}>
+                <Textarea
+                  placeholder="Escreva um comentário..."
+                  radius="md"
+                  autosize
+                  minRows={2}
+                  maxRows={5}
+                  maxLength={1000}
+                  value={commentBody}
+                  onChange={(e) => setCommentBody(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey && commentBody.trim()) {
+                      e.preventDefault()
+                      submitComment()
+                    }
+                  }}
+                />
+                <Group justify="space-between">
+                  <Text size="xs" c="dimmed">{commentBody.length}/1000</Text>
+                  <Button
+                    size="sm"
+                    radius="md"
+                    variant="default"
+                    disabled={!commentBody.trim()}
+                    loading={submittingComment}
+                    onClick={() => submitComment()}
+                  >
+                    Postar
+                  </Button>
+                </Group>
+              </Stack>
+            </Group>
+          }
+
+          {/* Lista de comentários */}
+          {loadingComments ? (
+            <Center mt="md"><Loader size="xs" /></Center>
+          ) : comments.length > 0 ? (
+            <Stack gap={0} mt="md">
+              {comments.map((comment, i) => (
+                <Box key={comment.id}>
+                  {i > 0 && <Divider opacity={0.4} />}
+                  <Group gap="sm" align="flex-start" py="sm">
+                    <Avatar
+                      size={30}
+                      radius="xl"
+                      src={comment.profiles?.avatar ? AVATAR_PATH + comment.profiles.avatar : undefined}
+                      component={Link}
+                      to={`/${comment.profiles?.username}`}
+                    />
+                    <Stack gap={2} style={{ flex: 1 }}>
+                      <Flex gap={4} align="center">
+                        <Anchor
+                          component={Link}
+                          to={`/${comment.profiles?.username}`}
+                          underline="hover"
+                          size="xs"
+                          fw={700}
+                          c="var(--mantine-color-text)"
+                        >
+                          {comment.profiles?.full_name}
+                        </Anchor>
+                        {comment.profiles?.is_verified && (
+                          <IconRosetteDiscountCheckFilled
+                            size={13}
+                            className="iconVerified"
+                            title="Usuário verificado"
+                          />
+                        )}
+                        <Text
+                          size="xs"
+                          c="dimmed"
+                          title={dayjs(comment.created_at).format('dddd, D [de] MMMM [de] YYYY [às] HH:mm')}
+                        >
+                          {dayjs(comment.created_at).fromNow()}
+                        </Text>
+                        {comment.updated_at && (
+                          <Text size="xs" c="dimmed" fs="italic">(editado)</Text>
+                        )}
+                      </Flex>
+                      <Text size="0.94em" lh={1.5} opacity={0.85}>
+                        {comment.body}
+                      </Text>
+                    </Stack>
+                  </Group>
+                </Box>
+              ))}
+            </Stack>
+          ) : (
+            <Text size="sm" c="dimmed" ta="center" mt="md">
+              Nenhum comentário ainda. Seja o primeiro!
+            </Text>
+          )}
+
+        </Box>
+      ) : (
+        <Text size="sm" c="dimmed" ta="center" mt="md">
+          Comentários desativados.
+        </Text>
+      )}
     </Container>
   )
 }
