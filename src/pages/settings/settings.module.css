@@ -1,0 +1,16 @@
+.tabsList {
+  /* Esconde a scrollbar no Chrome/Safari enquanto permite o scroll */
+  &::-webkit-scrollbar {
+    display: none;
+  }
+  
+  /* Garante que as abas não quebrem linha e permitam o scroll horizontal */
+  flex-wrap: nowrap !important;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch; /* Scroll suave no iOS */
+}
+
+.tab {
+  /* Evita que o texto da aba "encolha" para caber na tela */
+  flex-shrink: 0;
+}

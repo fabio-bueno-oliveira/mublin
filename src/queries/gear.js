@@ -63,6 +63,19 @@ export async function fetchProductCategories() {
   return data
 }
 
+export async function fetchTunings(instrumentType) {
+  let query = supabase
+    .from('tunings')
+    .select('id, name_ptbr, description, instrument_type')
+    .order('id')
+
+  if (instrumentType) query = query.eq('instrument_type', instrumentType)
+
+  const { data, error } = await query
+  if (error) throw new Error(error.message)
+  return data
+}
+
 export async function fetchFeaturedProducts() {
   const { data, error } = await supabase
     .rpc('get_featured_products')

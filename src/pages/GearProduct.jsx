@@ -7,7 +7,7 @@ import {
   Container, Grid, Box, Group, Flex, Stack, Center,
   Title, Text, Image, Anchor, Badge, ColorSwatch,
   ActionIcon, Skeleton, Modal, ScrollArea, Affix, Transition,
-  Paper, Avatar, ThemeIcon, Divider
+  Paper, Avatar, Divider
 } from '@mantine/core'
 import {
   IconZoom, IconX, IconDiamond, IconAlignJustified,

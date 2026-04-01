@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabaseClient'
 export async function fetchUserProfile(userId) {
   const { data, error } = await supabase
     .from('profiles')
-    .select('bio, username, region_id, city_id')
+    .select('full_name, bio, username, title, gender, region_id, city_id, website')
     .eq('id', userId)
     .single()
   if (error) throw new Error(error.message)

@@ -1,4 +1,4 @@
-import { createBrowserRouter } from 'react-router-dom'
+import { createBrowserRouter, Navigate } from 'react-router-dom'
 import PublicLayout from './components/layouts/PublicLayout'
 import AppLayout from './components/layouts/AppLayout'
 
@@ -12,21 +12,36 @@ import ForgotPassword from './pages/ForgotPassword'
 import ResetPassword from './pages/ResetPassword'
 
 // Authenticated pages
-import Onboarding from './pages/Onboarding'
 import Menu from './pages/Menu' // used only for mobile devices
+import Onboarding from './pages/Onboarding'
 import Home from './pages/Home'
+// -- Search pages
 import Search from './pages/Search'
+// -- Profile pages
 import ProfileRouter from './components/ProfileRouter'
+// -- Project pages
 import ProjectRouter from './components/ProjectRouter'
 import Projects from './pages/Projects'
 import NewProject from './pages/NewProject'
+import Backstage from './pages/Backstage'
+// -- Gigs pages
 import Gigs from './pages/Gigs'
+// -- Gear pages
 import Gear from './pages/Gear'
 import GearProduct from './pages/GearProduct'
 import Brand from './pages/Brand'
+import NewGear from './pages/NewGear'
+// -- Feed pages
 import Post from './pages/Post'
 import NewPost from './pages/NewPost'
-import Backstage from './pages/Backstage'
+// -- Settings pages
+import SettingsLayout from './pages/settings'
+import EditMyProfile from './pages/settings/EditMyProfile'
+import MusicalPreferences from './pages/settings/MusicalPreferences'
+import Password from './pages/settings/Password'
+import Endorsements from './pages/settings/Endorsements'
+import MyGear from './pages/settings/MyGear'
+import Availability from './pages/settings/Availability'
 
 export const router = createBrowserRouter([
   // ── Rotas públicas ──────────────────────────────
@@ -64,7 +79,22 @@ export const router = createBrowserRouter([
       { path: 'new/post', element: <NewPost /> },
       { path: 'gear', element: <Gear /> },
       { path: 'gear/:slug', element: <GearProduct /> },
+      { path: 'new/gear', element: <NewGear />},
       { path: 'backstage', element: <Backstage /> },
+      // ── Settings ──────────────────────────────────
+      {
+        path: 'settings',
+        element: <SettingsLayout />,
+        children: [
+          { index: true, element: <Navigate to="settings/profile" replace /> },
+          { path: 'profile',               element: <EditMyProfile /> },
+          { path: 'musical-preferences',   element: <MusicalPreferences /> },
+          { path: 'password',              element: <Password /> },
+          { path: 'endorsements',          element: <Endorsements /> },
+          { path: 'gear',                  element: <MyGear /> },
+          { path: 'availability',          element: <Availability /> },
+        ],
+      },
     ],
   },
   // ── Perfil ──────────────────────────────────────

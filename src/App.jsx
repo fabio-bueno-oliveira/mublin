@@ -1,6 +1,6 @@
 import React from 'react'
 import { RouterProvider } from 'react-router-dom'
-import { MantineProvider, createTheme, localStorageColorSchemeManager  } from '@mantine/core'
+import { MantineProvider, createTheme, localStorageColorSchemeManager, Badge  } from '@mantine/core'
 import { Notifications } from '@mantine/notifications'
 import { AuthProvider } from './contexts/AuthContext'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -12,6 +12,7 @@ import '@mantine/schedule/styles.css';
 import './styles.scss'
 
 const theme = createTheme({
+  autoContrast: true,
   primaryColor: 'indigo',
   primaryShade: { light: 6, dark: 5 },
 
@@ -36,8 +37,15 @@ const theme = createTheme({
     fontFamily: 'Geist, Helvetica, Arial, sans-serif',
     fontWeight: '700',
   },
-
   defaultRadius: 'md',
+
+  components: {
+    Badge: Badge.extend({
+      defaultProps: {
+        fw: '500',
+      },
+    }),
+  },
 })
 
 const colorSchemeManager = localStorageColorSchemeManager({

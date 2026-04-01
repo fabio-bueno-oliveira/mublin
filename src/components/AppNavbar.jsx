@@ -131,10 +131,16 @@ export default function AppNavbar({ children }) {
                 <Menu.Label>
                   {profile?.full_name}
                 </Menu.Label>
-                <Menu.Item onClick={() => navigate(`/${profile?.username}`)}>
+                <Menu.Item
+                  component={Link}
+                  to={`/${profile?.username}`}
+                >
                   Meu perfil
                 </Menu.Item>
-                <Menu.Item onClick={() => navigate('/settings')}>
+                <Menu.Item 
+                  component={Link}
+                  to="/settings"
+                >
                   Configurações
                 </Menu.Item>
                 <Menu.Divider />

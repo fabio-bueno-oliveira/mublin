@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { supabase } from '../lib/supabaseClient'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
@@ -11,11 +12,13 @@ import { fetchRandomOtherProjects } from '../queries/projects'
 import {
   Box, Container, Grid, Stack, Group, Anchor, Text, Title, Card,
   Avatar, Badge, Button, Flex, ActionIcon, Menu,
-  ScrollArea, Skeleton, Image
+  ScrollArea, Skeleton, Image, Modal
 } from '@mantine/core'
+import { useDisclosure } from '@mantine/hooks'
+import { notifications } from '@mantine/notifications'
 import {
   IconCirclePlus, IconClock, IconRosetteDiscountCheckFilled, IconMessageCircle, 
-  IconDots, IconMicrophone2, IconLink, IconHeart, IconHeartFilled
+  IconDots, IconMicrophone2, IconLink, IconHeart, IconHeartFilled, IconTrash
 } from '@tabler/icons-react'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
@@ -247,7 +250,12 @@ function LikeButton({ postId, userId, likedPostIds, likesCount }) {
 // ── Página principal ─────────────────────────────────────
 
 export default function Home() {
+  const queryClient = useQueryClient()
   const { profile, user } = useAuth()
+
+  const [postToDelete, setPostToDelete] = useState(null)
+  const [isDeletingPost, setIsDeletingPost] = useState(false)
+  const [confirmDeletePostOpened, { open: openConfirmDeletePost, close: closeConfirmDeletePost }] = useDisclosure(false)
 
   const {
     data: feedData,
@@ -316,6 +324,22 @@ export default function Home() {
     staleTime: 1000 * 60 * 10, // muda a cada 10 min ou ao recarregar
   })
 
+  async function handleDeletePost() {
+    setIsDeletingPost(true)
+    const { error } = await supabase
+      .from('feed')
+      .delete()
+      .eq('id', postToDelete)
+    if (error) {
+      notifications.show({ color: 'red', position: 'top-center', message: 'Erro ao apagar postagem.' })
+    } else {
+      queryClient.invalidateQueries({ queryKey: ['feed'] })
+      notifications.show({ color: 'green', position: 'top-center', message: 'Postagem apagada!' })
+      closeConfirmDeletePost()
+    }
+    setIsDeletingPost(false)
+  }
+
   return (
     <>
       {/* {isMobile && // Logo + header para mobile
@@ -334,6 +358,9 @@ export default function Home() {
       <Container size="xl" py="xs" px={0}>
         <Grid gutter="md">
           <Grid.Col span={{ base: 12, md: 7 }}>
+            <Title order={2} fz="h4" ta="left" fw={600} lts="-0.02em" mb="lg">
+              Meus projetos
+            </Title>
             <ScrollArea w="100%" type="never">
               <Flex gap={14}>
                 <Flex direction="column" align="center" gap={10}>
@@ -409,7 +436,7 @@ export default function Home() {
               </Flex>
             </ScrollArea>
             <Box mt="xl">
-              <Title order={2} fz="h3" ta="left" fw={700} lts="-0.02em" mb="lg">
+              <Title order={2} fz="h4" ta="left" fw={600} lts="-0.02em" mb="lg">
                 Gigs para você
               </Title>
               <Flex gap={18}>
@@ -557,14 +584,28 @@ export default function Home() {
                               <Menu.Dropdown>
                                 <Menu.Item
                                   leftSection={<IconLink size={14} />}
-                                  onClick={
-                                    () => navigator.clipboard.writeText(
-                                      `${window.location.origin}/post/${post.id}`
-                                    )
-                                  }
+                                  onClick={() => navigator.clipboard.writeText(
+                                    `${window.location.origin}/post/${post.id}`
+                                  )}
                                 >
                                   Copiar link
                                 </Menu.Item>
+
+                                {post.author_profile_id === user?.id && (
+                                  <>
+                                    <Menu.Divider />
+                                    <Menu.Item
+                                      color="red"
+                                      leftSection={<IconTrash size={14} />}
+                                      onClick={() => {
+                                        setPostToDelete(post.id)
+                                        openConfirmDeletePost()
+                                      }}
+                                    >
+                                      Apagar postagem
+                                    </Menu.Item>
+                                  </>
+                                )}
                               </Menu.Dropdown>
                             </Menu>
                           </Group>
@@ -637,6 +678,27 @@ export default function Home() {
           </Grid.Col>
         </Grid>
       </Container>
+
+      <Modal
+        opened={confirmDeletePostOpened}
+        onClose={closeConfirmDeletePost}
+        withCloseButton={false}
+        size="xs"
+        radius="md"
+        centered
+      >
+        <Text size="sm">
+          Tem certeza que deseja apagar esta postagem? Esta ação não pode ser desfeita.
+        </Text>
+        <Group justify="flex-end" gap={8} mt="md">
+          <Button variant="default" size="sm" onClick={closeConfirmDeletePost}>
+            Cancelar
+          </Button>
+          <Button color="red" size="sm" loading={isDeletingPost} onClick={handleDeletePost}>
+            Apagar
+          </Button>
+        </Group>
+      </Modal>
     </>
   )
 }
