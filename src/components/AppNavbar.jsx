@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import {
   Group, Text, TextInput, ActionIcon, Avatar, Switch,
   Menu, Box, Container, useComputedColorScheme, useMantineColorScheme
@@ -15,7 +15,8 @@ const AVATAR_PATH = 'https://ik.imagekit.io/mublin/tr:h-200,c-maintain_ratio/use
 export default function AppNavbar({ children }) {
   const navigate = useNavigate()
   const { profile, signOut } = useAuth()
-  const [searchQuery, setSearchQuery] = useState('')
+  const [searchParams] = useSearchParams()
+  const [searchQuery, setSearchQuery] = useState(searchParams.get('q') ?? '')
 
   const { setColorScheme } = useMantineColorScheme()
   const computedColorScheme = useComputedColorScheme('light')

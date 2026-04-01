@@ -384,10 +384,10 @@ export default function Home() {
                           direction="column"
                           gap="xs"
                           inset={0}
-                          bg="rgba(0,0,0,0.18)"
+                          bg="rgba(0,0,0,0.55)"
                         >
                           <IconClock size={24} color="white" stroke={1.5} />
-                          <Badge size="xs" variant="filled" fw="400" color="amber.6">
+                          <Badge size="xs" variant="outline" fw="400" color="white">
                             Pendente
                           </Badge>
                         </Flex>
