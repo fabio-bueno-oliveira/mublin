@@ -8,12 +8,16 @@ export async function fetchBasicProfile(profileUsername) {
       full_name,
       username,
       avatar,
+      cover_image,
       title,
       bio,
       city_id,
       region_id,
       is_verified,
       is_legend,
+      website,
+      is_open_to_work,
+      plan,
       cities (
         name
       ),
@@ -98,7 +102,7 @@ export async function fetchProfileFeed(profileId, limit = 10) {
   return data
 }
 
-export async function fetchProfileProjects(userId) {
+export async function fetchProfileProjects(profileId) {
   const { data, error } = await supabase
     .from('project_members')
     .select(`
@@ -110,7 +114,77 @@ export async function fetchProfileProjects(userId) {
       projects ( id, name, slug, picture, description, project_types ( name_ptbr ) )
     `)
     .eq('status', 2)
-    .eq('profile_id', userId)
+    .eq('profile_id', profileId)
   if (error) throw new Error(error.message)
   return data
 }
+
+export async function fetchProfileGear(profileId) {
+  const { data, error } = await supabase
+    .from('profile_gear')
+    .select(`
+      id_product,
+      is_featured,
+      is_for_sale,
+      products ( id, id_category, name, slug, picture, brands(name) )
+    `)
+    .eq('id_user', profileId)
+  if (error) throw new Error(error.message)
+  return data
+}
+
+export async function fetchProfileGearCategories(profileId) {
+  const { data, error } = await supabase
+    .rpc('get_profile_gear_categories', { p_profile_id: profileId })
+  if (error) throw new Error(error.message)
+  return data
+}
+
+export async function fetchProfileGearSetups(profileId) {
+  const { data, error } = await supabase
+    .rpc('get_profile_gear_setups', { p_profile_id: profileId })
+  if (error) throw new Error(error.message)
+  return data
+}
+
+export async function fetchProfileGearExpanded(profileId) {
+  const { data, error } = await supabase
+    .from('profile_gear')
+    .select(`
+      id,
+      id_product,
+      is_featured,
+      is_for_sale,
+      is_currently_using,
+      price,
+      owner_comments,
+      id_tuning,
+      tunings ( name_ptbr, description ),
+      products (
+        id, name, slug, picture,
+        brands ( name, slug, logo ),
+        product_categories ( name_ptbr )
+      )
+    `)
+    .eq('id_user', profileId)
+    .order('is_featured', { ascending: false })
+  if (error) throw new Error(error.message)
+  return data
+}
+
+export async function fetchProfileWorkAvailability(profileId) {
+  const { data, error } = await supabase
+    .from('profile_work_availability')
+    .select(`
+      id,
+      work_types (
+        id, name_ptbr
+      )
+    `)
+    .eq('id_profile', profileId)
+  if (error) throw new Error(error.message)
+  return data?.sort((a, b) =>
+    a.work_types?.name_ptbr?.localeCompare(b.work_types?.name_ptbr ?? '') ?? 0
+  )
+}
+

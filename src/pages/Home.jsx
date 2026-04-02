@@ -16,9 +16,11 @@ import {
 } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
+import LinkedItem from '../components/feed/LinkedItem'
+import VideoPlayer from '../components/feed/VideoPlayer'
 import {
   IconCirclePlus, IconClock, IconRosetteDiscountCheckFilled, IconMessageCircle, 
-  IconDots, IconMicrophone2, IconLink, IconHeart, IconHeartFilled, IconTrash
+  IconDots, IconLink, IconHeart, IconHeartFilled, IconTrash
 } from '@tabler/icons-react'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
@@ -28,7 +30,6 @@ dayjs.extend(relativeTime)
 dayjs.locale('pt-br')
 
 const AVATAR_PATH = 'https://ik.imagekit.io/mublin/tr:h-68,c-maintain_ratio/users/avatars/'
-const PATH_PRODUCT_IMAGE = 'https://ik.imagekit.io/mublin/products/tr:w-64,h-64,cm-pad_resize,bg-FFFFFF/'
 
 function ProjectSkeletons({ count = 4 }) {
   return Array.from({ length: count }).map((_, i) => (
@@ -37,143 +38,6 @@ function ProjectSkeletons({ count = 4 }) {
       <Skeleton radius="xl" width={50} height={10} />
     </Flex>
   ))
-}
-
-function LinkedItem({ post }) {
-  if (post.linked_gig_id) return (
-    <Card
-      component={Link}
-      to={`/gig/${post.slug}`}
-      withBorder
-      radius="md"
-      p="xs"
-      mt="xs"
-      style={{ textDecoration: 'none' }}
-    >
-      <Group gap="xs">
-        <Avatar size={32} radius="md" color="violet" variant="light">
-          <IconMicrophone2 size={16} />
-        </Avatar>
-        <Stack gap={0}>
-          <Text size="xs" c="dimmed" fw={500}>Gig vinculada</Text>
-          <Text size="sm" fw={600} truncate="end">{post.title}</Text>
-        </Stack>
-        {post.has_remuneration && (
-          <Badge size="xs" color="green" variant="light" ml="auto">
-            Remunerada
-          </Badge>
-        )}
-      </Group>
-    </Card>
-  )
-
-  if (post.linked_product_id > 0) return (
-    <Card
-      component={Link}
-      to={`/gear/${post.linked_product_slug}`}
-      withBorder
-      radius="md"
-      p="xs"
-      mt="xs"
-      style={{ textDecoration: 'none' }}
-    >
-      <Group gap="xs">
-        <Image
-          src={post.linked_product_picture
-            ? PATH_PRODUCT_IMAGE + post.linked_product_picture
-            : undefined}
-          w={32}
-          h={32}
-          radius="md"
-          fit="contain"
-        />
-        <Stack gap={0}>
-          <Text size="xs" c="dimmed" fw={500}>{post.linked_product_brand_name}</Text>
-          <Text size="sm" fw={600}>{post.linked_product_name}</Text>
-        </Stack>
-      </Group>
-    </Card>
-  )
-
-  return null
-}
-
-function getYouTubeId(url) {
-  const match = url.match(
-    /(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/
-  )
-  return match ? match[1] : null
-}
-
-function VideoPlayer({ url, title }) {
-  const [expanded, setExpanded] = useState(false)
-  const ytId = getYouTubeId(url)
-  if (!ytId) return null
-
-  return (
-    <Box
-      mt={4}
-      style={{
-        position: 'relative',
-        paddingTop: '56.25%',
-        borderRadius: 'var(--mantine-radius-md)',
-        overflow: 'hidden',
-        cursor: expanded ? 'default' : 'pointer',
-      }}
-      onClick={() => !expanded && setExpanded(true)}
-    >
-      {expanded ? (
-        <iframe
-          src={`https://www.youtube.com/embed/${ytId}?autoplay=1&rel=0&modestbranding=1`}
-          width="100%"
-          height="100%"
-          style={{ position: 'absolute', top: 0, left: 0, border: 'none' }}
-          allowFullScreen
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          title={title ?? 'Vídeo'}
-        />
-      ) : (
-        <>
-          <img
-            src={`https://img.youtube.com/vi/${ytId}/hqdefault.jpg`}
-            alt="Thumbnail do vídeo"
-            style={{
-              position: 'absolute',
-              top: 0, left: 0,
-              width: '100%', height: '100%',
-              objectFit: 'cover',
-            }}
-          />
-          <Flex
-            align="center"
-            justify="center"
-            style={{
-              position: 'absolute',
-              inset: 0,
-              background: 'rgba(0,0,0,0.25)',
-              transition: 'background 0.2s',
-            }}
-          >
-            <Box
-              style={{
-                width: 52,
-                height: 52,
-                borderRadius: '50%',
-                background: 'rgba(255,255,255,0.92)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <svg width="30" height="30" viewBox="0 0 24 24" fill="#000000">
-                <path d="M8 5v14l11-7z"/>
-              </svg>
-            </Box>
-          </Flex>
-        </>
-      )}
-    </Box>
-  )
 }
 
 function LikeButton({ postId, userId, likedPostIds, likesCount }) {

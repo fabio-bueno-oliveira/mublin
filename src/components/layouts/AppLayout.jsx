@@ -13,7 +13,7 @@ export default function AppLayout({ children }) {
 
   if (loading) return (
     <Center h="100vh">
-      <Loader color="amber" />
+      <Loader color="indigo" />
     </Center>
   )
 
@@ -27,7 +27,7 @@ export default function AppLayout({ children }) {
         breakpoint: 'sm',
         collapsed: { mobile: !opened },
       }}
-      padding="md"
+      padding={isMobile ? 0 : "md"}
       style={{ '--app-shell-footer-height': '70px' }}
     >
       {!isMobile && (

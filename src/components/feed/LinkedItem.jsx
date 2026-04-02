@@ -56,7 +56,9 @@ export default function LinkedItem({ post }) {
         />
         <Stack gap={0}>
           <Text size="xs" c="dimmed" fw={500}>{post.linked_product_brand_name}</Text>
-          <Text size="sm" fw={600}>{post.linked_product_name}</Text>
+          <Text size="sm" fw={600} style={{ whiteSpace: "wrap"}}>
+            {post.linked_product_name}
+          </Text>
         </Stack>
       </Group>
     </Card>

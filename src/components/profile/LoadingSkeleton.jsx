@@ -1,0 +1,73 @@
+import {
+  Container, Skeleton, Grid, Group, Box, Flex, Stack, Paper
+} from '@mantine/core'
+
+export default function LoadingSkeleton() {
+
+  return (
+    <Container size="xl" py="sm">
+      <Grid>
+        {/* Coluna Principal (Esquerda) */}
+        <Grid.Col span={{ base: 12, md: 8 }}>
+          <Group align="center" gap="md" mb="xl">
+            <Skeleton circle height={96} />
+            <Stack gap={8} flex={1}>
+              <Skeleton height={28} width="40%" radius="xl" />
+              <Skeleton height={16} width="25%" radius="xl" />
+              <Skeleton height={16} width="60%" radius="md" mt={4} />
+              <Group gap={4} mt={4}>
+                <Skeleton height={20} width={80} radius="xl" />
+                <Skeleton height={20} width={80} radius="xl" />
+              </Group>
+            </Stack>
+          </Group>
+
+          <Stack gap={12}>
+            <Box>
+              <Skeleton height={24} width={100} mb="xs" />
+              <Skeleton height={14} width="100%" radius="sm" />
+              <Skeleton height={14} width="95%" radius="sm" mt={6} />
+              <Skeleton height={14} width="40%" radius="sm" mt={6} />
+            </Box>
+
+            <Skeleton height={24} width={250} mt="md" />
+            <Flex gap={15}>
+              <Skeleton width={180} height={180} radius="md" />
+              <Skeleton width={180} height={180} radius="md" />
+              <Skeleton width={180} height={180} radius="md" />
+            </Flex>
+          </Stack>
+        </Grid.Col>
+
+        {/* Sidebar (Direita) */}
+        <Grid.Col span={{ base: 12, md: 4 }}>
+          <Stack gap={12}>
+            <Paper p="md" radius="md" withBorder>
+              <Skeleton height={20} width="60%" mb="sm" />
+              <Group gap={6}>
+                {[1, 2, 3, 4].map((i) => (
+                  <Skeleton key={i} circle height={32} />
+                ))}
+              </Group>
+            </Paper>
+
+            <Paper p="md" radius="md" withBorder>
+              <Skeleton height={20} width="70%" mb="md" />
+              <Stack gap="md">
+                {[1, 2, 3].map((i) => (
+                  <Group key={i} gap="sm" wrap="nowrap">
+                    <Skeleton circle height={40} />
+                    <Stack gap={4} style={{ flex: 1 }}>
+                      <Skeleton height={12} width="80%" radius="xl" />
+                      <Skeleton height={10} width="50%" radius="xl" />
+                    </Stack>
+                  </Group>
+                ))}
+              </Stack>
+            </Paper>
+          </Stack>
+        </Grid.Col>
+      </Grid>
+    </Container>
+  )
+}

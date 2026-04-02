@@ -19,6 +19,7 @@ import Home from './pages/Home'
 import Search from './pages/Search'
 // -- Profile pages
 import ProfileRouter from './components/ProfileRouter'
+import ProfileGear from './pages/ProfileGear'
 // -- Project pages
 import ProjectRouter from './components/ProjectRouter'
 import Projects from './pages/Projects'
@@ -81,6 +82,7 @@ export const router = createBrowserRouter([
       { path: 'gear/:slug', element: <GearProduct /> },
       { path: 'new/gear', element: <NewGear />},
       { path: 'backstage', element: <Backstage /> },
+      { path: '/:username/gear', element: <ProfileGear /> },
       // ── Settings ──────────────────────────────────
       {
         path: 'settings',

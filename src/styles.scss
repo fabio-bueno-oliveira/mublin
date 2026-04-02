@@ -18,6 +18,15 @@
   padding-inline-start: 0.3rem;
 }
 
+.mantine-Spoiler-root {
+  .mantine-Spoiler-control {
+    top: 94%;
+  }
+  &[data-has-spoiler='true'] {
+    margin-bottom: 18px!important;
+  }
+}
+
 // Other styles
 
 .iconVerified {
