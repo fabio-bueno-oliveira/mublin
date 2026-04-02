@@ -385,10 +385,10 @@ export default function Home() {
                   shadow={{ base: 'none', sm: 'sm' }}
                   pl={{ base: 0, sm: 3 }}
                   pr={{ base: 0, sm: "lg" }}
-                  pb="xs"
                   radius={{ base: 0, sm: 'md' }}
-                  withBorder={false}
                   bg={{ base: 'transparent', sm: 'var(--mantine-color-body)' }}
+                  pb="xs"
+                  withBorder={false}
                   mt="xs"
                 >
                   {feedPosts.map(post => (

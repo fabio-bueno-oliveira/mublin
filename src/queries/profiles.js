@@ -18,6 +18,9 @@ export async function fetchBasicProfile(profileUsername) {
       website,
       is_open_to_work,
       plan,
+      is_live,
+      live_platform,
+      live_expires_at,
       cities (
         name
       ),
@@ -188,3 +191,17 @@ export async function fetchProfileWorkAvailability(profileId) {
   )
 }
 
+export async function fetchProfileWorkFocuses(profileId) {
+  const { data, error } = await supabase
+    .from('profile_work_focus')
+    .select(`
+      id,
+      work_focuses (
+        id, title_ptbr
+      )
+    `)
+    .eq('id_profile', profileId)
+    .order('id', { ascending: true })
+  if (error) throw new Error(error.message)
+  return data
+}

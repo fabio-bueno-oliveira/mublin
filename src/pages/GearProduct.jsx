@@ -183,28 +183,32 @@ export default function GearProduct() {
                   {productColors.map(item => (
                     <Flex key={item.id} direction="column" align="center" gap={2}>
                       <ColorSwatch
-                        color={
-                          item.colors?.img_sample
-                            ? 'transparent'
-                            : (item.colors?.rgb ?? '#ccc')
-                        }
-                        title={item.colors?.name}
-                        size={26}
-                        style={{
-                          cursor: 'pointer',
-                          backgroundImage: item.colors?.img_sample
-                            ? `url(${PATH_COLOR_SAMPLE + item.colors.img_sample})`
-                            : undefined,
-                          backgroundSize: '26px 26px',
-                          outline: item.id === selectedColor?.id
-                            ? '2px solid var(--mantine-color-blue-5)'
-                            : '2px solid transparent',
-                          outlineOffset: 2,
-                        }}
+                        component="div"
+                        color={item.colors?.img_sample ? 'transparent' : (item.colors?.rgb ?? '#ccc')}
+                        withShadow={false}
                         onClick={() => setSelectedColorId(item.id)}
+                        title={item.colors?.name_ptbr ?? item.colors?.name}
+                        styles={{
+                          alphaOverlay: {
+                            backgroundImage: item.colors?.img_sample
+                              ? `url(${PATH_COLOR_SAMPLE + item.colors.img_sample})`
+                              : 'none',
+                            backgroundSize: 'cover',
+                            backgroundPosition: 'center',
+                          },
+                          root: {
+                            cursor: 'pointer',
+                            width: 28,
+                            height: 28,
+                            outline: item.id === selectedColor?.id
+                              ? '2px solid var(--mantine-color-indigo-6)'
+                              : 'none',
+                            outlineOffset: 2,
+                          }
+                        }}
                       />
                       {item.id === selectedColor?.id && (
-                        <IconChevronUp size={12} />
+                        <IconChevronUp style={{ width: 14, height: 14 }} />
                       )}
                     </Flex>
                   ))}
@@ -218,10 +222,7 @@ export default function GearProduct() {
 
             {/* Descrição */}
             <Box mb={28}>
-              <Group gap={6} mb={10}>
-                <IconAlignJustified size={16} />
-                <Text size="sm" fw={600}>Sobre {product.brands?.name} {product.name}</Text>
-              </Group>
+              <Title size="md" fw={600} mb={6}>Sobre</Title>
               {product.description ? (
                 <Stack gap={4}>
                   <Text size="sm" style={{ whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
@@ -251,13 +252,9 @@ export default function GearProduct() {
 
             {/* Quem utiliza */}
             <Box>
-              <Group gap={6} mb={10}>
-                <IconUser size={16} />
-                <Text size="sm" fw={600}>
-                  Quem utiliza ({owners.length})
-                </Text>
-              </Group>
-
+              <Title size="md" fw={600} mb={10}>
+                Quem utiliza ({owners.length})
+              </Title>
               {isLoadingOwners ? (
                 <Stack gap={10}>
                   {[1, 2, 3].map(i => (
@@ -380,10 +377,10 @@ export default function GearProduct() {
         onClose={() => setModalZoomOpen(false)}
         title={
           <Box>
-            <Text size="sm" fw={500}>{product.brands?.name} · {product.name}</Text>
+            <Text size="md" fw={500}>{product.brands?.name} · {product.name}</Text>
             {selectedColor?.colors && (
-              <Text size="xs" c="dimmed">
-                {selectedColor.colors.name_ptbr ?? selectedColor.colors.name}
+              <Text size="sm" c="dimmed">
+                Cor: {selectedColor.colors.name_ptbr ?? selectedColor.colors.name}
               </Text>
             )}
           </Box>

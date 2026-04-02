@@ -103,12 +103,12 @@ export default function Menu() {
   // ── Menu items ──────────────────────────────────────────
   const menuItems = [
     { icon: IconHome, label: 'Home', to: '/home' },
+    { icon: IconUser,                   label: 'Ir para meu perfil',            to: `/${profile?.username}` },
     { icon: IconCalendarEvent,          label: 'Gigs',                          to: '/gigs' },
     { icon: IconCalendarMonth,          label: 'Disponibilidade para gigs',     to: '/settings/availability' },
     { icon: IconMusic,                  label: 'Projetos musicais',             to: '/projects' },
     { icon: IconPackages,               label: 'Equipamentos',                  to: '/gearr' },
     { icon: IconHeartHandshake,         label: 'Parceiros e Endorsements',      to: '/settings/endorsements' },
-    { icon: IconUser,                   label: 'Ir para meu perfil',            to: `/${profile?.username}` },
     { icon: IconEdit,                   label: 'Editar meus dados',             to: '/settings' },
     { icon: IconAdjustmentsHorizontal,  label: 'Preferências musicais',         to: '/settings/preferences' },
     // { icon: IconStar,                   label: 'Minha assinatura',              to: '/settings/plan' },

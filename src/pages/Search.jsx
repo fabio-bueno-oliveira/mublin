@@ -67,7 +67,7 @@ export default function Search() {
           </Title>
           <Grid>
             <Grid.Col span={{ base: 12, md: 6, lg: 3 }}>
-              <Title order={4} fw={550} fz="h5" mb="sm" c="dimmed">
+              <Title order={4} fw={400} fz="h5" mb="sm" c="dimmed">
                 Resultados nesta página
               </Title>
               <NavLink
@@ -75,7 +75,7 @@ export default function Search() {
                 label={loadingProfiles ? 'Pessoas...' : `Pessoas (${profileResults.length})`}
                 color="gray"
                 variant="light"
-                px={{ base: 0, sm: "sm" }}
+                px={{ base: 0, sm: "xs" }}
                 py={{ base: 0, sm: "xs" }}
               />
               <NavLink
@@ -83,7 +83,7 @@ export default function Search() {
                 label={loadingProjects ? 'Projetos...' : `Projetos (${projectResults.length})`}
                 color="gray"
                 variant="light"
-                px={{ base: 0, sm: "sm" }}
+                px={{ base: 0, sm: "xs" }}
                 py={{ base: 0, sm: "xs" }}
               />
               <NavLink
@@ -91,7 +91,7 @@ export default function Search() {
                 label={loadingGear ? 'Equipamentos...' : `Equipamentos (${gearResults.length})`}
                 color="gray"
                 variant="light"
-                px={{ base: 0, sm: "sm" }}
+                px={{ base: 0, sm: "xs" }}
                 py={{ base: 0, sm: "xs" }}
               />
             </Grid.Col>

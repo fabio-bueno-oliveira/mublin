@@ -4,10 +4,10 @@ import { useAuth } from '../../hooks/useAuth'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabaseClient'
 import {
-  Title, Stack, Group, Text, Button, Divider, Modal, Drawer,
+  Stack, Group, Text, Button, Divider, Modal, Drawer,
   TextInput, Textarea, Loader, Box, Avatar,
   ActionIcon, Flex, Skeleton, Image, Badge, Switch, Grid,
-  NativeSelect, NumberInput, Paper, ThemeIcon, Collapse,
+  NativeSelect, NumberInput, Paper, ThemeIcon,
 } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
@@ -414,7 +414,7 @@ export default function MyGear() {
                 </Text>
               </Group>
               <Text size="xs" c="dimmed" mt={2}>
-                Grupos de equipamentos para apresentações (opcional)
+                Grupos de equipamentos para apresentações
               </Text>
             </div>
             <Button
@@ -440,19 +440,26 @@ export default function MyGear() {
                 <Flex key={setup.id} direction="column" align="center" gap={4} w={80}>
                   <Image
                     src={setup.image ? SETUP_IMG + setup.image : SETUP_IMG_FALLBACK}
-                    h={60} w={60} radius="md" fit="cover"
+                    h={60} w={60}
+                    mb={2} 
+                    radius="md" 
+                    fit="cover"
                     style={{ cursor: 'pointer', opacity: setup.image ? 1 : 0.5 }}
                     onClick={() => handleOpenSetupDrawer(setup)}
                   />
-                  <Text size="xs" fw={550} ta="center" lineClamp={2} style={{ lineHeight: 1.2 }}>
+                  <Text 
+                    size="xs" fw={550} ta="center" 
+                    lineClamp={2} 
+                    style={{ lineHeight: 1.2 }}
+                  >
                     {setup.name}
                   </Text>
                   <ActionIcon.Group>
-                    <ActionIcon variant="default" size="sm" onClick={() => handleOpenSetupDrawer(setup)}>
+                    <ActionIcon variant="default" size="md" onClick={() => handleOpenSetupDrawer(setup)}>
                       <IconPencil size={12} />
                     </ActionIcon>
                     <ActionIcon
-                      variant="default" size="sm" color="red"
+                      variant="default" size="md" color="red"
                       onClick={() => { setSetupToDelete(setup); openConfirmDeleteSetup() }}
                     >
                       <IconTrash size={12} />
@@ -520,17 +527,21 @@ export default function MyGear() {
                         fallbackSrc="https://placehold.co/160x160?text=?"
                       />
                       <Stack gap={2} style={{ flex: 1 }}>
-                        <Text size="10px" ta="center" truncate="end">
+                        <Text size="xs" c="dimmed" ta="center" truncate="end">
                           {item.products?.brands?.name} · {item.products?.product_categories?.name_ptbr}
                         </Text>
-                        <Text size="xs" fw={600} ta="center" lineClamp={2} style={{ lineHeight: 1.3 }}>
+                        <Text 
+                          size="xs" fw={600} ta="center" 
+                          lineClamp={1} 
+                          style={{ lineHeight: 1.2 }}
+                        >
                           {item.products?.name}
                         </Text>
                       </Stack>
                       <Flex gap={4} wrap="wrap" justify="center">
-                        {item.is_featured        && <Badge size="xs" variant="light" color="yellow">Destaque</Badge>}
+                        {item.is_featured        && <Badge size="xs" variant="light" color="yellow">Em destaque</Badge>}
                         {item.is_currently_using && <Badge size="xs" variant="light" color="green">Em uso</Badge>}
-                        {item.is_for_sale        && <Badge size="xs" variant="light" color="red">À venda</Badge>}
+                        {item.is_for_sale        && <Badge size="xs" variant="light" color="grape">À venda</Badge>}
                       </Flex>
 
                       {/* Sub itens */}
@@ -551,7 +562,7 @@ export default function MyGear() {
                       <Divider />
                       <Group gap={4} grow>
                         <ActionIcon
-                          variant="light" size="md" color="indigo"
+                          variant="subtle" size="md" color="indigo"
                           onClick={() => handleOpenEditItem(item)}
                           title="Editar item"
                         >
@@ -592,7 +603,7 @@ export default function MyGear() {
                 h={80} w={80} fit="contain" radius="sm"
                 fallbackSrc="https://placehold.co/160x160?text=?"
               />
-              <Text size="xs" c="dimmed">{editingItem.brand}</Text>
+              <Text size="sm" c="dimmed">{editingItem.brand}</Text>
               <Text size="sm" fw={600} ta="center">{editingItem.name}</Text>
             </Flex>
 
@@ -643,7 +654,10 @@ export default function MyGear() {
               minRows={2}
               maxLength={500}
               value={editingItem.owner_comments}
-              onChange={(e) => setEditingItem(prev => ({ ...prev, owner_comments: e.currentTarget.value }))}
+              onChange={(e) => {
+                const value = e.currentTarget.value
+                setEditingItem(prev => ({ ...prev, owner_comments: value }))
+              }}
             />
 
             <Group justify="flex-end" gap={8}>
@@ -797,41 +811,6 @@ export default function MyGear() {
       >
         <Stack gap="md">
 
-          {/* Adicionar item ao setup */}
-          <Group justify="space-between" align="center">
-            <Text size="sm" fw={500}>
-              Itens do setup ({setupItems.length})
-            </Text>
-            <ActionIcon
-              variant="light" color="indigo"
-              onClick={() => setShowAddToSetup(v => !v)}
-            >
-              {showAddToSetup ? <IconMinus size={16} /> : <IconPlus size={16} />}
-            </ActionIcon>
-          </Group>
-
-          <Collapse in={showAddToSetup}>
-            <NativeSelect
-              size="sm"
-              disabled={isAddingToSetup || gearAvailableForSetup.length === 0}
-              onChange={(e) => handleAddToSetup(e.currentTarget.value)}
-              value=""
-            >
-              <option value="">
-                {gearAvailableForSetup.length === 0
-                  ? 'Todos os itens já foram adicionados'
-                  : isAddingToSetup ? 'Adicionando...' : 'Selecione o item'}
-              </option>
-              {gearAvailableForSetup.map(g => (
-                <option key={g.id} value={String(g.products?.id)}>
-                  {g.products?.brands?.name} {g.products?.name}
-                </option>
-              ))}
-            </NativeSelect>
-          </Collapse>
-
-          <Divider />
-
           {/* ── Dados do setup ─────────────────────────── */}
           <Stack gap="sm">
             <TextInput
@@ -870,7 +849,42 @@ export default function MyGear() {
 
           <Divider label="Itens do setup" labelPosition="left" />
 
-          {/* Lista de itens do setup */}
+          {/* ── Botão adicionar item ────────────────────── */}
+          <Button
+            size="xs"
+            variant="light"
+            color="indigo"
+            leftSection={showAddToSetup ? <IconMinus size={13} /> : <IconPlus size={13} />}
+            onClick={() => setShowAddToSetup(v => !v)}
+          >
+            {showAddToSetup ? 'Cancelar' : 'Adicionar item ao setup'}
+          </Button>
+
+          {showAddToSetup && (
+            <NativeSelect
+              size="sm"
+              disabled={isAddingToSetup}
+              value=""
+              onChange={(e) => {
+                if (e.currentTarget.value) handleAddToSetup(e.currentTarget.value)
+              }}
+            >
+              <option value="">
+                {isAddingToSetup
+                  ? 'Adicionando...'
+                  : gearAvailableForSetup.length === 0
+                  ? 'Todos os itens já foram adicionados'
+                  : 'Selecione o item para adicionar'}
+              </option>
+              {gearAvailableForSetup.map(g => (
+                <option key={g.id} value={String(g.products?.id)}>
+                  {g.products?.brands?.name} {g.products?.name}
+                </option>
+              ))}
+            </NativeSelect>
+          )}
+
+          {/* ── Lista de itens do setup ─────────────────── */}
           {loadingSetupItems ? (
             <Stack gap="sm">
               {[1, 2].map(i => <Skeleton key={i} height={60} radius="md" />)}
@@ -925,7 +939,7 @@ export default function MyGear() {
                     </ActionIcon.Group>
                   </Flex>
 
-                  {/* Campos de edição inline */}
+                  {/* ── Edição inline ───────────────────── */}
                   {editingSetupItem?.id === item.id && (
                     <Flex gap="sm" mt="sm">
                       <NumberInput
@@ -945,6 +959,7 @@ export default function MyGear() {
               ))}
             </Stack>
           )}
+
         </Stack>
       </Drawer>
     </>

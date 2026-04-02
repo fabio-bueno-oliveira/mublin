@@ -30,7 +30,6 @@ export default function LoadingSkeleton() {
               <Skeleton height={14} width="40%" radius="sm" mt={6} />
             </Box>
 
-            <Skeleton height={24} width={250} mt="md" />
             <Flex gap={15}>
               <Skeleton width={180} height={180} radius="md" />
               <Skeleton width={180} height={180} radius="md" />

@@ -23,3 +23,36 @@ export async function searchGear(keyword) {
   if (error) throw new Error(error.message)
   return data
 }
+
+export async function fetchRecentSearches(profileId) {
+  const { data, error } = await supabase
+    .from('search_history')
+    .select('id, query, searched_at')
+    .eq('profile_id', profileId)
+    .order('searched_at', { ascending: false })
+    .limit(5)
+  if (error) throw new Error(error.message)
+  // Remove duplicatas mantendo a mais recente
+  const seen = new Set()
+  return data.filter(row => {
+    if (seen.has(row.query)) return false
+    seen.add(row.query)
+    return true
+  })
+}
+
+export async function saveSearchQuery(profileId, query) {
+  if (!query.trim()) return
+  const { error } = await supabase
+    .from('search_history')
+    .insert({ profile_id: profileId, query: query.trim() })
+  if (error) throw new Error(error.message)
+}
+
+export async function clearSearchHistory(profileId) {
+  const { error } = await supabase
+    .from('search_history')
+    .delete()
+    .eq('profile_id', profileId)
+  if (error) throw new Error(error.message)
+}

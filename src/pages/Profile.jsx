@@ -10,27 +10,30 @@ import {
   fetchProfileGearCategories,
   fetchProfileGearSetups,
   fetchProfileWorkAvailability,
+  fetchProfileWorkFocuses
 } from '../queries/profiles'
 import { useAuth } from '../hooks/useAuth'
 import { Helmet } from 'react-helmet-async'
 import {
-  Container, Grid, Scroller, Avatar, Paper, Box, Spoiler, Anchor, Center,
+  Container, Modal, Grid, Scroller, Avatar, Paper, Box, Anchor, Center,
   Card, Button, Title, Text, Group, Flex, Stack, ActionIcon, NativeSelect,
   Skeleton, ScrollArea, Alert, Badge, Image, Tooltip, Indicator, em
 } from '@mantine/core'
-import { useMediaQuery } from '@mantine/hooks'
+import { useMediaQuery, useDisclosure } from '@mantine/hooks'
 import LoadingSkeleton from '../components/profile/LoadingSkeleton'
 import LinkedItem from '../components/feed/LinkedItem'
 import VideoPlayer from '../components/feed/VideoPlayer'
+import TruncatedText from '../components/TruncatedText'
+import SectionPanel from '../components/SectionPanel'
+import ProfileHeaderMobile from '../components/profile/ProfileHeaderMobile'
 import { 
   IconMoodSad, IconRosetteDiscountCheckFilled,
-  IconBrandInstagram, IconBrandTiktok, IconBrandYoutube,
-  IconBrandSpotify, IconBrandSoundcloud, 
-  IconBrandLinkedin, IconWorld,
-  IconShieldCheckFilled, IconArrowsMaximize, IconPlus, IconSettings,
-  IconCircleArrowLeftFilled, IconCircleArrowRightFilled
+  IconWorld, IconShieldCheckFilled, IconArrowsMaximize, IconPlus, IconSettings,
+  IconCircleArrowLeftFilled, IconCircleArrowRightFilled, IconCheck
 } from '@tabler/icons-react'
 import { truncateString } from '../utils/formatter'
+import { isProfileLive } from '../utils/live'
+import { SOCIAL_CONFIG } from '../constants/socialConfig'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import 'dayjs/locale/pt-br'
@@ -40,20 +43,15 @@ dayjs.locale('pt-br')
 
 const AVATAR_PATH = 'https://ik.imagekit.io/mublin/tr:h-200,c-maintain_ratio/users/avatars/'
 
-// Mapa de plataforma → URL base e ícone
-const SOCIAL_CONFIG = {
-  instagram:  { icon: IconBrandInstagram, base: 'https://instagram.com/',  color: '#E1306C' },
-  tiktok:     { icon: IconBrandTiktok,    base: 'https://tiktok.com/@',    color: '#010101' },
-  youtube:    { icon: IconBrandYoutube,   base: 'https://youtube.com/@',   color: '#FF0000' },
-  spotify:    { icon: IconBrandSpotify,   base: 'https://open.spotify.com/artist/', color: '#1DB954' },
-  soundcloud: { icon: IconBrandSoundcloud,base: 'https://soundcloud.com/', color: '#FF5500' },
-  linkedin:   { icon: IconBrandLinkedin,  base: 'https://linkedin.com/in/', color: '#0A66C2' },
+function SectionTitle({ text, mb }) {
+  return <Text fw={550} size="18px" mb={mb}>{text}</Text>
 }
 
 export default function Profile() {
   const { username } = useParams()
   const { loading: authLoading, user } = useAuth()
   const isMobile = useMediaQuery(`(max-width: ${em(750)})`)
+  const [modalBioOpened, { open: openModalBio, close: closeModalBio }] = useDisclosure(false)
 
   const { data: profile, isLoading : isLoadingProfileInfo, isError } = useQuery({
     queryKey: ['profile', username],
@@ -109,13 +107,20 @@ export default function Profile() {
   const { data: gearSetups = [] } = useQuery({
     queryKey: ['user-gear-setups', profile?.id],
     queryFn: () => fetchProfileGearSetups(profile.id),
-    enabled: !!profile?.id && gear.length > 0,
+    enabled: !!profile?.id,
     staleTime: 1000 * 60 * 5,
   })
 
   const { data: workAvailability = [], isLoading: loadingWorkAvailability } = useQuery({
     queryKey: ['user-work-availability', profile?.id],
     queryFn: () => fetchProfileWorkAvailability(profile.id),
+    enabled: !!profile?.id,
+    staleTime: 1000 * 60 * 5,
+  })
+
+  const { data: workFocus = [], isLoading: loadingWorkFocus } = useQuery({
+    queryKey: ['user-work-focus', profile?.id],
+    queryFn: () => fetchProfileWorkFocuses(profile.id),
     enabled: !!profile?.id && gear.length > 0,
     staleTime: 1000 * 60 * 5,
   })
@@ -135,6 +140,8 @@ export default function Profile() {
   })) || [];
 
   const roles = profile?.profile_roles.sort((a, b) => b.main_activity - a.main_activity)
+  const city = profile?.cities?.name
+  const regionUf = profile?.regions?.uf
 
   if (authLoading) {
     return (
@@ -192,181 +199,15 @@ export default function Profile() {
         </Card>
       }
       <Container size="xl" py="sm">
-        <Paper 
-          withBorder={false}
-          px='0'
-          py='0'
-          style={{ backgroundColor: 'transparent' }}
-          hiddenFrom='sm'
-        >
-          <Flex
-            justify='flex-start'
-            align="flex-start"
-            direction='row'
-            wrap='nowrap'
-            columnGap='xs'
-          >
-            <Indicator 
-              position='bottom-center' 
-              inline 
-              label={<Text size='0.7rem' >Disponível</Text>} 
-              color='lime' 
-              size={18} 
-              withBorder 
-              disabled={!profile.is_open_to_work}
-            >
-              <Avatar
-                size='xl'
-                src={profile.avatar ? AVATAR_PATH + profile.avatar : undefined}
-              />
-            </Indicator>
-            <Box style={{overflow:'hidden'}}>
-              <Flex align="center" gap={2} mb={2}>
-                <Title order={1} size="22px" lts='-0.02em' lh='1'>
-                  {profile.full_name}
-                </Title>
-                {!!profile.is_verified && 
-                  <IconRosetteDiscountCheckFilled 
-                    className='iconVerified'
-                    title='Perfil verificado'
-                  />
-                }
-                {!!profile.is_legend && 
-                  <IconShieldCheckFilled
-                    className='iconLegend'
-                    title='Lenda da Música'
-                  />
-                }
-                {profile.plan === 'Pro' && 
-                  <Badge
-                    title='Usuário PRO'
-                    radius='sm'
-                    size='xs'
-                    variant="light"
-                    color="gray"
-                  >
-                    PRO
-                  </Badge>
-                }
-              </Flex>
-              <Text 
-                order={2} 
-                fz="sm" 
-                lh={1.3}
-                mb={2}
-                lineClamp={2}
-              >
-                {profile.title}
-              </Text>
-              <Flex align="center" gap={4} opacity={0.6}>
-                <Text size="sm">
-                  @{profile.username}
-                </Text>
-                {(profile?.cities?.name || profile?.regions?.uf) && (
-                  <Text size="sm">
-                    · {[profile?.cities?.name, profile?.regions?.uf]
-                      .filter(Boolean)
-                      .join('/')}
-                  </Text>
-                )}
-              </Flex>
-              {roles && roles.length > 0 && (
-                <Scroller>
-                  <Group gap={4} wrap="nowrap" style={{ width: "max-content" }}>
-                    {roles && roles.map(({ id, main_activity, roles: role }) => (
-                      <Badge 
-                        key={id} 
-                        variant="light" 
-                        color="var(--mantine-color-text)"
-                        fw='500' 
-                        size="sm"
-                        radius="sm"
-                      >
-                        {role?.name_ptbr}
-                        {main_activity ? ' ★' : ''}
-                      </Badge>
-                    ))}
-                  </Group>
-                </Scroller>
-              )}
-            </Box>
-          </Flex>
-          {/* <Group 
-            gap={12} 
-            mt={10} 
-            mb={9}
-          >
-            <Text 
-              className='point'
-              size={isMobile ? '1.04rem' : '0.87rem'}
-              fw='600'
-              onClick={() => setModalFollowersOpen(true)}
-              style={{lineHeight: 'normal'}}
-            >
-              {profile.followers.total} seguidores
-            </Text>
-            <Text 
-              className='point'
-              size={isMobile ? '1.04rem' : '0.87rem'}
-              fw='600'
-              onClick={() => setModalFollowingOpen(true)}
-              style={{lineHeight: 'normal'}}
-            >
-              {profile.following.total} seguindo
-            </Text>
-          </Group> */}
-          {(profile.website && profile.website !== 'null') && 
-            <Anchor 
-              href={profile.website} 
-              target='_blank'
-              underline='hover'
-              className='websiteLink'
-              mt={isMobile ? 4 : 4}
-              mb={isMobile ? 8 : 6}
-            >
-              <Flex gap={2} align='center'>
-                <IconLink size={13} />
-                <Text size='0.91em' className='lhNormal'>
-                  {truncateString(profile.website, 37)}
-                </Text>
-              </Flex>
-            </Anchor>
-          }
-          {(profile.instagram || profile.tiktok) &&
-            <Group gap={10} mt={6}>
-              {profile.instagram &&
-                <Anchor 
-                  href={`https://instagram.com/${profile.instagram}`}
-                  target='_blank'
-                  underline='hover'
-                  className='websiteLink'
-                >
-                  <Flex gap={2} align='center'>
-                    <IconBrandInstagram size={13} />
-                    <Text size='0.91em' className='lhNormal'>
-                      Instagram
-                    </Text>
-                  </Flex>
-                </Anchor>
-              }
-              {profile.tiktok &&
-                <Anchor 
-                  href={`https://tiktok.com/@${profile.tiktok}`}
-                  target='_blank'
-                  underline='hover'
-                  className='websiteLink'
-                >
-                  <Flex gap={2} align='center'>
-                    <IconBrandTiktok size={13} />
-                    <Text size='0.91em' className='lhNormal'>
-                      TikTok
-                    </Text>
-                  </Flex>
-                </Anchor>
-              }
-            </Group>
-          }
-        </Paper>
+        {isMobile &&
+          <ProfileHeaderMobile 
+            profile={profile} 
+            roles={roles} 
+            city={city} 
+            regionUf={regionUf} 
+            user={user}
+          />
+        }
         <Grid>
           <Grid.Col span={{ base: 12, md: 8 }}>
             <Group align="flex-start" gap="md" mb="lg" visibleFrom="sm">
@@ -392,14 +233,15 @@ export default function Profile() {
                     />
                   }
                   {user?.id === profile.id && (
-                    <Button 
-                      radius="sm" 
-                      size="compact-sm" 
-                      variant="light"
+                    <Button
+                      component={Link}
+                      to="/settings/profile"
+                      radius="sm"
+                      size="compact-xs"
+                      variant="default"
                       ml={4}
-                      color="indigo"
                     >
-                      Editar Perfil
+                      Editar meu perfil
                     </Button>
                   )}
                 </Flex>
@@ -407,12 +249,20 @@ export default function Profile() {
                   <Text size="sm">
                     @{profile.username}
                   </Text>
-                  {(profile?.cities?.name || profile?.regions?.uf) && (
+                  {(city || regionUf) && (
                     <Text size="sm">
-                      · {[profile?.cities?.name, profile?.regions?.uf]
+                      · {[city, regionUf]
                         .filter(Boolean)
                         .join('/')}
                     </Text>
+                  )}
+                  {isProfileLive(profile) && (
+                    <Group gap={6} ml={10} align="center">
+                      <span className="live-dot" />
+                      <Text size="11px" fw={600} c="red" tt="uppercase">
+                        AO VIVO em {profile.live_platform}
+                      </Text>
+                    </Group>
                   )}
                 </Flex>
                 {profile.title && (
@@ -442,23 +292,27 @@ export default function Profile() {
               </Stack>
             </Group>
             <Stack gap={12}>
-              {(profile.bio && profile.bio !== 'null') && 
-                <Spoiler
+              {profile.bio && (
+                <Box
                   mt={isMobile ? 14 : 0}
-                  maxHeight={66}
-                  showLabel={<Text fz="xs" fw={500} c="var(--mantine-color-text)">Ver mais</Text>}
-                  hideLabel={<Text fz="xs" fw={500} c="var(--mantine-color-text)">Ver menos</Text>}
-                  fz="sm"
-                  pb="xs"
-                  lh={1.3}
-                  style={{whiteSpace:'pre-wrap'}}
+                  onClick={profile.bio.length > 240 ? openModalBio : undefined}
+                  style={{ 
+                    cursor: profile.bio.length > 240 ? 'pointer' : undefined,
+                    whiteSpace: 'pre-wrap' 
+                  }}
                 >
-                  {profile.bio}
-                </Spoiler>
-              }
+                  <Text fz="sm" pb="xs" lh={1.3}>
+                    <TruncatedText 
+                      fontSize="sm"
+                      text={profile.bio} 
+                      maxLength={240} 
+                    />
+                  </Text>
+                </Box>
+              )}
               {loadingProjects && (
                 <>
-                  <Text fw={550} size="17px">Projetos de {profile.full_name}</Text>
+                  <SectionTitle text="Projetos" mb="0" />
                   <Flex gap={15}>    
                     <Skeleton width={180} height={180} radius="md" />
                     <Skeleton width={180} height={180} radius="md" />
@@ -468,7 +322,7 @@ export default function Profile() {
               )}
               {profileProjects.length > 0 && (
                 <>
-                  <Text fw={550} size="17px">Projetos de {profile.full_name}</Text>
+                  <SectionTitle text="Projetos" mb="0" />
                   <ScrollArea w="100%" type="never" mb="sm">
                     <Flex gap={15}>
                       {!loadingProjects && profileProjects?.map(item => (
@@ -548,12 +402,12 @@ export default function Profile() {
                   </ScrollArea>
                 </>
               )}
-              <Text fw={550} size="17px">Postagens</Text>
+              <SectionTitle text="Postagens" mb="0" />
               <Scroller 
                 key={profilePosts.length}
                 draggable
                 controlSize="xl"
-                showEndControl={profilePosts.length > 2 ? true : false}
+                showEndControl={profilePosts.length > 2}
                 startControlIcon={<IconCircleArrowLeftFilled size={36} />}
                 endControlIcon={<IconCircleArrowRightFilled size={36} />}
               >
@@ -622,9 +476,7 @@ export default function Profile() {
                 </Group>
               </Scroller>
               <Group justify='space-between' align='center' gap={8} mt={10}>
-                <Text fw={550} size="17px">
-                  Equipamento {!!gear.length && `(${gear.length})`}
-                </Text>
+                <SectionTitle text={`Equipamento ${!!gear.length && `(${gear.length})`}`} mb="0" />
                 <Group gap={8}>
                   {!!gear.length && 
                     <ActionIcon
@@ -632,8 +484,8 @@ export default function Profile() {
                       size='md'
                       color="gray"
                       aria-label='Gerenciar'
-                      component='a'
-                      href={`/${username}/gear`}
+                      component={Link}
+                      to={`/${username}/gear`}
                       title='Ver ampliado'
                     >
                       <IconArrowsMaximize 
@@ -648,9 +500,9 @@ export default function Profile() {
                         variant="subtle"
                         size='md'
                         color="gray"
-                        aria-label='Gerenciar'
-                        component='a'
-                        href='/settings/gear'
+                        aria-label='Adicionar item'
+                        component={Link}
+                        to='/new/gear'
                         title='Adicionar item'
                       >
                         <IconPlus 
@@ -663,8 +515,8 @@ export default function Profile() {
                         size='md'
                         color="gray"
                         aria-label='Gerenciar'
-                        component='a'
-                        href='/settings/gear'
+                        component={Link} 
+                        to='/settings/gear'
                         title='Gerenciar'
                       >
                         <IconSettings 
@@ -706,7 +558,7 @@ export default function Profile() {
                   key={gear.length}
                   draggable
                   controlSize="xl"
-                  showEndControl={gear.length > 4 ? true : false}
+                  showEndControl={gear.length > 4}
                   startControlIcon={<IconCircleArrowLeftFilled size={36} />}
                   endControlIcon={<IconCircleArrowRightFilled size={36} />}
                 >
@@ -743,32 +595,28 @@ export default function Profile() {
                     Setups de {profile.full_name} {!!gearSetups.length && `(${gearSetups.length})`}
                   </Title>
                   <Flex gap={15}>
-                    {gearSetups.map(setup =>
+                    {gearSetups.map(setup => (
                       <Box key={setup.id}>
-                        <Flex direction='column' gap={2}>
-                          <Center
-                            component='a'
-                            href={`/${username}/setup/${setup.id}`}
-                          >
+                        <Flex direction='column' justify="center" gap={2}>
+                          <Link to={`/${username}/setup/${setup.id}`}>
                             <Image
-                              src={'https://ik.imagekit.io/mublin/users/gear-setups/tr:w-120,h-120/'+setup.image}
+                              src={'https://ik.imagekit.io/mublin/users/gear-setups/tr:w-120,h-120/' + setup.image}
                               h={60}
                               mah={60}
                               w='auto'
                               fit='contain'
                               radius='md'
-                              className='point'
                             />
-                          </Center>
+                          </Link>
                           <Text ta='center' fw={550} size='xs' className='lhNormal'>
                             {setup.name}
                           </Text>
                           <Text ta='center' size='xs' className='lhNormal'>
-                            {setup.totalItems ? setup.totalItems : 0} itens
+                            {setup.totalItems ?? 0} itens
                           </Text>
                         </Flex>
                       </Box>
-                    )}
+                    ))}
                   </Flex>
                 </Box>
               }
@@ -776,13 +624,63 @@ export default function Profile() {
           </Grid.Col>
           <Grid.Col span={{ base: 12, md: 4 }}>
             <Stack gap={12}>
-              <Paper p="md" radius="md" withBorder>
-                <Text fw={550} size="17px" mb="sm">
-                  Redes de {profile.username}
-                </Text>
+              <SectionPanel>
+                <SectionTitle text="Disponibilidade" mb="sm" />
+                {isLoadingProfileInfo || loadingWorkAvailability || loadingWorkFocus ? (
+                  <Group gap={6} wrap="wrap">
+                    {[1, 2, 3, 4, 5].map(i => (
+                      // eslint-disable-next-line react-hooks/purity
+                      <Skeleton key={i} h={20} w={70 + Math.random() * 20} radius="xl" />
+                    ))}
+                  </Group>
+                ) : (
+                  <>
+                    <Title order={6} fw={400} mt="sm" mb="sm" c="dimmed">
+                      Tipos de trabalho
+                    </Title>
+                    {workAvailability.length > 0 ? (
+                      <Group gap={4} wrap="wrap">
+                        {workAvailability.map(item => (
+                          <Badge 
+                            key={item.id} 
+                            variant="light" 
+                            color="gray" 
+                            leftSection={<IconCheck color="green" size={12} stroke={4} />}
+                          >
+                            {item.work_types?.name_ptbr}
+                          </Badge>
+                        ))}
+                      </Group>
+                    ) : (
+                      <Text size="sm" c="dimmed">Não informado</Text>
+                    )}
+                    <Title order={6} fw={400} mt="sm" mb="sm" c="dimmed">
+                      Vínculos de preferência
+                    </Title>
+                    {workFocus.length > 0 ? (
+                      <Group gap={4} wrap="wrap">
+                        {workFocus.map(item => (
+                          <Badge 
+                            key={item.id} 
+                            variant="light" 
+                            color="gray" 
+                            leftSection={<IconCheck color="green" size={12} stroke={4} />}
+                          >
+                            {item.work_focuses?.title_ptbr}
+                          </Badge>
+                        ))}
+                      </Group>
+                    ) : (
+                      <Text size="sm" c="dimmed">Não informado</Text>
+                    )}
+                  </>
+                )}
+              </SectionPanel>
+              <SectionPanel>
+                <SectionTitle text="Redes" mb="sm" />
                 {/* Social links + website */}
                 {(profile.profile_social_links.length > 0 || profile.website) && (
-                  <Group gap={6} wrap="wrap">
+                  <Group gap={10} wrap="wrap">
                     {profile.website && (
                       <ActionIcon
                         component="a"
@@ -827,27 +725,9 @@ export default function Profile() {
                     })}
                   </Group>
                 )}
-              </Paper>
-              <Paper p="md" radius="md" withBorder>
-                <Text fw={550} size="17px" mb="sm">
-                  Disponibilidade para trabalhos
-                </Text>
-                {loadingWorkAvailability ? (
-                  <Skeleton height={20} width="100%" radius="xl" />
-                ) : (
-                  <Group gap={6} wrap="wrap">
-                    {workAvailability.map(item => (
-                      <Badge key={item.id} variant="default">
-                        {item.work_types?.name_ptbr}
-                      </Badge>
-                    ))}
-                  </Group>
-                )}
-              </Paper>
-              <Paper p="md" radius="md" withBorder>
-                <Text fw={550} size="17px" mb="sm">
-                  Mais perfis parecidos
-                </Text>
+              </SectionPanel>
+              <SectionPanel>
+                <SectionTitle text="Mais perfis parecidos" mb="sm" />
                 {loadingSimilar ? (
                   <Stack gap="md">
                     {[1, 2, 3, 4].map(i => (
@@ -908,11 +788,26 @@ export default function Profile() {
                     ))}
                   </Stack>
                 )}
-              </Paper>
+              </SectionPanel>
             </Stack>
           </Grid.Col>
         </Grid>
       </Container>
+      <Modal 
+        opened={modalBioOpened} 
+        onClose={closeModalBio} 
+        title={`Sobre ${profile.full_name}`} 
+        overlayProps={{
+          backgroundOpacity: 0.55,
+          blur: 3,
+        }}
+        centered
+        scrollAreaComponent={ScrollArea.Autosize}
+      >
+        <Text size="sm" style={{ whiteSpace: 'pre-wrap' }}>
+          {profile.bio || 'Nenhuma informação fornecida.'}
+        </Text>
+      </Modal>
     </>
   )
 }

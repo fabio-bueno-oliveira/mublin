@@ -56,3 +56,29 @@
     cursor: default;
   }
 }
+
+@keyframes live-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.5; transform: scale(0.92); }
+}
+
+.icon-live {
+  color: var(--mantine-color-white);
+  animation: live-pulse 1.4s ease-in-out infinite;
+  display: flex;
+  align-items: center;
+}
+
+@keyframes live-dot {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(224, 49, 49, 0.5); }
+  50%       { box-shadow: 0 0 0 5px rgba(224, 49, 49, 0); }
+}
+
+.live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--mantine-color-red-6);
+  animation: live-dot 1.2s ease-in-out infinite;
+  display: inline-block;
+}

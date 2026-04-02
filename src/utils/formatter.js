@@ -1,5 +1,5 @@
-export const truncateString = (input, maxLength) => {
-   return input.length > maxLength ? `${input.substring(0, maxLength)}...` : input;
+export const truncateString = (input, maxLength, showSeeMore) => {
+   return input.length > maxLength ? `${input.substring(0, maxLength)}...` + (showSeeMore ? ' ver mais' : '') : input;
 };
 
 export const  nFormatter = (num) => {

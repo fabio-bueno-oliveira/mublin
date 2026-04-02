@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../../hooks/useAuth'
-import { Link } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { fetchUserProfile } from '../../queries/user'
 import { fetchCityById } from '../../queries/locations'
@@ -8,7 +7,7 @@ import { supabase } from '../../lib/supabaseClient'
 import {
   Stack, Grid, TextInput, Textarea, NativeSelect,
   Input, Select, Button, Group, Text, Anchor, Divider,
-  Modal, ScrollArea, Box, Loader, Alert,
+  Modal, ScrollArea, Box, Loader, Alert, Switch
 } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { useDebouncedCallback, useDisclosure } from '@mantine/hooks'
@@ -16,6 +15,7 @@ import { notifications } from '@mantine/notifications'
 import {
   IconSearch, IconCheck, IconAlertCircle,
   IconBrandInstagram, IconBrandTiktok, IconWorld,
+  IconBrandYoutube, IconBrandTwitch, IconVideo
 } from '@tabler/icons-react'
 
 // ── Queries locais ────────────────────────────────────────
@@ -59,6 +59,17 @@ async function fetchSocialLinks(profileId) {
   return data
 }
 
+async function resetExpiredLive(userId) {
+  await supabase
+    .from('profiles')
+    .update({
+      is_live: false,
+      live_platform: null,
+      live_expires_at: null,
+    })
+    .eq('id', userId)
+}
+
 // ── Componente principal ──────────────────────────────────
 
 export default function EditMyProfile() {
@@ -80,6 +91,11 @@ export default function EditMyProfile() {
   const [noCityResults, setNoCityResults] = useState(false)
   const [modalCityOpened, { open: openCityModal, close: closeCityModal }] = useDisclosure(false)
 
+  // ── Live Streaming ────────────────────────────────────
+  const [isLive, setIsLive] = useState(false)
+  const [livePlatform, setLivePlatform] = useState('')
+  const [liveDuration, setLiveDuration] = useState('')
+
   // ── Form ──────────────────────────────────────────────
   const form = useForm({
     initialValues: {
@@ -92,6 +108,8 @@ export default function EditMyProfile() {
       website: '',
       instagram: '',
       tiktok: '',
+      youtube: '',
+      twitch: '',
     },
     validate: {
       full_name: (v) => (!v?.trim() ? 'Nome completo é obrigatório' : null),
@@ -127,7 +145,7 @@ export default function EditMyProfile() {
     queryKey: ['city', savedProfile?.city_id],
     queryFn: () => fetchCityById(savedProfile.city_id),
     enabled: !!savedProfile?.city_id,
-    staleTime: Infinity, // cidade do perfil não muda sozinha
+    staleTime: Infinity,
   })
 
   const { data: genders = [] } = useQuery({
@@ -159,10 +177,34 @@ export default function EditMyProfile() {
   }, [savedProfile])
 
   useEffect(() => {
+    if (!savedProfile) return
+    const expired = savedProfile.live_expires_at
+      ? new Date(savedProfile.live_expires_at) < new Date()
+      : false
+    if (expired && savedProfile.is_live) {
+      resetExpiredLive(user.id)
+    }
+    setIsLive(!expired && !!savedProfile.is_live)
+    setLivePlatform(savedProfile.live_platform ?? '')
+    if (savedProfile.live_expires_at && !expired) {
+      const remaining = Math.round(
+        (new Date(savedProfile.live_expires_at) - new Date()) / 60000
+      )
+      const closest = [15, 30, 60, 120, 180].reduce((a, b) =>
+        Math.abs(b - remaining) < Math.abs(a - remaining) ? b : a
+      )
+      setLiveDuration(String(closest))
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [savedProfile])
+
+  useEffect(() => {
     if (!socialLinks.length) return
     const instagram = socialLinks.find(l => l.platform === 'instagram')?.handle ?? ''
-    const tiktok    = socialLinks.find(l => l.platform === 'tiktok')?.handle ?? ''
-    form.setValues(prev => ({ ...prev, instagram, tiktok }))
+    const tiktok    = socialLinks.find(l => l.platform === 'tiktok')?.handle    ?? ''
+    const youtube   = socialLinks.find(l => l.platform === 'youtube')?.handle   ?? ''
+    const twitch    = socialLinks.find(l => l.platform === 'twitch')?.handle    ?? ''
+    form.setValues(prev => ({ ...prev, instagram, tiktok, youtube, twitch }))
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [socialLinks])
 
@@ -223,6 +265,8 @@ export default function EditMyProfile() {
     const platforms = [
       { platform: 'instagram', handle: values.instagram },
       { platform: 'tiktok',   handle: values.tiktok },
+      { platform: 'youtube',  handle: values.youtube },
+      { platform: 'twitch',   handle: values.twitch },
     ]
 
     for (const { platform, handle } of platforms) {
@@ -246,6 +290,9 @@ export default function EditMyProfile() {
 
   // ── Submit ────────────────────────────────────────────
   async function handleSubmit(values) {
+    const liveExpiresAt = isLive && liveDuration
+      ? new Date(Date.now() + Number(liveDuration) * 60 * 1000).toISOString()
+      : null
     const validation = form.validate()
     if (validation.hasErrors) return
     if (usernameAvailable === false) return
@@ -256,14 +303,17 @@ export default function EditMyProfile() {
       const { error } = await supabase
         .from('profiles')
         .update({
-          full_name: values.full_name.trim(),
-          username:  values.username.trim(),
-          title:     values.title?.trim()  || null,
-          bio:       values.bio?.trim()    || null,
-          gender:    values.gender         || null,
-          region_id: values.region_id ? Number(values.region_id) : null,
-          city_id:   selectedCity?.id      ?? null,
-          website:   values.website?.trim() || null,
+          full_name:       values.full_name.trim(),
+          username:        values.username.trim(),
+          title:           values.title?.trim()  || null,
+          bio:             values.bio?.trim()    || null,
+          gender:          values.gender         || null,
+          region_id:       values.region_id ? Number(values.region_id) : null,
+          city_id:         selectedCity?.id      ?? null,
+          website:         values.website?.trim() || null,
+          is_live:         isLive,
+          live_platform:   isLive ? livePlatform || null : null,
+          live_expires_at: liveExpiresAt,
         })
         .eq('id', user.id)
 
@@ -296,10 +346,89 @@ export default function EditMyProfile() {
     ...genders.map(g => ({ value: g.id, label: g.label })),
   ]
 
+  const LIVE_PLATFORMS = [
+    { value: 'instagram', label: 'Instagram',  icon: <IconBrandInstagram size={14} /> },
+    { value: 'tiktok',    label: 'TikTok',     icon: <IconBrandTiktok size={14} /> },
+    { value: 'youtube',   label: 'YouTube',    icon: <IconBrandYoutube size={14} /> },
+    { value: 'twitch',    label: 'Twitch',     icon: <IconBrandTwitch size={14} /> },
+  ]
+
+  const savedHandles = new Set(socialLinks.map(l => l.platform))
+
+  const livePlatformOptions = LIVE_PLATFORMS
+    .filter(p => savedHandles.has(p.value))
+    .map(p => ({ value: p.value, label: p.label }))
+
+  const liveDurationOptions = [
+    { value: '15',  label: '15 minutos' },
+    { value: '30',  label: '30 minutos' },
+    { value: '60',  label: '1 hora' },
+    { value: '120', label: '2 horas' },
+    { value: '180', label: '3 horas' },
+  ]
+
   // ── Render ────────────────────────────────────────────
   return (
     <>
       <Stack gap="lg">
+
+        {/* ── Live ─────────────────────────────────────── */}
+        <Stack gap="sm">
+          <Text fw={600} size="sm" c="dimmed" tt="uppercase" lts="0.05em">
+            Live
+          </Text>
+          <Switch
+            label="Avisar que estou fazendo live agora"
+            description="Seu perfil exibirá um indicador de live ativa"
+            color="red"
+            style={{ width: "fit-content" }}
+            checked={isLive}
+            onChange={(e) => {
+              setIsLive(e.currentTarget.checked)
+              if (!e.currentTarget.checked) {
+                setLivePlatform('')
+                setLiveDuration('')
+              }
+            }}
+          />
+          {isLive && (
+            <>
+              <Grid>
+                <Grid.Col span={{ base: 12, sm: 6 }}>
+                  <Select
+                    label="Rede social"
+                    placeholder={
+                      livePlatformOptions.length === 0
+                        ? 'Nenhuma rede social cadastrada'
+                        : 'Selecione'
+                    }
+                    data={livePlatformOptions}
+                    disabled={livePlatformOptions.length === 0}
+                    value={livePlatform}
+                    onChange={(val) => setLivePlatform(val ?? '')}
+                    description={
+                      livePlatformOptions.length === 0
+                        ? 'Cadastre uma rede social primeiro'
+                        : 'Informe a rede que estará transmitindo'
+                    }
+                    leftSection={<IconVideo size={14} />}
+                  />
+                </Grid.Col>
+                <Grid.Col span={{ base: 12, sm: 6 }}>
+                  <Select
+                    label="Duração estimada"
+                    placeholder="Selecione"
+                    data={liveDurationOptions}
+                    value={liveDuration}
+                    onChange={(val) => setLiveDuration(val ?? '')}
+                    description="Após esse tempo o indicador será removido"
+                  />
+                </Grid.Col>
+              </Grid>
+            </>
+          )}
+        </Stack>
+        <Divider />
 
         {/* ── Dados básicos ───────────────────────────── */}
         <Stack gap="md">
@@ -454,6 +583,32 @@ export default function EditMyProfile() {
                 onChange={(e) => {
                   const value = e.target.value.replace(/^@/, '')
                   form.setFieldValue('tiktok', value)
+                }}
+              />
+            </Grid.Col>
+            <Grid.Col span={{ base: 12, sm: 6 }}>
+              <TextInput
+                label="YouTube"
+                placeholder="seu canal"
+                leftSection={<IconBrandYoutube size={16} />}
+                description="Username ou handle do canal"
+                {...form.getInputProps('youtube')}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/^@/, '')
+                  form.setFieldValue('youtube', value)
+                }}
+              />
+            </Grid.Col>
+            <Grid.Col span={{ base: 12, sm: 6 }}>
+              <TextInput
+                label="Twitch"
+                placeholder="seu username"
+                leftSection={<IconBrandTwitch size={16} />}
+                description="Só o username, sem @"
+                {...form.getInputProps('twitch')}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/^@/, '')
+                  form.setFieldValue('twitch', value)
                 }}
               />
             </Grid.Col>
