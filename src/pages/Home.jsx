@@ -10,9 +10,10 @@ import {
 import { fetchUserProjects } from '../queries/user'
 import { fetchRandomOtherProjects } from '../queries/projects'
 import {
-  Box, Container, Grid, Stack, Group, Anchor, Text, Title, Card,
+  Box, Container, Grid, Stack, Group, Anchor, Text, Title,
   Avatar, Badge, Button, Flex, ActionIcon, Menu,
-  ScrollArea, Skeleton, Image, Modal
+  ScrollArea, Skeleton, Image, Modal, Divider,
+  Affix, Transition
 } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
@@ -20,7 +21,8 @@ import LinkedItem from '../components/feed/LinkedItem'
 import VideoPlayer from '../components/feed/VideoPlayer'
 import {
   IconCirclePlus, IconClock, IconRosetteDiscountCheckFilled, IconMessageCircle, 
-  IconDots, IconLink, IconHeart, IconHeartFilled, IconTrash
+  IconDots, IconLink, IconHeart, IconHeartFilled, IconTrash, 
+  IconPlus, IconPencil, IconBox
 } from '@tabler/icons-react'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
@@ -120,6 +122,7 @@ export default function Home() {
   const [postToDelete, setPostToDelete] = useState(null)
   const [isDeletingPost, setIsDeletingPost] = useState(false)
   const [confirmDeletePostOpened, { open: openConfirmDeletePost, close: closeConfirmDeletePost }] = useDisclosure(false)
+  const [affixOpen, setAffixOpen] = useState(false)
 
   const {
     data: feedData,
@@ -219,7 +222,7 @@ export default function Home() {
         />
         <Button>Gigs</Button>
       </Flex>
-      <Container size="xl" py="xs" px={0}>
+      <Container size="xl" py="xs" px={{ base: "md", md: 0 }}>
         <Grid gutter="md">
           <Grid.Col span={{ base: 12, md: 7 }}>
             <Title order={2} fz="h4" ta="left" fw={600} lts="-0.02em" mb="lg">
@@ -344,15 +347,21 @@ export default function Home() {
             </Box>
           </Grid.Col>
           <Grid.Col span={{ base: 12, md: 5 }}>
-            <Flex 
-              gap={10} 
-              align="center" 
-              mt={{ base: "lg", sm: 0 }} 
-              mb={{ base: "lg", sm: "md" }} 
-              mr="xs" 
-              justify="space-between"
+            <ScrollArea
+              h={{ base: 'auto', md: 'calc(100vh - 120px)' }}
+              type="scroll"
+              offsetScrollbars
             >
-              <Group>
+              {/* Caixa de novo post */}
+              <Flex
+                gap={10}
+                align="center"
+                mt={{ base: 'lg', sm: 0 }}
+                mb="md"
+                component={Link}
+                to="/new/post"
+                style={{ textDecoration: 'none' }}
+              >
                 <Avatar
                   w={35}
                   h={35}
@@ -362,183 +371,164 @@ export default function Home() {
                       : undefined
                   }
                   alt={profile?.username}
-                  component={Link}
-                  to={`/${profile?.username}`}
                 />
-              </Group>
-              <Text
-                c="dimmed"
-                fz="16px"
-                lh="0"
-                w="100%"
-                component={Link}
-                to={`/new/post`}
-              >
-                {feedPhrase ?? 'Quais são as novidades?'}
-              </Text>
-            </Flex>
-            {loadingFeed ? (
-              <Text>Carregando postagens...</Text>
-            ) : (
-              <>
-                <Card
-                  shadow={{ base: 'none', sm: 'sm' }}
-                  pl={{ base: 0, sm: 3 }}
-                  pr={{ base: 0, sm: "lg" }}
-                  radius={{ base: 0, sm: 'md' }}
-                  bg={{ base: 'transparent', sm: 'var(--mantine-color-body)' }}
-                  pb="xs"
-                  withBorder={false}
-                  mt="xs"
-                >
-                  {feedPosts.map(post => (
-                    <Card.Section key={post.id} px="xs" withBorder>
-                      <Group gap="sm" align="flex-start" pt="xs" pb="sm">
-                        <Avatar 
-                          size={36} 
-                          radius="xl" 
-                          src={post.author_avatar ? AVATAR_PATH + post.author_avatar : undefined}
-                          component={Link}
-                          to={`/${post.author_username}`}
-                          title={post.author_full_name}
-                        >
-                          {post.author_full_name}
-                        </Avatar>
-                        <Stack gap={4} style={{ flex: 1 }}>
-                          <Group gap="xs" justify="space-between" align="flex-start">
-                            <Flex gap={post.author_is_verified ? 2 : 6} align="center">
-                              <Anchor 
-                                component={Link}
-                                to={`/${post.author_username}`}
-                                underline='hover'
-                                size="sm"
-                                c="var(--mantine-color-text)"
-                                fw="600"
-                              >
-                                {post.author_username}
-                              </Anchor>
-                              {!!post.author_is_verified && 
-                                <IconRosetteDiscountCheckFilled 
-                                  className='iconVerified'
-                                  title='Usuário verificado'
-                                />
-                              }
-                              {post.author_project_id &&
-                                <Text span color="gray">
-                                  Projeto
-                                </Text>
-                              }
-                              <Text
-                                c="dimmed"
-                                size="sm"
-                                lh="0"
-                                title={dayjs(post.created_at).format('DD/MM/YYYY HH:mm:ss')}
-                                component={Link}
-                                to={`/post/${post.id}`}
-                              >
-                                {dayjs(post.created_at).fromNow()}
-                              </Text>
-                            </Flex>
-                            <Menu shadow="md" radius="md" position="bottom-end">
-                              <Menu.Target>
-                                <ActionIcon variant="subtle" color="gray" size="sm" radius="xl">
-                                  <IconDots size={15} color="gray" />
-                                </ActionIcon>
-                              </Menu.Target>
-                              <Menu.Dropdown>
-                                <Menu.Item
-                                  leftSection={<IconLink size={14} />}
-                                  onClick={() => navigator.clipboard.writeText(
-                                    `${window.location.origin}/post/${post.id}`
-                                  )}
-                                >
-                                  Copiar link
-                                </Menu.Item>
+                <Text c="dimmed" fz="15px" w="100%">
+                  {feedPhrase ?? 'Quais são as novidades?'}
+                </Text>
+              </Flex>
 
-                                {post.author_profile_id === user?.id && (
-                                  <>
-                                    <Menu.Divider />
-                                    <Menu.Item
-                                      color="red"
-                                      leftSection={<IconTrash size={14} />}
-                                      onClick={() => {
-                                        setPostToDelete(post.id)
-                                        openConfirmDeletePost()
-                                      }}
-                                    >
-                                      Apagar postagem
-                                    </Menu.Item>
-                                  </>
-                                )}
-                              </Menu.Dropdown>
-                            </Menu>
-                          </Group>
-                          <Text 
-                            size="0.9em" fw="480" lh={1.5} 
-                            opacity={0.85}
+              {/* Feed */}
+              {loadingFeed ? (
+                <Text size="sm" c="dimmed">Carregando postagens...</Text>
+              ) : (
+                <>
+                  <Stack gap={0}>
+                    {feedPosts.map((post, i) => (
+                      <Box key={post.id}>
+                        {i > 0 && <Divider />}
+                        <Group gap="sm" align="flex-start" py="sm">
+                          <Avatar
+                            size={36}
+                            radius="xl"
+                            src={post.author_avatar ? AVATAR_PATH + post.author_avatar : undefined}
                             component={Link}
-                            to={`/post/${post.id}`}
-                            c="var(--mantine-color-text)"
-                          >
-                            {post.body}
-                          </Text>
-                          {/* Player de vídeo */}
-                          {post.video_url && (
-                            <VideoPlayer
-                              url={post.video_url}
-                              title={post.body?.slice(0, 60)}
-                            />
-                          )}
-                          {post.linked_gig_id || post.linked_product_id && 
-                            <LinkedItem post={post} />
-                          }
-                          <Group mt={4} ml={-4}>
-                            <LikeButton
-                              postId={post.id}
-                              userId={user?.id}
-                              likedPostIds={likedPostIds}
-                              likesCount={likesCountMap[post.id] ?? 0}
-                            />
-                            {!post.comments_disabled && 
-                              <ActionIcon
-                                component={Link}
-                                to={`/post/${post.id}`}
-                                c="var(--mantine-color-text)"
-                                variant="subtle"
-                                color="gray"
-                                size="md"
-                                radius="md"
-                                px={post.comments_count > 0 ? 23 : 12}
-                              >
-                                <Flex gap={6} align="center">
-                                  <IconMessageCircle size={18} />
-                                  {post.comments_count > 0 &&
-                                    <Text size="sm" lh={0}>{post.comments_count}</Text>
-                                  }
-                                </Flex>
-                              </ActionIcon>
+                            to={`/${post.author_username}`}
+                            title={post.author_full_name}
+                          />
+                          <Stack gap={4} style={{ flex: 1 }}>
+                            {/* Cabeçalho do post */}
+                            <Group justify="space-between" align="flex-start">
+                              <Flex gap={post.author_is_verified ? 2 : 6} align="center" wrap="wrap">
+                                <Anchor
+                                  component={Link}
+                                  to={`/${post.author_username}`}
+                                  underline="hover"
+                                  size="sm"
+                                  c="var(--mantine-color-text)"
+                                  fw={600}
+                                >
+                                  {post.author_username}
+                                </Anchor>
+                                {!!post.author_is_verified &&
+                                  <IconRosetteDiscountCheckFilled
+                                    className="iconVerified"
+                                    title="Usuário verificado"
+                                  />
+                                }
+                                {post.author_project_id &&
+                                  <Text size="xs" c="dimmed">Projeto</Text>
+                                }
+                                <Text
+                                  size="xs"
+                                  c="dimmed"
+                                  title={dayjs(post.created_at).format('DD/MM/YYYY HH:mm:ss')}
+                                  component={Link}
+                                  to={`/post/${post.id}`}
+                                  style={{ textDecoration: 'none' }}
+                                >
+                                  {dayjs(post.created_at).fromNow()}
+                                </Text>
+                              </Flex>
+                              <Menu shadow="md" radius="md" position="bottom-end">
+                                <Menu.Target>
+                                  <ActionIcon variant="subtle" color="gray" size="sm" radius="xl">
+                                    <IconDots size={15} />
+                                  </ActionIcon>
+                                </Menu.Target>
+                                <Menu.Dropdown>
+                                  <Menu.Item
+                                    leftSection={<IconLink size={14} />}
+                                    onClick={() => navigator.clipboard.writeText(
+                                      `${window.location.origin}/post/${post.id}`
+                                    )}
+                                  >
+                                    Copiar link
+                                  </Menu.Item>
+                                  {post.author_profile_id === user?.id && (
+                                    <>
+                                      <Menu.Divider />
+                                      <Menu.Item
+                                        color="red"
+                                        leftSection={<IconTrash size={14} />}
+                                        onClick={() => {
+                                          setPostToDelete(post.id)
+                                          openConfirmDeletePost()
+                                        }}
+                                      >
+                                        Apagar postagem
+                                      </Menu.Item>
+                                    </>
+                                  )}
+                                </Menu.Dropdown>
+                              </Menu>
+                            </Group>
+
+                            {/* Corpo */}
+                            <Text
+                              size="0.9em"
+                              fw={480}
+                              lh={1.5}
+                              opacity={0.85}
+                              component={Link}
+                              to={`/post/${post.id}`}
+                              c="var(--mantine-color-text)"
+                              style={{ textDecoration: 'none' }}
+                            >
+                              {post.body}
+                            </Text>
+
+                            {post.video_url && (
+                              <VideoPlayer url={post.video_url} title={post.body?.slice(0, 60)} />
+                            )}
+
+                            {(post.linked_gig_id || post.linked_product_id) &&
+                              <LinkedItem post={post} />
                             }
-                          </Group>
-                        </Stack>
-                      </Group>
-                    </Card.Section>
-                  ))}
-                </Card>
-                {hasNextPage && (
-                  <Button
-                    variant="subtle"
-                    color="gray"
-                    size="xs"
-                    fullWidth
-                    mt="sm"
-                    loading={isFetchingNextPage}
-                    onClick={() => fetchNextPage()}
-                  >
-                    Carregar mais
-                  </Button>
-                )}
-              </>
-            )}
+
+                            {/* Ações */}
+                            <Group gap={4} mt={2} ml={-6}>
+                              <LikeButton
+                                postId={post.id}
+                                userId={user?.id}
+                                likedPostIds={likedPostIds}
+                                likesCount={likesCountMap[post.id] ?? 0}
+                              />
+                              {!post.comments_disabled &&
+                                <Button
+                                  component={Link}
+                                  to={`/post/${post.id}`}
+                                  variant="subtle"
+                                  color="gray"
+                                  size="xs"
+                                  radius="md"
+                                  leftSection={<IconMessageCircle size={16} />}
+                                >
+                                  {post.comments_count > 0 ? post.comments_count : ''}
+                                </Button>
+                              }
+                            </Group>
+                          </Stack>
+                        </Group>
+                      </Box>
+                    ))}
+                  </Stack>
+
+                  {hasNextPage && (
+                    <Button
+                      variant="subtle"
+                      color="gray"
+                      size="xs"
+                      fullWidth
+                      mt="sm"
+                      loading={isFetchingNextPage}
+                      onClick={() => fetchNextPage()}
+                    >
+                      Carregar mais
+                    </Button>
+                  )}
+                </>
+              )}
+            </ScrollArea>
           </Grid.Col>
         </Grid>
       </Container>
@@ -563,6 +553,62 @@ export default function Home() {
           </Button>
         </Group>
       </Modal>
+      {/* Affix — apenas desktop */}
+      <Affix position={{ bottom: 30, right: 30 }} visibleFrom="md">
+        <Stack gap="xs" align="flex-end">
+          <Transition mounted={affixOpen} transition="slide-up" duration={150}>
+            {(styles) => (
+              <Stack gap="xs" align="flex-end" style={styles}>
+                <Button
+                  component={Link}
+                  to="/new/post"
+                  radius="xl"
+                  size="sm"
+                  variant="default"
+                  leftSection={<IconPencil size={15} />}
+                  onClick={() => setAffixOpen(false)}
+                >
+                  Novo post
+                </Button>
+                <Button
+                  component={Link}
+                  to="/new/project"
+                  radius="xl"
+                  size="sm"
+                  variant="default"
+                  leftSection={<IconMusic size={15} />}
+                  onClick={() => setAffixOpen(false)}
+                >
+                  Novo projeto
+                </Button>
+                <Button
+                  component={Link}
+                  to="/new/gear"
+                  radius="xl"
+                  size="sm"
+                  variant="default"
+                  leftSection={<IconBox size={15} />}
+                  onClick={() => setAffixOpen(false)}
+                >
+                  Novo equipamento
+                </Button>
+              </Stack>
+            )}
+          </Transition>
+          <ActionIcon
+            radius="xl"
+            size="xl"
+            color="indigo"
+            onClick={() => setAffixOpen(o => !o)}
+            style={{
+              transition: 'transform 0.2s',
+              transform: affixOpen ? 'rotate(45deg)' : 'rotate(0deg)',
+            }}
+          >
+            <IconPlus size={22} />
+          </ActionIcon>
+        </Stack>
+      </Affix>
     </>
   )
 }
