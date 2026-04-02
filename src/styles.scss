@@ -33,3 +33,17 @@
     cursor: default;
   }
 }
+
+.iconLegend {
+  color: #DAA520;
+  width: calc(1.1rem);
+  height: calc(1.1rem);
+  margin-left: 1px;
+
+  &.small {
+    width: calc(1rem);
+    height: calc(1rem);
+    margin-left: 2px;
+    cursor: default;
+  }
+}

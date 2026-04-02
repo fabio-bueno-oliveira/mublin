@@ -298,7 +298,7 @@ export default function MusicalPreferences() {
               {userRoles.length > 0 ? userRoles.map(role => (
                 <Badge
                   key={role.id}
-                  color={role.main_activity ? 'amber' : 'gray'}
+                  color='gray'
                   variant="light"
                   size="md"
                   rightSection={

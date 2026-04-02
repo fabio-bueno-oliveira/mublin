@@ -357,10 +357,11 @@ export default function EditMyProfile() {
           <Textarea
             label="Bio"
             placeholder="Conte um pouco sobre você, sua trajetória e estilo musical..."
-            maxLength={220}
-            description={`${form.values.bio.length}/220`}
+            maxLength={5000}
+            description={`${form.values.bio.length}/5000`}
             autosize
             minRows={3}
+            maxRows={12}
             {...form.getInputProps('bio')}
           />
 
@@ -475,14 +476,6 @@ export default function EditMyProfile() {
         )}
 
         <Group justify="flex-end">
-          <Button
-            variant="default"
-            radius="xl"
-            component={Link}
-            to="/home"
-          >
-            Cancelar e voltar
-          </Button>
           <Button
             color="indigo"
             radius="xl"

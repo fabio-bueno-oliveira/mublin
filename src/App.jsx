@@ -1,6 +1,10 @@
 import React from 'react'
 import { RouterProvider } from 'react-router-dom'
-import { MantineProvider, createTheme, localStorageColorSchemeManager, Badge  } from '@mantine/core'
+import { 
+  MantineProvider, createTheme, 
+  localStorageColorSchemeManager,
+  Badge, Button
+} from '@mantine/core'
 import { Notifications } from '@mantine/notifications'
 import { AuthProvider } from './contexts/AuthContext'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -45,6 +49,21 @@ const theme = createTheme({
         fw: '500',
       },
     }),
+    Button: Button.extend({
+      defaultProps: {
+        size: "md",
+      },
+    }),
+  },
+})
+
+const resolver = () => ({
+  variables: {},
+  light: {},
+  dark: {
+    '--mantine-color-body':           '#121212',  // fundo principal — preto suave
+    '--mantine-color-default':        '#1e1e1e',  // Paper, Card, inputs
+    '--mantine-color-default-border': '#2e2e2e',  // bordas
   },
 })
 
@@ -61,6 +80,7 @@ function App() {
         theme={theme} 
         defaultColorScheme="light"
         colorSchemeManager={colorSchemeManager}
+        cssVariablesResolver={resolver}
       >
         <Notifications />
         <QueryClientProvider client={queryClient}>
