@@ -15,9 +15,9 @@ import {
 import { useAuth } from '../hooks/useAuth'
 import { Helmet } from 'react-helmet-async'
 import {
-  Container, Modal, Grid, Scroller, Avatar, Paper, Box, Anchor, Center,
+  Container, Modal, Grid, Scroller, Avatar, Paper, Box, Indicator,
   Card, Button, Title, Text, Group, Flex, Stack, ActionIcon, NativeSelect,
-  Skeleton, ScrollArea, Alert, Badge, Image, Tooltip, Indicator, em
+  Skeleton, ScrollArea, Alert, Anchor, Image, Tooltip, Pill, em,
 } from '@mantine/core'
 import { useMediaQuery, useDisclosure } from '@mantine/hooks'
 import LoadingSkeleton from '../components/profile/LoadingSkeleton'
@@ -29,7 +29,9 @@ import ProfileHeaderMobile from '../components/profile/ProfileHeaderMobile'
 import { 
   IconMoodSad, IconRosetteDiscountCheckFilled,
   IconWorld, IconShieldCheckFilled, IconArrowsMaximize, IconPlus, IconSettings,
-  IconCircleArrowLeftFilled, IconCircleArrowRightFilled, IconCheck
+  IconCircleArrowLeftFilled, IconCircleArrowRightFilled, IconCheck,
+  IconMessage,
+  IconBrandWhatsapp
 } from '@tabler/icons-react'
 import { truncateString } from '../utils/formatter'
 import { isProfileLive } from '../utils/live'
@@ -133,9 +135,9 @@ export default function Profile() {
     status:  r.status,
     type:    r.projects?.project_types?.name_ptbr ?? 'Outro', 
     roles: [
-      r.roles?.name_ptbr,
-      r.role2?.name_ptbr,
-      r.role3?.name_ptbr,
+      r.roles?.description_ptbr,
+      r.role2?.description_ptbr,
+      r.role3?.description_ptbr,
     ].filter(Boolean),
   })) || [];
 
@@ -211,10 +213,20 @@ export default function Profile() {
         <Grid>
           <Grid.Col span={{ base: 12, md: 8 }}>
             <Group align="flex-start" gap="md" mb="lg" visibleFrom="sm">
-              <Avatar
-                size={96}
-                src={profile.avatar ? AVATAR_PATH + profile.avatar : undefined}
-              />
+              <Indicator 
+                position='bottom-center' 
+                inline 
+                label={<Text size='0.7rem' >Disponível</Text>} 
+                color='green' 
+                size={18} 
+                withBorder 
+                disabled={!profile.is_open_to_work}
+              >
+                <Avatar
+                  size={96}
+                  src={profile.avatar ? AVATAR_PATH + profile.avatar : undefined}
+                />
+              </Indicator>
               <Stack gap={2} flex={1}>
                 <Flex align="center" gap={2} wrap="wrap">
                   <Title order={1} size="25px" lts='-0.02em' lh='1'>
@@ -245,22 +257,28 @@ export default function Profile() {
                     </Button>
                   )}
                 </Flex>
-                <Flex align="center" gap={4} opacity={0.6}>
-                  <Text size="sm">
+                <Flex align="center" gap={4}>
+                  <Text size="sm" opacity={0.6}>
                     @{profile.username}
                   </Text>
                   {(city || regionUf) && (
-                    <Text size="sm">
+                    <Text size="sm" opacity={0.6}>
                       · {[city, regionUf]
                         .filter(Boolean)
                         .join('/')}
                     </Text>
                   )}
                   {isProfileLive(profile) && (
-                    <Group gap={6} ml={10} align="center">
-                      <span className="live-dot" />
-                      <Text size="11px" fw={600} c="red" tt="uppercase">
-                        AO VIVO em {profile.live_platform}
+                    <Group gap={6} ml={10} align="center" wrap="nowrap">
+                      <Box component="span" className="live-dot" style={{ flexShrink: 0 }} />
+                      <Text 
+                        size="11px" 
+                        fw={600}
+                        c="red.7"
+                        tt="uppercase" 
+                        lts="0.02em"
+                      >
+                        Ao vivo em {profile.live_platform}
                       </Text>
                     </Group>
                   )}
@@ -274,17 +292,15 @@ export default function Profile() {
                   <Scroller>
                     <Group gap={4} wrap="nowrap">
                       {roles.map(({ id, main_activity, roles: role }) => (
-                        <Badge 
+                        <Pill 
                           key={id} 
-                          variant="light" 
-                          color="gray"
                           fw='500' 
                           size="sm"
                           radius="sm"
                         >
                           {role?.name_ptbr}
                           {main_activity ? ' ★' : ''}
-                        </Badge>
+                        </Pill>
                       ))}
                     </Group>
                   </Scroller>
@@ -295,7 +311,7 @@ export default function Profile() {
               {profile.bio && (
                 <Box
                   mt={isMobile ? 14 : 0}
-                  onClick={profile.bio.length > 240 ? openModalBio : undefined}
+                  onClick={openModalBio}
                   style={{ 
                     cursor: profile.bio.length > 240 ? 'pointer' : undefined,
                     whiteSpace: 'pre-wrap' 
@@ -544,7 +560,7 @@ export default function Profile() {
                 </NativeSelect>
               )}
               <Paper
-                p="xs"
+                p="sm"
                 withBorder
                 h="100%"
               >
@@ -623,7 +639,7 @@ export default function Profile() {
             </Stack>
           </Grid.Col>
           <Grid.Col span={{ base: 12, md: 4 }}>
-            <Stack gap={12}>
+            <Stack gap={10}>
               <SectionPanel>
                 <SectionTitle text="Disponibilidade" mb="sm" />
                 {isLoadingProfileInfo || loadingWorkAvailability || loadingWorkFocus ? (
@@ -635,39 +651,29 @@ export default function Profile() {
                   </Group>
                 ) : (
                   <>
-                    <Title order={6} fw={400} mt="sm" mb="sm" c="dimmed">
+                    <Title order={3} fz="sm" opacity={0.8} fw={300} mt="sm" mb="xs">
                       Tipos de trabalho
                     </Title>
                     {workAvailability.length > 0 ? (
-                      <Group gap={4} wrap="wrap">
+                      <Group gap={6} wrap="wrap">
                         {workAvailability.map(item => (
-                          <Badge 
-                            key={item.id} 
-                            variant="light" 
-                            color="gray" 
-                            leftSection={<IconCheck color="green" size={12} stroke={4} />}
-                          >
-                            {item.work_types?.name_ptbr}
-                          </Badge>
+                          <Text span size="sm" key={item.id}>
+                            <IconCheck color="green" size={10} stroke={4} /> {item.work_types?.name_ptbr}
+                          </Text>
                         ))}
                       </Group>
                     ) : (
                       <Text size="sm" c="dimmed">Não informado</Text>
                     )}
-                    <Title order={6} fw={400} mt="sm" mb="sm" c="dimmed">
+                    <Title order={3} fz="sm" opacity={0.8} fw={300} mt="sm" mb="xs">
                       Vínculos de preferência
                     </Title>
                     {workFocus.length > 0 ? (
-                      <Group gap={4} wrap="wrap">
+                      <Group gap={6} wrap="wrap">
                         {workFocus.map(item => (
-                          <Badge 
-                            key={item.id} 
-                            variant="light" 
-                            color="gray" 
-                            leftSection={<IconCheck color="green" size={12} stroke={4} />}
-                          >
-                            {item.work_focuses?.title_ptbr}
-                          </Badge>
+                          <Text span size="sm" key={item.id}>
+                            <IconCheck color="green" size={10} stroke={4} /> {item.work_focuses?.title_ptbr}
+                          </Text>
                         ))}
                       </Group>
                     ) : (
@@ -677,53 +683,81 @@ export default function Profile() {
                 )}
               </SectionPanel>
               <SectionPanel>
-                <SectionTitle text="Redes" mb="sm" />
-                {/* Social links + website */}
-                {(profile.profile_social_links.length > 0 || profile.website) && (
-                  <Group gap={10} wrap="wrap">
-                    {profile.website && (
-                      <ActionIcon
-                        component="a"
-                        href={profile.website}
+                <SectionTitle text="Contato" mb="sm" />
+                {/* Telefone — só exibe se phone_number_is_public */}
+                {profile.phone_number && profile.phone_number_is_public && (
+                  <Group gap="xs" mb="xs">
+                    {profile.phone_number_is_whatsapp ? (
+                      <Anchor
+                        href={`https://wa.me/${profile.phone_number.replace(/\D/g, '')}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        variant="light"
-                        size="md"
-                        radius="xl"
-                        title={profile.website}
+                        underline="never"
                       >
-                        <IconWorld size={17} />
-                      </ActionIcon>
+                        <Group gap="xs">
+                          <IconBrandWhatsapp size={16} color="var(--mantine-color-green-6)" />
+                          <Text size="sm">{profile.phone_number}</Text>
+                        </Group>
+                      </Anchor>
+                    ) : (
+                      <>
+                        <IconPhone size={16} opacity={0.6} />
+                        <Text size="sm">{profile.phone_number}</Text>
+                      </>
                     )}
-                    {profile.profile_social_links.map(link => {
-                      const config = SOCIAL_CONFIG[link.platform]
-                      if (!config) return null
-                      const Icon = config.icon
-                      const href = `${config.base}${link.handle}`
-                      return (
-                        <Tooltip 
-                          key={link.platform}
-                          label={`${link.platform}: ${link.handle}`}
-                          position="bottom"
-                          withArrow
-                        >
-                          <ActionIcon
-                            component="a"
-                            href={href}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            variant="filled"
-                            color={config.color}
-                            size="md"
-                            radius="xl"
-                            title={`${link.platform}: ${link.handle}`}
-                          >
-                            <Icon size={17} />
-                          </ActionIcon>
-                        </Tooltip>
-                      )
-                    })}
                   </Group>
+                )}
+                {/* Redes sociais + website */}
+                {(profile.profile_social_links.length > 0 || profile.website) && (
+                  <>
+                    <Title order={3} fz="sm" opacity={0.8} fw={300} mt="sm" mb="sm">
+                      Redes
+                    </Title>
+                    <Group gap={10} wrap="wrap">
+                      {profile.website && (
+                        <ActionIcon
+                          component="a"
+                          href={profile.website}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          variant="light"
+                          size="lg"
+                          radius="xl"
+                          title={profile.website}
+                        >
+                          <IconWorld size={18} />
+                        </ActionIcon>
+                      )}
+                      {profile.profile_social_links.map(link => {
+                        const config = SOCIAL_CONFIG[link.platform]
+                        if (!config) return null
+                        const Icon = config.icon
+                        const href = `${config.base}${link.handle}`
+                        return (
+                          <Tooltip
+                            key={link.platform}
+                            label={`${link.platform}: ${link.handle}`}
+                            position="bottom"
+                            withArrow
+                          >
+                            <ActionIcon
+                              component="a"
+                              href={href}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              variant="filled"
+                              color={config.color}
+                              size="md"
+                              radius="xl"
+                              title={`${link.platform}: ${link.handle}`}
+                            >
+                              <Icon size={17} />
+                            </ActionIcon>
+                          </Tooltip>
+                        )
+                      })}
+                    </Group>
+                  </>
                 )}
               </SectionPanel>
               <SectionPanel>
@@ -771,11 +805,11 @@ export default function Profile() {
                             )}
                           </Group>
                           {p.title && (
-                            <Text size="xs" lineClamp={2} maw={220}>
+                            <Text size="xs" lineClamp={1} maw={250}>
                               {p.title}
                             </Text>
                           )}
-                          <Text size="xs" c="dimmed" truncate="end" maw={220}>
+                          <Text size="xs" c="dimmed" truncate="end" maw={236}>
                             {p.roles?.map((role, index) => (
                               <Text span key={role.id}>
                                 {role.name_ptbr}
@@ -804,6 +838,19 @@ export default function Profile() {
         centered
         scrollAreaComponent={ScrollArea.Autosize}
       >
+        {profile.cover_image && 
+          <Card shadow={false} padding={0} radius={0} mb={14}>
+            <Card.Section>
+              <Image
+                src={profile.cover_image 
+                  ? `https://ik.imagekit.io/mublin/tr:h-200,c-maintain_ratio/users/avatars/${profile.cover_image}` 
+                  : 'https://ik.imagekit.io/mublin/bg/tr:w-1920,h-200,bg-F3F3F3,fo-bottom/open-air-concert.jpg'}
+                height={100}
+                alt={`Imagem de capa de ${profile.name}`}
+              />
+            </Card.Section>
+          </Card>
+        }
         <Text size="sm" style={{ whiteSpace: 'pre-wrap' }}>
           {profile.bio || 'Nenhuma informação fornecida.'}
         </Text>

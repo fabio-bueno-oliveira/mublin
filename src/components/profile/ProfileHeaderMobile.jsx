@@ -8,8 +8,8 @@ import {
   IconLink,
   IconShieldCheckFilled
 } from '@tabler/icons-react'
+import { isProfileLive } from '../../utils/live'
 import { truncateString } from '../../utils/formatter'
-import { SOCIAL_CONFIG } from '../../constants/socialConfig'
 
 const AVATAR_PATH = 'https://ik.imagekit.io/mublin/tr:h-200,c-maintain_ratio/users/avatars/'
 
@@ -17,8 +17,8 @@ export default function ProfileHeaderMobile({ profile, roles, city, regionUf, us
   return (
     <Box px='0' py='0'>
       <Flex
-        justify='flex-start'
-        align="flex-start"
+        justify="flex-start"
+        align="center"
         direction='row'
         wrap='nowrap'
         columnGap='xs'
@@ -27,7 +27,7 @@ export default function ProfileHeaderMobile({ profile, roles, city, regionUf, us
           position='bottom-center' 
           inline 
           label={<Text size='0.7rem' >Disponível</Text>} 
-          color='lime' 
+          color='green' 
           size={18} 
           withBorder 
           disabled={!profile.is_open_to_work}
@@ -58,7 +58,7 @@ export default function ProfileHeaderMobile({ profile, roles, city, regionUf, us
               <Badge
                 title='Usuário PRO'
                 radius='sm'
-                size='xs'
+                size='sm'
                 variant="light"
                 color="gray"
               >
@@ -66,14 +66,6 @@ export default function ProfileHeaderMobile({ profile, roles, city, regionUf, us
               </Badge>
             }
           </Flex>
-          <Text 
-            fz="sm" 
-            lh={1.3}
-            mb={2}
-            lineClamp={2}
-          >
-            {profile.title}
-          </Text>
           <Flex align="center" gap={4} opacity={0.6}>
             <Text size="sm">
               @{profile.username}
@@ -86,22 +78,27 @@ export default function ProfileHeaderMobile({ profile, roles, city, regionUf, us
               </Text>
             )}
           </Flex>
-          {roles && roles.length > 0 && (
-            <Scroller>
-              <Group gap={4} wrap="nowrap" style={{ width: "max-content" }}>
-                {roles.map(({ id, main_activity, roles: role }) => (
-                  <Pill 
-                    key={id} 
-                    fw='500' 
-                    size="sm"
-                    radius="sm"
-                  >
-                    {role?.name_ptbr}
-                    {main_activity ? ' ★' : ''}
-                  </Pill>
-                ))}
-              </Group>
-            </Scroller>
+          <Text 
+            fz="sm" 
+            lh={1.3}
+            mt={2}
+            lineClamp={2}
+          >
+            {profile.title}
+          </Text>
+          {isProfileLive(profile) && (
+            <Group gap={6} mt={3} align="center" wrap="nowrap">
+              <Box component="span" className="live-dot" style={{ flexShrink: 0 }} />
+              <Text 
+                size="11px" 
+                fw={600}
+                c="red.7"
+                tt="uppercase" 
+                lts="0.02em"
+              >
+                Ao vivo em {profile.live_platform}
+              </Text>
+            </Group>
           )}
         </Box>
       </Flex>
@@ -122,11 +119,28 @@ export default function ProfileHeaderMobile({ profile, roles, city, regionUf, us
           </Flex>
         </Anchor>
       }
+      {roles && roles.length > 0 && (
+        <Scroller mt={13}>
+          <Group gap={4} wrap="nowrap" style={{ width: "max-content" }}>
+            {roles.map(({ id, main_activity, roles: role }) => (
+              <Pill 
+                key={id} 
+                fw='500' 
+                size="sm"
+                radius="sm"
+              >
+                {role?.description_ptbr}
+                {main_activity ? ' ★' : ''}
+              </Pill>
+            ))}
+          </Group>
+        </Scroller>
+      )}
       {user?.id === profile.id && (
         <Button
           component={Link}
           to="/settings/profile"
-          size="compact-sm"
+          size="sm"
           variant="default"
           mt={10}
           fullWidth

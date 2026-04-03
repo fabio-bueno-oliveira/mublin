@@ -15,8 +15,10 @@ import { notifications } from '@mantine/notifications'
 import {
   IconSearch, IconCheck, IconAlertCircle,
   IconBrandInstagram, IconBrandTiktok, IconWorld,
-  IconBrandYoutube, IconBrandTwitch, IconVideo
+  IconBrandYoutube, IconBrandTwitch, IconVideo, IconPhone
 } from '@tabler/icons-react'
+import { PhoneInput } from 'react-international-phone'
+import 'react-international-phone/style.css'
 
 // ── Queries locais ────────────────────────────────────────
 
@@ -110,6 +112,9 @@ export default function EditMyProfile() {
       tiktok: '',
       youtube: '',
       twitch: '',
+      phone_number: '',
+      phone_number_is_public: false,
+      phone_number_is_whatsapp: false,
     },
     validate: {
       full_name: (v) => (!v?.trim() ? 'Nome completo é obrigatório' : null),
@@ -172,6 +177,9 @@ export default function EditMyProfile() {
       gender:    savedProfile.gender    ?? '',
       region_id: savedProfile.region_id ? String(savedProfile.region_id) : '',
       website:   savedProfile.website   ?? '',
+      phone_number:             savedProfile.phone_number             ?? '',
+      phone_number_is_public:   savedProfile.phone_number_is_public   ?? false,
+      phone_number_is_whatsapp: savedProfile.phone_number_is_whatsapp ?? false,
     })
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [savedProfile])
@@ -314,6 +322,9 @@ export default function EditMyProfile() {
           is_live:         isLive,
           live_platform:   isLive ? livePlatform || null : null,
           live_expires_at: liveExpiresAt,
+          phone_number:             values.phone_number?.trim() || null,
+          phone_number_is_public:   values.phone_number_is_public,
+          phone_number_is_whatsapp: values.phone_number_is_whatsapp,
         })
         .eq('id', user.id)
 
@@ -539,6 +550,46 @@ export default function EditMyProfile() {
                   onClick={() => { if (form.values.region_id) openCityModal() }}
                 />
               </Input.Wrapper>
+            </Grid.Col>
+          </Grid>
+        </Stack>
+
+        <Divider />
+        {/* ── Contato ──────────────────────────────────── */}
+        <Stack gap="md">
+          <Text fw={600} size="sm" c="dimmed" tt="uppercase" lts="0.05em">
+            Contato
+          </Text>
+          <Grid>
+            <Grid.Col span={{ base: 12, sm: 6 }}>
+              <Input.Wrapper label="Telefone" description="Número com DDD e código do país">
+                <PhoneInput
+                  defaultCountry="br"
+                  value={form.values.phone_number}
+                  onChange={(val) => form.setFieldValue('phone_number', val)}
+                  style={{ '--react-international-phone-border-radius': 'var(--mantine-radius-default)' }}
+                />
+              </Input.Wrapper>
+            </Grid.Col>
+            <Grid.Col span={{ base: 12, sm: 6 }}>
+              <Stack gap="xs" mt={{ base: 0, sm: 24 }}>
+                <Switch
+                  label="Exibir telefone no perfil"
+                  checked={form.values.phone_number_is_public}
+                  disabled={!form.values.phone_number}
+                  onChange={(e) =>
+                    form.setFieldValue('phone_number_is_public', e.currentTarget.checked)
+                  }
+                />
+                <Switch
+                  label="É WhatsApp"
+                  checked={form.values.phone_number_is_whatsapp}
+                  disabled={!form.values.phone_number}
+                  onChange={(e) =>
+                    form.setFieldValue('phone_number_is_whatsapp', e.currentTarget.checked)
+                  }
+                />
+              </Stack>
             </Grid.Col>
           </Grid>
         </Stack>

@@ -17,7 +17,7 @@ import './styles.scss'
 
 const theme = createTheme({
   autoContrast: true,
-  primaryColor: 'indigo',
+  primaryColor: 'linkedin',
   primaryShade: { light: 6, dark: 5 },
 
   colors: {
@@ -32,6 +32,11 @@ const theme = createTheme({
       '#a87209', // 7 - pressed
       '#865907', // 8
       '#634104', // 9 - texto escuro
+    ],
+    linkedin: [
+      '#E8F3FF', '#CDE5FF', '#99C7FF', '#66A9FF', '#338BFF', 
+      '#0A66C2',
+      '#08529C', '#063F76', '#042C51', '#02192B'
     ],
   },
 

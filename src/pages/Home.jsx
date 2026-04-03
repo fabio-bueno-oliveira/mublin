@@ -22,7 +22,7 @@ import VideoPlayer from '../components/feed/VideoPlayer'
 import {
   IconCirclePlus, IconClock, IconRosetteDiscountCheckFilled, IconMessageCircle, 
   IconDots, IconLink, IconHeart, IconHeartFilled, IconTrash, 
-  IconPlus, IconPencil, IconBox
+  IconPlus, IconCubePlus, IconBulb, IconPencilPlus
 } from '@tabler/icons-react'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
@@ -118,11 +118,11 @@ function LikeButton({ postId, userId, likedPostIds, likesCount }) {
 export default function Home() {
   const queryClient = useQueryClient()
   const { profile, user } = useAuth()
+  const [affixOpen, setAffixOpen] = useState(false)
 
   const [postToDelete, setPostToDelete] = useState(null)
   const [isDeletingPost, setIsDeletingPost] = useState(false)
   const [confirmDeletePostOpened, { open: openConfirmDeletePost, close: closeConfirmDeletePost }] = useDisclosure(false)
-  const [affixOpen, setAffixOpen] = useState(false)
 
   const {
     data: feedData,
@@ -477,6 +477,13 @@ export default function Home() {
                               {post.body}
                             </Text>
 
+                            {post.image && (
+                              <Image
+                                src={`https://ik.imagekit.io/mublin/posts/tr:w-700/${post.image}`}
+                                radius="md"
+                              />
+                            )}
+
                             {post.video_url && (
                               <VideoPlayer url={post.video_url} title={post.body?.slice(0, 60)} />
                             )}
@@ -565,7 +572,7 @@ export default function Home() {
                   radius="xl"
                   size="sm"
                   variant="default"
-                  leftSection={<IconPencil size={15} />}
+                  leftSection={<IconPencilPlus size={15} />}
                   onClick={() => setAffixOpen(false)}
                 >
                   Novo post
@@ -576,7 +583,7 @@ export default function Home() {
                   radius="xl"
                   size="sm"
                   variant="default"
-                  leftSection={<IconMusic size={15} />}
+                  leftSection={<IconBulb size={15} />}
                   onClick={() => setAffixOpen(false)}
                 >
                   Novo projeto
@@ -587,7 +594,7 @@ export default function Home() {
                   radius="xl"
                   size="sm"
                   variant="default"
-                  leftSection={<IconBox size={15} />}
+                  leftSection={<IconCubePlus size={15} />}
                   onClick={() => setAffixOpen(false)}
                 >
                   Novo equipamento

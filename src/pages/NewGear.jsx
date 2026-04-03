@@ -222,21 +222,14 @@ export default function NewGear() {
   // ── Render ────────────────────────────────────────────
   return (
     <Container size="xs" py="md">
-      <Group gap={10} mb="lg" align="center">
-        <ThemeIcon variant="light" radius="xl" size="lg" color="indigo">
-          <IconCubePlus style={{ width: '65%', height: '65%' }} />
-        </ThemeIcon>
-        <Box>
-          <Title order={2} fz="h4" fw={600} lts="-0.02em">
-            Adicionar equipamento
-          </Title>
-          <Text size="sm" c="dimmed">
-            Selecione o produto que será adicionado
-          </Text>
-        </Box>
-      </Group>
+      <Title order={2} fz="h4" fw={600} lts="-0.02em">
+        Adicionar equipamento
+      </Title>
+      <Text size="sm" c="dimmed">
+        Selecione o produto que será adicionado
+      </Text>
 
-      <Stack gap="md">
+      <Stack gap="md" mt={20}>
 
         {/* ── Seleção em cascata ─────────────────────── */}
         <NativeSelect

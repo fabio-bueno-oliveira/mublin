@@ -114,10 +114,10 @@ export default function AppFooterMobile() {
               fullWidth
               onClick={() => setDrawerOpen(false)}
             >
-              Nova postagem
+              Novo post
             </Button>
             <Text ta="center" size="xs" c="dimmed" mt={5} px={10}>
-              Escreva um novo post
+              Escreva uma nova postagem
             </Text>
           </Box>
 

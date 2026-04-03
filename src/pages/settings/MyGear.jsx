@@ -113,7 +113,6 @@ export default function MyGear() {
     queryKey: ['user-gear', user?.id],
     queryFn: () => fetchUserGear(user.id),
     enabled: !!user?.id,
-    staleTime: 1000 * 60 * 5,
   })
 
   const { data: userSetups = [], isLoading: loadingSetups } = useQuery({
@@ -418,9 +417,8 @@ export default function MyGear() {
               </Text>
             </div>
             <Button
-              size="xs"
-              variant="light"
-              color="indigo"
+              size="sm"
+              variant="default"
               leftSection={<IconPlus size={13} />}
               onClick={openNewSetup}
             >
@@ -441,7 +439,7 @@ export default function MyGear() {
                   <Image
                     src={setup.image ? SETUP_IMG + setup.image : SETUP_IMG_FALLBACK}
                     h={60} w={60}
-                    mb={2} 
+                    mb={4} 
                     radius="md" 
                     fit="cover"
                     style={{ cursor: 'pointer', opacity: setup.image ? 1 : 0.5 }}
@@ -455,14 +453,14 @@ export default function MyGear() {
                     {setup.name}
                   </Text>
                   <ActionIcon.Group>
-                    <ActionIcon variant="default" size="md" onClick={() => handleOpenSetupDrawer(setup)}>
-                      <IconPencil size={12} />
+                    <ActionIcon variant="default" size="lg" onClick={() => handleOpenSetupDrawer(setup)}>
+                      <IconPencil size={14} />
                     </ActionIcon>
                     <ActionIcon
-                      variant="default" size="md" color="red"
+                      variant="default" size="lg" color="red"
                       onClick={() => { setSetupToDelete(setup); openConfirmDeleteSetup() }}
                     >
-                      <IconTrash size={12} />
+                      <IconTrash size={14} />
                     </ActionIcon>
                   </ActionIcon.Group>
                 </Flex>
@@ -490,14 +488,13 @@ export default function MyGear() {
               </Text>
             </div>
             <Button
-              size="xs"
-              variant="light"
-              color="indigo"
+              size="sm"
+              variant="default"
               leftSection={<IconPlus size={13} />}
               component={Link}
               to="/new/gear"
             >
-              Adicionar item
+              Adicionar
             </Button>
           </Group>
 
@@ -517,7 +514,7 @@ export default function MyGear() {
             <Grid gutter="sm">
               {mainGear.map(item => (
                 <Grid.Col key={item.id} span={{ base: 6, sm: 4, md: 3 }}>
-                  <Paper withBorder radius="md" p="sm" h="100%">
+                  <Paper bg="white" radius="md" p="sm" h="100%">
                     <Flex direction="column" gap="xs" h="100%">
                       <Image
                         src={item.products?.picture ? PRODUCT_IMG + item.products.picture : undefined}
@@ -532,7 +529,7 @@ export default function MyGear() {
                         </Text>
                         <Text 
                           size="xs" fw={600} ta="center" 
-                          lineClamp={1} 
+                          lineClamp={1} c="black"
                           style={{ lineHeight: 1.2 }}
                         >
                           {item.products?.name}
@@ -562,14 +559,18 @@ export default function MyGear() {
                       <Divider />
                       <Group gap={4} grow>
                         <ActionIcon
-                          variant="subtle" size="md" color="indigo"
+                          variant="filled" 
+                          color="dark.5"
+                          size="md"
                           onClick={() => handleOpenEditItem(item)}
                           title="Editar item"
                         >
                           <IconPencil size={13} />
                         </ActionIcon>
                         <ActionIcon
-                          variant="subtle" size="md" color="red"
+                          variant="filled" 
+                          color="red.8"
+                          size="md" 
                           onClick={() => handleOpenConfirmDelete(item)}
                           title="Remover item do meu equipamento"
                         >
@@ -834,9 +835,8 @@ export default function MyGear() {
             />
             <Group justify="flex-end">
               <Button
-                size="xs"
-                color="indigo"
-                radius="xl"
+                size="sm"
+                variant="default"
                 loading={isSavingSetup}
                 disabled={!editingSetup.name.trim()}
                 leftSection={<IconCheck size={13} />}
@@ -851,7 +851,7 @@ export default function MyGear() {
 
           {/* ── Botão adicionar item ────────────────────── */}
           <Button
-            size="xs"
+            size="sm"
             variant="light"
             color="indigo"
             leftSection={showAddToSetup ? <IconMinus size={13} /> : <IconPlus size={13} />}

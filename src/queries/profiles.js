@@ -21,6 +21,9 @@ export async function fetchBasicProfile(profileUsername) {
       is_live,
       live_platform,
       live_expires_at,
+      phone_number,
+      phone_number_is_public,
+      phone_number_is_whatsapp,
       cities (
         name
       ),
@@ -111,9 +114,9 @@ export async function fetchProfileProjects(profileId) {
     .select(`
       project_id,
       status,
-      roles!project_members_role_id_fkey ( name_ptbr ),
-      role2:roles!project_members_role_2_id_fkey ( name_ptbr ),
-      role3:roles!project_members_role_3_id_fkey ( name_ptbr ),
+      roles!project_members_role_id_fkey ( description_ptbr ),
+      role2:roles!project_members_role_2_id_fkey ( description_ptbr ),
+      role3:roles!project_members_role_3_id_fkey ( description_ptbr ),
       projects ( id, name, slug, picture, description, project_types ( name_ptbr ) )
     `)
     .eq('status', 2)

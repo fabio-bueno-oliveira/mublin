@@ -91,12 +91,7 @@ export default function SettingsLayout() {
   return (
     <Box>
       {/* Cabeçalho da seção */}
-      <Box
-        py="md"
-        style={{
-          borderBottom: '1px solid var(--mantine-color-default-border)',
-        }}
-      >
+      <Box py="md">
         <Container size="lg">
           <Group gap="xs" align="baseline">
             <Title order={2} fw={700} size="h3">
@@ -112,7 +107,6 @@ export default function SettingsLayout() {
       {/* Tabs de navegação */}
       <Box
         style={{
-          borderBottom: '1px solid var(--mantine-color-default-border)',
           position: 'sticky',
           top: 0,
           zIndex: 100,

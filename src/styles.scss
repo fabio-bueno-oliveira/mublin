@@ -69,16 +69,38 @@
   align-items: center;
 }
 
-@keyframes live-dot {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(224, 49, 49, 0.5); }
-  50%       { box-shadow: 0 0 0 5px rgba(224, 49, 49, 0); }
+@keyframes live-pulse {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(224, 49, 49, 0.7);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 8px rgba(224, 49, 49, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(224, 49, 49, 0);
+  }
 }
 
 .live-dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: var(--mantine-color-red-6);
-  animation: live-dot 1.2s ease-in-out infinite;
+  background-color: var(--mantine-color-red-6);
   display: inline-block;
+  position: relative;
+  /* Animação mais suave e visível */
+  animation: live-pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Opcional: Um brilho fixo interno para o ponto não sumir no fundo escuro */
+.live-dot::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  border-radius: 50%;
+  background: inherit;
 }
