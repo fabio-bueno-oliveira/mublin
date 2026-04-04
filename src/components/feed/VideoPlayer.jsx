@@ -1,7 +1,5 @@
 import { useState } from 'react'
-import {
-  Box, Flex
-} from '@mantine/core'
+import { Box, Flex } from '@mantine/core'
 
 function getYouTubeId(url) {
   const match = url.match(
@@ -10,10 +8,23 @@ function getYouTubeId(url) {
   return match ? match[1] : null
 }
 
-export default function VideoPlayer({ url, title }) {
+export default function VideoPlayer({ url, title, thumbnailOnly = false }) {
   const [expanded, setExpanded] = useState(false)
   const ytId = getYouTubeId(url)
   if (!ytId) return null
+
+  const thumbnail = (
+    <img
+      src={`https://img.youtube.com/vi/${ytId}/hqdefault.jpg`}
+      alt="Thumbnail do vídeo"
+      style={{
+        position: 'absolute',
+        top: 0, left: 0,
+        width: '100%', height: '100%',
+        objectFit: 'cover',
+      }}
+    />
+  )
 
   return (
     <Box
@@ -23,11 +34,13 @@ export default function VideoPlayer({ url, title }) {
         paddingTop: '56.25%',
         borderRadius: 'var(--mantine-radius-md)',
         overflow: 'hidden',
-        cursor: expanded ? 'default' : 'pointer',
+        cursor: thumbnailOnly ? 'default' : expanded ? 'default' : 'pointer',
       }}
-      onClick={() => !expanded && setExpanded(true)}
+      onClick={() => !thumbnailOnly && !expanded && setExpanded(true)}
     >
-      {expanded ? (
+      {thumbnailOnly ? (
+        thumbnail
+      ) : expanded ? (
         <iframe
           src={`https://www.youtube.com/embed/${ytId}?autoplay=1&rel=0&modestbranding=1`}
           width="100%"
@@ -39,16 +52,7 @@ export default function VideoPlayer({ url, title }) {
         />
       ) : (
         <>
-          <img
-            src={`https://img.youtube.com/vi/${ytId}/hqdefault.jpg`}
-            alt="Thumbnail do vídeo"
-            style={{
-              position: 'absolute',
-              top: 0, left: 0,
-              width: '100%', height: '100%',
-              objectFit: 'cover',
-            }}
-          />
+          {thumbnail}
           <Flex
             align="center"
             justify="center"

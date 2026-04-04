@@ -465,8 +465,18 @@ export default function Profile() {
                         >
                           {post.body}
                         </Text>
+                        {post.image && (
+                          <Link to={`/post/${post.id}`}>
+                            <Image
+                              src={`https://ik.imagekit.io/mublin/posts/tr:w-700/${post.image}`}
+                              radius="md"
+                            />
+                          </Link>
+                        )}
                         {post.video_url && (
-                          <VideoPlayer url={post.video_url} title={post.body?.slice(0, 60)} />
+                          <Link to={`/post/${post.id}`}>
+                            <VideoPlayer url={post.video_url} thumbnailOnly />
+                          </Link>
                         )}
                         {(post.linked_gig_id || post.linked_product_id) && (
                           <LinkedItem post={{

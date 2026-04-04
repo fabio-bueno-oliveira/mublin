@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useUI } from '../contexts/UIContext'
 import { useParams, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { 
@@ -29,10 +30,16 @@ const PRODUCT_IMG_LG = 'https://ik.imagekit.io/mublin/products/tr:w-400,cm-pad_r
 export default function ProfileGear() {
   const { username } = useParams()
   const { loading: authLoading } = useAuth()
+  const { setHideFooter } = useUI()
 
   // ── Modal de detalhe ──────────────────────────────────
   const [modalOpened, { open: openModal, close: closeModal }] = useDisclosure(false)
   const [selectedItem, setSelectedItem] = useState(null)
+
+  useEffect(() => {
+    setHideFooter(modalOpened)
+    return () => setHideFooter(false)
+  }, [modalOpened])
 
   function handleOpenModal(item) {
     setSelectedItem(item)
@@ -283,7 +290,7 @@ export default function ProfileGear() {
       >
         {selectedItem && (
           <>
-            <Center>
+            <Center mt={10}>
               <Image
                 src={selectedItem.products?.picture
                   ? PRODUCT_IMG_LG + selectedItem.products.picture

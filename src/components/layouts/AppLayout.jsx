@@ -2,6 +2,7 @@ import { Outlet, Navigate } from 'react-router-dom'
 import { AppShell, Burger, Center, Loader } from '@mantine/core'
 import { useDisclosure, useMediaQuery } from '@mantine/hooks'
 import { useAuth } from '../../hooks/useAuth'
+import { useUI } from '../../contexts/UIContext'
 import AppNavbar from '../AppNavbar'
 import AppSidebar from '../AppSidebar'
 import AppFooterMobile from '../AppFooterMobile'
@@ -10,6 +11,7 @@ export default function AppLayout({ children }) {
   const [opened, { toggle }] = useDisclosure()
   const { session, loading } = useAuth()
   const isMobile = useMediaQuery('(max-width: 48em)')
+  const { hideFooter } = useUI()
 
   if (loading) return (
     <Center h="100vh">
@@ -53,7 +55,7 @@ export default function AppLayout({ children }) {
         {children ?? <Outlet />}
       </AppShell.Main>
 
-      <AppFooterMobile />
+      {!hideFooter && <AppFooterMobile />}
     </AppShell>
   )
 }

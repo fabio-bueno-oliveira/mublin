@@ -7,6 +7,7 @@ import {
 } from '@mantine/core'
 import { Notifications } from '@mantine/notifications'
 import { AuthProvider } from './contexts/AuthContext'
+import { UIProvider } from './contexts/UIContext'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { router } from './routes'
 import '@mantine/core/styles.css'
@@ -84,7 +85,9 @@ function App() {
         <Notifications />
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
-            <RouterProvider router={router} />
+            <UIProvider>
+              <RouterProvider router={router} />
+            </UIProvider>
           </AuthProvider>
         </QueryClientProvider>
       </MantineProvider>
