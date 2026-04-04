@@ -18,8 +18,8 @@ import {
 } from '@tabler/icons-react'
 
 const PRODUCT_IMG  = 'https://ik.imagekit.io/mublin/products/tr:h-160,cm-pad_resize,bg-FFFFFF/'
-const SETUP_IMG    = 'https://ik.imagekit.io/mublin/users/gear-setups/tr:w-120,h-120/'
-const SETUP_IMG_FALLBACK = 'https://ik.imagekit.io/mublin/bg/tr:w-120,h-120/blue-soft_1_.jpg'
+const SETUP_IMG    = 'https://ik.imagekit.io/mublin/users/gear-setups/tr:w-140,h-140/'
+const SETUP_IMG_FALLBACK = 'https://ik.imagekit.io/mublin/bg/tr:w-140,h-140/blue-soft_1_.jpg'
 
 // ── Queries locais ────────────────────────────────────────
 
@@ -413,7 +413,7 @@ export default function MyGear() {
                 </Text>
               </Group>
               <Text size="xs" c="dimmed" mt={2}>
-                Grupos de equipamentos para apresentações
+                Grupos de equipamentos para ocasiões específicas
               </Text>
             </div>
             <Button
@@ -438,7 +438,7 @@ export default function MyGear() {
                 <Flex key={setup.id} direction="column" align="center" gap={4} w={80}>
                   <Image
                     src={setup.image ? SETUP_IMG + setup.image : SETUP_IMG_FALLBACK}
-                    h={60} w={60}
+                    h={70} w={70}
                     mb={4} 
                     radius="md" 
                     fit="cover"
@@ -447,8 +447,9 @@ export default function MyGear() {
                   />
                   <Text 
                     size="xs" fw={550} ta="center" 
-                    lineClamp={2} 
+                    lineClamp={1} 
                     style={{ lineHeight: 1.2 }}
+                    title={setup.name}
                   >
                     {setup.name}
                   </Text>
@@ -839,7 +840,6 @@ export default function MyGear() {
                 variant="default"
                 loading={isSavingSetup}
                 disabled={!editingSetup.name.trim()}
-                leftSection={<IconCheck size={13} />}
                 onClick={handleSaveSetup}
               >
                 Atualizar

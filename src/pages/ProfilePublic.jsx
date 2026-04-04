@@ -87,7 +87,7 @@ export default function ProfilePublic() {
                 <Scroller>
                   <Group gap={4} wrap="nowrap">
                     {roles && roles.map(({ id, main_activity, roles: role }) => (
-                      <Badge key={id} variant="light" fw='500' size="sm" color={main_activity ? 'amber' : 'gray'}>
+                      <Badge key={id} variant="light" fw='500' size="sm" color={main_activity ? 'indigo' : 'gray'}>
                         {role.name_ptbr}
                       </Badge>
                     ))}
@@ -114,7 +114,7 @@ export default function ProfilePublic() {
             <Group justify="space-between" align="center" wrap="wrap" gap="md">
               <Stack gap={2}>
                 <Group gap={6}>
-                  <IconMusic size={16} color="var(--mantine-color-amber-6)" />
+                  <IconMusic size={16} color="var(--mantine-color-indigo-6)" />
                   <Text size="sm" fw={600}>Veja o perfil completo no Mublin</Text>
                 </Group>
                 <Text size="xs" c="dimmed">
@@ -132,7 +132,7 @@ export default function ProfilePublic() {
                   Entrar
                 </Button>
                 <Button
-                  color="amber"
+                  color="indigo"
                   size="sm"
                   radius="xl"
                   rightSection={<IconArrowRight size={14} />}

@@ -178,6 +178,24 @@ export async function fetchProfileGearExpanded(profileId) {
   return data
 }
 
+export async function fetchProfileGearSetupNames(profileId) {
+  const { data, error } = await supabase
+    .from('gear_setup_items')
+    .select(`
+      id_product,
+      gear_setups ( id, name )
+    `)
+    .eq('id_user', profileId)
+  if (error) throw new Error(error.message)
+  // Agrupa por id_product: { [id_product]: ['Setup A', 'Setup B'] }
+  return data.reduce((acc, item) => {
+    if (!item.gear_setups?.name) return acc
+    if (!acc[item.id_product]) acc[item.id_product] = []
+    acc[item.id_product].push(item.gear_setups.name)
+    return acc
+  }, {})
+}
+
 export async function fetchProfileWorkAvailability(profileId) {
   const { data, error } = await supabase
     .from('profile_work_availability')

@@ -1,7 +1,11 @@
 import { useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { fetchBasicProfile, fetchProfileGearExpanded } from '../queries/profiles'
+import { 
+  fetchBasicProfile, 
+  fetchProfileGearExpanded, 
+  fetchProfileGearSetupNames 
+} from '../queries/profiles'
 import { useAuth } from '../hooks/useAuth'
 import {
   Container, Avatar, Title, Text, Group, Flex, Stack, Box,
@@ -47,6 +51,13 @@ export default function ProfileGear() {
   const { data: gear = [], isLoading: loadingGear } = useQuery({
     queryKey: ['profile-gear-expanded', profile?.id],
     queryFn: () => fetchProfileGearExpanded(profile.id),
+    enabled: !!profile?.id,
+    staleTime: 1000 * 60 * 5,
+  })
+
+  const { data: setupNames = {} } = useQuery({
+    queryKey: ['profile-gear-setup-names', profile?.id],
+    queryFn: () => fetchProfileGearSetupNames(profile.id),
     enabled: !!profile?.id,
     staleTime: 1000 * 60 * 5,
   })
@@ -122,7 +133,7 @@ export default function ProfileGear() {
                 />
               )}
             </Flex>
-            <Text size="sm">
+            <Text size="sm" c="dimmed">
               {loadingGear ? '...' : gear.length} {gear.length === 1 ? 'item' : 'itens'} no equipamento
             </Text>
             <Anchor
@@ -179,10 +190,10 @@ export default function ProfileGear() {
                     />
                   </Center>
 
-                  <Text ta="center" size="xs" c="dimmed" fw={400}>
+                  <Text ta="center" size="xs" c="black" fw={400}>
                     {item.products?.product_categories?.name_ptbr} · {item.products?.brands?.name}
                   </Text>
-                  <Text ta="center" size="sm" c="black" fw={550} lh={1.3} mt={2}>
+                  <Text ta="center" size="md" c="black" fw={550} lh={1.3} mt={2}>
                     {item.products?.name}
                   </Text>
 
@@ -205,7 +216,11 @@ export default function ProfileGear() {
                       )}
                     </Flex>
                   )}
-
+                  {setupNames[item.id_product]?.length > 0 && (
+                    <Text size="xs" c="dimmed" ta="center" mt={6}>
+                      Incluído no{setupNames[item.id_product]?.length !== 1 && 's'} setup{setupNames[item.id_product]?.length !== 1 && 's'} : <strong>{setupNames[item.id_product].join(', ')}</strong>
+                    </Text>
+                  )}
                   {item.owner_comments && (
                     <Paper p="xs" bg="#d3d3d3" mt={8} w="100%">
                       <Text size="xs" c="black" lineClamp={2}>{item.owner_comments}</Text>
@@ -228,10 +243,10 @@ export default function ProfileGear() {
         title={
           selectedItem && (
             <Stack gap={2}>
-              <Text size="sm" c="dimmed">
+              <Text size="xs" c="dimmed">
                 {selectedItem.products?.product_categories?.name_ptbr}
               </Text>
-              <Text size="lg" fw={700} lh={1.2}>
+              <Text size="xl" mb={4} fw={700} lh={1.2}>
                 {selectedItem.products?.brands?.name} {selectedItem.products?.name}
               </Text>
               <Flex gap={5} align="center">
@@ -250,6 +265,18 @@ export default function ProfileGear() {
                   </Flex>
                 </Box>
               </Flex>
+              {setupNames[selectedItem?.id_product]?.length > 0 && (
+                <Group gap={3} wrap="wrap">
+                  <Text size="xs" c="dimmed">
+                    Incluído no{setupNames[selectedItem?.id_product]?.length !== 1 && 's'} setup{setupNames[selectedItem?.id_product]?.length !== 1 && 's'}
+                  </Text>
+                  {setupNames[selectedItem.id_product].map(name => (
+                    <Badge key={name} size="sm" variant="light">
+                      {name}
+                    </Badge>
+                  ))}
+                </Group>
+              )}
             </Stack>
           )
         }
@@ -305,16 +332,18 @@ export default function ProfileGear() {
                 </Text>
               </Paper>
             )}
-            <Anchor
-              component={Link}
-              to={`/gear/${selectedItem.products?.slug}`}
-              size="xs"
-              fw={500}
-              mt={2}
-              onClick={closeModal}
-            >
-              Ir para a página deste produto →
-            </Anchor>
+            <Group justify="right">
+              <Anchor
+                component={Link}
+                to={`/gear/${selectedItem.products?.slug}`}
+                size="xs"
+                fw={500}
+                mt={2}
+                onClick={closeModal}
+              >
+                Ir para a página deste produto →
+              </Anchor>
+            </Group>
           </>
         )}
       </Modal>

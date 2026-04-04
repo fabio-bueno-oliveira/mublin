@@ -240,7 +240,7 @@ export default function MusicalPreferences() {
               {userGenres.length > 0 ? userGenres.map(genre => (
                 <Badge
                   key={genre.id}
-                  color={genre.main_genre ? 'amber' : 'gray'}
+                  color={genre.main_genre ? 'indigo' : 'gray'}
                   variant="light"
                   size="md"
                   rightSection={

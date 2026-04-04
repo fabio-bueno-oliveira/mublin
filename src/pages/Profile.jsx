@@ -15,9 +15,9 @@ import {
 import { useAuth } from '../hooks/useAuth'
 import { Helmet } from 'react-helmet-async'
 import {
-  Container, Modal, Grid, Scroller, Avatar, Paper, Box, Indicator,
+  Container, Modal, Grid, Scroller, Avatar, Paper, Box, Indicator, Spoiler,
   Card, Button, Title, Text, Group, Flex, Stack, ActionIcon, NativeSelect,
-  Skeleton, ScrollArea, Alert, Anchor, Image, Tooltip, Pill, em,
+  Skeleton, ScrollArea, Alert, Anchor, Image, Tooltip, Pill, Divider, em,
 } from '@mantine/core'
 import { useMediaQuery, useDisclosure } from '@mantine/hooks'
 import LoadingSkeleton from '../components/profile/LoadingSkeleton'
@@ -46,7 +46,7 @@ dayjs.locale('pt-br')
 const AVATAR_PATH = 'https://ik.imagekit.io/mublin/tr:h-200,c-maintain_ratio/users/avatars/'
 
 function SectionTitle({ text, mb }) {
-  return <Text fw={550} size="18px" mb={mb}>{text}</Text>
+  return <Text fw={600} size="17px" mb={mb}>{text}</Text>
 }
 
 export default function Profile() {
@@ -71,7 +71,7 @@ export default function Profile() {
   })
 
   const { data: projects = [], isLoading: loadingProjects } = useQuery({
-    queryKey: ['user-projects', profile?.id],
+    queryKey: ['profile-projects', profile?.id],
     queryFn: () => fetchProfileProjects(profile.id),
     enabled: !!profile?.id,
     staleTime: 1000 * 60 * 4,
@@ -309,22 +309,16 @@ export default function Profile() {
             </Group>
             <Stack gap={12}>
               {profile.bio && (
-                <Box
-                  mt={isMobile ? 14 : 0}
-                  onClick={openModalBio}
-                  style={{ 
-                    cursor: profile.bio.length > 240 ? 'pointer' : undefined,
-                    whiteSpace: 'pre-wrap' 
-                  }}
+                <Spoiler 
+                  maxHeight={66} 
+                  showLabel={<Text size='sm' fw={600}>...ver mais</Text>} 
+                  hideLabel={<Text size='sm' fw={600}>mostrar menos</Text>}
+                  mb={8}
                 >
-                  <Text fz="sm" pb="xs" lh={1.3}>
-                    <TruncatedText 
-                      fontSize="sm"
-                      text={profile.bio} 
-                      maxLength={240} 
-                    />
+                  <Text size='sm' mt={10} lh={1.3}>
+                    {profile.bio}
                   </Text>
-                </Box>
+                </Spoiler>
               )}
               {loadingProjects && (
                 <>
@@ -492,7 +486,10 @@ export default function Profile() {
                 </Group>
               </Scroller>
               <Group justify='space-between' align='center' gap={8} mt={10}>
-                <SectionTitle text={`Equipamento ${!!gear.length && `(${gear.length})`}`} mb="0" />
+                <SectionTitle 
+                  text={`Equipamento ${!!gear.length && `(${gear.length})`}`} 
+                  mb="0" 
+                />
                 <Group gap={8}>
                   {!!gear.length && 
                     <ActionIcon
@@ -586,15 +583,17 @@ export default function Profile() {
                       align='center'
                       w={140}
                     >
-                      <Image
-                        src={'https://ik.imagekit.io/mublin/products/tr:w-240,h-240,cm-pad_resize,bg-FFFFFF,fo-x/'+item.products?.picture}
-                        h={120}
-                        mah={120}
-                        w='auto'
-                        fit='contain'
-                        mb={10}
-                        radius='md'
-                      />
+                      <Link to={`/gear/${item.products?.slug}`}>
+                        <Image
+                          src={'https://ik.imagekit.io/mublin/products/tr:w-240,h-240,cm-pad_resize,bg-FFFFFF,fo-x/'+item.products?.picture}
+                          h={120}
+                          mah={120}
+                          w='auto'
+                          fit='contain'
+                          mb={10}
+                          radius='md'
+                        />
+                      </Link>
                       <Text size="xs" c="dimmed" fw={500} lineClamp={2}>
                         {item.products?.brands?.name}
                       </Text>
@@ -604,13 +603,12 @@ export default function Profile() {
                     </Flex>
                   ))}
                 </Scroller>
-              </Paper>
-              {gearSetups.length > 0 && 
-                <Box mt={8}>
-                  <Title fz='0.9rem' fw='640' mb={12}>
-                    Setups de {profile.full_name} {!!gearSetups.length && `(${gearSetups.length})`}
-                  </Title>
-                  <Flex gap={15}>
+                <Divider my="md" />
+                <Text fw={600} size="15px">
+                  Setups de {profile.full_name} {!!gearSetups.length && `(${gearSetups.length})`}
+                </Text>
+                {gearSetups.length > 0 && 
+                  <Flex gap={15} mt={18}>
                     {gearSetups.map(setup => (
                       <Box key={setup.id}>
                         <Flex direction='column' justify="center" gap={2}>
@@ -634,8 +632,8 @@ export default function Profile() {
                       </Box>
                     ))}
                   </Flex>
-                </Box>
-              }
+                }
+              </Paper>
             </Stack>
           </Grid.Col>
           <Grid.Col span={{ base: 12, md: 4 }}>
@@ -652,7 +650,7 @@ export default function Profile() {
                 ) : (
                   <>
                     <Title order={3} fz="sm" opacity={0.8} fw={300} mt="sm" mb="xs">
-                      Tipos de trabalho
+                      Tipos de trabalho:
                     </Title>
                     {workAvailability.length > 0 ? (
                       <Group gap={6} wrap="wrap">
@@ -666,7 +664,7 @@ export default function Profile() {
                       <Text size="sm" c="dimmed">Não informado</Text>
                     )}
                     <Title order={3} fz="sm" opacity={0.8} fw={300} mt="sm" mb="xs">
-                      Vínculos de preferência
+                      Vínculos de preferência:
                     </Title>
                     {workFocus.length > 0 ? (
                       <Group gap={6} wrap="wrap">
@@ -686,7 +684,7 @@ export default function Profile() {
                 <SectionTitle text="Contato" mb="sm" />
                 {/* Telefone — só exibe se phone_number_is_public */}
                 {profile.phone_number && profile.phone_number_is_public && (
-                  <Group gap="xs" mb="xs">
+                  <Group gap="xs">
                     {profile.phone_number_is_whatsapp ? (
                       <Anchor
                         href={`https://wa.me/${profile.phone_number.replace(/\D/g, '')}`}
@@ -707,57 +705,54 @@ export default function Profile() {
                     )}
                   </Group>
                 )}
-                {/* Redes sociais + website */}
+              </SectionPanel>
+              <SectionPanel>
+                <SectionTitle text="Redes" mb="sm" />
                 {(profile.profile_social_links.length > 0 || profile.website) && (
-                  <>
-                    <Title order={3} fz="sm" opacity={0.8} fw={300} mt="sm" mb="sm">
-                      Redes
-                    </Title>
-                    <Group gap={10} wrap="wrap">
-                      {profile.website && (
-                        <ActionIcon
-                          component="a"
-                          href={profile.website}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          variant="light"
-                          size="lg"
-                          radius="xl"
-                          title={profile.website}
+                  <Group gap={10} wrap="wrap">
+                    {profile.website && (
+                      <ActionIcon
+                        component="a"
+                        href={profile.website}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        variant="light"
+                        size="lg"
+                        radius="xl"
+                        title={profile.website}
+                      >
+                        <IconWorld size={18} />
+                      </ActionIcon>
+                    )}
+                    {profile.profile_social_links.map(link => {
+                      const config = SOCIAL_CONFIG[link.platform]
+                      if (!config) return null
+                      const Icon = config.icon
+                      const href = `${config.base}${link.handle}`
+                      return (
+                        <Tooltip
+                          key={link.platform}
+                          label={`${link.platform}: ${link.handle}`}
+                          position="bottom"
+                          withArrow
                         >
-                          <IconWorld size={18} />
-                        </ActionIcon>
-                      )}
-                      {profile.profile_social_links.map(link => {
-                        const config = SOCIAL_CONFIG[link.platform]
-                        if (!config) return null
-                        const Icon = config.icon
-                        const href = `${config.base}${link.handle}`
-                        return (
-                          <Tooltip
-                            key={link.platform}
-                            label={`${link.platform}: ${link.handle}`}
-                            position="bottom"
-                            withArrow
+                          <ActionIcon
+                            component="a"
+                            href={href}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            variant="filled"
+                            color={config.color}
+                            size="md"
+                            radius="xl"
+                            title={`${link.platform}: ${link.handle}`}
                           >
-                            <ActionIcon
-                              component="a"
-                              href={href}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              variant="filled"
-                              color={config.color}
-                              size="md"
-                              radius="xl"
-                              title={`${link.platform}: ${link.handle}`}
-                            >
-                              <Icon size={17} />
-                            </ActionIcon>
-                          </Tooltip>
-                        )
-                      })}
-                    </Group>
-                  </>
+                            <Icon size={17} />
+                          </ActionIcon>
+                        </Tooltip>
+                      )
+                    })}
+                  </Group>
                 )}
               </SectionPanel>
               <SectionPanel>

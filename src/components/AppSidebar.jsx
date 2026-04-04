@@ -64,13 +64,13 @@ export default function AppSidebar() {
                   style={{
                     minWidth: 44,
                     textAlign: 'center',
-                    background: 'var(--mantine-color-amber-0)',
+                    background: 'var(--mantine-color-yellow-0)',
                     borderRadius: 8,
                     padding: '6px 4px',
                   }}
                 >
                   <Text size="xs" c="dimmed" lh={1}>{gig.weekday}</Text>
-                  <Text fw={800} size="sm" c="amber" lh={1.2}>{gig.date.split(' ')[0]}</Text>
+                  <Text fw={800} size="sm" c="dark" lh={1.2}>{gig.date.split(' ')[0]}</Text>
                   <Text size="xs" c="dimmed" lh={1}>{gig.date.split(' ')[1]}</Text>
                 </Box>
                 <Stack gap={1} style={{ flex: 1 }}>

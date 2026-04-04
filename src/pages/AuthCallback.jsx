@@ -27,5 +27,5 @@ export default function AuthCallback() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  return <Center h="100vh"><Loader color="amber" /></Center>
+  return <Center h="100vh"><Loader color="indigo" /></Center>
 }

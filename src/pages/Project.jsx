@@ -251,7 +251,7 @@ export default function Project() {
                       </Menu>
                       <Button 
                         size="compact-xs" 
-                        color="amber.9" 
+                        color="indigo.9" 
                         variant="filled"
                         component={Link}
                         to={`/backstage?project=${slug}`}

@@ -3,7 +3,7 @@ import { RouterProvider } from 'react-router-dom'
 import { 
   MantineProvider, createTheme, 
   localStorageColorSchemeManager,
-  Badge, Button
+  Badge, Button, Paper
 } from '@mantine/core'
 import { Notifications } from '@mantine/notifications'
 import { AuthProvider } from './contexts/AuthContext'
@@ -17,28 +17,8 @@ import './styles.scss'
 
 const theme = createTheme({
   autoContrast: true,
-  primaryColor: 'linkedin',
+  primaryColor: 'indigo',
   primaryShade: { light: 6, dark: 5 },
-
-  colors: {
-    amber: [
-      '#fff8eb', // 0 - fundo suave
-      '#ffedc2', // 1
-      '#ffd980', // 2
-      '#ffc23d', // 3
-      '#ffb01a', // 4
-      '#e6a817', // 5 - principal
-      '#c98f0e', // 6 - hover
-      '#a87209', // 7 - pressed
-      '#865907', // 8
-      '#634104', // 9 - texto escuro
-    ],
-    linkedin: [
-      '#E8F3FF', '#CDE5FF', '#99C7FF', '#66A9FF', '#338BFF', 
-      '#0A66C2',
-      '#08529C', '#063F76', '#042C51', '#02192B'
-    ],
-  },
 
   fontFamily: 'Geist, Helvetica, Arial, sans-serif',
   fontFamilyMonospace: 'monospace',
@@ -59,16 +39,30 @@ const theme = createTheme({
         size: "md",
       },
     }),
+    Paper: Paper.extend({
+      styles: {
+        root: {
+          backgroundColor: 'light-dark(#ffffff, #1c1c1c)',
+          borderColor: 'light-dark(#dde1e7, #101010)',
+        },
+      },
+    }),
   },
 })
 
 const resolver = () => ({
   variables: {},
-  light: {},
+  light: {
+    '--mantine-color-body':           '#f0f2f5',  // fundo — mesmo cinza do Facebook
+    '--mantine-color-default':        '#ffffff',  // Paper, Card, inputs
+    '--mantine-color-default-border': '#dde1e7',  // borda sutil azulada
+  },
   dark: {
-    '--mantine-color-body':           '#121212',  // fundo principal — preto suave
-    '--mantine-color-default':        '#1e1e1e',  // Paper, Card, inputs
-    '--mantine-color-default-border': '#2e2e2e',  // bordas
+    '--mantine-color-body':           '#101010',
+    '--mantine-color-default':        '#1c1c1c',
+    '--mantine-color-default-border': '#101010',
+    '--mantine-color-anchor':         '#c9c9c9',
+    '--mantine-color-text':           '#e9ecef',
   },
 })
 

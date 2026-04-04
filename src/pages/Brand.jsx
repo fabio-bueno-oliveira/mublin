@@ -63,43 +63,41 @@ export default function Brand() {
         )}
         {/* Logo flutuando sobre a cover */}
         <Box
-          mt={brand?.cover ? -70 : 0}
+          mt={brand?.cover ? -60 : 0}
           ml={brand?.cover ? 24 : 0}
           mb="xs"
+          w={92}
+          h={92}
           style={{
-            width: 90,
-            height: 90,
-            background: 'var(--mantine-color-body)',
             borderRadius: 'var(--mantine-radius-md)',
-            padding: 4,
-            boxShadow: brand?.cover ? '0 1px 6px rgba(0,0,0,0.15)' : undefined,
+            overflow: 'hidden',
+            boxShadow: brand?.cover ? '0 2px 12px rgba(0,0,0,0.18)' : undefined
           }}
         >
           <Image
             src={brand?.logo
-              ? `https://ik.imagekit.io/mublin/products/brands/tr:w-90,h-90,cm-pad_resize,bg-FFFFFF,fo-x/${brand.logo}`
+              ? `https://ik.imagekit.io/mublin/products/brands/tr:w-200,h-200,cm-pad_resize,bg-FFFFFF,fo-x/${brand.logo}`
               : undefined}
-            h={90}
-            w={90}
-            fit='contain'
-            radius="sm"
+            h={92}
+            w={92}
+            fit="contain"
           />
         </Box>
 
         <Box mt="lg">
-          <Title order={1} fz="h3" fw={700} lts="-0.02em">
+          <Title order={1} fz="h2" fw={700} lts="-0.02em">
             {brand?.name}
           </Title>
           <Anchor href={brand?.website} underline='hover' target='_blank' size="sm">
             {brand?.website}
           </Anchor>
-          <Text size="sm" c="dimmed" my="md">
+          <Text size="sm" my="md">
             {brand?.description}
           </Text>
         </Box>
 
         {/* Artists Section */}
-        <Box mt="xl">
+        <Box mt="lg">
           <Title order={2} fz="h4" fw={600} mb="xs">
             Artistas
           </Title>
@@ -127,11 +125,12 @@ export default function Brand() {
                     </Text>
                     <Badge
                       size="xs"
-                      variant="light"
+                      variant="filled"
                       fw="400"
-                      color={item.type === 'Endorsee' ? 'blue' : 'gray'}
+                      color={item.type === 'Endorser' ? "violet.9" : 'grape'}
                     >
-                      {item.type ?? '—'}
+                      {item.type === 'Endorser' && "Endorsee"}
+                      {item.type === 'Partner' && "Partner"}
                     </Badge>
                   </Stack>
                 </Group>

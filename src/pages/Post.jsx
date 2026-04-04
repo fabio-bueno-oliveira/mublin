@@ -146,7 +146,7 @@ export default function Post() {
   })
 
   if (isLoading) return (
-    <Center h="50vh"><Loader color="amber" /></Center>
+    <Center h="50vh"><Loader color="indigo" /></Center>
   )
   if (!post) return (
     <Center h="50vh">

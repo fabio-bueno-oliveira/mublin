@@ -47,7 +47,7 @@ export default function Landing() {
       >
         <Container size="sm" py={50} w="100%">
           <Stack gap="lg" align="center">
-            <Badge fw='500' color="amber" variant="light" size="md">
+            <Badge fw='500' color="yellow" variant="light" size="md">
               The professional network for musicians
             </Badge>
             <Title

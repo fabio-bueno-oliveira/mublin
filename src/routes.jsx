@@ -29,7 +29,7 @@ import Backstage from './pages/Backstage'
 import Gigs from './pages/Gigs'
 // -- Gear pages
 import Gear from './pages/Gear'
-import GearProduct from './pages/GearProduct'
+import GearItem from './pages/GearItem'
 import Brand from './pages/Brand'
 import NewGear from './pages/NewGear'
 // -- Feed pages
@@ -79,7 +79,7 @@ export const router = createBrowserRouter([
       { path: 'post/:id', element: <Post /> },
       { path: 'new/post', element: <NewPost /> },
       { path: 'gear', element: <Gear /> },
-      { path: 'gear/:slug', element: <GearProduct /> },
+      { path: 'gear/:slug', element: <GearItem /> },
       { path: 'new/gear', element: <NewGear />},
       { path: 'backstage', element: <Backstage /> },
       { path: '/:username/gear', element: <ProfileGear /> },

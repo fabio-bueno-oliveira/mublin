@@ -11,11 +11,11 @@ import {
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import {
-  IconCircuitResistor, IconUser, IconLock, IconEye, IconAdjustmentsHorizontal,
-  IconCamera, IconHeartHandshake, IconPackages, IconCalendarMonth,
-  IconChevronRight, IconLogout, IconBrightnessUp, IconMoon,
-  IconEdit, IconUpload,
-  IconMusic, IconCalendarEvent, IconHome
+  IconCircuitResistor, IconUser, IconSettings,
+  IconCamera, IconChevronRight, IconLogout, 
+  IconBrightnessUp, IconMoon, IconUpload, IconHome,
+  // IconHeartHandshake, IconPackages, IconCalendarMonth, IconEdit,
+  // IconLock, IconEye, IconAdjustmentsHorizontal, IconMusic, IconCalendarEvent,
 } from '@tabler/icons-react'
 import MublinLogoBlack from '../assets/svg/mublin-logo-black.svg'
 import MublinLogoWhite from '../assets/svg/mublin-logo-white.svg'
@@ -103,17 +103,18 @@ export default function Menu() {
   // ── Menu items ──────────────────────────────────────────
   const menuItems = [
     { icon: IconHome, label: 'Home', to: '/home' },
-    { icon: IconUser,                   label: 'Ir para meu perfil',            to: `/${profile?.username}` },
-    { icon: IconCalendarEvent,          label: 'Gigs',                          to: '/gigs' },
-    { icon: IconCalendarMonth,          label: 'Disponibilidade para gigs',     to: '/settings/availability' },
-    { icon: IconMusic,                  label: 'Projetos musicais',             to: '/projects' },
-    { icon: IconPackages,               label: 'Equipamentos',                  to: '/gearr' },
-    { icon: IconHeartHandshake,         label: 'Parceiros e Endorsements',      to: '/settings/endorsements' },
-    { icon: IconEdit,                   label: 'Editar meus dados',             to: '/settings' },
-    { icon: IconAdjustmentsHorizontal,  label: 'Preferências musicais',         to: '/settings/preferences' },
+    { icon: IconUser,                      label: 'Ir para meu perfil',            to: `/${profile?.username}` },
+    { icon: IconSettings,                  label: 'Configurações',                 to: `/settings` },
+    // { icon: IconCalendarEvent,          label: 'Gigs',                          to: '/gigs' },
+    // { icon: IconCalendarMonth,          label: 'Disponibilidade para gigs',     to: '/settings/availability' },
+    // { icon: IconMusic,                  label: 'Projetos musicais',             to: '/projects' },
+    // { icon: IconPackages,               label: 'Equipamentos',                  to: '/gearr' },
+    // { icon: IconHeartHandshake,         label: 'Parceiros e Endorsements',      to: '/settings/endorsements' },
+    // { icon: IconEdit,                   label: 'Editar meus dados',             to: '/settings' },
+    // { icon: IconAdjustmentsHorizontal,  label: 'Preferências musicais',         to: '/settings/preferences' },
     // { icon: IconStar,                   label: 'Minha assinatura',              to: '/settings/plan' },
-    { icon: IconLock,                   label: 'Senha',                         to: '/settings/password' },
-    { icon: IconEye,                    label: 'Privacidade da conta',          to: '/settings/privacy' },
+    // { icon: IconLock,                   label: 'Senha',                         to: '/settings/password' },
+    // { icon: IconEye,                    label: 'Privacidade da conta',          to: '/settings/privacy' },
   ]
 
   return (

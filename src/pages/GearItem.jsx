@@ -6,19 +6,21 @@ import { fetchProductInfo, fetchProductColors, fetchProductOwners } from '../que
 import {
   Container, Grid, Box, Group, Flex, Stack, Center,
   Title, Text, Image, Anchor, Badge, ColorSwatch,
-  ActionIcon, Skeleton, Modal, ScrollArea, Affix, Transition,
-  Paper, Avatar, Divider
+  ActionIcon, Skeleton, Modal, ScrollArea, 
+  Affix, Transition, Paper, Avatar
 } from '@mantine/core'
 import {
-  IconZoom, IconX, IconDiamond, IconAlignJustified,
-  IconUser, IconChevronUp
+  IconZoom, IconX, IconDiamond, IconChevronUp,
+  IconMessage
 } from '@tabler/icons-react'
+import parse from 'html-react-parser'
+import linkifyStr from 'linkify-string';
 
 const PATH_BRAND_LOGO   = 'https://ik.imagekit.io/mublin/products/brands/tr:h-150,w-150,cm-pad_resize,bg-FFFFFF/'
 const PATH_PRODUCT_IMG  = 'https://ik.imagekit.io/mublin/products/tr:w-600,h-600,cm-pad_resize,bg-FFFFFF,fo-x/'
 const PATH_COLOR_SAMPLE = 'https://ik.imagekit.io/mublin/products/colors/'
 
-export default function GearProduct() {
+export default function GearItem() {
   const { slug } = useParams()
   const [modalZoomOpen, setModalZoomOpen] = useState(false)
   const [selectedColorId, setSelectedColorId] = useState(null)
@@ -266,16 +268,12 @@ export default function GearProduct() {
               ) : (
                 <Stack gap={10}>
                   {owners.map(owner => (
-                    <Paper
+                    <Box
                       key={owner.id}
-                      withBorder
                       radius="md"
                       p="sm"
-                      style={{ backgroundColor: 'transparent' }}
                     >
-                      <Flex gap={10} align="flex-start">
-
-                        {/* Avatar clicável */}
+                      <Flex gap={10} align="center">
                         <Anchor
                           component={Link}
                           to={`/${owner.profiles?.username}`}
@@ -295,7 +293,7 @@ export default function GearProduct() {
                           <Anchor
                             component={Link}
                             to={`/${owner.profiles?.username}`}
-                            underline="never"
+                            underline="hover"
                             c="inherit"
                           >
                             <Text size="sm" fw={600} truncate>
@@ -313,12 +311,12 @@ export default function GearProduct() {
                           {/* Badges */}
                           <Group gap={6} mt={6}>
                             {owner.is_currently_using && (
-                              <Badge size="xs" color="green" variant="light">
+                              <Badge size="sm" color="green" variant="light">
                                 Em uso
                               </Badge>
                             )}
                             {owner.is_for_sale && (
-                              <Badge size="xs" color="dark" variant="filled">
+                              <Badge size="sm" color="dark" variant="filled">
                                 À venda
                               </Badge>
                             )}
@@ -346,25 +344,26 @@ export default function GearProduct() {
                         )}
                       </Flex>
 
-                      {/* Comentários do owner */}
                       {owner.owner_comments && (
-                        <>
-                          <Divider my="xs" />
-                          <Text
-                            size="sm"
-                            c="dimmed"
-                            style={{ whiteSpace: 'pre-wrap', lineHeight: 1.6 }}
-                          >
-                            {owner.owner_comments}
-                          </Text>
-                        </>
+                        <Paper 
+                          p="xs" mt={8} w="100%"
+                        >
+                          <Group gap={6}>
+                            <IconMessage size={16} color="gray" />
+                            <Text
+                              size="xs"
+                              style={{ whiteSpace: 'pre-wrap', lineHeight: 1.6 }}
+                            >
+                              {parse(linkifyStr(owner.owner_comments, {target: '_blank'}))}
+                            </Text>
+                          </Group>
+                        </Paper>
                       )}
-                    </Paper>
+                    </Box>
                   ))}
                 </Stack>
               )}
             </Box>
-
           </Grid.Col>
         </Grid>
       </Container>

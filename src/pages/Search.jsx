@@ -1,15 +1,18 @@
 import { useSearchParams, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { fetchRandomBrands, fetchFeaturedProducts } from '../queries/gear'
-import { searchProfiles, searchProjects, searchGear } from '../queries/search'
+import { 
+  searchProfiles, searchProjects, 
+  searchGear, searchBrands 
+} from '../queries/search'
 import {
   Grid, Box, NavLink, Flex, Container,
-  Loader, Group, Space, Marquee, Center,
-  Card, Scroller, Title, Text, Image, Avatar
+  Loader, Group, Space, Marquee, Center, Anchor,
+  Card, Scroller, Title, Text, Image, Avatar, Divider
 } from '@mantine/core'
 import {
   IconCircleArrowLeftFilled, IconCircleArrowRightFilled,
-  IconRosetteDiscountCheckFilled
+  IconRosetteDiscountCheckFilled, IconSearch
 } from '@tabler/icons-react'
 
 const PATH_USER_AVATAR = 'https://ik.imagekit.io/mublin/tr:h-200,c-maintain_ratio/users/avatars/'
@@ -49,6 +52,13 @@ export default function Search() {
   const { data: gearResults = [], isLoading: loadingGear } = useQuery({
     queryKey: ['searched-gear', q],
     queryFn: () => searchGear(q),
+    enabled: !!q,
+    staleTime: 1000 * 60 * 5,
+  })
+
+  const { data: brandResults = [], isLoading: loadingBrands } = useQuery({
+    queryKey: ['searched-brands', q],
+    queryFn: () => searchBrands(q),
     enabled: !!q,
     staleTime: 1000 * 60 * 5,
   })
@@ -205,9 +215,37 @@ export default function Search() {
 
               {/* Equipamentos */}
               <Box id="gear">
-                <Title order={4} fw={600} fz="h5" mb="sm">
+                <Title order={4} fw={600} fz="h5" mb="xs">
                   Equipamentos
                 </Title>
+
+                {/* Marcas relacionadas */}
+                {!loadingBrands && brandResults.length > 0 && (
+                  <Box mb="sm">
+                    <Text size="xs" mb={6}>
+                      {brandResults.length} marca{brandResults.length !== 1 ? 's' : ''} relacionada{brandResults.length !== 1 ? 's' : ''}
+                    </Text>
+                    <Scroller>
+                    {brandResults.map(brand => (
+                      <Link key={brand.id} to={`/brand/${brand.slug}`}>
+                        <Image
+                          src={brand.logo
+                            ? `https://ik.imagekit.io/mublin/products/brands/tr:w-130,h-130,cm-pad_resize,bg-FFFFFF,fo-x/${brand.logo}`
+                            : undefined}
+                          h={65}
+                          w={65}
+                          fit="contain"
+                          radius="xl"
+                          fallbackSrc="https://placehold.co/48x48?text=?"
+                          title={brand.name}
+                        />
+                      </Link>
+                    ))}
+                    </Scroller>
+                  </Box>
+                )}
+
+                {/* Equipamentos */}
                 {loadingGear ? (
                   <Center mt="xl"><Loader size="sm" /></Center>
                 ) : gearResults.length === 0 ? (
@@ -229,20 +267,16 @@ export default function Search() {
                         radius="sm"
                       />
                       <Flex direction="column" justify="flex-start">
-                        <Text size="xs" opacity={0.8}>
-                          {gear.brand_name}
-                        </Text>
-                        <Text size="sm" fw={600}>
-                          {gear.name}
-                        </Text>
+                        <Text size="sm" opacity={0.8}>{gear.brand_name}</Text>
+                        <Text size="md" fw={600} lh={1.2}>{gear.name}</Text>
                         {gear.subtitle && (
                           <Text size="sm" opacity={0.7}>{gear.subtitle}</Text>
                         )}
                         {gear.category_name_ptbr && (
-                          <Text size="xs" opacity={0.5} mt={2}>{gear.category_name_ptbr}</Text>
+                          <Text size="xs" opacity={0.5}>{gear.category_name_ptbr}</Text>
                         )}
                         {gear.total_owners > 0 && (
-                          <Text size="11px" opacity={0.4} mt={6}>
+                          <Text size="11px" mt={3}>
                             {gear.total_owners} usuário{gear.total_owners !== 1 ? 's' : ''} tem este equipamento
                           </Text>
                         )}
@@ -251,7 +285,6 @@ export default function Search() {
                   ))
                 )}
               </Box>
-
             </Grid.Col>
           </Grid>
         </>

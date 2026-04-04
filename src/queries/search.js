@@ -24,6 +24,26 @@ export async function searchGear(keyword) {
   return data
 }
 
+export async function searchBrands(keyword) {
+  const words = keyword.trim().split(/\s+/).filter(Boolean)
+
+  // Monta filtros ilike para cada palavra em name e slug
+  const filters = words.flatMap(word => [
+    `name.ilike.%${word}%`,
+    `slug.ilike.%${word}%`,
+  ]).join(',')
+
+  const { data, error } = await supabase
+    .from('brands')
+    .select('id, name, slug, logo, cover, website')
+    .or(filters)
+    .eq('active', true)
+    .order('name', { ascending: true })
+    .limit(50)
+  if (error) throw new Error(error.message)
+  return data
+}
+
 export async function fetchRecentSearches(profileId) {
   const { data, error } = await supabase
     .from('search_history')

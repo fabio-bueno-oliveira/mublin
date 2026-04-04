@@ -1,29 +1,15 @@
 // Mantine styles
 
-:root[data-mantine-color-scheme='dark'] {
-  body {
-    // background-color: #090e12;
-
-    .mublinLogo {
-      h1,h2,h3,h4 {
-        color: white;
-      }
-    }
-  }
-  --mantine-color-anchor: #c9c9c9;
-  --mantine-color-text: #ffffff;
-}
-
 .mantine-Checkbox-label {
   padding-inline-start: 0.3rem;
 }
 
 .mantine-Spoiler-root {
   .mantine-Spoiler-control {
-    top: 94%;
+    top: 98%;
   }
   &[data-has-spoiler='true'] {
-    margin-bottom: 18px!important;
+    margin-bottom: 20px!important;
   }
 }
 
