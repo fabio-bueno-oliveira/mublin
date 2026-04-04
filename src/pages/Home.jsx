@@ -403,9 +403,10 @@ export default function Home() {
                                   component={Link}
                                   to={`/${post.author_username}`}
                                   underline="hover"
-                                  size="sm"
+                                  size="md"
                                   c="var(--mantine-color-text)"
                                   fw={600}
+                                  lh={1}
                                 >
                                   {post.author_username}
                                 </Anchor>
@@ -425,6 +426,8 @@ export default function Home() {
                                   component={Link}
                                   to={`/post/${post.id}`}
                                   style={{ textDecoration: 'none' }}
+                                  lh={1}
+                                  ml={3}
                                 >
                                   {dayjs(post.created_at).fromNow()}
                                 </Text>

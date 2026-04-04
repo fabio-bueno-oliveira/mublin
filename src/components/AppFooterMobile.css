@@ -68,7 +68,7 @@
 
 /* ── Dark mode ── */
 [data-mantine-color-scheme='dark'] .footer-mobile {
-  background-color: #0c1319;
+  background-color: #0b0b0b;
 }
 
 [data-mantine-color-scheme='dark'] .nav-item {

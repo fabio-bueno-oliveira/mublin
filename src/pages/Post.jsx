@@ -11,9 +11,9 @@ import {
 import {
   Container, Group, Flex, Stack, Box, Text, Avatar,
   Card, Image, Loader, Center, Modal,
-  ActionIcon, Menu, Anchor, Textarea, Button, Divider
+  ActionIcon, Menu, Anchor, Textarea, Button, Divider, em
 } from '@mantine/core'
-import { useDisclosure } from '@mantine/hooks'
+import { useDisclosure, useMediaQuery } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
 import LinkedItem from '../components/feed/LinkedItem'
 import VideoPlayer from '../components/feed/VideoPlayer'
@@ -79,8 +79,8 @@ function LikeButton({ postId, userId, likedPostIds, likesCount }) {
         style={{ cursor: isPending ? 'default' : 'pointer' }}
       >
         {liked
-          ? <IconHeartFilled size={18} color="red" />
-          : <IconHeart size={18} />
+          ? <IconHeartFilled size={20} color="red" />
+          : <IconHeart size={20} />
         }
       </ActionIcon>
       {likesCount > 0 && (
@@ -94,6 +94,7 @@ export default function Post() {
   const { id } = useParams()
   const { user } = useAuth()
   const navigate = useNavigate()
+  const isMobile = useMediaQuery(`(max-width: ${em(750)})`)
 
   const { profile } = useAuth()
   const queryClient = useQueryClient()
@@ -182,6 +183,7 @@ export default function Post() {
           mb={{ base: 0, sm: 'xs' }}
           display="inline-flex" 
           style={{ alignItems: 'center', gap: 4 }}
+          mx={isMobile ? 14 : 0}
         >
           <IconArrowLeft size={14} /> Voltar
         </Anchor>
@@ -194,83 +196,85 @@ export default function Post() {
           bg={{ base: 'transparent', sm: 'var(--mantine-color-body)' }}
           mt="xs"
         >
-          <Group gap="sm" align="flex-start">
-            <Avatar
-              size={40}
-              radius="xl"
-              src={post.author_avatar ? AVATAR_PATH + post.author_avatar : undefined}
-              component={Link}
-              to={`/${post.author_username}`}
-            />
-            <Stack gap={3} style={{ flex: 1 }}>
-              <Group gap="xs" justify="space-between">
-                <Flex gap={post.author_is_verified ? 2 : 6} align="center">
-                  <Anchor
-                    component={Link}
-                    to={`/${post.author_username}`}
-                    underline='hover'
-                    size="0.9em"
-                    c="var(--mantine-color-text)"
-                    fw="600"
-                  >
-                    {post.author_full_name}
-                  </Anchor>
-                  {!!post.author_is_verified &&
-                    <IconRosetteDiscountCheckFilled
-                      className='iconVerified'
-                      title='Usuário verificado'
-                    />
-                  }
-                  {post.author_project_id &&
-                    <Text span color="gray">Projeto</Text>
-                  }
-                  <Text
-                    c="dimmed"
-                    size="0.9em"
-                    title={dayjs(post.created_at).format('dddd, D [de] MMMM [de] YYYY [às] HH:mm')}
-                  >
-                    {dayjs(post.created_at).fromNow()}
-                  </Text>
-                </Flex>
-                <Menu shadow="md" radius="md" position="bottom-end">
-                  <Menu.Target>
-                    <ActionIcon variant="subtle" color="gray" size="sm" radius="xl">
-                      <IconDots size={18} />
-                    </ActionIcon>
-                  </Menu.Target>
-                  <Menu.Dropdown>
-                    <Menu.Item
-                      leftSection={<IconLink size={14} />}
-                      onClick={() => navigator.clipboard.writeText(`${window.location.origin}/post/${post.id}`)}
+          <Box px={isMobile ? 14 : 0}>
+            <Group gap="sm" align="flex-start">
+              <Avatar
+                size={40}
+                radius="xl"
+                src={post.author_avatar ? AVATAR_PATH + post.author_avatar : undefined}
+                component={Link}
+                to={`/${post.author_username}`}
+              />
+              <Stack gap={3} style={{ flex: 1 }}>
+                <Group gap="xs" justify="space-between">
+                  <Flex gap={post.author_is_verified ? 2 : 6} align="center">
+                    <Anchor
+                      component={Link}
+                      to={`/${post.author_username}`}
+                      underline='hover'
+                      size="0.9em"
+                      c="var(--mantine-color-text)"
+                      fw="600"
                     >
-                      Copiar link
-                    </Menu.Item>
-                    {post.author_profile_id === user?.id && (
-                      <>
-                        <Menu.Divider />
-                        <Menu.Item
-                          color="red"
-                          leftSection={<IconTrash size={14} />}
-                          onClick={() => {
-                            setPostToDelete(post.id)
-                            openConfirmDeletePost()
-                          }}
-                        >
-                          Apagar postagem
-                        </Menu.Item>
-                      </>
-                    )}
-                  </Menu.Dropdown>
-                </Menu>
-              </Group>
-              {post.author_title && (
-                <Text size="11px" lh="1" opacity={0.7}>{post.author_title}</Text>
-              )}
-            </Stack>
-          </Group>
-          <Text size="0.94em" fw="500" lh={1.5} opacity={0.9} mt="sm">
-            {post.body}
-          </Text>
+                      {post.author_full_name}
+                    </Anchor>
+                    {!!post.author_is_verified &&
+                      <IconRosetteDiscountCheckFilled
+                        className='iconVerified'
+                        title='Usuário verificado'
+                      />
+                    }
+                    {post.author_project_id &&
+                      <Text span color="gray">Projeto</Text>
+                    }
+                    <Text
+                      c="dimmed"
+                      size="0.9em"
+                      title={dayjs(post.created_at).format('dddd, D [de] MMMM [de] YYYY [às] HH:mm')}
+                    >
+                      {dayjs(post.created_at).fromNow()}
+                    </Text>
+                  </Flex>
+                  <Menu shadow="md" radius="md" position="bottom-end">
+                    <Menu.Target>
+                      <ActionIcon variant="subtle" color="gray" size="sm" radius="xl">
+                        <IconDots size={18} />
+                      </ActionIcon>
+                    </Menu.Target>
+                    <Menu.Dropdown>
+                      <Menu.Item
+                        leftSection={<IconLink size={14} />}
+                        onClick={() => navigator.clipboard.writeText(`${window.location.origin}/post/${post.id}`)}
+                      >
+                        Copiar link
+                      </Menu.Item>
+                      {post.author_profile_id === user?.id && (
+                        <>
+                          <Menu.Divider />
+                          <Menu.Item
+                            color="red"
+                            leftSection={<IconTrash size={14} />}
+                            onClick={() => {
+                              setPostToDelete(post.id)
+                              openConfirmDeletePost()
+                            }}
+                          >
+                            Apagar postagem
+                          </Menu.Item>
+                        </>
+                      )}
+                    </Menu.Dropdown>
+                  </Menu>
+                </Group>
+                {post.author_title && (
+                  <Text size="12px" lh="1" opacity={0.7}>{post.author_title}</Text>
+                )}
+              </Stack>
+            </Group>
+            <Text size="0.94em" fw="500" lh={1.5} opacity={0.9} mt="sm">
+              {post.body}
+            </Text>
+          </Box>
           {/* Player de vídeo */}
           {post.video_url && (
             <VideoPlayer
@@ -281,41 +285,42 @@ export default function Post() {
           {post.image && (
             <Image
               src={`https://ik.imagekit.io/mublin/posts/tr:w-700/${post.image}`}
-              radius="md"
               mt="sm"
             />
           )}
-          <LinkedItem post={post} />
-          <Group mt={16} ml={-4}>
-            <LikeButton
-              postId={postIdNum}
-              userId={user?.id}
-              likedPostIds={likedPostIds}
-              likesCount={likesCount}
-            />
-            {!post.comments_disabled && (
-              <Group gap={10} align="center">
-                <IconMessageCircle size={18} />
-                {comments.length > 0 &&
-                  <Text size="sm" lh={0}>{comments.length}</Text>
-                }
-              </Group>
-            )}
-            {!post.comments_disabled && showNewPostSection === false && (
-              <Button 
-                leftSection={<IconPlus size={16} />} 
-                variant="default"
-                size='xs'
-                onClick={() => setShowNewPostSection(true)}
-              >
-                Comentar
-              </Button>
-            )}
-          </Group>
+          <Box px={isMobile ? 14 : 0}>
+            <LinkedItem post={post} />
+            <Group mt={16} ml={-4}>
+              <LikeButton
+                postId={postIdNum}
+                userId={user?.id}
+                likedPostIds={likedPostIds}
+                likesCount={likesCount}
+              />
+              {!post.comments_disabled && (
+                <Group gap={10} align="center">
+                  <IconMessageCircle size={20} />
+                  {comments.length > 0 &&
+                    <Text size="sm" lh={0}>{comments.length}</Text>
+                  }
+                </Group>
+              )}
+              {!post.comments_disabled && showNewPostSection === false && (
+                <Button 
+                  leftSection={<IconPlus size={16} />} 
+                  variant="default"
+                  size='xs'
+                  onClick={() => setShowNewPostSection(true)}
+                >
+                  Comentar
+                </Button>
+              )}
+            </Group>
+          </Box>
         </Card>
         {/* Comentários */}
         {!post.comments_disabled ? (
-          <Box mt="md">
+          <Box mt="md" px={isMobile ? 14 : 0}>
 
             {/* Campo de novo comentário */}
             {showNewPostSection && 
