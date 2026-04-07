@@ -284,7 +284,7 @@ export default function Profile() {
                   )}
                 </Flex>
                 {profile.title && (
-                  <Text size="sm" maw={420} lh={1.3} mt={2}>
+                  <Text size="sm" maw={420} lh={1.3} my={3}>
                     {profile.title}
                   </Text>
                 )}
@@ -309,16 +309,18 @@ export default function Profile() {
             </Group>
             <Stack gap={12}>
               {profile.bio && (
+                <Paper px={14} pt={6} pb={10}>
                 <Spoiler 
                   maxHeight={66} 
-                  showLabel={<Text size='sm' fw={600}>...ver mais</Text>} 
-                  hideLabel={<Text size='sm' fw={600}>mostrar menos</Text>}
+                  showLabel={<Text size='xs' fw={550}>...ver mais</Text>} 
+                  hideLabel={<Text size='xs' fw={550}>mostrar menos</Text>}
                   mb={8}
                 >
                   <Text size='sm' mt={10} lh={1.3}>
                     {profile.bio}
                   </Text>
                 </Spoiler>
+                </Paper>
               )}
               {loadingProjects && (
                 <>
@@ -618,10 +620,10 @@ export default function Profile() {
                   Setups de {profile.full_name} {!!gearSetups.length && `(${gearSetups.length})`}
                 </Text>
                 {gearSetups.length > 0 && 
-                  <Flex gap={15} mt={18}>
+                  <Flex gap={16} mt={18}>
                     {gearSetups.map(setup => (
                       <Box key={setup.id}>
-                        <Flex direction='column' justify="center" gap={2}>
+                        <Flex  w={60} direction='column' justify="center">
                           <Link to={`/${username}/setup/${setup.id}`}>
                             <Image
                               src={'https://ik.imagekit.io/mublin/users/gear-setups/tr:w-120,h-120/' + setup.image}
@@ -630,12 +632,13 @@ export default function Profile() {
                               w='auto'
                               fit='contain'
                               radius='md'
+                              mb={4}
                             />
                           </Link>
-                          <Text ta='center' fw={550} size='xs' className='lhNormal'>
+                          <Text ta='center' fw={550} size='xs' truncate="end">
                             {setup.name}
                           </Text>
-                          <Text ta='center' size='xs' className='lhNormal'>
+                          <Text ta='center' size='xs'>
                             {setup.totalItems ?? 0} itens
                           </Text>
                         </Flex>

@@ -1,12 +1,12 @@
 import { useState } from 'react'
+import { Helmet } from 'react-helmet-async'
 import { supabase } from '../lib/supabaseClient'
 import { Link, useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../hooks/useAuth'
 import { 
   fetchPostById, fetchUserLikedPosts, 
-  fetchPostLikes, toggleLike, 
-  fetchPostComments, postComment
+  fetchPostLikes, fetchPostComments, postComment
 } from '../queries/feed'
 import {
   Container, Group, Flex, Stack, Box, Text, Avatar,
@@ -17,11 +17,12 @@ import { useDisclosure, useMediaQuery } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
 import LinkedItem from '../components/feed/LinkedItem'
 import VideoPlayer from '../components/feed/VideoPlayer'
+import LikeButton from '../components/feed/LikeButton'
 import {
   IconDots, IconLink, IconRosetteDiscountCheckFilled, IconPlus,
-  IconArrowLeft, IconHeart, IconHeartFilled, 
-  IconMessageCircle, IconTrash
+  IconArrowLeft, IconMessageCircle, IconTrash
 } from '@tabler/icons-react'
+import { truncateString } from '../utils/formatter'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import 'dayjs/locale/pt-br'
@@ -29,66 +30,6 @@ dayjs.extend(relativeTime)
 dayjs.locale('pt-br')
 
 const AVATAR_PATH = 'https://ik.imagekit.io/mublin/tr:h-68,c-maintain_ratio/users/avatars/'
-
-function LikeButton({ postId, userId, likedPostIds, likesCount }) {
-  const queryClient = useQueryClient()
-  const liked = likedPostIds.includes(postId)
-
-  const { mutate, isPending } = useMutation({
-    mutationFn: () => toggleLike({ postId, userId, liked }),
-    onMutate: async () => {
-      await queryClient.cancelQueries({ queryKey: ['likedPosts', userId] })
-      await queryClient.cancelQueries({ queryKey: ['postLikes', postId] })
-
-      const previousLiked = queryClient.getQueryData(['likedPosts', userId])
-      const previousCount = queryClient.getQueryData(['postLikes', postId])
-
-      // Atualiza lista de posts curtidos
-      queryClient.setQueryData(['likedPosts', userId], (old = []) =>
-        liked ? old.filter(id => id !== postId) : [...old, postId]
-      )
-
-      // Atualiza contador diretamente
-      queryClient.setQueryData(['postLikes', postId], (old = 0) =>
-        Math.max(0, old + (liked ? -1 : 1))
-      )
-
-      return { previousLiked, previousCount }
-    },
-    onError: (_err, _vars, context) => {
-      queryClient.setQueryData(['likedPosts', userId], context.previousLiked)
-      queryClient.setQueryData(['postLikes', postId], context.previousCount)
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['likedPosts', userId] })
-      queryClient.invalidateQueries({ queryKey: ['postLikes', postId] })
-    },
-  })
-
-  return (
-    <Group gap={4} align="center">
-      <ActionIcon
-        variant="subtle"
-        color="gray"
-        size="md"
-        radius="md"
-        aria-label={liked ? 'Descurtir' : 'Curtir'}
-        title={liked ? 'Descurtir' : 'Curtir'}
-        loading={isPending}
-        onClick={() => mutate()}
-        style={{ cursor: isPending ? 'default' : 'pointer' }}
-      >
-        {liked
-          ? <IconHeartFilled size={20} color="red" />
-          : <IconHeart size={20} />
-        }
-      </ActionIcon>
-      {likesCount > 0 && (
-        <Text size="sm" lh={0}>{likesCount}</Text>
-      )}
-    </Group>
-  )
-}
 
 export default function Post() {
   const { id } = useParams()
@@ -104,6 +45,10 @@ export default function Post() {
   const [postToDelete, setPostToDelete] = useState(null)
   const [isDeletingPost, setIsDeletingPost] = useState(false)
   const [confirmDeletePostOpened, { open: openConfirmDeletePost, close: closeConfirmDeletePost }] = useDisclosure(false)
+
+  const [commentToDelete, setCommentToDelete] = useState(null)
+  const [isDeletingComment, setIsDeletingComment] = useState(false)
+  const [confirmDeleteCommentOpened, { open: openConfirmDeleteComment, close: closeConfirmDeleteComment }] = useDisclosure(false)
 
   const { data: post, isLoading } = useQuery({
     queryKey: ['post', id],
@@ -172,29 +117,50 @@ export default function Post() {
     setIsDeletingPost(false)
   }
 
+  async function handleDeleteComment() {
+    setIsDeletingComment(true)
+    const { error } = await supabase
+      .from('feed_comments')
+      .delete()
+      .eq('id', commentToDelete)
+    if (error) {
+      notifications.show({ color: 'red', position: 'top-center', message: 'Erro ao apagar comentário.' })
+    } else {
+      queryClient.invalidateQueries({ queryKey: ['post-comments', postIdNum] })
+      notifications.show({ color: 'green', position: 'top-center', message: 'Comentário apagado!' })
+      closeConfirmDeleteComment()
+    }
+    setIsDeletingComment(false)
+  }
+
   return (
     <>
+      <Helmet>
+        <meta charSet='utf-8' />
+        <title>{`${truncateString(post.body, 30)} · ${post.author_username} · Mublin`}</title>
+        <link rel='canonical' href={`https://mublin.com/post/${post?.id}`} />
+        <meta name='description' content={`Postagem de ${post.author_username} no Mublin`} />
+      </Helmet>
       <Container size="sm" px={{ base: 0, sm: 'xs' }} pt={{ base:"xs", sm: "sm" }} mb="xl">
-        <Anchor 
-          component={Link} 
-          to="/home" 
-          c="dimmed" 
-          size="sm" 
-          mb={{ base: 0, sm: 'xs' }}
-          display="inline-flex" 
-          style={{ alignItems: 'center', gap: 4 }}
+        <ActionIcon
+          component={Link}
+          to="/home"
+          variant="subtle"
+          color="gray"
+          radius="xl"
+          mb={0}
+          mt={isMobile ? 6 : 0}
           mx={isMobile ? 14 : 0}
         >
-          <IconArrowLeft size={14} /> Voltar
-        </Anchor>
+          <IconArrowLeft size={22} />
+        </ActionIcon>
         <Card
           shadow={{ base: 'none', sm: 'sm' }}
           px={{ base: 0, sm: 'md' }}
           pb="xs"
           radius={{ base: 0, sm: 'md' }}
-          withBorder={false}
-          bg={{ base: 'transparent', sm: 'var(--mantine-color-body)' }}
-          mt="xs"
+          mt={{ base: 0, sm: 'xs' }}
+          className="transparent-in-mobile-dark"
         >
           <Box px={isMobile ? 14 : 0}>
             <Group gap="sm" align="flex-start">
@@ -290,7 +256,7 @@ export default function Post() {
           )}
           <Box px={isMobile ? 14 : 0}>
             <LinkedItem post={post} />
-            <Group mt={16} ml={-4}>
+            <Group mt={12} ml={-4}>
               <LikeButton
                 postId={postIdNum}
                 userId={user?.id}
@@ -301,15 +267,15 @@ export default function Post() {
                 <Group gap={10} align="center">
                   <IconMessageCircle size={20} />
                   {comments.length > 0 &&
-                    <Text size="sm" lh={0}>{comments.length}</Text>
+                    <Text size="sm" fw={600} lh={0}>{comments.length}</Text>
                   }
                 </Group>
               )}
               {!post.comments_disabled && showNewPostSection === false && (
                 <Button 
                   leftSection={<IconPlus size={16} />} 
-                  variant="default"
-                  size='xs'
+                  variant="subtle"
+                  size='sm'
                   onClick={() => setShowNewPostSection(true)}
                 >
                   Comentar
@@ -381,7 +347,7 @@ export default function Post() {
                         to={`/${comment.profiles?.username}`}
                       />
                       <Stack gap={2} style={{ flex: 1 }}>
-                        <Flex gap={4} align="center">
+                        <Flex gap={4} justify="flex-start" align="center">
                           <Anchor
                             component={Link}
                             to={`/${comment.profiles?.username}`}
@@ -408,6 +374,22 @@ export default function Post() {
                           </Text>
                           {comment.updated_at && (
                             <Text size="xs" c="dimmed" fs="italic">(editado)</Text>
+                          )}
+                          {user.id === comment.profiles?.id && (
+                            <ActionIcon
+                              variant="subtle"
+                              color="red"
+                              size="sm"
+                              title="Deletar meu comentário"
+                              radius="xl"
+                              ml={3}
+                              onClick={() => {
+                                setCommentToDelete(comment.id)
+                                openConfirmDeleteComment()
+                              }}
+                            >
+                              <IconTrash size={13} />
+                            </ActionIcon>
                           )}
                         </Flex>
                         <Text size="0.94em" lh={1.5} opacity={0.85}>
@@ -447,6 +429,26 @@ export default function Post() {
             Cancelar
           </Button>
           <Button color="red" size="sm" loading={isDeletingPost} onClick={handleDeletePost}>
+            Apagar
+          </Button>
+        </Group>
+      </Modal>
+      <Modal
+        opened={confirmDeleteCommentOpened}
+        onClose={closeConfirmDeleteComment}
+        withCloseButton={false}
+        size="xs"
+        radius="md"
+        centered
+      >
+        <Text size="sm">
+          Tem certeza que deseja apagar este comentário? Esta ação não pode ser desfeita.
+        </Text>
+        <Group justify="flex-end" gap={8} mt="md">
+          <Button variant="default" size="sm" onClick={closeConfirmDeleteComment}>
+            Cancelar
+          </Button>
+          <Button color="red" size="sm" loading={isDeletingComment} onClick={handleDeleteComment}>
             Apagar
           </Button>
         </Group>

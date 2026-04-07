@@ -2,15 +2,15 @@ import { useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
-import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useInfiniteQuery, useQueryClient } from '@tanstack/react-query'
 import { 
-  fetchFeed, fetchUserLikedPosts, fetchRandomFeedPhrase,
-  fetchLikesCountByPosts, toggleLike
+  fetchFeed, fetchUserLikedPosts,
+  fetchRandomFeedPhrase, fetchLikesCountByPosts
 } from '../queries/feed'
 import { fetchUserProjects } from '../queries/user'
 import { fetchRandomOtherProjects } from '../queries/projects'
 import {
-  Box, Container, Grid, Stack, Group, Anchor, Text, Title,
+  Box, Container, Grid, Stack, Group, Text, Title,
   Avatar, Badge, Button, Flex, ActionIcon, Menu,
   ScrollArea, Skeleton, Image, Modal, Divider,
   Affix, Transition
@@ -19,10 +19,11 @@ import { useDisclosure } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
 import LinkedItem from '../components/feed/LinkedItem'
 import VideoPlayer from '../components/feed/VideoPlayer'
+import LikeButton from '../components/feed/LikeButton'
 import {
   IconCirclePlus, IconClock, IconRosetteDiscountCheckFilled, IconMessageCircle, 
-  IconDots, IconLink, IconHeart, IconHeartFilled, IconTrash, 
-  IconPlus, IconCubePlus, IconBulb, IconPencilPlus
+  IconDots, IconLink, IconTrash, IconPlus, 
+  IconCubePlus, IconBulb, IconPencilPlus
 } from '@tabler/icons-react'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
@@ -40,77 +41,6 @@ function ProjectSkeletons({ count = 4 }) {
       <Skeleton radius="xl" width={50} height={10} />
     </Flex>
   ))
-}
-
-function LikeButton({ postId, userId, likedPostIds, likesCount }) {
-  const queryClient = useQueryClient()
-  const liked = likedPostIds.includes(postId)
-
-  const { mutate, isPending } = useMutation({
-    mutationFn: () => toggleLike({ postId, userId, liked }),
-    onMutate: async () => {
-      await queryClient.cancelQueries({ queryKey: ['likedPosts', userId] })
-      await queryClient.cancelQueries({ queryKey: ['likesCount'] })
-
-      const previousLiked = queryClient.getQueryData(['likedPosts', userId])
-      const previousCount = queryClient.getQueryData(
-        queryClient.getQueryCache().findAll({ queryKey: ['likesCount'] })[0]?.queryKey
-      )
-
-      // Atualiza lista de posts curtidos
-      queryClient.setQueryData(['likedPosts', userId], (old = []) =>
-        liked ? old.filter(id => id !== postId) : [...old, postId]
-      )
-
-      // Atualiza o mapa de contagens
-      const countKey = queryClient.getQueryCache()
-        .findAll({ queryKey: ['likesCount'] })[0]?.queryKey
-      if (countKey) {
-        queryClient.setQueryData(countKey, (old = {}) => ({
-          ...old,
-          [postId]: Math.max(0, (old[postId] ?? 0) + (liked ? -1 : 1)),
-        }))
-      }
-
-      return { previousLiked, previousCount, countKey }
-    },
-    onError: (_err, _vars, context) => {
-      if (context?.previousLiked !== undefined) {
-        queryClient.setQueryData(['likedPosts', userId], context.previousLiked)
-      }
-      if (context?.countKey && context?.previousCount !== undefined) {
-        queryClient.setQueryData(context.countKey, context.previousCount)
-      }
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['likedPosts', userId] })
-      queryClient.invalidateQueries({ queryKey: ['likesCount'] })
-    },
-  })
-
-  return (
-    <Group gap={2} align="center">
-      <ActionIcon
-        variant="subtle"
-        color="gray"
-        size="md"
-        radius="md"
-        aria-label={liked ? 'Descurtir' : 'Curtir'}
-        title={liked ? 'Descurtir' : 'Curtir'}
-        loading={isPending}
-        onClick={() => mutate()}
-        style={{ cursor: isPending ? 'default' : 'pointer' }}
-      >
-        {liked
-          ? <IconHeartFilled size={18} color="red" />
-          : <IconHeart size={18} />
-        }
-      </ActionIcon>
-      {likesCount > 0 && (
-        <Text size="sm" lh={0}>{likesCount}</Text>
-      )}
-    </Group>
-  )
 }
 
 // ── Página principal ─────────────────────────────────────
@@ -222,7 +152,7 @@ export default function Home() {
         />
         <Button>Gigs</Button>
       </Flex>
-      <Container size="xl" py="xs" px={{ base: "md", md: 0 }}>
+      <Container size="xl" py="0" px={{ base: "md", md: 0 }}>
         <Grid gutter="md">
           <Grid.Col span={{ base: 12, md: 7 }}>
             <Title order={2} fz="h4" ta="left" fw={600} lts="-0.02em" mb="lg">
@@ -356,23 +286,26 @@ export default function Home() {
               <Flex
                 gap={10}
                 align="center"
-                mt={{ base: 'lg', sm: 0 }}
-                mb="md"
-                component={Link}
-                to="/new/post"
-                style={{ textDecoration: 'none' }}
+                mt={{ base: 'lg', sm: 'xs' }}
+                mb="sm"
               >
-                <Avatar
-                  w={35}
-                  h={35}
-                  src={
-                    profile?.avatar
-                      ? `https://ik.imagekit.io/mublin/tr:h-76,w-76,r-max,c-maintain_ratio/users/avatars/${profile.avatar}`
-                      : undefined
-                  }
-                  alt={profile?.username}
-                />
-                <Text c="dimmed" fz="15px" w="100%">
+                <Link to={`/${profile.username}`}>
+                  <Avatar
+                    size={36}
+                    radius="xl"
+                    src={
+                      profile?.avatar
+                        ? `https://ik.imagekit.io/mublin/tr:h-76,w-76,r-max,c-maintain_ratio/users/avatars/${profile.avatar}`
+                        : undefined
+                    }
+                    alt={profile?.username}
+                  />
+                </Link>
+                <Text
+                  c="dimmed" fz="15px" w="100%"
+                  component={Link}
+                  to="/new/post"
+                >
                   {feedPhrase ?? 'Quais são as novidades?'}
                 </Text>
               </Flex>
@@ -386,7 +319,7 @@ export default function Home() {
                     {feedPosts.map((post, i) => (
                       <Box key={post.id}>
                         {i > 0 && <Divider />}
-                        <Group gap="sm" align="flex-start" py="sm">
+                        <Group gap="sm" align="flex-start" pt="md" pb="xs">
                           <Avatar
                             size={36}
                             radius="xl"
@@ -395,21 +328,24 @@ export default function Home() {
                             to={`/${post.author_username}`}
                             title={post.author_full_name}
                           />
-                          <Stack gap={4} style={{ flex: 1 }}>
+                          <Stack gap={2} style={{ flex: 1 }}>
                             {/* Cabeçalho do post */}
                             <Group justify="space-between" align="flex-start">
-                              <Flex gap={post.author_is_verified ? 2 : 6} align="center" wrap="wrap">
-                                <Anchor
+                              <Flex 
+                                gap={post.author_is_verified ? 2 : 6} 
+                                align="center" wrap="wrap"
+                              >
+                                <Text
                                   component={Link}
                                   to={`/${post.author_username}`}
-                                  underline="hover"
                                   size="md"
-                                  c="var(--mantine-color-text)"
                                   fw={600}
                                   lh={1}
+                                  c="var(--mantine-color-text)"
+                                  className="link"
                                 >
                                   {post.author_username}
-                                </Anchor>
+                                </Text>
                                 {!!post.author_is_verified &&
                                   <IconRosetteDiscountCheckFilled
                                     className="iconVerified"
@@ -422,7 +358,7 @@ export default function Home() {
                                 <Text
                                   size="xs"
                                   c="dimmed"
-                                  title={dayjs(post.created_at).format('DD/MM/YYYY HH:mm:ss')}
+                                  title={dayjs(post.created_at).format('dddd, D [de] MMMM [de] YYYY [às] HH:mm')}
                                   component={Link}
                                   to={`/post/${post.id}`}
                                   style={{ textDecoration: 'none' }}
@@ -435,7 +371,7 @@ export default function Home() {
                               <Menu shadow="md" radius="md" position="bottom-end">
                                 <Menu.Target>
                                   <ActionIcon variant="subtle" color="gray" size="sm" radius="xl">
-                                    <IconDots size={15} />
+                                    <IconDots size={18} color="gray" />
                                   </ActionIcon>
                                 </Menu.Target>
                                 <Menu.Dropdown>
@@ -481,10 +417,13 @@ export default function Home() {
                             </Text>
 
                             {post.image && (
-                              <Image
-                                src={`https://ik.imagekit.io/mublin/posts/tr:w-700/${post.image}`}
-                                radius="md"
-                              />
+                              <Link to={`/post/${post.id}`}>
+                                <Image
+                                  src={`https://ik.imagekit.io/mublin/posts/tr:w-700/${post.image}`}
+                                  radius="md"
+                                   mt={2}
+                                />
+                              </Link>
                             )}
 
                             {post.video_url && (
@@ -496,26 +435,30 @@ export default function Home() {
                             }
 
                             {/* Ações */}
-                            <Group gap={4} mt={2} ml={-6}>
+                            <Group gap={4} mt={6}>
                               <LikeButton
                                 postId={post.id}
                                 userId={user?.id}
                                 likedPostIds={likedPostIds}
                                 likesCount={likesCountMap[post.id] ?? 0}
                               />
-                              {!post.comments_disabled &&
+                              {!post.comments_disabled && (
                                 <Button
                                   component={Link}
                                   to={`/post/${post.id}`}
                                   variant="subtle"
                                   color="gray"
-                                  size="xs"
+                                  size="sm"
                                   radius="md"
-                                  leftSection={<IconMessageCircle size={16} />}
+                                  fw={400}
+                                  px={10}
+                                  leftSection={
+                                    post.comments_count > 0 && <IconMessageCircle size={20} />
+                                  }
                                 >
-                                  {post.comments_count > 0 ? post.comments_count : ''}
+                                  {post.comments_count === 0 && <IconMessageCircle size={20} />} {post.comments_count > 0 ? post.comments_count : ''}
                                 </Button>
-                              }
+                              )}
                             </Group>
                           </Stack>
                         </Group>
@@ -606,16 +549,16 @@ export default function Home() {
             )}
           </Transition>
           <ActionIcon
-            radius="xl"
-            size="xl"
-            color="indigo"
+            radius="lg"
+            size={70}
+           color="indigo"
             onClick={() => setAffixOpen(o => !o)}
             style={{
               transition: 'transform 0.2s',
               transform: affixOpen ? 'rotate(45deg)' : 'rotate(0deg)',
             }}
           >
-            <IconPlus size={22} />
+            <IconPlus size={28} />
           </ActionIcon>
         </Stack>
       </Affix>

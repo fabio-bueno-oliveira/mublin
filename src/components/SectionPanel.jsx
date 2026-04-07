@@ -11,7 +11,7 @@ export default function SectionPanel({ children, ...props }) {
       pr={{ base: 0, sm: 'md' }}
       py={{ base: 'xs', sm: 'md' }}
       radius={{ base: 0, sm: 'md' }}
-      bg={isMobile ? 'transparent' : '#1c1c1c'}
+      // bg={isMobile ? 'transparent' : '#1c1c1c'}
       {...props}
     >
       {children}

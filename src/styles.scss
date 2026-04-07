@@ -13,7 +13,18 @@
   }
 }
 
+@media (max-width: 48em) {
+  [data-mantine-color-scheme='dark'] .transparent-in-mobile-dark {
+    background-color: transparent !important;
+    border-color: transparent !important;
+  }
+}
+
 // Other styles
+
+.link:hover {
+  text-decoration: underline;
+}
 
 .iconVerified {
   color: #0977ff;

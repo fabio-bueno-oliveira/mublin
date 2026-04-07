@@ -3,7 +3,7 @@ import { RouterProvider } from 'react-router-dom'
 import { 
   MantineProvider, createTheme, 
   localStorageColorSchemeManager,
-  Badge, Button, Paper
+  Badge, Button, Paper, Divider
 } from '@mantine/core'
 import { Notifications } from '@mantine/notifications'
 import { AuthProvider } from './contexts/AuthContext'
@@ -40,12 +40,25 @@ const theme = createTheme({
         size: "md",
       },
     }),
+    Card: Paper.extend({
+      styles: {
+        root: {
+          backgroundColor: 'light-dark(#ffffff, #1c1c1c)',
+          borderColor: 'light-dark(#dde1e7, #101010)',
+        },
+      },
+    }),
     Paper: Paper.extend({
       styles: {
         root: {
           backgroundColor: 'light-dark(#ffffff, #1c1c1c)',
           borderColor: 'light-dark(#dde1e7, #101010)',
         },
+      },
+    }),
+    Divider: Divider.extend({
+      defaultProps: {
+        opacity: 0.3,
       },
     }),
   },
