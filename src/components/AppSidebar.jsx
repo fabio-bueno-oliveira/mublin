@@ -4,13 +4,13 @@ import {
   Badge, Group, Text, Divider
 } from '@mantine/core'
 import {
-  IconHome2, IconSparkles, IconMicrophone2
+  IconHome2, IconPlus
 } from '@tabler/icons-react'
 
 const NAV_ITEMS = [
   { label: 'Home', icon: IconHome2, path: '/home' },
-  { label: 'Meus projetos', icon: IconMicrophone2, path: '/projects' },
-  { label: 'Explorar', icon: IconSparkles, path: '/search' },
+  // { label: 'Meus projetos', icon: IconMicrophone2, path: '/projects' },
+  // { label: 'Explorar', icon: IconSparkles, path: '/search' },
 ]
 
 const UPCOMING_GIGS = [
@@ -51,6 +51,18 @@ export default function AppSidebar() {
             />
           )
         })}
+        <NavLink
+          href="#required-for-focus"
+          label={<Text size="md">Criar</Text>}
+          color="gray"
+          leftSection={<IconPlus size={20} />}
+          childrenOffset={28}
+        >
+          <NavLink href="#required-for-focus" label={<Text size="sm">Novo Post</Text>}  />
+          <NavLink href="#required-for-focus" label={<Text size="sm">Novo Evento</Text>}  />
+          <NavLink href="#required-for-focus" label={<Text size="sm">Novo Projeto</Text>} />
+          <NavLink href="#required-for-focus" label={<Text size="sm">Novo Equipamento</Text>} />
+        </NavLink>
       </Stack>
       <Text fw={600} size="sm" mt="md" c="dimmed">
         Minhas próximas gigs:

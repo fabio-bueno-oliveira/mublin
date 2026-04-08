@@ -21,7 +21,7 @@ import LinkedItem from '../components/feed/LinkedItem'
 import VideoPlayer from '../components/feed/VideoPlayer'
 import LikeButton from '../components/feed/LikeButton'
 import {
-  IconCirclePlus, IconClock, IconRosetteDiscountCheckFilled, IconMessageCircle, 
+  IconClock, IconRosetteDiscountCheckFilled, IconMessageCircle, 
   IconDots, IconLink, IconTrash, IconPlus, 
   IconCubePlus, IconBulb, IconPencilPlus
 } from '@tabler/icons-react'
@@ -139,9 +139,6 @@ export default function Home() {
 
   return (
     <>
-      {/* {isMobile && // Logo + header para mobile
-        <Text>Teste</Text>
-      } */}
       <Flex gap="xs" align="flex-start" mb="lg" hiddenFrom="sm">
         <Avatar
           size={34}
@@ -160,7 +157,7 @@ export default function Home() {
             </Title>
             <ScrollArea w="100%" type="never">
               <Flex gap={14}>
-                <Flex direction="column" align="center" gap={10}>
+                {/* <Flex direction="column" align="center" gap={10}>
                   <Avatar
                     w={90}
                     h={130}
@@ -173,7 +170,7 @@ export default function Home() {
                     <IconCirclePlus size="1.5rem" color="gray" stroke={1.5} />
                   </Avatar>
                   <Text size="0.75rem" fw={480}>Novo Projeto</Text>
-                </Flex>
+                </Flex> */}
 
                 {loadingProjects && <ProjectSkeletons />}
 

@@ -243,15 +243,17 @@ export default function Post() {
           </Box>
           {/* Player de vídeo */}
           {post.video_url && (
-            <VideoPlayer
-              url={post.video_url}
-              title={post.body?.slice(0, 60)}
-            />
+            <Box mt="xs">
+              <VideoPlayer
+                url={post.video_url}
+                title={post.body?.slice(0, 60)}
+              />
+            </Box>
           )}
           {post.image && (
             <Image
               src={`https://ik.imagekit.io/mublin/posts/tr:w-700/${post.image}`}
-              mt="sm"
+              mt="xs"
             />
           )}
           <Box px={isMobile ? 14 : 0}>

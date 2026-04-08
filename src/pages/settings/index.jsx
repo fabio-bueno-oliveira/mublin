@@ -46,7 +46,7 @@ const SETTINGS_TABS = [
   },
   {
     value: 'availability',
-    label: 'Disponibilidade para trabalhos',
+    label: 'Disponibilidade',
     icon: IconRadar,
     path: '/settings/availability',
   },

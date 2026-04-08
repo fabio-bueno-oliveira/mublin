@@ -45,8 +45,8 @@ dayjs.locale('pt-br')
 
 const AVATAR_PATH = 'https://ik.imagekit.io/mublin/tr:h-200,c-maintain_ratio/users/avatars/'
 
-function SectionTitle({ text, mb }) {
-  return <Text fw={600} size="17px" mb={mb}>{text}</Text>
+function SectionTitle({ text, mb, mt = 0 }) {
+  return <Text fw={600} size="17px" mb={mb} mt={mt}>{text}</Text>
 }
 
 export default function Profile() {
@@ -497,77 +497,63 @@ export default function Profile() {
                   )}
                 </Group>
               </Scroller>
-              <Group justify='space-between' align='center' gap={8} mt={10}>
-                <SectionTitle 
-                  text={`Equipamento ${!!gear.length && `(${gear.length})`}`} 
-                  mb="0" 
-                />
-                <Group gap={8}>
-                  {!!gear.length && 
-                    <ActionIcon
-                      variant="subtle"
-                      size='md'
-                      color="gray"
-                      aria-label='Gerenciar'
+              <SectionTitle 
+                text={`Equipamento ${!!gear.length && `(${gear.length})`}`} 
+                mt={10}
+                mb="0" 
+              />
+              <Group gap={10} mb={4}>
+                {(gear.length > 0 && gearCategories.length > 1) && (
+                  <NativeSelect
+                    size="sm"
+                    w={145}
+                    onChange={(e) => setGearCategorySelected(e.target.value)}
+                  >
+                    <option value="">Exibir tudo</option>
+                    {gearCategories.map(cat => (
+                      <option key={cat.category_id} value={cat.category_id}>
+                        {truncateString(`${cat.category} (${cat.total})`, 28)}
+                      </option>
+                    ))}
+                  </NativeSelect>
+                )}
+                {!!gear.length && 
+                  <Button
+                    variant="default"
+                    size="sm"
+                    aria-label="Gerenciar"
+                    component={Link}
+                    to={`/${username}/gear`}
+                    leftSection={<IconArrowsMaximize size={16} stroke={1.5} />}
+                  >
+                    Ver tudo
+                  </Button>
+                }
+                {user?.id === profile.id && (
+                  <>
+                    <Button
+                      variant="default"
+                      size="sm"
+                      aria-label='Adicionar item'
                       component={Link}
-                      to={`/${username}/gear`}
-                      title='Ver ampliado'
+                      to='/new/gear'
+                      leftSection={<IconPlus size={16} stroke={1.5} />}
                     >
-                      <IconArrowsMaximize 
-                        color="var(--mantine-color-text)"
-                        style={{ width: '80%', height: '80%' }} stroke={1.5}
-                      />
-                    </ActionIcon>
-                  }
-                  {user?.id === profile.id && (
-                    <>
-                      <ActionIcon
-                        variant="subtle"
-                        size='md'
-                        color="gray"
-                        aria-label='Adicionar item'
-                        component={Link}
-                        to='/new/gear'
-                        title='Adicionar item'
-                      >
-                        <IconPlus 
-                          color="var(--mantine-color-text)"
-                          style={{ width: '92%', height: '92%' }} stroke={1.5}
-                        />
-                      </ActionIcon>
-                      <ActionIcon
-                        variant="subtle"
-                        size='md'
-                        color="gray"
-                        aria-label='Gerenciar'
-                        component={Link} 
-                        to='/settings/gear'
-                        title='Gerenciar'
-                      >
-                        <IconSettings 
-                          color="var(--mantine-color-text)"
-                          style={{ width: '92%', height: '92%' }} stroke={1.5}
-                        />
-                      </ActionIcon>
-                    </>
-                  )}
-                </Group>
+                      Adicionar
+                    </Button>
+                    <Button
+                      variant="default"
+                      size="sm"
+                      aria-label='Gerenciar'
+                      component={Link} 
+                      to='/settings/gear'
+                      leftSection={<IconSettings size={16} stroke={1.5} />}
+                    >
+                      Gerenciar
+                    </Button>
+                  </>
+                )}
               </Group>
-              {(gear.length > 0 && gearCategories.length > 1) && (
-                <NativeSelect
-                  size="sm"
-                  w={145}
-                  mb={4}
-                  onChange={(e) => setGearCategorySelected(e.target.value)}
-                >
-                  <option value="">Exibir tudo</option>
-                  {gearCategories.map(cat => (
-                    <option key={cat.category_id} value={cat.category_id}>
-                      {truncateString(`${cat.category} (${cat.total})`, 28)}
-                    </option>
-                  ))}
-                </NativeSelect>
-              )}
               <Paper
                 p="sm"
                 withBorder

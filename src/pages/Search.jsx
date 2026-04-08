@@ -1,5 +1,8 @@
-import { useSearchParams, Link } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
+import { useState } from 'react'
+import { useSearchParams, Link, useNavigate } from 'react-router-dom'
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query'
+import { fetchRecentSearches, saveSearchQuery, clearSearchHistory } from '../queries/search'
+import { useAuth } from '../hooks/useAuth'
 import { fetchRandomBrands, fetchFeaturedProducts } from '../queries/gear'
 import { 
   searchProfiles, searchProjects, 
@@ -7,12 +10,13 @@ import {
 } from '../queries/search'
 import {
   Grid, Box, NavLink, Flex, Container,
-  Loader, Group, Space, Marquee, Center, Anchor,
-  Card, Scroller, Title, Text, Image, Avatar, Divider
+  Loader, Group, Marquee, Center, 
+  Card, Scroller, Title, Text, Image, Avatar,
+  TextInput, ActionIcon, Button
 } from '@mantine/core'
 import {
-  IconCircleArrowLeftFilled, IconCircleArrowRightFilled,
-  IconRosetteDiscountCheckFilled, IconSearch
+  IconCircleArrowLeftFilled, IconCircleArrowRightFilled, IconSearch,
+  IconRosetteDiscountCheckFilled, IconArrowRight, IconClock
 } from '@tabler/icons-react'
 
 const PATH_USER_AVATAR = 'https://ik.imagekit.io/mublin/tr:h-200,c-maintain_ratio/users/avatars/'
@@ -20,8 +24,19 @@ const PATH_PROJECT_AVATAR = 'https://ik.imagekit.io/mublin/projects/tr:h-200,w-2
 const PATH_PRODUCT_IMAGE = 'https://ik.imagekit.io/mublin/products/tr:w-300,h-300,cm-pad_resize,bg-FFFFFF,fo-x/'
 
 export default function Search() {
+  const navigate = useNavigate()
+  const { user } = useAuth()
+  const queryClient = useQueryClient()
   const [searchParams] = useSearchParams()
   const q = searchParams.get('q') ?? ''
+  const [mobileInput, setMobileInput] = useState(q)
+
+  const { data: recentSearches = [] } = useQuery({
+    queryKey: ['recent-searches', user?.id],
+    queryFn: () => fetchRecentSearches(user.id),
+    enabled: !!user?.id,
+    staleTime: 1000 * 60 * 5,
+  })
 
   const { data: featuredProducts = [], isLoading: loadingFeaturedProducts } = useQuery({
     queryKey: ['search-featured-products'],
@@ -63,13 +78,85 @@ export default function Search() {
     staleTime: 1000 * 60 * 5,
   })
 
+  async function doMobileSearch(keyword) {
+    const trimmed = keyword.trim()
+    if (trimmed && user?.id) {
+      await saveSearchQuery(user.id, trimmed)
+      queryClient.invalidateQueries({ queryKey: ['recent-searches', user?.id] })
+    }
+    navigate(trimmed ? `/search?q=${encodeURIComponent(trimmed)}` : '/search')
+  }
+
   const locationLabel = (city, region) => {
     const parts = [city, region].filter(Boolean)
     return parts.length > 0 ? parts.join(', ') : null
   }
 
+  const { mutate: clearHistory } = useMutation({
+    mutationFn: () => clearSearchHistory(user.id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['recent-searches', user?.id] }),
+  })
+
   return (
     <Container size="xl" py="sm">
+      {/* Busca Mobile */}
+      <Box hiddenFrom="sm" mb="xl">
+        <TextInput
+          placeholder="Buscar músicos, projetos, gigs..."
+          leftSection={<IconSearch size={15} />}
+          rightSection={
+            <ActionIcon
+              variant="subtle"
+              color="gray"
+              radius="xl"
+              size="md"
+              onClick={() => doMobileSearch(mobileInput)}
+            >
+              <IconArrowRight size={16} />
+            </ActionIcon>
+          }
+          radius="xl"
+          size="md"
+          value={mobileInput}
+          onChange={(e) => setMobileInput(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && doMobileSearch(mobileInput)}
+        />
+        {/* Buscas recentes — só exibe quando campo vazio e sem query ativa */}
+        {!q && recentSearches.length > 0 && (
+          <Box mt="sm">
+            <Group justify="space-between" mb="xs">
+              <Text size="xs" c="dimmed">
+                <IconClock size={11} style={{ marginRight: 4, verticalAlign: 'middle' }} />
+                Buscas recentes 
+              </Text>
+              <Text
+                size="xs"
+                c="dimmed"
+                style={{ cursor: 'pointer' }}
+                onClick={() => clearHistory()}
+              >
+                Deletar buscas recentes
+              </Text>
+            </Group>
+            <Group gap="xs" wrap="wrap">
+              {recentSearches.map(s => (
+                <Button
+                  key={s.id}
+                  size="xs"
+                  variant="default"
+                  radius="xl"
+                  onClick={() => {
+                    setMobileInput(s.query)
+                    doMobileSearch(s.query)
+                  }}
+                >
+                  {s.query}
+                </Button>
+              ))}
+            </Group>
+          </Box>
+        )}
+      </Box>
       {q ? (
         <>
           <Title order={1} fz="h2" fw={700} lts="-0.02em" mb={{ base: 4, sm: 24 }}>
@@ -290,13 +377,6 @@ export default function Search() {
         </>
       ) : (
         <>
-          <Title order={1} fz="h2" ta="left" fw={700} lts="-0.02em" mb="sm">
-            Explorar
-          </Title>
-          <Space h="md" />
-          <Title order={3} fz="h4" ta="left" fw={700} lts="-0.02em" mb="sm" opacity={0.8}>
-            Equipamentos em destaque
-          </Title>
           <Scroller
             mb="lg"
             startControlIcon={<IconCircleArrowLeftFilled size={36} />}
@@ -332,9 +412,6 @@ export default function Search() {
               )}
             </Group>
           </Scroller>
-          <Title order={3} fz="h4" ta="left" fw={700} lts="-0.02em" mb="sm" opacity={0.8}>
-            Marcas em destaque
-          </Title>
           {loadingRandomBrands ? (
             <Center><Loader size="sm" /></Center>
           ) : (
