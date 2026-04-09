@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import {
-  Drawer, Box, Flex, Button, Text, Avatar
+  Drawer, Button, Avatar, Stack
 } from '@mantine/core'
 import {
   IconBulb, IconCubePlus, IconHome, IconSearch,
@@ -82,64 +82,59 @@ export default function AppFooterMobile() {
         title="O que deseja criar?"
         position="bottom"
       >
-        <Flex mb={40} mt={4} direction="column" gap={18}>
-          <Box>
-            <Button
-              component={Link}
-              to="/new/project"
-              variant="filled"
-              color="indigo"
-              size="md"
-              radius="md"
-              leftSection={<IconBulb size={19} />}
-              fullWidth
-              onClick={() => setDrawerOpen(false)}
-            >
-              Novo projeto
-            </Button>
-            <Text ta="center" size="xs" c="dimmed" mt={5} px={10}>
-              Ingresse em projetos de música novos ou em atividade
-            </Text>
-          </Box>
+        <Stack mb={20} mt={18} direction="column" gap={18}>
+          <Button
+            component={Link}
+            to="/new/post"
+            variant="light"
+            size="md"
+            radius="md"
+            leftSection={<IconPencilPlus size={19} />}
+            fullWidth
+            onClick={() => setDrawerOpen(false)}
+          >
+            Novo post
+          </Button>
 
-          <Box>
-            <Button
-              component={Link}
-              to="/new/post"
-              variant="filled"
-              color="indigo"
-              size="md"
-              radius="md"
-              leftSection={<IconPencilPlus size={19} />}
-              fullWidth
-              onClick={() => setDrawerOpen(false)}
-            >
-              Novo post
-            </Button>
-            <Text ta="center" size="xs" c="dimmed" mt={5} px={10}>
-              Escreva uma nova postagem
-            </Text>
-          </Box>
+          <Button
+            component={Link}
+            to="/new/project"
+            variant="light"
+            size="md"
+            radius="md"
+            leftSection={<IconBulb size={19} />}
+            fullWidth
+            onClick={() => setDrawerOpen(false)}
+          >
+            Novo projeto
+          </Button>
 
-          <Box>
-            <Button
-              component={Link}
-              to="/new/gear"
-              variant="filled"
-              color="indigo"
-              size="md"
-              radius="md"
-              leftSection={<IconCubePlus size={22} />}
-              fullWidth
-              onClick={() => setDrawerOpen(false)}
-            >
-              Novo equipamento
-            </Button>
-            <Text ta="center" size="xs" c="dimmed" mt={5} px={10}>
-              Cadastre um novo item do seu equipamento
-            </Text>
-          </Box>
-        </Flex>
+          <Button
+            component={Link}
+            to="/new/project"
+            variant="light"
+            size="md"
+            radius="md"
+            leftSection={<IconBulb size={19} />}
+            fullWidth
+            onClick={() => setDrawerOpen(false)}
+          >
+            Novo evento
+          </Button>
+
+          <Button
+            component={Link}
+            to="/new/gear"
+            variant="light"
+            size="md"
+            radius="md"
+            leftSection={<IconCubePlus size={22} />}
+            fullWidth
+            onClick={() => setDrawerOpen(false)}
+          >
+            Novo equipamento
+          </Button>
+        </Stack>
       </Drawer>
     </>
   )

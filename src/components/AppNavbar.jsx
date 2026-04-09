@@ -2,13 +2,15 @@ import { useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query'
 import { fetchRecentSearches, saveSearchQuery, clearSearchHistory } from '../queries/search'
+import MublinLogoBlack from '../assets/svg/mublin-logo-black.svg'
+import MublinLogoWhite from '../assets/svg/mublin-logo-white.svg'
 import {
+  useMantineColorScheme, useComputedColorScheme,
   Group, Text, TextInput, ActionIcon, Avatar, Switch,
-  Menu, Box, Container, Combobox, useCombobox,
-  useComputedColorScheme, useMantineColorScheme
+  Menu, Box, Container, Combobox, useCombobox, Image,
 } from '@mantine/core'
 import {
-  IconSearch, IconCircuitResistor, IconArrowRight,
+  IconSearch, IconArrowRight,
   IconBell, IconChevronDown, IconSun, IconMoon, IconClock
 } from '@tabler/icons-react'
 import { useAuth } from '../hooks/useAuth'
@@ -17,6 +19,7 @@ const AVATAR_PATH = 'https://ik.imagekit.io/mublin/tr:h-200,c-maintain_ratio/use
 
 export default function AppNavbar({ children }) {
   const navigate = useNavigate()
+  const { colorScheme } = useMantineColorScheme()
   const { profile, user, signOut } = useAuth()
   const [searchParams] = useSearchParams()
   const { setColorScheme } = useMantineColorScheme()
@@ -77,17 +80,17 @@ export default function AppNavbar({ children }) {
         <Group justify="space-between" align="center" h="100%" gap="md">
           <Group gap="md">
             {children}
-            <Group
-              gap={8}
+            <Link
               component={Link}
               to="/home"
-              style={{ textDecoration: 'none', color: 'inherit' }}
             >
-              <IconCircuitResistor size={30} />
-              <Text fw={800} size="xl" style={{ letterSpacing: '-0.03em' }} visibleFrom="sm">
-                mublin
-              </Text>
-            </Group>
+              <Image 
+                src={colorScheme === 'light' ? MublinLogoBlack : MublinLogoWhite} 
+                h={26} 
+                w="auto"
+                fit="contain"
+              />
+            </Link>
           </Group>
 
           {/* Busca Desktop */}

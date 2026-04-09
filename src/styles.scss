@@ -13,6 +13,14 @@
   }
 }
 
+.paperWrapper {
+  padding: 0.2rem 1rem 0.2rem 1rem;
+  @media (max-width: 48em) {
+    background-color: transparent!important;
+    padding: 0.2rem 1rem 0.2rem 1rem;
+  }
+}
+
 @media (max-width: 48em) {
   [data-mantine-color-scheme='dark'] .transparent-in-mobile-dark {
     background-color: transparent !important;

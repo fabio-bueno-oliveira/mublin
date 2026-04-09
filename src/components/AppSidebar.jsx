@@ -4,7 +4,8 @@ import {
   Badge, Group, Text, Divider
 } from '@mantine/core'
 import {
-  IconHome2, IconPlus
+  IconHome2, IconPlus, IconCubePlus, 
+  IconBulb, IconPencilPlus, IconCalendarPlus
 } from '@tabler/icons-react'
 
 const NAV_ITEMS = [
@@ -37,10 +38,10 @@ export default function AppSidebar() {
               component={Link}
               to={item.path}
               disabled={!item.path}
-              label={<Text size="md">{item.label}</Text>}
+              label={<Text size="sm">{item.label}</Text>}
               description={item.extra}
               color="gray"
-              leftSection={<Icon size={20} />}
+              leftSection={<Icon size={18} />}
               rightSection={item.badge && (
                 <Badge size="xs" color="gray" variant="light">
                   {item.badge}
@@ -53,15 +54,27 @@ export default function AppSidebar() {
         })}
         <NavLink
           href="#required-for-focus"
-          label={<Text size="md">Criar</Text>}
+          label={<Text size="sm">Criar</Text>}
           color="gray"
-          leftSection={<IconPlus size={20} />}
+          leftSection={<IconPlus size={18} />}
           childrenOffset={28}
         >
-          <NavLink href="#required-for-focus" label={<Text size="sm">Novo Post</Text>}  />
-          <NavLink href="#required-for-focus" label={<Text size="sm">Novo Evento</Text>}  />
-          <NavLink href="#required-for-focus" label={<Text size="sm">Novo Projeto</Text>} />
-          <NavLink href="#required-for-focus" label={<Text size="sm">Novo Equipamento</Text>} />
+          <NavLink 
+            href="#required-for-focus" label={<Text size="xs">Novo Post</Text>} 
+            leftSection={<IconPencilPlus size={16} />}
+          />
+          <NavLink 
+            href="#required-for-focus" label={<Text size="xs">Novo Evento</Text>}  
+            leftSection={<IconCalendarPlus size={16} />}
+          />
+          <NavLink 
+            href="#required-for-focus" label={<Text size="xs">Novo Projeto</Text>} 
+            leftSection={<IconBulb size={16} />}
+          />
+          <NavLink 
+            href="#required-for-focus" label={<Text size="xs">Novo Equipamento</Text>} 
+            leftSection={<IconCubePlus size={16} />}
+          />
         </NavLink>
       </Stack>
       <Text fw={600} size="sm" mt="md" c="dimmed">
