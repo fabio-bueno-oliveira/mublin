@@ -5,9 +5,9 @@ import { useQuery } from '@tanstack/react-query'
 import { fetchTunings, fetchProductColors } from '../queries/gear'
 import { supabase } from '../lib/supabaseClient'
 import {
-  Container, Title, Text, Stack, Group, Button, Divider,
+  Grid, Container, Title, Text, Stack, Group, Button, Divider,
   NativeSelect, Image, Center, Flex, Switch, NumberInput,
-  Textarea, ColorSwatch, Loader, Box, ThemeIcon, Checkbox,
+  Textarea, ColorSwatch, Loader, Checkbox,
 } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { notifications } from '@mantine/notifications'
@@ -73,14 +73,14 @@ export default function NewGear() {
   const [categorySelected, setCategorySelected] = useState('')
   const [productSelected,  setProductSelected]  = useState('')
   const [selectedColor,    setSelectedColor]    = useState(null)
-  const [tuningSelected, setTuningSelected] = useState('')
-  const [shareOnFeed,      setShareOnFeed]      = useState(true)
+  const [tuningSelected,   setTuningSelected]   = useState('')
+  const [shareOnFeed,      setShareOnFeed]      = useState(false)
   const [isSubmitting,     setIsSubmitting]     = useState(false)
 
   // ── Form ──────────────────────────────────────────────
   const form = useForm({
     initialValues: {
-      is_featured:        false,
+      is_featured:        true,
       is_currently_using: true,
       is_for_sale:        false,
       price:              '',
@@ -221,12 +221,12 @@ export default function NewGear() {
 
   // ── Render ────────────────────────────────────────────
   return (
-    <Container size="xs" py="md">
-      <Title order={2} fz="h4" fw={600} lts="-0.02em">
+    <Container size="xl" py="sm">
+      <Title order={1} fz="h3" ta="left" fw={600} lts="-0.02em">
         Adicionar equipamento
       </Title>
-      <Text size="sm" c="dimmed">
-        Selecione o produto que será adicionado
+      <Text size="sm" c="dimmed" mb={20}>
+        Selecione o item que será adicionado ao seu equipamento
       </Text>
 
       <Stack gap="md" mt={20}>
@@ -376,47 +376,55 @@ export default function NewGear() {
         <Divider />
 
         {/* ── Opções do item ────────────────────────── */}
-        <Switch
-          label="Em destaque"
-          description="Exibir entre os primeiros no perfil"
-          checked={form.values.is_featured}
-          onChange={(e) => {
-            const checked = e.currentTarget.checked
-            form.setFieldValue('is_featured', checked)
-          }}
-        />
-
-        <Switch
-          label="Em uso atualmente"
-          description="Presente em algum dos meus setups"
-          checked={form.values.is_currently_using}
-          onChange={(e) => {
-            const checked = e.currentTarget.checked
-            form.setFieldValue('is_currently_using', checked)
-          }}
-        />
-
-        <Switch
-          label="À venda"
-          checked={form.values.is_for_sale}
-          onChange={(e) => {
-            const checked = e.currentTarget.checked
-            form.setFieldValue('is_for_sale', checked)
-            if (!checked) form.setFieldValue('price', '')
-          }}
-        />
-
-        {form.values.is_for_sale && (
-          <NumberInput
-            label="Preço de venda (R$)"
-            placeholder="0,00"
-            min={0}
-            decimalScale={2}
-            fixedDecimalScale
-            value={form.values.price}
-            onChange={(v) => form.setFieldValue('price', v)}
-          />
-        )}
+        <Grid>
+          <Grid.Col span={{ base: 12, md: 4 }}>
+            <Switch
+              label="Em destaque"
+              description="Exibir entre os primeiros no perfil"
+              checked={form.values.is_featured}
+              disabled={!productSelected || loadingProducts}
+              onChange={(e) => {
+                const checked = e.currentTarget.checked
+                form.setFieldValue('is_featured', checked)
+              }}
+            />
+          </Grid.Col>
+          <Grid.Col span={{ base: 12, md: 4 }}>
+            <Switch
+              label="Em uso atualmente"
+              description="Utilizo este item em minhas gigs atuais"
+              checked={form.values.is_currently_using}
+              disabled={!productSelected || loadingProducts}
+              onChange={(e) => {
+                const checked = e.currentTarget.checked
+                form.setFieldValue('is_currently_using', checked)
+              }}
+            />
+          </Grid.Col>
+          <Grid.Col span={{ base: 12, md: 4 }}>
+            <Switch
+              label="À venda"
+              checked={form.values.is_for_sale}
+              disabled={!productSelected || loadingProducts}
+              onChange={(e) => {
+                const checked = e.currentTarget.checked
+                form.setFieldValue('is_for_sale', checked)
+                if (!checked) form.setFieldValue('price', '')
+              }}
+            />
+            {form.values.is_for_sale && (
+              <NumberInput
+                label="Preço de venda (R$)"
+                placeholder="0,00"
+                min={0}
+                decimalScale={2}
+                fixedDecimalScale
+                value={form.values.price}
+                onChange={(v) => form.setFieldValue('price', v)}
+              />
+            )}
+          </Grid.Col>
+        </Grid>
 
         {/* Afinação — só para macro_category 'chords' */}
         {tunings.length > 0 && (
@@ -448,6 +456,7 @@ export default function NewGear() {
           minRows={2}
           maxLength={420}
           value={form.values.owner_comments}
+          disabled={!productSelected || loadingProducts}
           onChange={(e) => form.setFieldValue('owner_comments', e.currentTarget.value)}
         />
 
@@ -464,14 +473,12 @@ export default function NewGear() {
           <Group gap={8}>
             <Button
               variant="default"
-              radius="xl"
               onClick={() => navigate('/settings/gear')}
             >
               Cancelar
             </Button>
             <Button
               color="indigo"
-              radius="xl"
               loading={isSubmitting}
               disabled={!productSelected || (hasColors && !selectedColor)}
               onClick={handleSubmit}

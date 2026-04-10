@@ -3,12 +3,13 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../lib/supabaseClient'
+import { fetchGenreCategories } from '../queries/genres'
 import {
   Container, Title, TextInput, Textarea, NativeSelect,
   NumberInput, Checkbox, Radio, Grid, Group, Button,
   Divider, Text, Paper, ScrollArea, Flex,
   Avatar, Anchor, Image, Box, Input, Modal,
-  Loader, Stack
+  Loader, Stack, LoadingOverlay
 } from '@mantine/core'
 import { useForm, isNotEmpty, isInRange } from '@mantine/form'
 import { useDebouncedCallback, useDisclosure } from '@mantine/hooks'
@@ -17,7 +18,6 @@ import { upload } from '@imagekit/react'
 import { IconTrash, IconCheck, IconSearch } from '@tabler/icons-react'
 
 // ── Helpers ──────────────────────────────────────────────
-
 function generateSlug(name) {
   const base = name
     .toLowerCase()
@@ -31,7 +31,6 @@ function generateSlug(name) {
 }
 
 // ── Queries ──────────────────────────────────────────────
-
 async function fetchRoles() {
   const { data, error } = await supabase
     .from('roles')
@@ -41,17 +40,15 @@ async function fetchRoles() {
   if (error) throw new Error(error.message)
   return data
 }
-
 async function fetchRegions() {
   const { data, error } = await supabase
     .from('regions')
     .select('id, name, uf')
-    .eq('country_id', 27) // Brasil
+    .eq('country_id', 27)
     .order('name')
   if (error) throw new Error(error.message)
   return data
 }
-
 async function searchProjectsByName(name) {
   const { data, error } = await supabase
     .from('projects')
@@ -61,7 +58,6 @@ async function searchProjectsByName(name) {
   if (error) throw new Error(error.message)
   return data
 }
-
 async function searchCitiesByName(query, regionId) {
   const { data, error } = await supabase
     .from('cities')
@@ -74,29 +70,48 @@ async function searchCitiesByName(query, regionId) {
   return data
 }
 
-// ── Componente principal ──────────────────────────────────
+async function fetchAllGenres() {
+  const { data, error } = await supabase
+    .from('genres')
+    .select('id, name_ptbr, id_category')
+    .eq('active', true)
+    .order('name_ptbr')
+  if (error) throw new Error(error.message)
+  return data
+}
 
+// ── Componente principal ──────────────────────────────────
 export default function NewProject() {
   const navigate = useNavigate()
   const { user } = useAuth()
-
   const currentYear = new Date().getFullYear()
 
   // Estados locais
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [nameValue, setNameValue] = useState('')
+  // Imagem principal do projeto
   const [projectImage, setProjectImage] = useState('')
   const [projectFileId, setProjectFileId] = useState('')
+  const [projectImageProgress, setProjectImageProgress] = useState(0)
+  const [projectImageFile, setProjectImageFile] = useState(null)
+  // Logo do projeto
+  const [projectLogo, setProjectLogo] = useState('')
+  const [projectLogoFileId, setProjectLogoFileId] = useState('')
+  const [projectLogoProgress, setProjectLogoProgress] = useState(0)
+  const [projectLogoFile, setProjectLogoFile] = useState(null)
+  // Demais estados
   const [slugValue, setSlugValue] = useState('')
   const [slugChecking, setSlugChecking] = useState(false)
   const [slugAvailable, setSlugAvailable] = useState(null)
+  const [descriptionValue, setDescriptionValue] = useState('')
   const [similarProjects, setSimilarProjects] = useState([])
-  const [selectedCity, setSelectedCity] = useState(null) // { id, name }
+  const [selectedCity, setSelectedCity] = useState(null)
   const [citySearchQuery, setCitySearchQuery] = useState('')
   const [cityResults, setCityResults] = useState([])
   const [citySearchLoading, setCitySearchLoading] = useState(false)
   const [noCityResults, setNoCityResults] = useState(false)
   const [modalCityOpened, { open: openCityModal, close: closeCityModal }] = useDisclosure(false)
+  const [loadingStep, setLoadingStep] = useState('')
 
   // Queries
   const { data: roles = [] } = useQuery({
@@ -104,17 +119,29 @@ export default function NewProject() {
     queryFn: fetchRoles,
     staleTime: 1000 * 60 * 30,
   })
-
   const { data: regions = [] } = useQuery({
     queryKey: ['regions-br'],
     queryFn: fetchRegions,
     staleTime: 1000 * 60 * 60,
   })
+  const { data: genreCategories = [] } = useQuery({
+    queryKey: ['genre-categories'],
+    queryFn: fetchGenreCategories,   // já existe em genres.js
+    staleTime: Infinity,
+  })
+  const { data: allGenres = [] } = useQuery({
+    queryKey: ['all-genres'],
+    queryFn: fetchAllGenres,
+    staleTime: Infinity,
+  })
 
+  const sortedGenreCategories = [
+    ...genreCategories.filter(c => c.id !== 5),
+    ...genreCategories.filter(c => c.id === 5),
+  ]
   const rolesMusicians = roles
     .filter(r => r.instrumentalist)
     .map(r => ({ label: r.name_ptbr, value: String(r.id) }))
-
   const rolesManagement = roles
     .filter(r => !r.instrumentalist)
     .map(r => ({ label: r.name_ptbr, value: String(r.id) }))
@@ -135,6 +162,7 @@ export default function NewProject() {
       is_public: '1',
       featured: false,
       region_id: '',
+      genre_id: '',
     },
     validate: {
       name: (v) => (v.length < 2 ? 'Mínimo de 2 caracteres' : null),
@@ -160,7 +188,6 @@ export default function NewProject() {
     setSlugChecking(false)
   }, 700)
 
-  // Busca projetos similares com debounce
   const checkSimilarProjects = useDebouncedCallback(async (name) => {
     if (name.length < 3) { setSimilarProjects([]); return }
     const results = await searchProjectsByName(name)
@@ -190,11 +217,10 @@ export default function NewProject() {
       .replace(/[\u0300-\u036f]/g, '')
       .replace(/[^a-z0-9-]/g, '')
     setSlugValue(formatted)
-    setSlugAvailable(null)   // reseta o ícone enquanto digita
+    setSlugAvailable(null)
     checkSlug(formatted)
   }
 
-  // Busca cidades
   const handleCitySearch = useDebouncedCallback(async (query) => {
     const regionId = form.getValues().region_id
     if (!query || query.length < 2 || !regionId) return
@@ -210,75 +236,99 @@ export default function NewProject() {
     setCitySearchLoading(false)
   }, 500)
 
-  // Upload de imagem
-  const [uploadProgress, setUploadProgress] = useState(0)
+  // ── Upload helpers ────────────────────────────────────────
+
+  /**
+   * Busca os tokens de autenticação do ImageKit.
+   * Reutilizada por ambos os uploads.
+   */
+  async function getIkAuthTokens() {
+    const { data: { session } } = await supabase.auth.getSession()
+    const authRes = await fetch(import.meta.env.VITE_IMAGEKIT_AUTH_ENDPOINT, {
+      headers: { Authorization: `Bearer ${session?.access_token}` },
+    })
+    if (!authRes.ok) throw new Error('Falha na autenticação do ImageKit')
+    return { session, ...(await authRes.json()) }
+  }
+
+  /**
+   * Faz upload de um arquivo para o ImageKit num folder específico.
+   * @param {File}     file         - arquivo selecionado
+   * @param {string}   fileName     - nome base do arquivo
+   * @param {string}   folder       - pasta de destino (ex: '/projects/123/')
+   * @param {string[]} tags         - tags do ImageKit
+   * @param {Function} onProgress   - callback de progresso
+   */
+  async function uploadToImageKit({ file, fileName, folder, tags, onProgress }) {
+    const { token: ikToken, expire, signature } = await getIkAuthTokens()
+    return upload({
+      file,
+      fileName,
+      folder,
+      tags,
+      useUniqueFileName: true,
+      publicKey: import.meta.env.VITE_IMAGEKIT_PUBLIC_KEY,
+      urlEndpoint: import.meta.env.VITE_IMAGEKIT_URL_ENDPOINT,
+      token: ikToken,
+      expire,
+      signature,
+      onProgress: (e) => onProgress(Math.round((e.loaded / e.total) * 100)),
+    })
+  }
+
+  /**
+   * Remove um arquivo do ImageKit via Edge Function.
+   */
+  async function deleteFromImageKit(fileId) {
+    const { data: { session } } = await supabase.auth.getSession()
+    const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/imagekit-manage`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session?.access_token}`,
+      },
+      body: JSON.stringify({ fileId }),
+    })
+    if (!response.ok) throw new Error('Erro ao deletar no servidor')
+  }
+
+  // ── Handlers de imagem principal ─────────────────────────
 
   async function handleRemoveImage() {
-    if (!projectFileId) return;
-
+    if (!projectFileId) return
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/imagekit-manage`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session?.access_token}`,
-        },
-        body: JSON.stringify({ fileId: projectFileId }),
-      });
-
-      if (!response.ok) throw new Error('Erro ao deletar no servidor');
-
-      setProjectImage('');
-      setProjectFileId('');
-      if (document.querySelector('#projectImage')) {
-        document.querySelector('#projectImage').value = null;
-      }
+      await deleteFromImageKit(projectFileId)
+      setProjectImage('')
+      setProjectFileId('')
+      setProjectImageFile(null)
+      const el = document.querySelector('#projectImage')
+      if (el) el.value = null
     } catch (err) {
-      console.error(err);
+      console.error(err)
     }
   }
 
+  /**
+   * Pré-upload da imagem principal — folder temporário sem ID.
+   * O caminho final será atualizado no handleSubmit após criação do projeto.
+   */
   async function handleImageUpload(file) {
     if (!file) return
+    setProjectImageFile(file)
     try {
-      // 1. Buscar a sessão para autenticar no seu endpoint de auth do ImageKit
-      const { data: { session } } = await supabase.auth.getSession()
-
-      // 2. Chamar seu endpoint de autenticação (mesma lógica do Onboarding)
-      const authRes = await fetch(import.meta.env.VITE_IMAGEKIT_AUTH_ENDPOINT, {
-        headers: {
-          Authorization: `Bearer ${session?.access_token}`,
-        },
-      })
-
-      if (!authRes.ok) throw new Error('Falha na autenticação do ImageKit')
-      
-      const { token: ikToken, expire, signature } = await authRes.json()
-
-      // 3. Realizar o upload passando os tokens de segurança
-      const response = await upload({
+      const response = await uploadToImageKit({
         file,
         fileName: `${slugValue || 'project'}_.jpg`,
-        folder: '/projects/',
-        tags: ['project', 'avatar'],
-        useUniqueFileName: true,
-        publicKey: import.meta.env.VITE_IMAGEKIT_PUBLIC_KEY,
-        urlEndpoint: import.meta.env.VITE_IMAGEKIT_URL_ENDPOINT,
-        // PASSAR OS TOKENS ABAIXO:
-        token: ikToken,
-        expire,
-        signature,
-        onProgress: (e) => setUploadProgress(Math.round((e.loaded / e.total) * 100)),
+        folder: '/projects/temp/',
+        tags: ['project', 'picture'],
+        onProgress: setProjectImageProgress,
       })
-
       const n = response.filePath.lastIndexOf('/')
       setProjectImage(response.filePath.substring(n + 1))
       setProjectFileId(response.fileId)
-      setUploadProgress(0)
+      setProjectImageProgress(0)
     } catch (err) {
-      console.error("Erro detalhado:", err)
+      console.error('Erro detalhado:', err)
       notifications.show({
         color: 'red',
         title: 'Erro no upload',
@@ -287,25 +337,69 @@ export default function NewProject() {
     }
   }
 
-  // Submit
+  // ── Handlers de logo (novo) ───────────────────────────────
+
+  async function handleRemoveLogo() {
+    if (!projectLogoFileId) return
+    try {
+      await deleteFromImageKit(projectLogoFileId)
+      setProjectLogo('')
+      setProjectLogoFileId('')
+      setProjectLogoFile(null)
+      const el = document.querySelector('#projectLogo')
+      if (el) el.value = null
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  async function handleLogoUpload(file) {
+    if (!file) return
+    setProjectLogoFile(file)
+    try {
+      const response = await uploadToImageKit({
+        file,
+        fileName: `${slugValue || 'project'}_logo_.png`,
+        folder: '/projects/temp/',
+        tags: ['project', 'logo'],
+        onProgress: setProjectLogoProgress,
+      })
+      const n = response.filePath.lastIndexOf('/')
+      setProjectLogo(response.filePath.substring(n + 1))
+      setProjectLogoFileId(response.fileId)
+      setProjectLogoProgress(0)
+    } catch (err) {
+      console.error('Erro detalhado:', err)
+      notifications.show({
+        color: 'red',
+        title: 'Erro no upload da logo',
+        message: 'Não foi possível enviar a logo. Tente novamente.',
+      })
+    }
+  }
+
+  // ── Submit ────────────────────────────────────────────────
+
   async function handleSubmit(values) {
     setIsSubmitting(true)
-    if (slugAvailable === false) return
+    if (slugAvailable === false) { setIsSubmitting(false); return }
 
     const finalName = values.name || nameValue
     const finalSlug = slugValue || generateSlug(finalName)
 
     // 1. Cria o projeto
+    setLoadingStep('Criando o projeto...')
     const { data: newProject, error: projectError } = await supabase
       .from('projects')
       .insert({
         name: finalName,
         slug: finalSlug,
         description: values.description || null,
-        picture: projectImage || null,
         project_type_id: Number(values.project_type_id),
+        genre_id: values.genre_id ? Number(values.genre_id) : null,
         on_tour: false,
         city_id: selectedCity?.id || null,
+        is_public: values.is_public === '1',
       })
       .select('id')
       .single()
@@ -316,11 +410,63 @@ export default function NewProject() {
       return
     }
 
-    // 2. Adiciona o criador como membro fundador e admin
+    const projectId = newProject.id
+    const targetFolder = `/projects/${projectId}/`
+
+    let finalPicture = null
+    let finalLogo = null
+
+    try {
+      if (projectImageFile) {
+        if (projectFileId) await deleteFromImageKit(projectFileId).catch(() => {})
+        const res = await uploadToImageKit({
+          file: projectImageFile,
+          fileName: `${finalSlug}_.jpg`,
+          folder: targetFolder,
+          tags: ['project', 'picture'],
+          onProgress: setProjectImageProgress,
+        })
+        finalPicture = res.filePath.split('/').pop()
+      }
+
+      if (projectLogoFile) {
+        if (projectLogoFileId) await deleteFromImageKit(projectLogoFileId).catch(() => {})
+        const res = await uploadToImageKit({
+          file: projectLogoFile,
+          fileName: `${finalSlug}_logo_.png`,
+          folder: targetFolder,
+          tags: ['project', 'logo'],
+          onProgress: setProjectLogoProgress,
+        })
+        finalLogo = res.filePath.split('/').pop()
+      }
+    } catch (err) {
+      console.error('Erro no upload após criação do projeto:', err)
+      notifications.show({
+        color: 'yellow',
+        title: 'Aviso',
+        message: 'Projeto criado, mas houve um erro no upload das imagens.',
+      })
+    }
+
+    // UPDATE com imagens (fora do try para garantir execução)
+    setLoadingStep('Trabalhando as imagens...')
+    if (finalPicture || finalLogo) {
+      const { error: updateError } = await supabase
+        .from('projects')
+        .update({
+          ...(finalPicture && { picture: finalPicture }),
+          ...(finalLogo && { logo: finalLogo }),
+        })
+        .eq('id', projectId)
+    }
+
+    // Adiciona membro fundador
+    setLoadingStep('Quase lá...')
     const { error: memberError } = await supabase
       .from('project_members')
       .insert({
-        project_id: newProject.id,
+        project_id: projectId,
         profile_id: user.id,
         role_id: Number(values.main_role_id),
         is_founder: true,
@@ -338,9 +484,8 @@ export default function NewProject() {
     notifications.show({
       color: 'green',
       title: 'Projeto criado!',
-      message: `"${values.name}" foi criado com sucesso.`,
+      message: `"${finalName}" foi criado com sucesso.`,
     })
-
     navigate('/home')
   }
 
@@ -348,17 +493,26 @@ export default function NewProject() {
   const regionId = form.getValues().region_id
 
   return (
-    <Container size="xl" py="sm">
-      <Title order={1} fz="h2" ta="left" fw={700} lts="-0.02em" mb={24}>
-        Cadastrar novo projeto
+    <Container size="xl" py="sm" style={{ position: 'relative' }}>
+      <LoadingOverlay
+        visible={isSubmitting}
+        overlayProps={{ radius: 'sm', blur: 2 }}
+        loaderProps={{
+          children: (
+            <Stack align="center" gap="xs">
+              <Loader color="indigo" size="md" />
+              <Text size="sm" c="dimmed" ta="center">{loadingStep}</Text>
+            </Stack>
+          )
+        }}
+      />
+      <Title order={1} fz="h3" ta="left" fw={600} lts="-0.02em" mb={20}>
+        Cadastrar um novo projeto
       </Title>
-
       <form onSubmit={form.onSubmit(handleSubmit)}>
         <Stack gap="md">
-
           <Grid>
             <Grid.Col span={6}>
-              {/* Nome */}
               <TextInput
                 withAsterisk
                 label="Nome do projeto"
@@ -381,7 +535,6 @@ export default function NewProject() {
               />
             </Grid.Col>
             <Grid.Col span={6}>
-              {/* Slug */}
               <TextInput
                 withAsterisk
                 label="URL do projeto"
@@ -404,6 +557,7 @@ export default function NewProject() {
               />
             </Grid.Col>
           </Grid>
+
           {/* Projetos similares */}
           {similarProjects.length > 0 && (
             <Paper withBorder p="sm" radius="md">
@@ -428,40 +582,84 @@ export default function NewProject() {
             </Paper>
           )}
 
-          <Divider label="Imagem do projeto" labelPosition="center" />
+          {/* ── Imagens ── */}
+          <Divider label="Imagens do projeto" labelPosition="center" />
 
-          {/* Upload de imagem */}
-          {!projectImage ? (
-            <>
-              <input
-                id="projectImage"
-                type="file"
-                accept="image/png,image/jpeg,image/gif"
-                onChange={(e) => handleImageUpload(e.target.files?.[0])}
-              />
-              {uploadProgress > 0 && uploadProgress < 100 && (
-                <Text size="xs" c="dimmed">Enviando... {uploadProgress}%</Text>
+          <Grid>
+            {/* Imagem principal */}
+            <Grid.Col span={6}>
+              <Text size="sm" fw={500}>Imagem do projeto</Text>
+              <Text size="xs" c="dimmed" mb={6}>Uma foto/imagem que representa o projeto</Text>
+              {!projectImage ? (
+                <>
+                  <input
+                    id="projectImage"
+                    type="file"
+                    accept="image/png,image/jpeg,image/gif"
+                    onChange={(e) => handleImageUpload(e.target.files?.[0])}
+                  />
+                  {projectImageProgress > 0 && projectImageProgress < 100 && (
+                    <Text size="xs" c="dimmed" mt={4}>Enviando... {projectImageProgress}%</Text>
+                  )}
+                </>
+              ) : (
+                <Flex gap={12} align="center">
+                  <Image
+                    radius="md"
+                    h="auto"
+                    w={100}
+                    src={`https://ik.imagekit.io/mublin/tr:w-130/projects/temp/${projectImage}`}
+                  />
+                  <Button
+                    size="xs"
+                    color="red"
+                    variant="light"
+                    leftSection={<IconTrash size={14} />}
+                    onClick={handleRemoveImage}
+                  >
+                    Remover
+                  </Button>
+                </Flex>
               )}
-            </>
-          ) : (
-            <Flex gap={12} align="center">
-              <Image
-                radius="md"
-                h="auto"
-                w={100}
-                src={`https://ik.imagekit.io/mublin/tr:w-130/projects/${projectImage}`}
-              />
-              <Button
-                size="xs"
-                color="red"
-                variant="light"
-                leftSection={<IconTrash size={14} />}
-                onClick={handleRemoveImage}
-              >
-                Remover
-              </Button>
-            </Flex>
-          )}
+            </Grid.Col>
+
+            {/* Logo (novo) */}
+            <Grid.Col span={6}>
+              <Text size="sm" fw={500}>Logo do projeto</Text>
+              <Text size="xs" c="dimmed" mb={6}>Logotipo/símbolo do projeto</Text>
+              {!projectLogo ? (
+                <>
+                  <input
+                    id="projectLogo"
+                    type="file"
+                    accept="image/png,image/jpeg,image/svg+xml"
+                    onChange={(e) => handleLogoUpload(e.target.files?.[0])}
+                  />
+                  {projectLogoProgress > 0 && projectLogoProgress < 100 && (
+                    <Text size="xs" c="dimmed" mt={4}>Enviando... {projectLogoProgress}%</Text>
+                  )}
+                </>
+              ) : (
+                <Flex gap={12} align="center">
+                  <Image
+                    radius="md"
+                    h="auto"
+                    w={80}
+                    src={`https://ik.imagekit.io/mublin/tr:w-100/projects/temp/${projectLogo}`}
+                  />
+                  <Button
+                    size="xs"
+                    color="red"
+                    variant="light"
+                    leftSection={<IconTrash size={14} />}
+                    onClick={handleRemoveLogo}
+                  >
+                    Remover
+                  </Button>
+                </Flex>
+              )}
+            </Grid.Col>
+          </Grid>
 
           <Divider label="Informações adicionais" labelPosition="center" />
 
@@ -497,7 +695,6 @@ export default function NewProject() {
             </Grid.Col>
           </Grid>
 
-          {/* Status */}
           <NativeSelect
             withAsterisk
             label="Status do projeto"
@@ -513,7 +710,6 @@ export default function NewProject() {
             <option value="6">Em hiato</option>
           </NativeSelect>
 
-          {/* Anos */}
           <Grid>
             <Grid.Col span={6}>
               <NumberInput
@@ -538,7 +734,27 @@ export default function NewProject() {
             </Grid.Col>
           </Grid>
 
-          {/* Localização */}
+          <NativeSelect
+            label="Gênero principal"
+            description="Gênero ou estilo musical que melhor define o projeto"
+            key={form.key('genre_id')}
+            {...form.getInputProps('genre_id')}
+          >
+            <option value="">Selecione (opcional)</option>
+            {sortedGenreCategories.map(category => (
+              <optgroup key={category.id} label={category.name_ptbr}>
+                {allGenres
+                  .filter(g => g.id_category === category.id)
+                  .map(genre => (
+                    <option key={genre.id} value={String(genre.id)}>
+                      {genre.name_ptbr}
+                    </option>
+                  ))
+                }
+              </optgroup>
+            ))}
+          </NativeSelect>
+
           <Grid>
             <Grid.Col span={6}>
               <NativeSelect
@@ -553,9 +769,7 @@ export default function NewProject() {
               >
                 <option value="">Selecione</option>
                 {regions.map(r => (
-                  <option key={r.id} value={String(r.id)}>
-                    {r.name}
-                  </option>
+                  <option key={r.id} value={String(r.id)}>{r.name}</option>
                 ))}
               </NativeSelect>
             </Grid.Col>
@@ -574,23 +788,23 @@ export default function NewProject() {
             </Grid.Col>
           </Grid>
 
-          {/* Bio */}
           <Textarea
             label="Bio"
             placeholder="Conte um pouco sobre o projeto (opcional)"
             maxLength={500}
-            description={`${form.getValues().description?.length ?? 0}/500`}
+            description={`${descriptionValue.length}/500`}
             autosize
             minRows={3}
-            key={form.key('description')}
-            {...form.getInputProps('description')}
+            value={descriptionValue}
+            onChange={(e) => {
+              setDescriptionValue(e.target.value)
+              form.setFieldValue('description', e.target.value)
+            }}
           />
 
-          {/* Função principal */}
           <NativeSelect
             withAsterisk
             label="Sua principal função no projeto"
-            description="Você será atribuído como Administrador e Fundador"
             data={[
               { label: 'Selecione', value: '' },
               { group: 'Gestão, produção e outros', items: rolesManagement },
@@ -600,7 +814,18 @@ export default function NewProject() {
             {...form.getInputProps('main_role_id')}
           />
 
-          {/* Visibilidade */}
+          <Checkbox.Group
+            defaultValue={["initial"]}
+            disabled
+            label="Minhas atribuições"
+            description="Você poderá alterar isto depois"
+          >
+            <Group mt="xs">
+              <Checkbox value="initial" label="Me definir como administrador" />
+              <Checkbox value="initial" label="Me definir como fundador" />
+            </Group>
+          </Checkbox.Group>
+
           <Radio.Group
             label="Visibilidade"
             description="Exibir o projeto nas buscas do Mublin?"
@@ -614,19 +839,17 @@ export default function NewProject() {
           </Radio.Group>
 
           <Group justify="flex-end" mt="sm">
-            <Button variant="subtle" color="gray" onClick={() => navigate(-1)}>
+            <Button variant="default" onClick={() => navigate(-1)}>
               Cancelar
             </Button>
             <Button
               type="submit"
               color="indigo"
-              loading={isSubmitting}
               disabled={slugChecking || slugAvailable === false || slugValue.length < 2 || !nameValue}
             >
               Cadastrar projeto
             </Button>
           </Group>
-
         </Stack>
       </form>
 
@@ -648,11 +871,9 @@ export default function NewProject() {
               handleCitySearch(e.target.value)
             }}
           />
-
           {noCityResults && (
             <Text size="xs" c="dimmed">Nenhuma cidade encontrada neste Estado.</Text>
           )}
-
           {cityResults.length > 0 && (
             <ScrollArea h={200} type="auto">
               <Stack gap={0}>

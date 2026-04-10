@@ -14,6 +14,13 @@ const NAV_ITEMS = [
   // { label: 'Explorar', icon: IconSparkles, path: '/search' },
 ]
 
+const NAV_ITEMS_CREATE = [
+  { label: 'Novo Post', icon: IconPencilPlus, path: '/new/post' },
+  { label: 'Novo Evento', icon: IconCalendarPlus, path: '/new/event' },
+  { label: 'Novo Projeto', icon: IconBulb, path: '/new/project' },
+  { label: 'Novo Equipamento', icon: IconCubePlus, path: '/new/gear' },
+]
+
 const UPCOMING_GIGS = [
   { id: 1, title: 'Show Acústico', project: 'Trio Acústico SP', date: '28 Mar', weekday: 'Sex', venue: 'Bar Sagarana', city: 'São Paulo, SP', confirmed: true },
   { id: 2, title: 'Ensaio Geral', project: 'Banda Paralela', date: '02 Abr', weekday: 'Qua', venue: 'Estúdio B', city: 'São Paulo, SP', confirmed: true },
@@ -59,22 +66,18 @@ export default function AppSidebar() {
           leftSection={<IconPlus size={18} />}
           childrenOffset={28}
         >
-          <NavLink 
-            href="#required-for-focus" label={<Text size="xs">Novo Post</Text>} 
-            leftSection={<IconPencilPlus size={16} />}
-          />
-          <NavLink 
-            href="#required-for-focus" label={<Text size="xs">Novo Evento</Text>}  
-            leftSection={<IconCalendarPlus size={16} />}
-          />
-          <NavLink 
-            href="#required-for-focus" label={<Text size="xs">Novo Projeto</Text>} 
-            leftSection={<IconBulb size={16} />}
-          />
-          <NavLink 
-            href="#required-for-focus" label={<Text size="xs">Novo Equipamento</Text>} 
-            leftSection={<IconCubePlus size={16} />}
-          />
+          {NAV_ITEMS_CREATE.map(item => {
+            const Icon = item.icon
+            return (
+              <NavLink
+                key={item.label}
+                href={item.path}
+                label={<Text size="xs">{item.label}</Text>}
+                leftSection={<Icon size={16} />}
+                variant="light"
+              />
+            )
+          })}
         </NavLink>
       </Stack>
       <Text fw={600} size="sm" mt="md" c="dimmed">

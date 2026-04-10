@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { supabase } from '../lib/supabaseClient'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
@@ -14,22 +14,19 @@ import {
   Title, Text, Badge,
   Skeleton, Group, Stack, Card,
   Tooltip, ActionIcon,
+  Pill,
 } from '@mantine/core'
 import {
-  IconBrandInstagram, IconBrandSpotify, IconPencil,
+  IconBrandInstagram, IconBrandSpotify, IconPencil, IconDoor,
   IconBrandSoundcloud, IconRoad, IconSettings, IconUsers,
   IconClock, IconUserUp, IconLogout, IconUserCog
 } from '@tabler/icons-react'
 
-const AVATAR_PATH = 'https://ik.imagekit.io/mublin/tr:h-240,c-maintain_ratio/users/avatars/'
-const PICTURE_AVATAR_PATH = 'https://ik.imagekit.io/mublin/projects/tr:h-200,w-200,c-maintain_ratio/'
-const PICTURE_COVER_PATH = 'https://ik.imagekit.io/mublin/projects/tr:h-140,w-800,c-maintain_ratio/'
-const DEFAULT_COVER_PICTURE = 'https://ik.imagekit.io/mublin/bg/tr:w-1920,h-140,bg-F3F3F3,fo-bottom/grey-dark.jpg'
-
 export default function Project() {
-  const { user } = useAuth()
+  const { user, profile } = useAuth()
   const { slug } = useParams()
   const queryClient = useQueryClient()
+  const navigate = useNavigate()
 
   const { data: project, isLoading, isError } = useQuery({
     queryKey: ['project', slug],
@@ -38,6 +35,11 @@ export default function Project() {
     staleTime: 1000 * 60 * 5,
     retry: 1,
   })
+
+  const AVATAR_PATH = 'https://ik.imagekit.io/mublin/tr:h-240,c-maintain_ratio/users/avatars/'
+  const PICTURE_AVATAR_PATH = `https://ik.imagekit.io/mublin/projects/${project?.id}/tr:h-200,w-200,c-maintain_ratio/`
+  const PICTURE_COVER_PATH = `https://ik.imagekit.io/mublin/projects/${project?.id}/tr:h-140,w-800,c-maintain_ratio/`
+  const DEFAULT_COVER_PICTURE = 'https://ik.imagekit.io/mublin/bg/tr:w-1920,h-140,bg-F3F3F3,fo-bottom/grey-dark.jpg'
 
   const currentYear = new Date().getFullYear()
   const [modalJoinOpened, { open: openJoinModal, close: closeJoinModal }] = useDisclosure(false)
@@ -221,44 +223,40 @@ export default function Project() {
                     </>
                   )}
                   {!isLoading && userIsConfirmedMember && ( 
-                    <>
-                      <Menu shadow="md" width={200} position="right-start" withArrow>
-                        <Menu.Target>
-                          <ActionIcon variant="subtle" color="gray" size="md">
-                            <IconSettings size={20} />
-                          </ActionIcon>
-                        </Menu.Target>
-                        <Menu.Dropdown>
-                          <Menu.Item leftSection={<IconPencil size={14} />}>
-                            Editar dados do projeto
+                    <Menu shadow="md" width={200} position="right-start" withArrow>
+                      <Menu.Target>
+                        <ActionIcon variant="subtle" color="gray" size="md">
+                          <IconSettings size={24} />
+                        </ActionIcon>
+                      </Menu.Target>
+                      <Menu.Dropdown>
+                        <Menu.Item 
+                          leftSection={<IconDoor size={14} />}
+                          onClick={() => navigate(`/backstage?project=${slug}`)}
+                        >
+                          Acessar Backstage
+                        </Menu.Item>
+                        <Menu.Divider />
+                        <Menu.Item leftSection={<IconPencil size={14} />}>
+                          Editar dados do projeto
+                        </Menu.Item>
+                        <Menu.Item leftSection={<IconSettings size={14} />}>
+                          Gerenciar minha participação
+                        </Menu.Item>
+                        {userIsAdmin && 
+                          <Menu.Item leftSection={<IconUserCog size={14} />}>
+                            Gerenciar pessoas
                           </Menu.Item>
-                          <Menu.Item leftSection={<IconSettings size={14} />}>
-                            Gerenciar minha participação
-                          </Menu.Item>
-                          {userIsAdmin && 
-                            <Menu.Item leftSection={<IconUserCog size={14} />}>
-                              Gerenciar pessoas
-                            </Menu.Item>
-                          }
-                          <Menu.Divider />
-                          <Menu.Item
-                            color="red"
-                            leftSection={<IconLogout size={14} />}
-                          >
-                            Sair deste projeto
-                          </Menu.Item>
-                        </Menu.Dropdown>
-                      </Menu>
-                      <Button 
-                        size="compact-xs" 
-                        color="indigo.9" 
-                        variant="filled"
-                        component={Link}
-                        to={`/backstage?project=${slug}`}
-                      >
-                        Acessar Backstage
-                      </Button>
-                    </>
+                        }
+                        <Menu.Divider />
+                        <Menu.Item
+                          color="red"
+                          leftSection={<IconLogout size={14} />}
+                        >
+                          Sair deste projeto
+                        </Menu.Item>
+                      </Menu.Dropdown>
+                    </Menu>
                   )}
                 </Group>
                 {!isLoading && userHasNoParticipation && (
@@ -407,17 +405,20 @@ export default function Project() {
                     size={50}
                     radius="xl"
                   />
-                  <Stack gap={1} align="center">
-                    <Text size="0.7rem" fw={500} ta="center" w={60} lineClamp={1}>
+                  <Stack gap={3} align="center">
+                    <Text size="0.7rem" fw={500} ta="center" w={70} lineClamp={1}>
                       {member.name}
                     </Text>
-                    <Text size="0.65rem" c="dimmed" ta="center" w={60} lineClamp={1}>
+                    <Text size="0.65rem" c="dimmed" ta="center" w={70} lineClamp={1}>
                       {member.role}
                       {member.role_2 ? ` · ${member.role_2}` : ''}
                     </Text>
                   </Stack>
+                  {member.username === profile?.username && (
+                    <Pill size="xs">Você</Pill>
+                  )}
                   {member.is_founder && (
-                    <Badge size="xs" variant="dot" color="yellow">Fundador</Badge>
+                    <Badge size="xs" variant="light" color="green">Fundador</Badge>
                   )}
                 </Flex>
               ))}

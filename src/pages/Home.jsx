@@ -207,7 +207,7 @@ export default function Home() {
                         fit="cover"
                         src={
                           item.picture
-                            ? `https://ik.imagekit.io/mublin/projects/tr:h-260,w-180,c-maintain_ratio/${item.picture}`
+                            ? `https://ik.imagekit.io/mublin/projects/${item.id}/tr:h-260,w-180,c-maintain_ratio/${item.picture}`
                             : undefined
                         }
                         fallbackSrc="https://placehold.co/90x130?text=Sem+foto"

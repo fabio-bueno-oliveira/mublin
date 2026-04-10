@@ -23,14 +23,12 @@ import { useMediaQuery, useDisclosure } from '@mantine/hooks'
 import LoadingSkeleton from '../components/profile/LoadingSkeleton'
 import LinkedItem from '../components/feed/LinkedItem'
 import VideoPlayer from '../components/feed/VideoPlayer'
-import TruncatedText from '../components/TruncatedText'
 import SectionPanel from '../components/SectionPanel'
 import ProfileHeaderMobile from '../components/profile/ProfileHeaderMobile'
 import { 
   IconMoodSad, IconRosetteDiscountCheckFilled,
   IconWorld, IconShieldCheckFilled, IconArrowsMaximize, IconPlus, IconSettings,
   IconCircleArrowLeftFilled, IconCircleArrowRightFilled, IconCheck,
-  IconMessage,
   IconBrandWhatsapp
 } from '@tabler/icons-react'
 import { truncateString } from '../utils/formatter'

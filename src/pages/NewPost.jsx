@@ -229,7 +229,7 @@ export default function NewPost() {
 
   return (
     <Container size="sm" py="md">
-      <Stack gap="md">
+      <Stack gap="sm">
         {/* Autor */}
         <Group gap="sm">
           {authorType === 'profile' || !selectedProject ? (
@@ -275,6 +275,7 @@ export default function NewPost() {
 
         {/* Corpo do post */}
         <Textarea
+          autoFocus
           placeholder="O que você quer compartilhar?"
           minRows={4}
           autosize

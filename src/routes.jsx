@@ -32,6 +32,8 @@ import Gear from './pages/Gear'
 import GearItem from './pages/GearItem'
 import Brand from './pages/Brand'
 import NewGear from './pages/NewGear'
+// -- Events pages
+import NewEvent from './pages/NewEvent'
 // -- Feed pages
 import Post from './pages/Post'
 import NewPost from './pages/NewPost'
@@ -82,6 +84,7 @@ export const router = createBrowserRouter([
       { path: 'gear/:slug', element: <GearItem /> },
       { path: 'new/gear', element: <NewGear />},
       { path: 'backstage', element: <Backstage /> },
+      { path: 'new/event', element: <NewEvent /> },
       { path: '/:username/gear', element: <ProfileGear /> },
       // ── Settings ──────────────────────────────────
       {
