@@ -4,6 +4,7 @@ import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query'
 import { fetchRecentSearches, saveSearchQuery, clearSearchHistory } from '../queries/search'
 import { useAuth } from '../hooks/useAuth'
 import { fetchRandomBrands, fetchFeaturedProducts } from '../queries/gear'
+import Masonry, { ResponsiveMasonry } from 'react-responsive-masonry'
 import { 
   searchProfiles, searchProjects, 
   searchGear, searchBrands 
@@ -14,14 +15,16 @@ import {
   Card, Scroller, Title, Text, Image, Avatar,
   TextInput, ActionIcon, Button
 } from '@mantine/core'
+import { useDebouncedCallback } from '@mantine/hooks'
 import {
   IconCircleArrowLeftFilled, IconCircleArrowRightFilled, IconSearch,
-  IconRosetteDiscountCheckFilled, IconArrowRight, IconClock
+  IconRosetteDiscountCheckFilled, IconArrowRight, IconClock, IconX
 } from '@tabler/icons-react'
 
 const PATH_USER_AVATAR = 'https://ik.imagekit.io/mublin/tr:h-200,c-maintain_ratio/users/avatars/'
 const PATH_PROJECT_AVATAR = 'https://ik.imagekit.io/mublin/projects/tr:h-200,w-200,c-maintain_ratio/'
-const PATH_PRODUCT_IMAGE = 'https://ik.imagekit.io/mublin/products/tr:w-300,h-300,cm-pad_resize,bg-FFFFFF,fo-x/'
+const PATH_PRODUCT_IMAGE_MOBILE = 'https://ik.imagekit.io/mublin/products/tr:w-200,bg-FFFFFF,fo-x/'
+const PATH_PRODUCT_IMAGE_DESKTOP = 'https://ik.imagekit.io/mublin/products/tr:w-300,h-300,cm-pad_resize,bg-FFFFFF,fo-x/'
 
 export default function Search() {
   const navigate = useNavigate()
@@ -30,6 +33,7 @@ export default function Search() {
   const [searchParams] = useSearchParams()
   const q = searchParams.get('q') ?? ''
   const [mobileInput, setMobileInput] = useState(q)
+  const [isMobileFocused, setIsMobileFocused] = useState(false)
 
   const { data: recentSearches = [] } = useQuery({
     queryKey: ['recent-searches', user?.id],
@@ -80,12 +84,20 @@ export default function Search() {
 
   async function doMobileSearch(keyword) {
     const trimmed = keyword.trim()
-    if (trimmed && user?.id) {
+    if (!trimmed) {
+      navigate('/search')
+      return
+    }
+    if (user?.id) {
       await saveSearchQuery(user.id, trimmed)
       queryClient.invalidateQueries({ queryKey: ['recent-searches', user?.id] })
     }
-    navigate(trimmed ? `/search?q=${encodeURIComponent(trimmed)}` : '/search')
+    navigate(`/search?q=${encodeURIComponent(trimmed)}`)
   }
+
+  const debouncedSearch = useDebouncedCallback((value) => {
+    doMobileSearch(value)
+  }, 600)
 
   const locationLabel = (city, region) => {
     const parts = [city, region].filter(Boolean)
@@ -100,29 +112,38 @@ export default function Search() {
   return (
     <Container size="xl" py="sm">
       {/* Busca Mobile */}
-      <Box hiddenFrom="sm" mb="xl">
+      <Box hiddenFrom="sm" mb="sm">
         <TextInput
           placeholder="Buscar músicos, projetos, gigs..."
           leftSection={<IconSearch size={15} />}
           rightSection={
-            <ActionIcon
-              variant="subtle"
-              color="gray"
-              radius="xl"
-              size="md"
-              onClick={() => doMobileSearch(mobileInput)}
-            >
-              <IconArrowRight size={16} />
-            </ActionIcon>
+            mobileInput ? (
+              <ActionIcon
+                variant="subtle"
+                color="gray"
+                radius="xl"
+                size="md"
+                onClick={() => {
+                  setMobileInput('')
+                  navigate('/search')
+                }}
+              >
+                <IconX size={16} />
+              </ActionIcon>
+            ) : null
           }
           radius="xl"
           size="md"
           value={mobileInput}
-          onChange={(e) => setMobileInput(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && doMobileSearch(mobileInput)}
+          onChange={(e) => {
+            setMobileInput(e.target.value)
+            debouncedSearch(e.target.value)
+          }}
+          onFocus={() => setIsMobileFocused(true)}
+          onBlur={() => setIsMobileFocused(false)}
         />
         {/* Buscas recentes — só exibe quando campo vazio e sem query ativa */}
-        {!q && recentSearches.length > 0 && (
+        {(!q && recentSearches.length > 0 && isMobileFocused) && (
           <Box mt="sm">
             <Group justify="space-between" mb="xs">
               <Text size="xs" c="dimmed">
@@ -135,7 +156,7 @@ export default function Search() {
                 style={{ cursor: 'pointer' }}
                 onClick={() => clearHistory()}
               >
-                Deletar buscas recentes
+                Deletar recentes
               </Text>
             </Group>
             <Group gap="xs" wrap="wrap">
@@ -159,12 +180,25 @@ export default function Search() {
       </Box>
       {q ? (
         <>
-          <Title order={1} fz="h2" fw={700} lts="-0.02em" mb={{ base: 4, sm: 24 }}>
+          <Title 
+            order={1} 
+            fz="h2" 
+            fw={700} 
+            lts="-0.02em" 
+            mb={4}
+            visibleFrom="sm"
+          >
             {`Buscando por "${q}"`}
           </Title>
           <Grid>
-            <Grid.Col span={{ base: 12, md: 6, lg: 3 }}>
-              <Title order={4} fw={400} fz="h5" mb="sm" c="dimmed">
+            <Grid.Col span={{ base: 12, md: 6, lg: 3 }} visibleFrom="sm">
+              <Title 
+                order={4} 
+                fw={400} 
+                fz="h5" 
+                mb="sm" 
+                c="dimmed" 
+              >
                 Resultados nesta página
               </Title>
               <NavLink
@@ -349,7 +383,7 @@ export default function Search() {
                       style={{ textDecoration: 'none', color: 'inherit' }}
                     >
                       <Avatar
-                        src={gear.picture ? PATH_PRODUCT_IMAGE + gear.picture : undefined}
+                        src={gear.picture ? PATH_PRODUCT_IMAGE_DESKTOP + gear.picture : undefined}
                         size={80}
                         radius="sm"
                       />
@@ -376,11 +410,44 @@ export default function Search() {
           </Grid>
         </>
       ) : (
+        !isMobileFocused && (
         <>
+          <Box hiddenFrom="sm">
+            <ResponsiveMasonry
+              columnsCountBreakPoints={{ 350: 3, 750: 4, 900: 4 }}
+              gutterBreakpoints={{ 350: '4px', 750: '8px', 900: '8px' }}
+            >
+              <Masonry>
+                {featuredProducts.map(item => (
+                  <Card 
+                    key={item.id} 
+                    w="100%"
+                    component={Link}
+                    to={`/gear/${item.slug}`}
+                  >
+                    <Card.Section style={{ pointerEvents: 'none' }}>
+                      <Image
+                        src={item.picture ? PATH_PRODUCT_IMAGE_MOBILE + item.picture : undefined}
+                        // h={100}
+                        // mah={100}
+                        w="100%"
+                        fit="contain"
+                        alt={item.name}
+                      />
+                    </Card.Section>
+                    {/* <Text size="sm" fw={500} mt="sm" truncate="end">
+                      {item.brand_name} {item.name}
+                    </Text> */}
+                  </Card>
+                ))}
+              </Masonry>
+            </ResponsiveMasonry>
+          </Box>
           <Scroller
             mb="lg"
             startControlIcon={<IconCircleArrowLeftFilled size={36} />}
             endControlIcon={<IconCircleArrowRightFilled size={36} />}
+            visibleFrom="sm"
           >
             <Group gap="lg" wrap="nowrap" miw={1200}>
               {loadingFeaturedProducts ? (
@@ -390,7 +457,7 @@ export default function Search() {
                   <Card
                     key={item.id}
                     component={Link}
-                    to={`/item/${item.slug}`}
+                    to={`/gear/${item.slug}`}
                     shadow="sm"
                     padding="sm"
                     radius="md"
@@ -399,7 +466,7 @@ export default function Search() {
                   >
                     <Card.Section style={{ pointerEvents: 'none' }}>
                       <Image
-                        src={item.picture ? PATH_PRODUCT_IMAGE + item.picture : undefined}
+                        src={item.picture ? PATH_PRODUCT_IMAGE_DESKTOP + item.picture : undefined}
                         height={180}
                         alt={item.name}
                       />
@@ -429,6 +496,7 @@ export default function Search() {
             </Marquee>
           )}
         </>
+        )
       )}
     </Container>
   )

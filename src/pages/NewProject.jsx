@@ -512,7 +512,7 @@ export default function NewProject() {
       <form onSubmit={form.onSubmit(handleSubmit)}>
         <Stack gap="md">
           <Grid>
-            <Grid.Col span={6}>
+            <Grid.Col span={{ base: 12, md: 6 }}>
               <TextInput
                 withAsterisk
                 label="Nome do projeto"
@@ -534,7 +534,7 @@ export default function NewProject() {
                 {...form.getInputProps('featured', { type: 'checkbox' })}
               />
             </Grid.Col>
-            <Grid.Col span={6}>
+            <Grid.Col span={{ base: 12, md: 6 }}>
               <TextInput
                 withAsterisk
                 label="URL do projeto"
@@ -587,7 +587,7 @@ export default function NewProject() {
 
           <Grid>
             {/* Imagem principal */}
-            <Grid.Col span={6}>
+            <Grid.Col span={{ base: 12, md: 6 }}>
               <Text size="sm" fw={500}>Imagem do projeto</Text>
               <Text size="xs" c="dimmed" mb={6}>Uma foto/imagem que representa o projeto</Text>
               {!projectImage ? (
@@ -623,8 +623,8 @@ export default function NewProject() {
               )}
             </Grid.Col>
 
-            {/* Logo (novo) */}
-            <Grid.Col span={6}>
+            {/* Logo */}
+            <Grid.Col span={{ base: 12, md: 6 }}>
               <Text size="sm" fw={500}>Logo do projeto</Text>
               <Text size="xs" c="dimmed" mb={6}>Logotipo/símbolo do projeto</Text>
               {!projectLogo ? (
