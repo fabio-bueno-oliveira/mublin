@@ -9,6 +9,7 @@ export async function fetchProjectProfile(slug) {
       slug,
       picture,
       cover_picture,
+      logo,
       description,
       purpose,
       on_tour,

@@ -421,7 +421,6 @@ export default function NewPost() {
         <Group justify="flex-end">
           <Text size="xs" c="dimmed">{body.length} caracteres</Text>
           <Button
-            color="indigo"
             radius="xl"
             size="sm"
             fw={700}

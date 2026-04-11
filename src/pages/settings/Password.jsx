@@ -81,8 +81,6 @@ export default function Password() {
 
         <Group justify="flex-end">
           <Button
-            color="indigo"
-            radius="xl"
             loading={isSubmitting}
             leftSection={<IconCheck size={15} />}
             onClick={() => {

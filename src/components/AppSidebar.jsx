@@ -1,7 +1,8 @@
+import { useState } from 'react'
 import { useLocation, Link } from 'react-router-dom'
 import { 
-  Stack, Box, NavLink, ScrollArea,
-  Badge, Group, Text, Divider
+  Stack, Box, NavLink, ScrollArea, Scroller,
+  Badge, Group, Text, Title, Divider
 } from '@mantine/core'
 import {
   IconHome2, IconPlus, IconCubePlus, 
@@ -21,14 +22,21 @@ const NAV_ITEMS_CREATE = [
   { label: 'Novo Equipamento', icon: IconCubePlus, path: '/new/gear' },
 ]
 
+const GIG_MENU_ITEMS = [
+  { label: 'Confirmadas', confirmed: true, path: '#', type: "confirmed" },
+  { label: 'Pendentes', confirmed: false, path: '#', type: "pending" },
+  { label: 'Sugeridas', confirmed: false, path: '#', type: "suggested" },
+]
+
 const UPCOMING_GIGS = [
-  { id: 1, title: 'Show Acústico', project: 'Trio Acústico SP', date: '28 Mar', weekday: 'Sex', venue: 'Bar Sagarana', city: 'São Paulo, SP', confirmed: true },
-  { id: 2, title: 'Ensaio Geral', project: 'Banda Paralela', date: '02 Abr', weekday: 'Qua', venue: 'Estúdio B', city: 'São Paulo, SP', confirmed: true },
-  { id: 3, title: 'Festival Indie', project: 'Trio Acústico SP', date: '12 Abr', weekday: 'Sáb', venue: 'Cine Joia', city: 'São Paulo, SP', confirmed: false },
+  { id: 1, title: 'Show Acústico', project: 'Trio Acústico SP', date: '28 Mar', weekday: 'Sex', venue: 'Bar Sagarana', city: 'São Paulo, SP', confirmed: true, type: "confirmed" },
+  { id: 2, title: 'Ensaio Geral', project: 'Banda Paralela', date: '02 Abr', weekday: 'Qua', venue: 'Estúdio B', city: 'São Paulo, SP', confirmed: true, type: "confirmed" },
+  { id: 3, title: 'Festival Indie', project: 'Trio Acústico SP', date: '12 Abr', weekday: 'Sáb', venue: 'Cine Joia', city: 'São Paulo, SP', confirmed: false, type: "suggested" },
 ]
 
 export default function AppSidebar() {
   const location = useLocation()
+  const [gigsToShow, setGigsToShow] = useState("confirmed")
 
   function isActive(path) {
     return location.pathname === path
@@ -36,7 +44,7 @@ export default function AppSidebar() {
 
   return (
     <Box p="md" h="100%">
-      <Stack gap={4}>
+      <Stack gap={4} mb={20}>
         {NAV_ITEMS.map(item => {
           const Icon = item.icon
           return (
@@ -64,7 +72,7 @@ export default function AppSidebar() {
           label={<Text size="sm">Criar</Text>}
           color="gray"
           leftSection={<IconPlus size={18} />}
-          childrenOffset={28}
+          childrenOffset={14}
         >
           {NAV_ITEMS_CREATE.map(item => {
             const Icon = item.icon
@@ -80,19 +88,37 @@ export default function AppSidebar() {
           })}
         </NavLink>
       </Stack>
-      <Text fw={600} size="sm" mt="md" c="dimmed">
-        Minhas próximas gigs:
-      </Text>
+      <Title order={2} fz="md" ta="left" fw={600} lts="-0.02em" mb="lg">
+        Suas próximas Gigs:
+      </Title>
+      <Scroller mb={20}>
+        <Group gap={4} wrap="nowrap" miw={300}>
+          {GIG_MENU_ITEMS.map((item, index) => (
+            <Badge
+              key={index}
+              variant={item.type === gigsToShow ? "filled" : "light"}
+              size="lg"
+              tt="none"
+              fw={550}
+              style={{ cursor: 'pointer' }}
+              color={item.type === gigsToShow ? "mublinGreen" : "dark"}
+              onClick={() => setGigsToShow(item.type)}
+            >
+              {item.label}
+            </Badge>
+          ))}
+        </Group>
+      </Scroller>
       <ScrollArea h={180} type="hover" offsetScrollbars mt="md">
         <Stack gap="xs">
-          {UPCOMING_GIGS.map((gig, i) => (
+          {UPCOMING_GIGS.filter(gig => gig.type === gigsToShow).map((gig, i) => (
             <Box key={gig.id}>
               <Group gap="xs" align="flex-start">
                 <Box
                   style={{
                     minWidth: 44,
                     textAlign: 'center',
-                    background: 'var(--mantine-color-yellow-0)',
+                    background: 'var(--mantine-color-mublinGreen-0)',
                     borderRadius: 8,
                     padding: '6px 4px',
                   }}
@@ -109,7 +135,7 @@ export default function AppSidebar() {
                   </Text>
                   <Badge
                     size="xs"
-                    variant="light"
+                    variant="dot"
                     fw="400"
                     color={gig.confirmed ? 'green' : 'gray'}
                   >

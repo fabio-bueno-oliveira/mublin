@@ -106,9 +106,10 @@ export default function SettingsLayout() {
 
       {/* Tabs de navegação */}
       <Box
+        pos="sticky"
+        top={{ base: 0, sm: 60 }}
         style={{
-          position: 'sticky',
-          top: 0,
+          // top: { base: 0, sm: 30 },
           zIndex: 100,
           backgroundColor: 'var(--mantine-color-body)',
         }}

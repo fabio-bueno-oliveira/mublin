@@ -683,8 +683,6 @@ export default function EditMyProfile() {
 
         <Group justify="flex-end">
           <Button
-            color="indigo"
-            radius="xl"
             loading={isSubmitting}
             leftSection={<IconCheck size={15} />}
             onClick={() => handleSubmit(form.values)}

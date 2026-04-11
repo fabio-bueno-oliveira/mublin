@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabaseClient'
 import { fetchGenreCategories } from '../../queries/genres'
 import {
-  Title, Stack, Group, Text, Badge, Button, Divider,
+  Pill, Stack, Group, Text, Badge, Button, Divider,
   Modal, NativeSelect, Skeleton, Flex,
 } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
@@ -238,23 +238,18 @@ export default function MusicalPreferences() {
           ) : (
             <Group gap={6}>
               {userGenres.length > 0 ? userGenres.map(genre => (
-                <Badge
-                  key={genre.id}
-                  color={genre.main_genre ? 'indigo' : 'gray'}
-                  variant="light"
-                  size="md"
-                  rightSection={
-                    <IconX
-                      style={xIconStyle}
-                      stroke={3}
-                      onClick={() => handleDeleteGenre(genre.id)}
-                      title="Remover"
-                    />
-                  }
+                <Pill 
+                  key={genre.id} 
+                  withRemoveButton
+                  onRemove={() => handleDeleteGenre(genre.id)}
+                  removeButtonProps={{ 
+                    'aria-label': `Remover ${genre.genres?.name_ptbr}`,
+                    'title': 'Remover',
+                  }}
                 >
                   {genre.genres?.name_ptbr}
                   {genre.main_genre ? ' ★' : ''}
-                </Badge>
+                </Pill>
               )) : (
                 <Text size="sm" c="dimmed">Nenhum gênero cadastrado</Text>
               )}
@@ -264,8 +259,7 @@ export default function MusicalPreferences() {
           <div>
             <Button
               size="sm"
-              variant="light"
-              color="indigo"
+              variant="filled"
               leftSection={<IconPlus size={14} />}
               onClick={openGenresModal}
             >
@@ -296,23 +290,35 @@ export default function MusicalPreferences() {
           ) : (
             <Group gap={6}>
               {userRoles.length > 0 ? userRoles.map(role => (
-                <Badge
-                  key={role.id}
-                  color='gray'
-                  variant="light"
-                  size="md"
-                  rightSection={
-                    <IconX
-                      style={xIconStyle}
-                      stroke={3}
-                      onClick={() => handleDeleteRole(role.id)}
-                      title="Remover"
-                    />
-                  }
+                // <Badge
+                //   key={role.id}
+                //   color="gray"
+                //   variant="light"
+                //   size="md"
+                //   rightSection={
+                //     <IconX
+                //       style={xIconStyle}
+                //       stroke={3}
+                //       onClick={() => handleDeleteRole(role.id)}
+                //       title="Remover"
+                //     />
+                //   }
+                // >
+                //   {role.roles?.name_ptbr}
+                //   {role.main_activity ? ' ★' : ''}
+                // </Badge>
+                <Pill 
+                  key={role.id} 
+                  withRemoveButton
+                  onRemove={() => handleDeleteRole(role.id)}
+                  removeButtonProps={{ 
+                    'aria-label': `Remover ${role.roles?.name_ptbr}`,
+                    'title': 'Remover',
+                  }}
                 >
                   {role.roles?.name_ptbr}
                   {role.main_activity ? ' ★' : ''}
-                </Badge>
+                </Pill>
               )) : (
                 <Text size="sm" c="dimmed">Nenhuma atividade cadastrada</Text>
               )}
@@ -322,8 +328,7 @@ export default function MusicalPreferences() {
           <div>
             <Button
               size="sm"
-              variant="light"
-              color="indigo"
+              variant="filled"
               leftSection={<IconPlus size={14} />}
               onClick={openRolesModal}
             >

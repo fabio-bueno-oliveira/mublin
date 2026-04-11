@@ -478,7 +478,6 @@ export default function NewGear() {
               Cancelar
             </Button>
             <Button
-              color="indigo"
               loading={isSubmitting}
               disabled={!productSelected || (hasColors && !selectedColor)}
               onClick={handleSubmit}

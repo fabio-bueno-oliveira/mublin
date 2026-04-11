@@ -188,10 +188,9 @@ export default function Endorsements() {
 
           <Button
             size="sm"
-            variant="light"
-            color="indigo"
             leftSection={<IconPlus size={14} />}
             onClick={openModal}
+            style={{ width: 'fit-content' }}
           >
             Adicionar parceiro
           </Button>

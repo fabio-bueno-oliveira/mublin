@@ -76,7 +76,7 @@ export default function AppNavbar({ children }) {
 
   return (
     <Box h="100%" style={{ borderBottom: '1px solid var(--mantine-color-default-border)' }}>
-      <Container size="xl" h="100%">
+      <Container fluid h="100%">
         <Group justify="space-between" align="center" h="100%" gap="md">
           <Group gap="md">
             {children}

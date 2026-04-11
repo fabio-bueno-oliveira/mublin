@@ -7,7 +7,7 @@ import {
   Stack, Group, Text, Button, Divider, Modal, Drawer,
   TextInput, Textarea, Loader, Box, Avatar,
   ActionIcon, Flex, Skeleton, Image, Badge, Switch, Grid,
-  NativeSelect, NumberInput, Paper, ThemeIcon,
+  NativeSelect, NumberInput, Paper, Card, ThemeIcon
 } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
@@ -515,8 +515,8 @@ export default function MyGear() {
             <Grid gutter="sm">
               {mainGear.map(item => (
                 <Grid.Col key={item.id} span={{ base: 6, sm: 4, md: 3 }}>
-                  <Paper bg="white" radius="md" p="sm" h="100%">
-                    <Flex direction="column" gap="xs" h="100%">
+                  <Card withBorder px="sm" shadow="sm">
+                    <Card.Section bg="white" withBorder inheritPadding py="xs">
                       <Image
                         src={item.products?.picture ? PRODUCT_IMG + item.products.picture : undefined}
                         h={80} fit="contain" radius="sm"
@@ -524,44 +524,44 @@ export default function MyGear() {
                         onClick={() => handleOpenEditItem(item)}
                         fallbackSrc="https://placehold.co/160x160?text=?"
                       />
+                    </Card.Section>
+                    <Card.Section withBorder inheritPadding pt="xs" pb="sm">
                       <Stack gap={2} style={{ flex: 1 }}>
-                        <Text size="xs" c="dimmed" ta="center" truncate="end">
-                          {item.products?.brands?.name} · {item.products?.product_categories?.name_ptbr}
+                        <Text size="xs" ta="center" truncate="end">
+                          {item.products?.product_categories?.name_ptbr} · {item.products?.brands?.name}
                         </Text>
                         <Text 
-                          size="xs" fw={600} ta="center" 
-                          lineClamp={1} c="black"
-                          style={{ lineHeight: 1.2 }}
+                          size="sm" fw={500} ta="center" 
+                          lineClamp={1}
+                          style={{ lineHeight: 1 }}
                         >
                           {item.products?.name}
                         </Text>
-                      </Stack>
-                      <Flex gap={4} wrap="wrap" justify="center">
-                        {item.is_featured        && <Badge size="xs" variant="light" color="yellow">Em destaque</Badge>}
-                        {item.is_currently_using && <Badge size="xs" variant="light" color="green">Em uso</Badge>}
-                        {item.is_for_sale        && <Badge size="xs" variant="light" color="grape">À venda</Badge>}
-                      </Flex>
-
-                      {/* Sub itens */}
-                      {subGear.filter(s => s.parent_gear_id === item.id).length > 0 && (
-                        <Flex gap={4} justify="center" wrap="wrap">
-                          {subGear.filter(s => s.parent_gear_id === item.id).map(s => (
-                            <Avatar
-                              key={s.id}
-                              size={24}
-                              radius="sm"
-                              src={s.products?.picture ? PRODUCT_IMG + s.products.picture : undefined}
-                              title={s.products?.name}
-                            />
-                          ))}
+                        <Flex mt="xs" gap={4} wrap="wrap" justify="center">
+                          {item.is_featured        && <Badge size="xs" variant="light" color="yellow">Destaque</Badge>}
+                          {item.is_currently_using && <Badge size="xs" variant="light" color="green">Em uso</Badge>}
+                          {item.is_for_sale        && <Badge size="xs" variant="light" color="blue">À venda</Badge>}
                         </Flex>
-                      )}
 
-                      <Divider />
-                      <Group gap={4} grow>
+                        {/* Sub itens */}
+                        {subGear.filter(s => s.parent_gear_id === item.id).length > 0 && (
+                          <Flex gap={4} justify="center" wrap="wrap">
+                            {subGear.filter(s => s.parent_gear_id === item.id).map(s => (
+                              <Avatar
+                                key={s.id}
+                                size={24}
+                                radius="sm"
+                                src={s.products?.picture ? PRODUCT_IMG + s.products.picture : undefined}
+                                title={s.products?.name}
+                              />
+                            ))}
+                          </Flex>
+                        )}
+                      </Stack>                    
+                      <ActionIcon.Group mt={12} width="100%">
                         <ActionIcon
-                          variant="filled" 
-                          color="dark.5"
+                          w="50%"
+                          variant="default" 
                           size="md"
                           onClick={() => handleOpenEditItem(item)}
                           title="Editar item"
@@ -569,17 +569,17 @@ export default function MyGear() {
                           <IconPencil size={13} />
                         </ActionIcon>
                         <ActionIcon
-                          variant="filled" 
-                          color="red.8"
+                          w="50%"
+                          variant="default" color="red"
                           size="md" 
                           onClick={() => handleOpenConfirmDelete(item)}
                           title="Remover item do meu equipamento"
                         >
                           <IconTrash size={13} />
                         </ActionIcon>
-                      </Group>
-                    </Flex>
-                  </Paper>
+                      </ActionIcon.Group>
+                    </Card.Section>
+                  </Card>
                 </Grid.Col>
               ))}
             </Grid>
@@ -595,7 +595,6 @@ export default function MyGear() {
         onClose={closeEditItem}
         size="sm"
         radius="md"
-        centered
       >
         {editingItem && (
           <Stack gap="md">
@@ -665,7 +664,6 @@ export default function MyGear() {
             <Group justify="flex-end" gap={8}>
               <Button variant="default" radius="xl" onClick={closeEditItem}>Cancelar</Button>
               <Button
-                color="indigo" radius="xl"
                 leftSection={<IconCheck size={15} />}
                 loading={isSavingItem}
                 onClick={handleSaveItem}
@@ -684,7 +682,6 @@ export default function MyGear() {
         withCloseButton={false}
         size="xs"
         radius="md"
-        centered
       >
         <Text size="sm">
           Remover <strong>{itemToDelete?.brand} {itemToDelete?.name}</strong> do seu equipamento?
@@ -704,7 +701,6 @@ export default function MyGear() {
         onClose={closeNewSetup}
         size="sm"
         radius="md"
-        centered
       >
         <Stack gap="md">
           <TextInput
@@ -789,7 +785,6 @@ export default function MyGear() {
         withCloseButton={false}
         size="xs"
         radius="md"
-        centered
       >
         <Text size="sm">
           Remover o setup <strong>{setupToDelete?.name}</strong>?

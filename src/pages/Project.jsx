@@ -9,12 +9,12 @@ import JoinProjectModal from '../components/modals/JoinProjectModal'
 import { useDisclosure } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
 import {
+  useMantineColorScheme,
   Container, Flex, Box, Button, 
   Avatar, Image, Menu,
-  Title, Text, Badge,
-  Skeleton, Group, Stack, Card,
-  Tooltip, ActionIcon,
-  Pill,
+  Title, Text, Badge, Skeleton, 
+  Group, Stack, Card, Tooltip, 
+  ActionIcon, Pill,
 } from '@mantine/core'
 import {
   IconBrandInstagram, IconBrandSpotify, IconPencil, IconDoor,
@@ -27,6 +27,7 @@ export default function Project() {
   const { slug } = useParams()
   const queryClient = useQueryClient()
   const navigate = useNavigate()
+  const { colorScheme } = useMantineColorScheme()
 
   const { data: project, isLoading, isError } = useQuery({
     queryKey: ['project', slug],
@@ -38,8 +39,8 @@ export default function Project() {
 
   const AVATAR_PATH = 'https://ik.imagekit.io/mublin/tr:h-240,c-maintain_ratio/users/avatars/'
   const PICTURE_AVATAR_PATH = `https://ik.imagekit.io/mublin/projects/${project?.id}/tr:h-200,w-200,c-maintain_ratio/`
-  const PICTURE_COVER_PATH = `https://ik.imagekit.io/mublin/projects/${project?.id}/tr:h-140,w-800,c-maintain_ratio/`
-  const DEFAULT_COVER_PICTURE = 'https://ik.imagekit.io/mublin/bg/tr:w-1920,h-140,bg-F3F3F3,fo-bottom/grey-dark.jpg'
+  const PICTURE_COVER_PATH = `https://ik.imagekit.io/mublin/projects/${project?.id}/tr:h-120,w-800,c-maintain_ratio/`
+  const DEFAULT_COVER_PICTURE = 'https://ik.imagekit.io/mublin/bg/tr:w-1042,h-120,bg-F3F3F3,fo-center,bl-10/mublin-hero-chatgpt-musicians2.png'
 
   const currentYear = new Date().getFullYear()
   const [modalJoinOpened, { open: openJoinModal, close: closeJoinModal }] = useDisclosure(false)
@@ -137,204 +138,233 @@ export default function Project() {
     <>
       <Container fluid pb="lg">
 
-        {/* ── Cabeçalho / Cover ── */}
-        <Box pos="relative" mb={44}>
+        <Card 
+          px={0} 
+          pt={0} 
+          bg={colorScheme === "light" ? "white" : "gray.9"}
+          shadow="xs"
+        >
+          {/* ── Cabeçalho / Cover ── */}
+          <Box pos="relative" mb={44}>
 
-          {/* Imagem de capa */}
-          {isLoading ? (
-            <Skeleton height={140} radius="md" />
-          ) : (
-            <Image
-              src={
-                project?.cover_picture
-                  ? PICTURE_COVER_PATH + project?.cover_picture 
-                  : DEFAULT_COVER_PICTURE
-              }
-              fallbackSrc="https://placehold.co/800x140?text=."
-              height={140}
-              radius="md"
-              fit="cover"
-              w="100%"
-              alt='Imagem de capa'
-            />
-          )}
-
-          {/* Avatar do projeto sobreposto */}
-          <Box
-            pos="absolute"
-            bottom={-30}
-            left={20}
-            style={{ zIndex: 1 }}
-          >
+            {/* Imagem de capa */}
             {isLoading ? (
-              <Skeleton height={100} width={100} />
+              <Skeleton height={140} radius="md" />
             ) : (
-              <Avatar
-                src={PICTURE_AVATAR_PATH+project?.picture}
-                size={100}
+              <Image
+                src={
+                  project?.cover_picture
+                    ? PICTURE_COVER_PATH + project?.cover_picture 
+                    : DEFAULT_COVER_PICTURE
+                }
+                fallbackSrc="https://placehold.co/800x120?text=."
+                height={120}
                 radius="md"
-                style={{ border: '3px solid var(--mantine-color-body)' }}
+                fit="cover"
+                w="100%"
+                alt='Imagem de capa'
               />
             )}
-          </Box>
-        </Box>
 
-        {/* ── Identidade ── */}
-        <Flex justify="space-between" align="flex-start" wrap="wrap" gap="sm">
-          <Stack gap={4}>
-            {isLoading ? (
-              <>
-                <Skeleton height={28} width={200} />
-                <Skeleton height={16} width={120} mt={4} />
-              </>
-            ) : (
-              <>
-                <Group gap={8}>
+            {/* Avatar do projeto sobreposto */}
+            <Box
+              pos="absolute"
+              bottom={-30}
+              left={20}
+              zIndex={1}
+            >
+              {isLoading ? (
+                <Skeleton height={100} width={100} />
+              ) : (
+                <Group align="baseline" gap={18}>
+                  <Avatar
+                    src={PICTURE_AVATAR_PATH+project?.picture}
+                    size={100}
+                    radius={0}
+                    style={
+                      colorScheme === "light" 
+                        ? { border: '2px solid white' }
+                        : { border: '2px solid #1c1c1c' }
+                    }
+                  />
+                  <Avatar
+                    src={PICTURE_AVATAR_PATH+project?.logo}
+                    size={80}
+                    radius={0}
+                    style={
+                      colorScheme === "light" 
+                        ? { border: '2px solid white' }
+                        : { border: '2px solid #1c1c1c' }
+                    }
+                  />
+                </Group>
+              )}
+            </Box>
+          </Box>
+
+          {/* ── Identidade ── */}
+          <Flex 
+            justify="space-between" 
+            align="flex-start" 
+            wrap="wrap" 
+            gap="sm"
+            px="lg"
+          >
+            <Stack gap={4}>
+              {isLoading ? (
+                <>
+                  <Skeleton height={28} width={200} />
+                  <Skeleton height={16} width={120} mt={4} />
+                </>
+              ) : (
+                <>
                   <Group gap={8}>
-                    <Title order={1} fw={730} lts="-0.03em">
-                      {project?.name}
-                    </Title>
-                    {!isLoading && userIsConfirmedMember && (
-                      <Badge size="md" variant="default" radius="sm" fw={400}>
-                        Membro
+                    <Group gap={8}>
+                      <Title order={1} fw={730} lts="-0.03em">
+                        {project?.name}
+                      </Title>
+                      {!isLoading && userIsConfirmedMember && (
+                        <Badge size="md" variant="default" radius="sm" fw={400}>
+                          Membro
+                        </Badge>
+                      )}
+                    </Group>
+                    {project?.on_tour && (
+                      <Badge 
+                        size="md" 
+                        variant="default"
+                        radius="sm" 
+                        fw={400}
+                        leftSection={<IconRoad size={16} />}
+                      >
+                        Em turnê
                       </Badge>
                     )}
                   </Group>
-                  {project?.on_tour && (
-                    <Badge 
-                      size="md" 
-                      variant="default"
-                      radius="sm" 
-                      fw={400}
-                      leftSection={<IconRoad size={16} />}
-                    >
-                      Em turnê
-                    </Badge>
-                  )}
-                </Group>
-                <Group gap={6}>
-                  {project?.project_type && (
-                    <Text size="sm" opacity={0.8}>{project.project_type}</Text>
-                  )}
-                  {project?.genre && (
-                    <>
-                      <Text size="sm" opacity={0.8}>·</Text>
-                      <Text size="sm" opacity={0.8}>{project.genre}</Text>
-                    </>
-                  )}
-                  {!isLoading && userIsConfirmedMember && ( 
-                    <Menu shadow="md" width={200} position="right-start" withArrow>
-                      <Menu.Target>
-                        <ActionIcon variant="subtle" color="gray" size="md">
-                          <IconSettings size={24} />
-                        </ActionIcon>
-                      </Menu.Target>
-                      <Menu.Dropdown>
-                        <Menu.Item 
-                          leftSection={<IconDoor size={14} />}
-                          onClick={() => navigate(`/backstage?project=${slug}`)}
-                        >
-                          Acessar Backstage
-                        </Menu.Item>
-                        <Menu.Divider />
-                        <Menu.Item leftSection={<IconPencil size={14} />}>
-                          Editar dados do projeto
-                        </Menu.Item>
-                        <Menu.Item leftSection={<IconSettings size={14} />}>
-                          Gerenciar minha participação
-                        </Menu.Item>
-                        {userIsAdmin && 
-                          <Menu.Item leftSection={<IconUserCog size={14} />}>
-                            Gerenciar pessoas
+                  <Group gap={6}>
+                    {project?.project_type && (
+                      <Text size="sm" opacity={0.8}>{project.project_type}</Text>
+                    )}
+                    {project?.genre && (
+                      <>
+                        <Text size="sm" opacity={0.8}>·</Text>
+                        <Text size="sm" opacity={0.8}>{project.genre}</Text>
+                      </>
+                    )}
+                    {!isLoading && userIsConfirmedMember && ( 
+                      <Menu shadow="md" width={200} position="right-start" withArrow>
+                        <Menu.Target>
+                          <ActionIcon variant="subtle" color="gray" size="md">
+                            <IconSettings size={24} />
+                          </ActionIcon>
+                        </Menu.Target>
+                        <Menu.Dropdown>
+                          <Menu.Item 
+                            leftSection={<IconDoor size={14} />}
+                            onClick={() => navigate(`/backstage?project=${slug}`)}
+                          >
+                            Acessar Backstage
                           </Menu.Item>
-                        }
-                        <Menu.Divider />
-                        <Menu.Item
-                          color="red"
-                          leftSection={<IconLogout size={14} />}
-                        >
-                          Sair deste projeto
-                        </Menu.Item>
-                      </Menu.Dropdown>
-                    </Menu>
+                          <Menu.Divider />
+                          <Menu.Item leftSection={<IconPencil size={14} />}>
+                            Editar dados do projeto
+                          </Menu.Item>
+                          <Menu.Item leftSection={<IconSettings size={14} />}>
+                            Gerenciar minha participação
+                          </Menu.Item>
+                          {userIsAdmin && 
+                            <Menu.Item leftSection={<IconUserCog size={14} />}>
+                              Gerenciar pessoas
+                            </Menu.Item>
+                          }
+                          <Menu.Divider />
+                          <Menu.Item
+                            color="red"
+                            leftSection={<IconLogout size={14} />}
+                          >
+                            Sair deste projeto
+                          </Menu.Item>
+                        </Menu.Dropdown>
+                      </Menu>
+                    )}
+                  </Group>
+                  {!isLoading && userHasNoParticipation && (
+                    <Button
+                      size='xs'
+                      mt={10} 
+                      onClick={openJoinModal}
+                      color="indigo"
+                      leftSection={<IconUserUp size={16} />}
+                    >
+                      Solicitar associação
+                    </Button>
                   )}
-                </Group>
-                {!isLoading && userHasNoParticipation && (
-                  <Button
-                    size='xs'
-                    mt={10} 
-                    onClick={openJoinModal}
-                    color="indigo"
-                    leftSection={<IconUserUp size={16} />}
-                  >
-                    Solicitar associação
-                  </Button>
-                )}
-                {!isLoading && userHasRequestedParticipation && (
-                  <Button
-                    size='xs'
-                    mt={10} 
-                    variant="light"
-                    color="red"
-                    onClick={() => cancelRequest()}
-                    loading={isCancelling}
-                    leftSection={<IconClock size={16} />}
-                  >
-                    Cancelar solicitação
-                  </Button>
-                )}
-              </>
-            )}
-          </Stack>
+                  {!isLoading && userHasRequestedParticipation && (
+                    <Button
+                      size='xs'
+                      mt={10} 
+                      variant="light"
+                      color="red"
+                      onClick={() => cancelRequest()}
+                      loading={isCancelling}
+                      leftSection={<IconClock size={16} />}
+                    >
+                      Cancelar solicitação
+                    </Button>
+                  )}
+                </>
+              )}
+            </Stack>
 
-          {/* Redes sociais */}
-          {!isLoading && (
-            <Group gap={6}>
-              {project?.instagram && (
-                <Tooltip label="Instagram">
-                  <ActionIcon
-                    component="a"
-                    href={`https://instagram.com/${project.instagram}`}
-                    target="_blank"
-                    variant="subtle"
-                    color="pink"
-                    size="lg"
-                  >
-                    <IconBrandInstagram size={22} />
-                  </ActionIcon>
-                </Tooltip>
-              )}
-              {project?.spotify_id && (
-                <Tooltip label="Spotify">
-                  <ActionIcon
-                    component="a"
-                    href={`https://open.spotify.com/artist/${project.spotify_id}`}
-                    target="_blank"
-                    variant="subtle"
-                    color="green"
-                    size="lg"
-                  >
-                    <IconBrandSpotify size={22} />
-                  </ActionIcon>
-                </Tooltip>
-              )}
-              {project?.soundcloud && (
-                <Tooltip label="SoundCloud">
-                  <ActionIcon
-                    component="a"
-                    href={`https://soundcloud.com/${project.soundcloud}`}
-                    target="_blank"
-                    variant="subtle"
-                    color="orange"
-                    size="lg"
-                  >
-                    <IconBrandSoundcloud size={22} />
-                  </ActionIcon>
-                </Tooltip>
-              )}
-            </Group>
-          )}
-        </Flex>
+            {/* Redes sociais */}
+            {!isLoading && (
+              <Group gap={6}>
+                {project?.instagram && (
+                  <Tooltip label="Instagram">
+                    <ActionIcon
+                      component="a"
+                      href={`https://instagram.com/${project.instagram}`}
+                      target="_blank"
+                      variant="subtle"
+                      color="pink"
+                      size="lg"
+                    >
+                      <IconBrandInstagram size={22} />
+                    </ActionIcon>
+                  </Tooltip>
+                )}
+                {project?.spotify_id && (
+                  <Tooltip label="Spotify">
+                    <ActionIcon
+                      component="a"
+                      href={`https://open.spotify.com/artist/${project.spotify_id}`}
+                      target="_blank"
+                      variant="subtle"
+                      color="green"
+                      size="lg"
+                    >
+                      <IconBrandSpotify size={22} />
+                    </ActionIcon>
+                  </Tooltip>
+                )}
+                {project?.soundcloud && (
+                  <Tooltip label="SoundCloud">
+                    <ActionIcon
+                      component="a"
+                      href={`https://soundcloud.com/${project.soundcloud}`}
+                      target="_blank"
+                      variant="subtle"
+                      color="orange"
+                      size="lg"
+                    >
+                      <IconBrandSoundcloud size={22} />
+                    </ActionIcon>
+                  </Tooltip>
+                )}
+              </Group>
+            )}
+          </Flex>
+        </Card>
 
         {/* ── Descrição / Purpose ── */}
         {(isLoading || project?.description || project?.purpose) && (

@@ -1,5 +1,4 @@
-// src/contexts/AuthContext.jsx
-import { createContext, useEffect, useState } from 'react'
+import { createContext, useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
 
 const AuthContext = createContext({})
@@ -11,6 +10,7 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(undefined)
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
+  const profileFetched = useRef(false)
 
   async function fetchProfile(userId) {
     const { data, error } = await supabase
@@ -29,15 +29,16 @@ export function AuthProvider({ children }) {
         setSession(session)
         setUser(session?.user ?? null)
 
-        if (session?.user && (event === 'INITIAL_SESSION' || event === 'SIGNED_IN')) {
+        if (session?.user && !profileFetched.current) {
+          profileFetched.current = true
           fetchProfile(session.user.id)
         } else if (!session) {
+          profileFetched.current = false
           setProfile(null)
           setLoading(false)
         }
       }
     )
-
     return () => subscription.unsubscribe()
   }, [])
 
