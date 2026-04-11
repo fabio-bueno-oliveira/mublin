@@ -78,8 +78,8 @@ export default function LikeButton({ postId, userId, likedPostIds, likesCount })
       >
         {(likesCount === 0) ? 
           liked
-            ? <IconHeartFilled size={20} color="red" />
-            : <IconHeart size={20} />
+            ? <IconHeartFilled size={24} color="red" />
+            : <IconHeart size={24} />
           : undefined
         }
         {likesCount > 0 ? likesCount : ''}

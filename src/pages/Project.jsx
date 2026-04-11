@@ -39,7 +39,7 @@ export default function Project() {
 
   const AVATAR_PATH = 'https://ik.imagekit.io/mublin/tr:h-240,c-maintain_ratio/users/avatars/'
   const PICTURE_AVATAR_PATH = `https://ik.imagekit.io/mublin/projects/${project?.id}/tr:h-200,w-200,c-maintain_ratio/`
-  const PICTURE_COVER_PATH = `https://ik.imagekit.io/mublin/projects/${project?.id}/tr:h-120,w-800,c-maintain_ratio/`
+  const PICTURE_COVER_PATH = `https://ik.imagekit.io/mublin/projects/${project?.id}/tr:h-120,w-1042,fo-top,c-maintain_ratio/`
   const DEFAULT_COVER_PICTURE = 'https://ik.imagekit.io/mublin/bg/tr:w-1042,h-120,bg-F3F3F3,fo-center,bl-10/mublin-hero-chatgpt-musicians2.png'
 
   const currentYear = new Date().getFullYear()
@@ -141,7 +141,7 @@ export default function Project() {
         <Card 
           px={0} 
           pt={0} 
-          bg={colorScheme === "light" ? "white" : "gray.9"}
+          bg={colorScheme === "light" ? "white" : "#1c1c1c"}
           shadow="xs"
         >
           {/* ── Cabeçalho / Cover ── */}
@@ -157,7 +157,7 @@ export default function Project() {
                     ? PICTURE_COVER_PATH + project?.cover_picture 
                     : DEFAULT_COVER_PICTURE
                 }
-                fallbackSrc="https://placehold.co/800x120?text=."
+                fallbackSrc="https://placehold.co/1042x120?text=."
                 height={120}
                 radius="md"
                 fit="cover"
@@ -176,7 +176,7 @@ export default function Project() {
               {isLoading ? (
                 <Skeleton height={100} width={100} />
               ) : (
-                <Group align="baseline" gap={18}>
+                <Group align="center" gap={18}>
                   <Avatar
                     src={PICTURE_AVATAR_PATH+project?.picture}
                     size={100}
@@ -187,16 +187,18 @@ export default function Project() {
                         : { border: '2px solid #1c1c1c' }
                     }
                   />
-                  <Avatar
-                    src={PICTURE_AVATAR_PATH+project?.logo}
-                    size={80}
-                    radius={0}
-                    style={
-                      colorScheme === "light" 
-                        ? { border: '2px solid white' }
-                        : { border: '2px solid #1c1c1c' }
-                    }
-                  />
+                  {project?.logo && 
+                    <Avatar
+                      src={PICTURE_AVATAR_PATH+project.logo}
+                      size={80}
+                      radius={0}
+                      style={
+                        colorScheme === "light" 
+                          ? { border: '2px solid white' }
+                          : { border: '2px solid #1c1c1c' }
+                      }
+                    />
+                  }
                 </Group>
               )}
             </Box>
@@ -218,22 +220,16 @@ export default function Project() {
                 </>
               ) : (
                 <>
-                  <Group gap={8}>
-                    <Group gap={8}>
-                      <Title order={1} fw={730} lts="-0.03em">
-                        {project?.name}
-                      </Title>
-                      {!isLoading && userIsConfirmedMember && (
-                        <Badge size="md" variant="default" radius="sm" fw={400}>
-                          Membro
-                        </Badge>
-                      )}
-                    </Group>
+                  <Group gap={14} align="baseline">
+                    <Title order={1} fw={800} lts="-0.01em">
+                      {project?.name}
+                    </Title>
                     {project?.on_tour && (
                       <Badge 
-                        size="md" 
-                        variant="default"
-                        radius="sm" 
+                        size="sm" 
+                        variant="filled"
+                        color="pink"
+                        radius="xl" 
                         fw={400}
                         leftSection={<IconRoad size={16} />}
                       >
@@ -241,21 +237,21 @@ export default function Project() {
                       </Badge>
                     )}
                   </Group>
-                  <Group gap={6}>
+                  <Group gap={10}>
                     {project?.project_type && (
-                      <Text size="sm" opacity={0.8}>{project.project_type}</Text>
+                      <Text size="sm">{project.project_type}</Text>
                     )}
                     {project?.genre && (
                       <>
-                        <Text size="sm" opacity={0.8}>·</Text>
-                        <Text size="sm" opacity={0.8}>{project.genre}</Text>
+                        <Text size="sm" opacity={0.4}>·</Text>
+                        <Text size="sm">{project.genre}</Text>
                       </>
                     )}
                     {!isLoading && userIsConfirmedMember && ( 
                       <Menu shadow="md" width={200} position="right-start" withArrow>
                         <Menu.Target>
                           <ActionIcon variant="subtle" color="gray" size="md">
-                            <IconSettings size={24} />
+                            <IconSettings stroke={1.4} size={21} />
                           </ActionIcon>
                         </Menu.Target>
                         <Menu.Dropdown>

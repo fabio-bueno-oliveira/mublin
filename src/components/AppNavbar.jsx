@@ -198,7 +198,7 @@ export default function AppNavbar({ children }) {
                   Configurações
                 </Menu.Item>
                 <Menu.Divider />
-                <Menu.Item color="red" onClick={handleSignOut}>
+                <Menu.Item onClick={handleSignOut}>
                   Sair
                 </Menu.Item>
               </Menu.Dropdown>

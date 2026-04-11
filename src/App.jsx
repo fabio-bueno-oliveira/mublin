@@ -67,7 +67,7 @@ const theme = createTheme({
       styles: {
         root: {
           backgroundColor: 'light-dark(#ffffff, #1c1c1c)',
-          borderColor: 'light-dark(#dde1e7, #101010)',
+          borderColor: 'light-dark(#dde1e7, #1f1f1f)',
         },
       },
     }),

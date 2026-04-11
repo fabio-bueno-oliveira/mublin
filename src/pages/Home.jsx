@@ -470,10 +470,10 @@ export default function Home() {
                                     fw={400}
                                     px={10}
                                     leftSection={
-                                      post.comments_count > 0 && <IconMessageCircle size={20} />
+                                      post.comments_count > 0 && <IconMessageCircle size={21} />
                                     }
                                   >
-                                    {post.comments_count === 0 && <IconMessageCircle size={20} />} {post.comments_count > 0 ? post.comments_count : ''}
+                                    {post.comments_count === 0 && <IconMessageCircle size={21} />} {post.comments_count > 0 ? post.comments_count : ''}
                                   </Button>
                                 )}
                               </Group>
