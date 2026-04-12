@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { 
-  Group, Flex, Button, Container, 
+  Group, Button, Container, 
   Box, Burger, Image,
   useMantineColorScheme 
 } from '@mantine/core'
@@ -18,16 +18,12 @@ export default function PublicNavbar() {
       <Container size="lg" h="100%">
         <Group justify="space-between" align="center" h="100%">
           {/* Logo */}
-          <Flex
-            gap={8}
-            align='center'
-            component={Link}
+          <Link
             to="/"
             style={{ cursor: 'pointer', textDecoration: 'none' }}
           >
-            <IconCircuitResistor size={30} stroke={2} />
             <Image src={colorScheme === 'light' ? MublinLogoBlack : MublinLogoWhite} h={22} />
-          </Flex>
+          </Link>
 
           {/* CTAs — desktop */}
           <Group gap="sm" visibleFrom="sm">
@@ -46,7 +42,7 @@ export default function PublicNavbar() {
               to="/signup"
               radius="xl"
               size="sm"
-              color="indigo"
+              color="mublinGreen"
             >
               Criar conta
             </Button>
@@ -106,7 +102,7 @@ export default function PublicNavbar() {
             <Button
               component={Link}
               to="/signup"
-              color="indigo"
+              color="mublinGreen"
               radius="xl"
               size="sm"
               onClick={close}
