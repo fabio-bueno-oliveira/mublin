@@ -15,6 +15,7 @@ import {
   Title, Text, Badge, Skeleton, 
   Group, Stack, Card, Tooltip, 
   ActionIcon, Pill,
+  Space,
 } from '@mantine/core'
 import {
   IconBrandInstagram, IconBrandSpotify, IconPencil, IconDoor,
@@ -136,11 +137,12 @@ export default function Project() {
 
   return (
     <>
-      <Container fluid pb="lg">
+      <Container fluid pb="lg" px={0}>
 
         <Card 
-          px={0} 
-          pt={0} 
+          px={0}
+          pt={0}
+          pb="xs"
           bg={colorScheme === "light" ? "white" : "#1c1c1c"}
           shadow="xs"
         >
@@ -151,19 +153,19 @@ export default function Project() {
             {isLoading ? (
               <Skeleton height={140} radius="md" />
             ) : (
-              <Image
-                src={
-                  project?.cover_picture
-                    ? PICTURE_COVER_PATH + project?.cover_picture 
-                    : DEFAULT_COVER_PICTURE
-                }
-                fallbackSrc="https://placehold.co/1042x120?text=."
-                height={120}
-                radius="md"
-                fit="cover"
-                w="100%"
-                alt='Imagem de capa'
-              />
+              project?.cover_picture ? (
+                <Image
+                  src={PICTURE_COVER_PATH + project?.cover_picture}
+                  fallbackSrc="https://placehold.co/1042x120?text=."
+                  height={120}
+                  radius="md"
+                  fit="cover"
+                  w="100%"
+                  alt='Imagem de capa'
+                />
+              ) : (
+                <Box h={88} bg="gray" opacity={0.25} />
+              )
             )}
 
             {/* Avatar do projeto sobreposto */}
@@ -171,7 +173,6 @@ export default function Project() {
               pos="absolute"
               bottom={-30}
               left={20}
-              zIndex={1}
             >
               {isLoading ? (
                 <Skeleton height={100} width={100} />
@@ -212,7 +213,7 @@ export default function Project() {
             gap="sm"
             px="lg"
           >
-            <Stack gap={4}>
+            <Stack gap={0}>
               {isLoading ? (
                 <>
                   <Skeleton height={28} width={200} />
@@ -220,31 +221,30 @@ export default function Project() {
                 </>
               ) : (
                 <>
-                  <Group gap={14} align="baseline">
-                    <Title order={1} fw={800} lts="-0.01em">
+                  <Group gap={10} align="center">
+                    <Title order={1} fz="h2" fw={550} lts="-0.01em">
                       {project?.name}
                     </Title>
                     {project?.on_tour && (
                       <Badge 
                         size="sm" 
-                        variant="filled"
-                        color="pink"
-                        radius="xl" 
+                        variant="light"
+                        radius="xs"
+                        color="gray"
                         fw={400}
-                        leftSection={<IconRoad size={16} />}
                       >
                         Em turnê
                       </Badge>
                     )}
                   </Group>
-                  <Group gap={10}>
+                  <Group gap={8}>
                     {project?.project_type && (
-                      <Text size="sm">{project.project_type}</Text>
+                      <Text size="sm" c="dimmed">{project.project_type}</Text>
                     )}
                     {project?.genre && (
                       <>
                         <Text size="sm" opacity={0.4}>·</Text>
-                        <Text size="sm">{project.genre}</Text>
+                        <Text size="sm" c="dimmed">{project.genre}</Text>
                       </>
                     )}
                     {!isLoading && userIsConfirmedMember && ( 
@@ -372,19 +372,20 @@ export default function Project() {
                   <Skeleton height={14} width="75%" />
                 </>
               ) : (
-                <Card shadow="sm" padding="lg" radius="md">
+                <Box padding="lg">
                   {project?.description && (
-                    <Card.Section p="xs" withBorder>
+                    <Box>
+                      <Text fw={600}>Sobre</Text>
                       <Text size="sm">{project.description}</Text>
-                    </Card.Section>
+                    </Box>
                   )}
                   {project?.purpose && (
-                    <Card.Section p="xs" withBorder>
+                    <Box>
                       <Text size="xs" fw={400} c="dimmed">Objetivo deste projeto</Text>
                       <Text size="sm">{project.purpose}</Text>
-                    </Card.Section>
+                    </Box>
                   )}
-                </Card>
+                </Box>
               )}
             </Stack>
           </>

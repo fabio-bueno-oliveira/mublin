@@ -8,14 +8,12 @@ import {
   fetchRandomFeedPhrase, fetchLikesCountByPosts
 } from '../queries/feed'
 import { fetchUserProjects } from '../queries/user'
-import { fetchRandomOtherProjects } from '../queries/projects'
 import MublinLogoBlack from '../assets/svg/mublin-logo-black.svg'
 import MublinLogoWhite from '../assets/svg/mublin-logo-white.svg'
 import {
-  useMantineColorScheme, Box, Container, Grid, Stack, Group, Text, Title, Loader,
-  Avatar, Badge, Button, Flex, ActionIcon, Menu,
-  ScrollArea, Skeleton, Image, Modal, Divider,
-  Paper
+  useMantineColorScheme, Box, Container, Grid, Flex, Stack, Group, 
+  Text, Title, Loader, Avatar, Badge, Button, ActionIcon, Menu,
+  ScrollArea, Scroller, Skeleton, Image, Modal, Paper, Card
 } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
@@ -23,8 +21,11 @@ import LinkedItem from '../components/feed/LinkedItem'
 import VideoPlayer from '../components/feed/VideoPlayer'
 import LikeButton from '../components/feed/LikeButton'
 import {
-  IconClock, IconRosetteDiscountCheckFilled, IconMessageCircle, 
-  IconDots, IconLink, IconTrash
+  IconCircleArrowLeftFilled, IconCircleArrowRightFilled,
+  IconRosetteDiscountCheckFilled, IconMessageCircle, 
+  IconDots, IconLink, IconTrash, IconClock,
+  IconUsersGroup,
+  IconUser
 } from '@tabler/icons-react'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
@@ -33,6 +34,7 @@ import 'dayjs/locale/pt-br'
 dayjs.extend(relativeTime)
 dayjs.locale('pt-br')
 
+const IMG_PATH = 'https://ik.imagekit.io/mublin/'
 const AVATAR_PATH = 'https://ik.imagekit.io/mublin/tr:h-68,c-maintain_ratio/users/avatars/'
 
 function ProjectSkeletons({ count = 4 }) {
@@ -78,12 +80,16 @@ export default function Home() {
     staleTime: 1000 * 60 * 4,
   })
 
-  const { data: randomProjects = [], isLoading: loadingRandomProjects } = useQuery({
-    queryKey: ['random-projects', user?.id],
-    queryFn: () => fetchRandomOtherProjects(user.id),
-    enabled: !!user?.id,
-    staleTime: 1000 * 60 * 4,
-  })
+  const userProjects = savedProjects.map((r) => ({
+    id: r.projects.id,
+    name: r.projects.name,
+    slug: r.projects.slug,
+    picture: r.projects.picture,
+    status: r.status,
+    main_role: r.roles.name_ptbr,
+    genre: r.projects.genres?.name,
+    totalMembers: r.projects.project_members?.length || 0
+  }))
 
   const feedPostIds = feedPosts.map(p => p.id)
 
@@ -100,21 +106,6 @@ export default function Home() {
     enabled: feedPostIds.length > 0,
     staleTime: 1000 * 60 * 2,
   })
-
-  const userProjects = savedProjects.map((r) => ({
-    id: r.projects.id,
-    name: r.projects.name,
-    slug: r.projects.slug,
-    picture: r.projects.picture,
-    status: r.status,
-  }))
-
-  const randomProjectsList = randomProjects.map((r) => ({
-    id: r.id,
-    name: r.name,
-    slug: r.slug,
-    picture: r.picture,
-  }))
 
   const { data: feedPhrase } = useQuery({
     queryKey: ['feed-phrase'],
@@ -168,10 +159,107 @@ export default function Home() {
             span={{ base: 12, md: 7 }}
             px={{ base: '1rem', sm: 0 }}
           >
-            <Title order={2} fz="h4" ta="left" fw={600} lts="-0.02em" mb="lg">
+            <Title order={2} fz="h3" fw={600} lts="-0.02em" mb="md">
               Meus projetos
             </Title>
-            <ScrollArea w="100%" type="never">
+            <Scroller
+              key={userProjects.length}
+              draggable
+              controlSize="xl"
+              startControlIcon={<IconCircleArrowLeftFilled size={36} />}
+              endControlIcon={<IconCircleArrowRightFilled size={36} />}
+            >
+              <Group gap="xs" wrap="nowrap">
+                {!loadingProjects && userProjects?.map(item => (
+                  <Link key={item.id}  to={`/project/${item.slug}`} className="noDecoration">
+                    <Card 
+                      w={140}
+                      shadow="sm" 
+                      padding="xs"  
+                      withBorder
+                    >
+                      <Card.Section>
+                        <Box 
+                          style={{ 
+                            position: 'relative', 
+                            width: '100%', 
+                            height: '100%',
+                            overflow: 'hidden' 
+                          }}
+                        >                      
+                          <Image
+                            src={
+                              item.picture
+                                ? `${IMG_PATH}projects/${item.id}/tr:h-120,w-140,c-maintain_ratio/${item.picture}`
+                                : undefined
+                            }
+                            height={120}
+                            alt={item.name}
+                          />
+                          {item.status === 1 && (
+                            <Flex
+                              align="center"
+                              justify="center"
+                              pos="absolute"
+                              direction="column"
+                              gap="xs"
+                              inset={0}
+                              bg="rgba(0,0,0,0.55)"
+                            >
+                              <IconClock size={24} color="white" stroke={1.5} />
+                              <Badge size="xs" variant="outline" fw="400" color="white">
+                                Pendente
+                              </Badge>
+                            </Flex>
+                          )}
+                        </Box>
+                      </Card.Section>
+                      <Stack mt={8} gap={1} pos="relative" style={{ minWidth: 0 }}>
+                        <Text
+                          size="sm"
+                          fw={550}
+                          truncate="end"
+                        >
+                          {item.name}
+                        </Text>
+
+                        <Flex gap={4} align="center" style={{ minWidth: 0 }}>
+                          {item.genre && (
+                            <>
+                              <Text 
+                                size="11px" c="dimmed" truncate="end" 
+                                style={{ minWidth: 0, flexShrink: 1 }}
+                                title={item.genre}
+                              >
+                                {item.genre}
+                              </Text>
+                              <Text size="11px" c="dimmed" style={{ flexShrink: 0 }}>·</Text>
+                            </>
+                          )}
+                          <Flex gap={0} align="center" style={{ flexShrink: 0 }}>
+                            <IconUser size={12} color="gray" />
+                            <Text size="11px" c="dimmed" ml={2}>{item.totalMembers} pessoas</Text>
+                          </Flex>
+                        </Flex>
+
+                        <Flex gap={3} align="center" style={{ minWidth: 0 }}>
+                          <Avatar
+                            size={14}
+                            src={profile?.avatar ? AVATAR_PATH + profile.avatar : undefined}
+                            radius="xl"
+                            style={{ flexShrink: 0 }}
+                          />
+                          <Text size="xs" c="dimmed" truncate="end" style={{ minWidth: 0 }}>
+                            {item.main_role}
+                          </Text>
+                        </Flex>
+                      </Stack>
+                    </Card>
+                  </Link>
+                ))}
+              </Group>
+            </Scroller>
+            <ScrollArea w="600" type="never">
               <Flex gap={14}>
                 {/* <Flex direction="column" align="center" gap={10}>
                   <Avatar
@@ -190,7 +278,9 @@ export default function Home() {
 
                 {loadingProjects && <ProjectSkeletons />}
 
-                {!loadingProjects && userProjects?.map(item => (
+                
+
+                {/* {!loadingProjects && userProjects?.map(item => (
                   <Flex
                     key={item.id}
                     direction="column"
@@ -242,51 +332,13 @@ export default function Home() {
                       {item.name}
                     </Text>
                   </Flex>
-                ))}
+                ))} */}
               </Flex>
             </ScrollArea>
-            <Box mt="xl">
-              <Title order={2} fz="h4" ta="left" fw={600} lts="-0.02em" mb="lg">
+            <Box mt="lg">
+              <Title order={2} fz="h3" fw={600} lts="-0.02em" mb="lg">
                 Gigs para você
               </Title>
-              <Flex gap={18}>
-                {loadingRandomProjects && <ProjectSkeletons />}
-
-                {!loadingRandomProjects && randomProjectsList?.map(item => (
-                  <Flex
-                    key={item.id}
-                    direction="column"
-                    align="center"
-                    gap={10}
-                    component={Link}
-                    to={`/project/${item.slug ?? item.id}`}
-                    style={{ cursor: 'pointer', textDecoration: 'none', color: 'inherit' }}
-                  >
-                    <Image
-                      radius="md"
-                      w={90}
-                      h={90}
-                      fit="cover"
-                      src={
-                        item.picture
-                          ? `https://ik.imagekit.io/mublin/projects/tr:h-180,w-180,c-maintain_ratio/${item.picture}`
-                          : undefined
-                      }
-                      fallbackSrc="https://placehold.co/90x130?text=Sem+foto"
-                    />
-                    <Text
-                      w={65}
-                      ta="center" 
-                      size="0.75rem" 
-                      fw={480} 
-                      truncate="end"
-                      title={item.name}
-                    >
-                      {item.name}
-                    </Text>
-                  </Flex>
-                ))}
-              </Flex>
             </Box>
           </Grid.Col>
           <Grid.Col span={{ base: 12, md: 5 }}>
@@ -298,44 +350,46 @@ export default function Home() {
                 scrollHideDelay={0}
               >
                 {/* Caixa de novo post */}
-                <Flex
-                  gap={10}
-                  align="center"
-                  mt={{ base: 'lg', sm: 'xs' }}
-                  mb="sm"
+                <Paper 
+                  className="paperWrapper" 
+                  mb="sm" 
+                  py="xs"
                   visibleFrom="sm"
                 >
-                  <Link to={`/${profile?.username}`}>
-                    <Avatar
-                      size={36}
-                      radius="xl"
-                      src={
-                        profile?.avatar
-                          ? `https://ik.imagekit.io/mublin/tr:h-76,w-76,r-max,c-maintain_ratio/users/avatars/${profile.avatar}`
-                          : undefined
-                      }
-                      alt={profile?.username}
-                    />
-                  </Link>
-                  <Text
-                    c="dimmed" fz="15px" w="100%"
-                    component={Link}
-                    to="/new/post"
-                  >
-                    {feedPhrase ?? 'Quais são as novidades?'}
-                  </Text>
-                </Flex>
+                  <Flex gap={10} align="center">
+                    <Link to={`/${profile?.username}`}>
+                      <Avatar
+                        size={36}
+                        radius="xl"
+                        src={
+                          profile?.avatar
+                            ? `https://ik.imagekit.io/mublin/tr:h-76,w-76,r-max,c-maintain_ratio/users/avatars/${profile.avatar}`
+                            : undefined
+                        }
+                        alt={profile?.username}
+                      />
+                    </Link>
+                    <Text
+                      w="100%"
+                      c="dimmed"
+                      size="md" 
+                      component={Link}
+                      to="/new/post"
+                    >
+                      {feedPhrase ?? 'Quais são as novidades?'}
+                    </Text>
+                  </Flex>
+                </Paper>
 
                 {/* Feed */}
                 {loadingFeed ? (
                   <Text size="sm" c="dimmed">Carregando postagens...</Text>
                 ) : (
-                  <Paper className="paperWrapper">
-                    <Stack gap={0}>
-                      {feedPosts.map((post, i) => (
-                        <Box key={post.id}>
-                          {i > 0 && <Divider />}
-                          <Group gap="sm" align="flex-start" pt="md" pb="xs">
+                  <>
+                    <Stack gap={14}>
+                      {feedPosts.map(post => (
+                        <Card className="paperWrapper" key={post.id}>  
+                          <Group gap="xs" align="center" justify="space-between">
                             <Avatar
                               size={36}
                               radius="xl"
@@ -345,9 +399,9 @@ export default function Home() {
                               to={`/${post.author_username}`}
                               title={post.author_full_name}
                             />
-                            <Stack gap={2} style={{ flex: 1 }}>
+                            <Box flex={1}>
                               {/* Cabeçalho do post */}
-                              <Group justify="space-between" align="flex-start">
+                              <Stack gap={0}>
                                 <Flex 
                                   gap={post.author_is_verified ? 2 : 6} 
                                   align="center" wrap="wrap"
@@ -373,7 +427,7 @@ export default function Home() {
                                     <Text size="xs" c="dimmed">Projeto</Text>
                                   }
                                   <Text
-                                    size="sm"
+                                    size="xs"
                                     c="dimmed"
                                     title={dayjs(post.created_at).format('dddd, D [de] MMMM [de] YYYY [às] HH:mm')}
                                     component={Link}
@@ -385,101 +439,100 @@ export default function Home() {
                                     {dayjs(post.created_at).fromNow()}
                                   </Text>
                                 </Flex>
-                                <Menu shadow="md" radius="md" position="bottom-end">
-                                  <Menu.Target>
-                                    <ActionIcon variant="subtle" color="gray" size="sm" radius="xl">
-                                      <IconDots size={18} color="gray" />
-                                    </ActionIcon>
-                                  </Menu.Target>
-                                  <Menu.Dropdown>
+                                <Text size="xs" c="dimmed" truncate="end" title={post.author_title}>
+                                  {post.author_title}
+                                </Text>
+                              </Stack>
+                            </Box>
+                            <Menu shadow="md" radius="md" position="bottom-end">
+                              <Menu.Target>
+                                <ActionIcon variant="subtle" color="gray" size="sm" radius="xl">
+                                  <IconDots size={18} color="gray" />
+                                </ActionIcon>
+                              </Menu.Target>
+                              <Menu.Dropdown>
+                                <Menu.Item
+                                  leftSection={<IconLink size={14} />}
+                                  onClick={() => navigator.clipboard.writeText(
+                                    `${window.location.origin}/post/${post.id}`
+                                  )}
+                                >
+                                  Copiar link
+                                </Menu.Item>
+                                {post.author_profile_id === user?.id && (
+                                  <>
+                                    <Menu.Divider />
                                     <Menu.Item
-                                      leftSection={<IconLink size={14} />}
-                                      onClick={() => navigator.clipboard.writeText(
-                                        `${window.location.origin}/post/${post.id}`
-                                      )}
+                                      color="red"
+                                      leftSection={<IconTrash size={14} />}
+                                      onClick={() => {
+                                        setPostToDelete(post.id)
+                                        openConfirmDeletePost()
+                                      }}
                                     >
-                                      Copiar link
+                                      Apagar postagem
                                     </Menu.Item>
-                                    {post.author_profile_id === user?.id && (
-                                      <>
-                                        <Menu.Divider />
-                                        <Menu.Item
-                                          color="red"
-                                          leftSection={<IconTrash size={14} />}
-                                          onClick={() => {
-                                            setPostToDelete(post.id)
-                                            openConfirmDeletePost()
-                                          }}
-                                        >
-                                          Apagar postagem
-                                        </Menu.Item>
-                                      </>
-                                    )}
-                                  </Menu.Dropdown>
-                                </Menu>
-                              </Group>
-
-                              {/* Corpo */}
-                              <Text
-                                size="0.9em"
-                                fw={480}
-                                lh={1.5}
-                                opacity={0.85}
+                                  </>
+                                )}
+                              </Menu.Dropdown>
+                            </Menu>
+                          </Group>
+                          {/* Corpo */}
+                          <Text
+                            size="0.88em"
+                            fw={480}
+                            lh={1.5}
+                            my={4}
+                            opacity={0.85}
+                            component={Link}
+                            to={`/post/${post.id}`}
+                            c="var(--mantine-color-text)"
+                            style={{ textDecoration: 'none' }}
+                          >
+                            {post.body}
+                          </Text>
+                          {post.image && (
+                            <Link to={`/post/${post.id}`}>
+                              <Image
+                                src={`https://ik.imagekit.io/mublin/posts/tr:w-700/${post.image}`}
+                                radius="md"
+                                mt={2}
+                              />
+                            </Link>
+                          )}
+                          {post.video_url && (
+                            <VideoPlayer url={post.video_url} title={post.body?.slice(0, 60)} />
+                          )}
+                          {(post.linked_gig_id || post.linked_product_id) &&
+                            <LinkedItem post={post} />
+                          }
+                          {/* Ações */}
+                          <Group gap={4} mt={6}>
+                            <LikeButton
+                              postId={post.id}
+                              userId={user?.id}
+                              likedPostIds={likedPostIds}
+                              likesCount={likesCountMap[post.id] ?? 0}
+                            />
+                            {!post.comments_disabled && (
+                              <Button
                                 component={Link}
                                 to={`/post/${post.id}`}
-                                c="var(--mantine-color-text)"
-                                style={{ textDecoration: 'none' }}
+                                variant="subtle"
+                                color="gray"
+                                size="sm"
+                                radius="md"
+                                fw={400}
+                                px={10}
+                                leftSection={
+                                  post.comments_count > 0 && <IconMessageCircle size={21} />
+                                }
                               >
-                                {post.body}
-                              </Text>
-
-                              {post.image && (
-                                <Link to={`/post/${post.id}`}>
-                                  <Image
-                                    src={`https://ik.imagekit.io/mublin/posts/tr:w-700/${post.image}`}
-                                    radius="md"
-                                    mt={2}
-                                  />
-                                </Link>
-                              )}
-
-                              {post.video_url && (
-                                <VideoPlayer url={post.video_url} title={post.body?.slice(0, 60)} />
-                              )}
-
-                              {(post.linked_gig_id || post.linked_product_id) &&
-                                <LinkedItem post={post} />
-                              }
-
-                              {/* Ações */}
-                              <Group gap={4} mt={6}>
-                                <LikeButton
-                                  postId={post.id}
-                                  userId={user?.id}
-                                  likedPostIds={likedPostIds}
-                                  likesCount={likesCountMap[post.id] ?? 0}
-                                />
-                                {!post.comments_disabled && (
-                                  <Button
-                                    component={Link}
-                                    to={`/post/${post.id}`}
-                                    variant="subtle"
-                                    color="gray"
-                                    size="sm"
-                                    radius="md"
-                                    fw={400}
-                                    px={10}
-                                    leftSection={
-                                      post.comments_count > 0 && <IconMessageCircle size={21} />
-                                    }
-                                  >
-                                    {post.comments_count === 0 && <IconMessageCircle size={21} />} {post.comments_count > 0 ? post.comments_count : ''}
-                                  </Button>
-                                )}
-                              </Group>
-                            </Stack>
+                                {post.comments_count === 0 && <IconMessageCircle size={21} />} {post.comments_count > 0 ? post.comments_count : ''}
+                              </Button>
+                            )}
                           </Group>
-                        </Box>
+                        </Card>
                       ))}
                     </Stack>
 
@@ -496,7 +549,7 @@ export default function Home() {
                         Carregar mais
                       </Button>
                     )}
-                  </Paper>
+                  </>
                 )}
               </ScrollArea>
             )}

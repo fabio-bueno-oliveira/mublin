@@ -26,9 +26,14 @@ export async function fetchUserProjects(userId) {
       project_id,
       status,
       roles!project_members_role_id_fkey ( name_ptbr ),
-      projects ( id, name, slug, picture, description )
+      projects ( 
+        id, name, slug, picture, description,
+        genres ( name ),
+        project_members ( count )
+      )
     `)
     .eq('profile_id', userId)
+    .eq('projects.project_members.status', 2)
   if (error) throw new Error(error.message)
   return data
 }
