@@ -59,7 +59,7 @@ export default function Landing() {
               fw='800'
             >
               Sua carreira musical,{' '}
-              <Text component="span" inherit c='mublinGreen'>
+              <Text component="span" inherit c='indigo'>
                 conectada.
               </Text>
             </Title>
@@ -68,7 +68,7 @@ export default function Landing() {
               e todos que fazem a música acontecer.
             </Text>
             <Group gap="sm" justify="center">
-              <Button size="md" radius="xl" fw='700' color="mublinGreen" onClick={() => navigate('/signup')}>
+              <Button size="md" radius="xl" fw='700' color="indigo" onClick={() => navigate('/signup')}>
                 Criar conta grátis
               </Button>
               <Button
@@ -157,7 +157,7 @@ export default function Landing() {
               size="lg"
               radius="xl"
               fw={700}
-              color="mublinGreen"
+              color="indigo"
               px={40}
               onClick={() => navigate('/signup')}
             >

@@ -16,26 +16,9 @@ import '@mantine/dates/styles.css'
 import '@mantine/schedule/styles.css'
 import './styles.scss'
 
-const mublinGreen = [ // Petrol Green, Deep Teal
-  '#e4f2ef',
-  '#c0e4dd',
-  '#8ed0c5',
-  '#5ab8a8',
-  '#1fa68e',
-  '#198f79',
-  '#127260',
-  '#0d5a4c',
-  '#084038',
-  '#042820',
-]
-
 const theme = createTheme({
   autoContrast: true,
-  primaryColor: 'mublinGreen',
-  // primaryShade: { light: 4, dark: 5 },
-  colors: {
-    mublinGreen,
-  },
+  primaryColor: "indigo",
   fontFamily: 'Geist, Helvetica, Arial, sans-serif',
   fontFamilyMonospace: 'monospace',
   headings: {
@@ -47,12 +30,13 @@ const theme = createTheme({
     Badge: Badge.extend({
       defaultProps: {
         fw: '500',
+        radius: 'md'
       },
     }),
     Button: Button.extend({
       defaultProps: {
         size: 'md',
-        variant: "filled",
+        variant: 'filled',
       },
     }),
     Card: Paper.extend({
@@ -61,6 +45,9 @@ const theme = createTheme({
           backgroundColor: 'light-dark(#ffffff, #1c1c1c)',
           borderColor: 'light-dark(#dde1e7, #101010)',
         },
+      },
+      defaultProps: {
+        shadow: 'xs',
       },
     }),
     Paper: Paper.extend({

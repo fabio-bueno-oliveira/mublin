@@ -10,17 +10,16 @@ import { useDisclosure } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
 import {
   useMantineColorScheme,
-  Container, Flex, Box, Button, 
+  Grid, Container, Flex, Box, Button, 
   Avatar, Image, Menu,
   Title, Text, Badge, Skeleton, 
   Group, Stack, Card, Tooltip, 
-  ActionIcon, Pill,
-  Space,
+  ActionIcon, Pill
 } from '@mantine/core'
 import {
   IconBrandInstagram, IconBrandSpotify, IconPencil, IconDoor,
-  IconBrandSoundcloud, IconRoad, IconSettings, IconUsers,
-  IconClock, IconUserUp, IconLogout, IconUserCog
+  IconBrandSoundcloud, IconSettings, IconX,
+  IconUserUp, IconLogout, IconUserCog
 } from '@tabler/icons-react'
 
 export default function Project() {
@@ -40,8 +39,8 @@ export default function Project() {
 
   const AVATAR_PATH = 'https://ik.imagekit.io/mublin/tr:h-240,c-maintain_ratio/users/avatars/'
   const PICTURE_AVATAR_PATH = `https://ik.imagekit.io/mublin/projects/${project?.id}/tr:h-200,w-200,c-maintain_ratio/`
-  const PICTURE_COVER_PATH = `https://ik.imagekit.io/mublin/projects/${project?.id}/tr:h-120,w-1042,fo-top,c-maintain_ratio/`
-  const DEFAULT_COVER_PICTURE = 'https://ik.imagekit.io/mublin/bg/tr:w-1042,h-120,bg-F3F3F3,fo-center,bl-10/mublin-hero-chatgpt-musicians2.png'
+  const PICTURE_COVER_PATH = `https://ik.imagekit.io/mublin/projects/${project?.id}/tr:h-100,w-1042,fo-top,c-maintain_ratio/`
+  const DEFAULT_COVER_PICTURE = 'https://ik.imagekit.io/mublin/bg/tr:w-1042,h-100,bg-F3F3F3,fo-bottom,bl-20/project-cover-default.png'
 
   const currentYear = new Date().getFullYear()
   const [modalJoinOpened, { open: openJoinModal, close: closeJoinModal }] = useDisclosure(false)
@@ -142,9 +141,10 @@ export default function Project() {
         <Card 
           px={0}
           pt={0}
-          pb="xs"
-          bg={colorScheme === "light" ? "white" : "#1c1c1c"}
+          pb={4}
+          bg="transparent"
           shadow="xs"
+          radius={false}        
         >
           {/* ── Cabeçalho / Cover ── */}
           <Box pos="relative" mb={44}>
@@ -153,50 +153,75 @@ export default function Project() {
             {isLoading ? (
               <Skeleton height={140} radius="md" />
             ) : (
-              project?.cover_picture ? (
-                <Image
-                  src={PICTURE_COVER_PATH + project?.cover_picture}
-                  fallbackSrc="https://placehold.co/1042x120?text=."
-                  height={120}
-                  radius="md"
-                  fit="cover"
-                  w="100%"
-                  alt='Imagem de capa'
-                />
-              ) : (
-                <Box h={88} bg="gray" opacity={0.25} />
-              )
+              <Image
+                src={
+                  project?.cover_picture 
+                    ? PICTURE_COVER_PATH + project?.cover_picture
+                    : DEFAULT_COVER_PICTURE
+                }
+                fallbackSrc="https://placehold.co/1042x100?text=."
+                height={100}
+                radius={false}
+                fit="cover"
+                w="100%"
+                alt='Imagem de capa'
+              />
             )}
+
+            {/* Gradiente sobre a capa */}
+            <Box
+              pos="absolute"
+              bottom={0}
+              left={0}
+              right={0}
+              h={60}
+              style={{
+                background: 'linear-gradient(to bottom, transparent, rgba(0,0,0,0.55))',
+                pointerEvents: 'none',
+              }}
+            />
+
+            <Group
+              pos="absolute"
+              top={12}
+              right={30}
+            >
+              {project?.on_tour && (
+                <Badge size="md" color="dark">
+                  Em turnê
+                </Badge>
+              )}
+            </Group>
 
             {/* Avatar do projeto sobreposto */}
             <Box
               pos="absolute"
               bottom={-30}
-              left={20}
+              left={30}
             >
               {isLoading ? (
                 <Skeleton height={100} width={100} />
               ) : (
-                <Group align="center" gap={18}>
+                <Group align="flex-start" gap={18}>
                   <Avatar
                     src={PICTURE_AVATAR_PATH+project?.picture}
                     size={100}
                     radius={0}
                     style={
                       colorScheme === "light" 
-                        ? { border: '2px solid white' }
-                        : { border: '2px solid #1c1c1c' }
+                        ? { border: '3px solid white' }
+                        : { border: '3px solid #1c1c1c' }
                     }
                   />
                   {project?.logo && 
                     <Avatar
                       src={PICTURE_AVATAR_PATH+project.logo}
-                      size={80}
+                      size={85}
                       radius={0}
                       style={
                         colorScheme === "light" 
-                          ? { border: '2px solid white' }
-                          : { border: '2px solid #1c1c1c' }
+                          ? { border: '3px solid white' }
+                          : { border: '3px solid #1c1c1c' }
                       }
                     />
                   }
@@ -211,9 +236,9 @@ export default function Project() {
             align="flex-start" 
             wrap="wrap" 
             gap="sm"
-            px="lg"
+            px="xl"
           >
-            <Stack gap={0}>
+            <Stack gap={2} w="100%">
               {isLoading ? (
                 <>
                   <Skeleton height={28} width={200} />
@@ -221,238 +246,251 @@ export default function Project() {
                 </>
               ) : (
                 <>
-                  <Group gap={10} align="center">
-                    <Title order={1} fz="h2" fw={550} lts="-0.01em">
-                      {project?.name}
-                    </Title>
-                    {project?.on_tour && (
-                      <Badge 
-                        size="sm" 
-                        variant="light"
-                        radius="xs"
-                        color="gray"
-                        fw={400}
-                      >
-                        Em turnê
-                      </Badge>
-                    )}
+                  <Group gap={10} justify="space-between" align="center">
+                    <Group>
+                      <Title order={1} fz="h2" fw={550} lts="-0.01em">
+                        {project?.name}
+                      </Title>
+                      {!isLoading && userIsConfirmedMember && ( 
+                        <Menu shadow="md" width={200} position="right-start" withArrow>
+                          <Menu.Target>
+                            <ActionIcon variant="subtle" color="gray" size="md">
+                              <IconSettings stroke={1.4} size={24} />
+                            </ActionIcon>
+                          </Menu.Target>
+                          <Menu.Dropdown>
+                            <Menu.Item 
+                              leftSection={<IconDoor size={14} />}
+                              onClick={() => navigate(`/backstage?project=${slug}`)}
+                            >
+                              Acessar Backstage
+                            </Menu.Item>
+                            <Menu.Divider />
+                            <Menu.Item leftSection={<IconPencil size={14} />}>
+                              Editar dados do projeto
+                            </Menu.Item>
+                            <Menu.Item leftSection={<IconSettings size={14} />}>
+                              Gerenciar minha participação
+                            </Menu.Item>
+                            {userIsAdmin && 
+                              <Menu.Item leftSection={<IconUserCog size={14} />}>
+                                Gerenciar pessoas
+                              </Menu.Item>
+                            }
+                            <Menu.Divider />
+                            <Menu.Item
+                              color="red"
+                              leftSection={<IconLogout size={14} />}
+                            >
+                              Sair deste projeto
+                            </Menu.Item>
+                          </Menu.Dropdown>
+                        </Menu>
+                      )}
+                    </Group>
+                    <Group gap={3}>
+                      {project?.instagram && (
+                        <Tooltip label="Instagram" position="bottom">
+                          <ActionIcon
+                            component="a"
+                            href={`https://instagram.com/${project.instagram}`}
+                            target="_blank"
+                            variant="subtle"
+                            color="pink"
+                            size="lg"
+                          >
+                            <IconBrandInstagram size={22} />
+                          </ActionIcon>
+                        </Tooltip>
+                      )}
+                      {project?.spotify_id && (
+                        <Tooltip label="Spotify" position="bottom">
+                          <ActionIcon
+                            component="a"
+                            href={`https://open.spotify.com/artist/${project.spotify_id}`}
+                            target="_blank"
+                            variant="subtle"
+                            color="green"
+                            size="lg"
+                          >
+                            <IconBrandSpotify size={22} />
+                          </ActionIcon>
+                        </Tooltip>
+                      )}
+                      {project?.soundcloud && (
+                        <Tooltip label="SoundCloud" position="bottom">
+                          <ActionIcon
+                            component="a"
+                            href={`https://soundcloud.com/${project.soundcloud}`}
+                            target="_blank"
+                            variant="subtle"
+                            color="orange"
+                            size="lg"
+                          >
+                            <IconBrandSoundcloud size={22} />
+                          </ActionIcon>
+                        </Tooltip>
+                      )}
+                    </Group>
                   </Group>
-                  <Group gap={8}>
+                  <Group w="100%" gap={8} align="center">
                     {project?.project_type && (
                       <Text size="sm" c="dimmed">{project.project_type}</Text>
                     )}
                     {project?.genre && (
                       <>
-                        <Text size="sm" opacity={0.4}>·</Text>
+                        <Text size="sm" opacity={0.4} style={{ cursor: 'default' }}>·</Text>
                         <Text size="sm" c="dimmed">{project.genre}</Text>
                       </>
                     )}
-                    {!isLoading && userIsConfirmedMember && ( 
-                      <Menu shadow="md" width={200} position="right-start" withArrow>
-                        <Menu.Target>
-                          <ActionIcon variant="subtle" color="gray" size="md">
-                            <IconSettings stroke={1.4} size={21} />
-                          </ActionIcon>
-                        </Menu.Target>
-                        <Menu.Dropdown>
-                          <Menu.Item 
-                            leftSection={<IconDoor size={14} />}
-                            onClick={() => navigate(`/backstage?project=${slug}`)}
-                          >
-                            Acessar Backstage
-                          </Menu.Item>
-                          <Menu.Divider />
-                          <Menu.Item leftSection={<IconPencil size={14} />}>
-                            Editar dados do projeto
-                          </Menu.Item>
-                          <Menu.Item leftSection={<IconSettings size={14} />}>
-                            Gerenciar minha participação
-                          </Menu.Item>
-                          {userIsAdmin && 
-                            <Menu.Item leftSection={<IconUserCog size={14} />}>
-                              Gerenciar pessoas
-                            </Menu.Item>
-                          }
-                          <Menu.Divider />
-                          <Menu.Item
-                            color="red"
-                            leftSection={<IconLogout size={14} />}
-                          >
-                            Sair deste projeto
-                          </Menu.Item>
-                        </Menu.Dropdown>
-                      </Menu>
-                    )}
                   </Group>
-                  {!isLoading && userHasNoParticipation && (
-                    <Button
-                      size='xs'
-                      mt={10} 
-                      onClick={openJoinModal}
-                      color="indigo"
-                      leftSection={<IconUserUp size={16} />}
-                    >
-                      Solicitar associação
-                    </Button>
-                  )}
-                  {!isLoading && userHasRequestedParticipation && (
-                    <Button
-                      size='xs'
-                      mt={10} 
-                      variant="light"
-                      color="red"
-                      onClick={() => cancelRequest()}
-                      loading={isCancelling}
-                      leftSection={<IconClock size={16} />}
-                    >
-                      Cancelar solicitação
-                    </Button>
-                  )}
                 </>
               )}
             </Stack>
 
-            {/* Redes sociais */}
+            {/* Ações */}
             {!isLoading && (
-              <Group gap={6}>
-                {project?.instagram && (
-                  <Tooltip label="Instagram">
-                    <ActionIcon
-                      component="a"
-                      href={`https://instagram.com/${project.instagram}`}
-                      target="_blank"
-                      variant="subtle"
-                      color="pink"
-                      size="lg"
-                    >
-                      <IconBrandInstagram size={22} />
-                    </ActionIcon>
-                  </Tooltip>
+              <Group gap={6} align="center">
+                {userHasNoParticipation && (
+                  <Button
+                    size='xs'
+                    variant="default"
+                    onClick={openJoinModal}
+                    leftSection={<IconUserUp size={16} />}
+                  >
+                    Solicitar associação
+                  </Button>
                 )}
-                {project?.spotify_id && (
-                  <Tooltip label="Spotify">
-                    <ActionIcon
-                      component="a"
-                      href={`https://open.spotify.com/artist/${project.spotify_id}`}
-                      target="_blank"
-                      variant="subtle"
-                      color="green"
-                      size="lg"
-                    >
-                      <IconBrandSpotify size={22} />
-                    </ActionIcon>
-                  </Tooltip>
-                )}
-                {project?.soundcloud && (
-                  <Tooltip label="SoundCloud">
-                    <ActionIcon
-                      component="a"
-                      href={`https://soundcloud.com/${project.soundcloud}`}
-                      target="_blank"
-                      variant="subtle"
-                      color="orange"
-                      size="lg"
-                    >
-                      <IconBrandSoundcloud size={22} />
-                    </ActionIcon>
-                  </Tooltip>
+                {userHasRequestedParticipation && (
+                  <Button
+                    size='xs'
+                    variant="light"
+                    color="gray"
+                    onClick={() => cancelRequest()}
+                    loading={isCancelling}
+                    leftSection={<IconX size={16} />}
+                  >
+                    Cancelar solicitação
+                  </Button>
                 )}
               </Group>
             )}
           </Flex>
         </Card>
 
-        {/* ── Descrição / Purpose ── */}
-        {(isLoading || project?.description || project?.purpose) && (
-          <>
-            <Stack gap={6} mt="md">
-              {isLoading ? (
-                <>
-                  <Skeleton height={14} width="90%" />
-                  <Skeleton height={14} width="75%" />
-                </>
-              ) : (
-                <Box padding="lg">
-                  {project?.description && (
-                    <Box>
-                      <Text fw={600}>Sobre</Text>
-                      <Text size="sm">{project.description}</Text>
-                    </Box>
-                  )}
-                  {project?.purpose && (
-                    <Box>
-                      <Text size="xs" fw={400} c="dimmed">Objetivo deste projeto</Text>
-                      <Text size="sm">{project.purpose}</Text>
-                    </Box>
-                  )}
-                </Box>
-              )}
-            </Stack>
-          </>
-        )}
-
-        {/* ── Integrantes confirmados ── */}
-        <Stack gap="sm" mt={18}>
-          <Group gap={6}>
-            <IconUsers size={16} />
-            <Title order={4} fz="h5" ta="left" fw={700} lts="-0.02em">
-              Integrantes e Staff ({confirmedMembers.length})
-            </Title>
-          </Group>
+        <Box px="lg" py="lg">
 
           {isLoading && (
-            <Flex gap={12} wrap="wrap">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <Flex key={i} direction="column" align="center" gap={6}>
-                  <Skeleton circle height={52} width={52} />
-                  <Skeleton height={10} width={50} />
-                </Flex>
-              ))}
-            </Flex>
+            <Grid gap="md" rowGap="xl" columnGap="sm">
+              <Grid.Col span={{ base: 12, sm: 6 }}>
+                <Skeleton height={130} width="100%" />
+              </Grid.Col>
+              <Grid.Col span={{ base: 12, sm: 6 }}>
+                <Skeleton height={130} width="100%" />
+              </Grid.Col>
+            </Grid>
           )}
 
-          {!isLoading && confirmedMembers.length === 0 && (
-            <Text size="sm" c="dimmed">Nenhum integrante confirmado.</Text>
-          )}
-
-          {!isLoading && confirmedMembers.length > 0 && (
-            <Flex gap={16} wrap="wrap">
-              {confirmedMembers.map(member => (
-                <Flex
-                  key={member.id}
-                  direction="column"
-                  align="center"
-                  gap={6}
-                  component={Link}
-                  to={`/${member.username}`}
-                  style={{ textDecoration: 'none', color: 'inherit', cursor: 'pointer' }}
-                >
-                  <Avatar
-                    src={AVATAR_PATH + member.avatar}
-                    size={50}
-                    radius="xl"
-                  />
-                  <Stack gap={3} align="center">
-                    <Text size="0.7rem" fw={500} ta="center" w={70} lineClamp={1}>
-                      {member.name}
+          {!isLoading && (
+            <Grid gap="md" rowGap="xl" columnGap="sm">
+              <Grid.Col span={{ base: 12, md: 6, lg: 6 }}>
+                <Stack gap="md">
+                  <Card>
+                    <Title order={5} fw={600} mb="xs">Sobre</Title>
+                    <Text size="sm">
+                      {project?.description ? (
+                        project.description
+                      ) : (
+                        <Text span c="dimmed">
+                          Descrição não disponível
+                        </Text>
+                      )}
                     </Text>
-                    <Text size="0.65rem" c="dimmed" ta="center" w={70} lineClamp={1}>
-                      {member.role}
-                      {member.role_2 ? ` · ${member.role_2}` : ''}
+                  </Card>
+                  <Card>
+                    <Title order={5} fw={600} mb="xs">Objetivo</Title>
+                    <Text size="sm">
+                      {project?.purpose ? (
+                        project.purpose
+                      ) : (
+                        <Text span c="dimmed">
+                          Objetivo não disponível
+                        </Text>
+                      )}
                     </Text>
-                  </Stack>
-                  {member.username === profile?.username && (
-                    <Pill size="xs">Você</Pill>
+                  </Card>
+                </Stack>
+              </Grid.Col>
+              <Grid.Col span={{ base: 12, md: 6, lg: 6 }}>
+                <Card mih={300}>
+                  <Title order={5} fw={600} mb="xs">
+                    Integrantes e Staff ({confirmedMembers.length})
+                  </Title>
+                  {isLoading && (
+                    <Flex gap={12} wrap="wrap">
+                      {Array.from({ length: 4 }).map((_, i) => (
+                        <Flex key={i} direction="column" align="center" gap={6}>
+                          <Skeleton circle height={52} width={52} />
+                          <Skeleton height={10} width={50} />
+                        </Flex>
+                      ))}
+                    </Flex>
                   )}
-                  {member.is_founder && (
-                    <Badge size="xs" variant="light" color="green">Fundador</Badge>
-                  )}
-                </Flex>
-              ))}
-            </Flex>
-          )}
-        </Stack>
 
+                  {!isLoading && confirmedMembers.length === 0 && (
+                    <Text size="sm" c="dimmed">Nenhum integrante confirmado.</Text>
+                  )}
+
+                  {!isLoading && confirmedMembers.length > 0 && (
+                    <Flex gap={16} wrap="wrap">
+                      {confirmedMembers.map(member => (
+                        <Card p="xs" withBorder>
+                          <Flex
+                            key={member.id}
+                            direction="column"
+                            align="center"
+                            gap={6}
+                            component={Link}
+                            to={`/${member.username}`}
+                            style={{ textDecoration: 'none', color: 'inherit', cursor: 'pointer' }}
+                          >
+                            <Avatar
+                              src={AVATAR_PATH + member.avatar}
+                              size={50}
+                              radius="xl"
+                            />
+                            <Stack gap={3} align="center">
+                              <Text size="xs" fw={500} ta="center" w={70} lineClamp={1}>
+                                {member.name}
+                              </Text>
+                              <Text
+                                size="xs" 
+                                ta="center" 
+                                w={70} 
+                                lineClamp={1}
+                                title={[member.role, member.role_2].filter(Boolean).join(', ')}
+                              >
+                                {[member.role, member.role_2].filter(Boolean).join(', ')}
+                              </Text>
+                            </Stack>
+                            {member.username === profile?.username && (
+                              <Pill size="xs">Você</Pill>
+                            )}
+                            {member.is_founder && (
+                              <Badge size="xs" variant="light" color="green">Fundador</Badge>
+                            )}
+                          </Flex>
+                        </Card>
+                      ))}
+                    </Flex>
+                  )}
+                </Card>
+              </Grid.Col>
+              <Grid.Col span={{ base: 12, md: 6, lg: 6 }}>3</Grid.Col>
+              <Grid.Col span={{ base: 12, md: 6, lg: 6 }}>4</Grid.Col>
+            </Grid>
+          )}
+        </Box>
       </Container>
       <JoinProjectModal
         opened={modalJoinOpened}

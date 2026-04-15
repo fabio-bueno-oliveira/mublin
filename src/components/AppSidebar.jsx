@@ -101,7 +101,7 @@ export default function AppSidebar() {
               tt="none"
               fw={550}
               style={{ cursor: 'pointer' }}
-              color={item.type === gigsToShow ? "mublinGreen" : "dark"}
+              color={item.type === gigsToShow ? "indigo" : "dark"}
               onClick={() => setGigsToShow(item.type)}
             >
               {item.label}
@@ -118,7 +118,7 @@ export default function AppSidebar() {
                   style={{
                     minWidth: 44,
                     textAlign: 'center',
-                    background: 'var(--mantine-color-mublinGreen-0)',
+                    background: 'var(--mantine-color-indigo-0)',
                     borderRadius: 8,
                     padding: '6px 4px',
                   }}

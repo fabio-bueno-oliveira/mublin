@@ -23,17 +23,17 @@ export default function JoinProjectModal({
   return (
     <Drawer
       position='right'
-      title={`Ingressar em ${project.name}`}
+      title={`Me associar a ${project.name}`}
       opened={opened}
       onClose={onClose}
     >
-      <Stack gap="md">
+      <Stack gap="sm" mt="sm">
         <Center>
           <Avatar
-            size={72}
+            size={70}
             radius="md"
             src={project.picture
-              ? `https://ik.imagekit.io/mublin/projects/tr:h-150/${project.picture}`
+              ? `https://ik.imagekit.io/mublin/projects/${project.id}/tr:h-140,w-140,c-maintain_ratio/${project.picture}`
               : undefined
             }
           />
@@ -72,10 +72,10 @@ export default function JoinProjectModal({
           </Text>
         </Alert>
         <Group justify="flex-end">
-          <Button variant="default" radius="xl" onClick={onClose}>Cancelar</Button>
+          <Button variant="default" size="sm" onClick={onClose}>Cancelar</Button>
           <Button
             color="indigo"
-            radius="xl"
+            size="sm"
             loading={loading}
             disabled={!joinRole || !joinYear}
             onClick={onConfirm}

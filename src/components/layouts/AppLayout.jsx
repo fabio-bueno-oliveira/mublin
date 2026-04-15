@@ -1,6 +1,6 @@
 import { Outlet, Navigate } from 'react-router-dom'
-import { AppShell, Burger, Center, Loader } from '@mantine/core'
-import { useDisclosure, useMediaQuery } from '@mantine/hooks'
+import { AppShell, Center, Loader } from '@mantine/core'
+import { useMediaQuery } from '@mantine/hooks'
 import { useAuth } from '../../hooks/useAuth'
 import { useUI } from '../../contexts/UIContext'
 import AppNavbar from '../AppNavbar'
@@ -8,7 +8,6 @@ import AppSidebar from '../AppSidebar'
 import AppFooterMobile from '../AppFooterMobile'
 
 export default function AppLayout({ children }) {
-  const [opened, { toggle }] = useDisclosure()
   const { session, loading } = useAuth()
   const isMobile = useMediaQuery('(max-width: 48em)')
   const { hideFooter } = useUI()
@@ -27,21 +26,14 @@ export default function AppLayout({ children }) {
       navbar={{
         width: 260,
         breakpoint: 'sm',
-        collapsed: { mobile: !opened },
+        collapsed: { mobile: true },
       }}
-      padding={isMobile ? 0 : "md"}
+      padding={0}
       style={{ '--app-shell-footer-height': '70px' }}
     >
       {!isMobile && (
         <AppShell.Header>
-          <AppNavbar>
-            <Burger
-              opened={opened}
-              onClick={toggle}
-              hiddenFrom="sm"
-              size="sm"
-            />
-          </AppNavbar>
+          <AppNavbar />
         </AppShell.Header>
       )}
 

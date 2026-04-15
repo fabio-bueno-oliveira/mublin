@@ -300,19 +300,23 @@ export default function Search() {
                     <Flex
                       key={project.id}
                       component={Link}
-                      to={`/gear/${project.slug}`}
+                      to={`/project/${project.slug}`}
                       justify="flex-start"
                       mb="lg"
                       gap="md"
                       style={{ textDecoration: 'none', color: 'inherit' }}
                     >
                       <Avatar
-                        src={project.picture ? PATH_PROJECT_AVATAR + project.picture : undefined}
+                        src={
+                          project.picture 
+                            ? `https://ik.imagekit.io/mublin/projects/${project.id}/tr:h-200,w-200,c-maintain_ratio/${project.picture}` 
+                            : undefined
+                        }
                         size={80}
                         radius="sm"
                       />
                       <Flex direction="column" justify="flex-start">
-                        <Text size="sm" fw={600}>{project.name}</Text>
+                        <Text size="md" fw={600} lh={1.2}>{project.name}</Text>
                         <Text size="xs" opacity={0.8}>
                           {project.project_type_name}
                           {(project.project_type_name && project.main_genre_name) && ' • '}
@@ -398,7 +402,7 @@ export default function Search() {
                         )}
                         {gear.total_owners > 0 && (
                           <Text size="11px" mt={3}>
-                            {gear.total_owners} usuário{gear.total_owners !== 1 ? 's' : ''} tem este equipamento
+                            {gear.total_owners} pessoa{gear.total_owners !== 1 ? 's' : ''} possui este item
                           </Text>
                         )}
                       </Flex>

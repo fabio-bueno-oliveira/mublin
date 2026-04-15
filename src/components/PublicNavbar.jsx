@@ -42,7 +42,7 @@ export default function PublicNavbar() {
               to="/signup"
               radius="xl"
               size="sm"
-              color="mublinGreen"
+              color="indigo"
             >
               Criar conta
             </Button>
@@ -102,7 +102,7 @@ export default function PublicNavbar() {
             <Button
               component={Link}
               to="/signup"
-              color="mublinGreen"
+              color="indigo"
               radius="xl"
               size="sm"
               onClick={close}
