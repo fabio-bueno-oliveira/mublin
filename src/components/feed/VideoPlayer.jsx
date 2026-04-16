@@ -29,6 +29,7 @@ export default function VideoPlayer({ url, title, thumbnailOnly = false }) {
   return (
     <Box
       mt={4}
+      className="video-player-box"
       style={{
         position: 'relative',
         paddingTop: '56.25%',

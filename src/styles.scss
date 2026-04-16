@@ -17,7 +17,8 @@
   padding: 1rem 0.7rem 0.5rem 0.7rem;
   @media (max-width: 48em) {
     background-color: transparent!important;
-    padding: 0.2rem 1rem 0.2rem 1rem;
+    padding: 0.2rem 0 0.2rem 0;
+    border-radius: 0;
   }
 }
 
@@ -30,11 +31,34 @@
 
 // Other styles
 
+.paddingX {
+  padding-left: 0;
+  padding-right: 0;
+  @media (max-width: 48em) {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+}
+
+.post-image {
+  border-radius: var(--mantine-radius-md);
+  
+  @media (max-width: 48em) {
+    border-radius: 0;
+  }
+}
+
+@media (max-width: 48em) {
+  .video-player-box {
+    border-radius: 0 !important;
+  }
+}
+
 .link:hover {
   text-decoration: underline;
 }
 
-a.noDecoration {
+.noDecoration {
   text-decoration: none;
 }
 

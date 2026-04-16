@@ -6,7 +6,7 @@ import MublinLogoBlack from '../assets/svg/mublin-logo-black.svg'
 import MublinLogoWhite from '../assets/svg/mublin-logo-white.svg'
 import {
   useMantineColorScheme, useComputedColorScheme,
-  Group, Text, TextInput, ActionIcon, Avatar, Switch,
+  Group, Text, TextInput, ActionIcon, Avatar,
   Menu, Box, Container, Combobox, useCombobox, Image,
 } from '@mantine/core'
 import {
@@ -164,14 +164,17 @@ export default function AppNavbar({ children }) {
             <ActionIcon variant="subtle" color="gray" radius="xl" size="lg" hiddenFrom="sm">
               <IconSearch size={18} />
             </ActionIcon>
-            <Switch
+            <ActionIcon
+              variant="subtle"
+              color="gray"
+              radius="xl"
               size="lg"
-              color={isDark ? 'dark.4' : 'gray.6'}
-              onLabel={<IconSun size={16} color="white" />}
-              offLabel={<IconMoon size={16} color="gray" />}
               onClick={toggleColorScheme}
               aria-label="Alternar tema"
-            />
+              title={isDark ? 'Mudar para tema claro' : 'Mudar para tema escuro'}
+            >
+              {isDark ? <IconSun size={18} /> : <IconMoon size={18} />}
+            </ActionIcon>
             <ActionIcon variant="subtle" color="gray" radius="xl" size="lg">
               <IconBell size={18} />
             </ActionIcon>

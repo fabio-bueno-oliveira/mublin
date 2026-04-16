@@ -103,3 +103,11 @@ export async function fetchRandomFeedPhrase() {
   if (error) throw new Error(error.message)
   return data
 }
+
+export async function deletePost(postId) {
+  const { error } = await supabase
+    .from('feed')
+    .delete()
+    .eq('id', postId)
+  if (error) throw new Error(error.message)
+}
