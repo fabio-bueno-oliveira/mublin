@@ -88,8 +88,8 @@ export default function AppSidebar() {
           })}
         </NavLink>
       </Stack>
-      <Title order={2} fz="md" ta="left" fw={600} lts="-0.02em" mb="lg">
-        Suas próximas Gigs:
+      <Title order={2} fz="md" ta="left" fw={600} lts="-0.02em" mb="md">
+        Suas próximas gigs
       </Title>
       <Scroller mb={20}>
         <Group gap={4} wrap="nowrap" miw={300}>
@@ -97,11 +97,12 @@ export default function AppSidebar() {
             <Badge
               key={index}
               variant={item.type === gigsToShow ? "filled" : "light"}
-              size="lg"
+              size="md"
               tt="none"
+              radius="xl"
               fw={550}
               style={{ cursor: 'pointer' }}
-              color={item.type === gigsToShow ? "indigo" : "dark"}
+              color={item.type === gigsToShow ? "indigo" : "gray"}
               onClick={() => setGigsToShow(item.type)}
             >
               {item.label}

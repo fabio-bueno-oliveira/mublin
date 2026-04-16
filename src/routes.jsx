@@ -1,7 +1,6 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom'
 import PublicLayout from './components/layouts/PublicLayout'
 import AppLayout from './components/layouts/AppLayout'
-
 // Public pages
 import AuthCallback from './pages/AuthCallback'
 import Landing from './pages/Landing'
@@ -10,7 +9,6 @@ import Login from './pages/Login'
 import Signup from './pages/Signup'
 import ForgotPassword from './pages/ForgotPassword'
 import ResetPassword from './pages/ResetPassword'
-
 // Authenticated pages
 import Menu from './pages/Menu' // used only for mobile devices
 import Onboarding from './pages/Onboarding'
@@ -45,6 +43,16 @@ import Password from './pages/settings/Password'
 import Endorsements from './pages/settings/Endorsements'
 import MyGear from './pages/settings/MyGear'
 import Availability from './pages/settings/Availability'
+// -- Admin pages
+import AdminRoute from './pages/admin/AdminRoute'
+import AdminLayout from './pages/admin/AdminLayout'
+import AdminIndex from './pages/admin/index'
+import AdminUsers from './pages/admin/AdminUsers'
+import AdminBrands from './pages/admin/AdminBrands'
+import AdminProducts from './pages/admin/AdminProducts'
+import AdminVenues from './pages/admin/AdminVenues'
+import AdminPlans from './pages/admin/AdminPlans'
+import AdminColors from './pages/admin/AdminColors'
 
 export const router = createBrowserRouter([
   // ── Rotas públicas ──────────────────────────────
@@ -98,6 +106,25 @@ export const router = createBrowserRouter([
           { path: 'endorsements',          element: <Endorsements /> },
           { path: 'gear',                  element: <MyGear /> },
           { path: 'availability',          element: <Availability /> },
+        ],
+      },
+    ],
+  },
+  // ── Admin ───────────────────────────────────────
+  {
+    path: 'admin',
+    element: <AdminRoute />,   // guard: verifica sessão + is_admin
+    children: [
+      {
+        element: <AdminLayout />, // sidebar + shell compartilhados
+        children: [
+          { index: true,          element: <AdminIndex /> },
+          { path: 'users',        element: <AdminUsers /> },
+          { path: 'brands',       element: <AdminBrands /> },
+          { path: 'products',     element: <AdminProducts /> },
+          { path: 'venues',       element: <AdminVenues /> },
+          { path: 'plans',        element: <AdminPlans /> },
+          { path: 'colors',       element: <AdminColors /> },
         ],
       },
     ],

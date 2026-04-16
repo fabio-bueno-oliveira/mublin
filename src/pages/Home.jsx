@@ -153,7 +153,7 @@ export default function Home() {
           to={`/${profile?.username}`}
         />
       </Flex>
-      <Container size="xl" py={0} px={0}>
+      <Container size="xl" py="lg" px="lg">
         <Grid gutter="md">
           <Grid.Col 
             span={{ base: 12, md: 7 }}
@@ -193,6 +193,7 @@ export default function Home() {
                                 ? `${IMG_PATH}projects/${item.id}/tr:h-120,w-140,c-maintain_ratio/${item.picture}`
                                 : undefined
                             }
+                            fallbackSrc="https://placehold.co/140x120?text=?"
                             height={120}
                             alt={item.name}
                           />
