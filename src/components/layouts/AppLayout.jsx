@@ -22,6 +22,7 @@ export default function AppLayout({ children }) {
 
   return (
     <AppShell
+      withBorder={false}
       header={isMobile ? undefined : { height: 60 }}
       navbar={{
         width: 260,

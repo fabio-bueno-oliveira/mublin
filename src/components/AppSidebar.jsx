@@ -1,26 +1,24 @@
 import { useState } from 'react'
-import { useLocation, Link } from 'react-router-dom'
+import { Link } from 'react-router-dom'
+import { useAuth } from '../hooks/useAuth'
 import { 
   Stack, Box, NavLink, ScrollArea, Scroller,
-  Badge, Group, Text, Title, Divider
+  Badge, Group, Text, Title, Divider,
+  Avatar, Card, Anchor, Image
 } from '@mantine/core'
+import { NAV_ITEMS, QUICK_ACTIONS } from '../constants/navItems'
+import { isProfileLive } from '../utils/live'
 import {
   IconHome2, IconPlus, IconCubePlus, 
-  IconBulb, IconPencilPlus, IconCalendarPlus
+  IconBulb, IconPencilPlus, IconCalendarPlus,
+  IconRosetteDiscountCheckFilled 
 } from '@tabler/icons-react'
 
-const NAV_ITEMS = [
-  { label: 'Home', icon: IconHome2, path: '/home' },
-  // { label: 'Meus projetos', icon: IconMicrophone2, path: '/projects' },
-  // { label: 'Explorar', icon: IconSparkles, path: '/search' },
-]
-
-const NAV_ITEMS_CREATE = [
-  { label: 'Novo Post', icon: IconPencilPlus, path: '/new/post' },
-  { label: 'Novo Evento', icon: IconCalendarPlus, path: '/new/event' },
-  { label: 'Novo Projeto', icon: IconBulb, path: '/new/project' },
-  { label: 'Novo Equipamento', icon: IconCubePlus, path: '/new/gear' },
-]
+const AVATAR_PATH = 'https://ik.imagekit.io/mublin/tr:h-96,c-maintain_ratio/users/avatars/'
+const COVER_PATH = 'https://ik.imagekit.io/mublin/tr:h-200,c-maintain_ratio/users/avatars/'
+const DEFAULT_COVER_PICTURE = 'https://ik.imagekit.io/mublin/bg/tr:h-52,bg-F3F3F3,fo-top/mublin-hero-chatgpt-musicians2.png'
+const DEFAULT_GRADIENT_LIGHT = 'linear-gradient(82deg, #e4e7eb, #ffffff)'
+const DEFAULT_GRADIENT_DARK = 'linear-gradient(170deg, #1c1c1c, #101010)'
 
 const GIG_MENU_ITEMS = [
   { label: 'Confirmadas', confirmed: true, path: '#', type: "confirmed" },
@@ -35,59 +33,81 @@ const UPCOMING_GIGS = [
 ]
 
 export default function AppSidebar() {
-  const location = useLocation()
+  const { profile } = useAuth()
   const [gigsToShow, setGigsToShow] = useState("confirmed")
-
-  function isActive(path) {
-    return location.pathname === path
-  }
 
   return (
     <Box p="md" h="100%">
-      <Stack gap={4} mb={20}>
-        {NAV_ITEMS.map(item => {
-          const Icon = item.icon
-          return (
-            <NavLink
-              key={item.label}
+      <Card withBorder radius="md" p={0} mt={8} mb={20} style={{ overflow: 'hidden' }}>
+        {/* Cover */}
+        <Box
+          h={52}
+          style={{
+            background: profile?.cover_image
+              ? `url(${COVER_PATH + profile.cover_image}) center/cover no-repeat`
+              : `url(${DEFAULT_COVER_PICTURE}) center/cover no-repeat`
+              // : DEFAULT_GRADIENT_LIGHT
+              // : isDark ? DEFAULT_GRADIENT_DARK : DEFAULT_GRADIENT_LIGHT,
+          }}
+        />
+        {/* Avatar flutuando sobre a cover */}
+        <Box px="sm" pb="sm">
+          <Box mt={-24} mb={4}>
+            <Avatar
+              size={48}
+              radius="xl"
+              src={profile?.avatar ? AVATAR_PATH + profile.avatar : undefined}
               component={Link}
-              to={item.path}
-              disabled={!item.path}
-              label={<Text size="sm">{item.label}</Text>}
-              description={item.extra}
-              color="gray"
-              leftSection={<Icon size={18} />}
-              rightSection={item.badge && (
-                <Badge size="xs" color="gray" variant="light">
-                  {item.badge}
-                </Badge>
-              )}
-              variant="light"
-              active={isActive(item.path)}
+              to={`/${profile?.username}`}
+              style={{
+                border: '2px solid var(--mantine-color-body)',
+              }}
             />
-          )
-        })}
-        <NavLink
-          href="#required-for-focus"
-          label={<Text size="sm">Criar</Text>}
-          color="gray"
-          leftSection={<IconPlus size={18} />}
-          childrenOffset={14}
-        >
-          {NAV_ITEMS_CREATE.map(item => {
-            const Icon = item.icon
-            return (
-              <NavLink
-                key={item.label}
-                href={item.path}
-                label={<Text size="xs">{item.label}</Text>}
-                leftSection={<Icon size={16} />}
-                variant="light"
-              />
-            )
-          })}
-        </NavLink>
-      </Stack>
+          </Box>
+          <Stack gap={2}>
+            <Group gap={4} align="center">
+              <Anchor
+                component={Link}
+                to={`/${profile?.username}`}
+                underline="hover"
+                c="var(--mantine-color-text)"
+                fw={600}
+                size="md"
+                lineClamp={1}
+              >
+                {profile?.full_name}
+              </Anchor>
+              {!!profile?.is_verified && (
+                <IconRosetteDiscountCheckFilled
+                  className="iconVerified small"
+                  title="Perfil verificado"
+                />
+              )}
+            </Group>
+            <Group gap={4} align="center">
+              <Text size="xs" c="dimmed" fw={400} lineClamp={2} lh={1}>
+                @{profile.username}
+              </Text>
+              {profile.plan &&
+                <Badge size="xs" color="yellow" variant="light">PRO</Badge>
+              }
+            </Group>
+            {profile?.title && (
+              <Text size="xs" mt={2} opacity={0.6} lineClamp={2} lh={1.3}>
+                {profile.title}
+              </Text>
+            )}
+            {isProfileLive(profile) && (
+              <Group gap={5} align="center" mt={4}>
+                <Box component="span" className="live-dot" style={{ flexShrink: 0 }} />
+                <Text size="10px" fw={600} c="red.7" tt="uppercase" lts="0.02em">
+                  Ao vivo em {profile.live_platform}
+                </Text>
+              </Group>
+            )}
+          </Stack>
+        </Box>
+      </Card>
       <Title order={2} fz="md" ta="left" fw={600} lts="-0.02em" mb="md">
         Suas próximas gigs
       </Title>

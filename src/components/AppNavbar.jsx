@@ -1,24 +1,27 @@
 import { useState } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom'
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query'
 import { fetchRecentSearches, saveSearchQuery, clearSearchHistory } from '../queries/search'
 import MublinLogoBlack from '../assets/svg/mublin-logo-black.svg'
 import MublinLogoWhite from '../assets/svg/mublin-logo-white.svg'
 import {
   useMantineColorScheme, useComputedColorScheme,
-  Group, Text, TextInput, ActionIcon, Avatar,
+  Group, Text, TextInput, ActionIcon, Avatar, Button,
   Menu, Box, Container, Combobox, useCombobox, Image,
 } from '@mantine/core'
 import {
-  IconSearch, IconArrowRight,
+  IconSearch, IconArrowRight, IconPlus,
   IconBell, IconChevronDown, IconSun, IconMoon, IconClock
 } from '@tabler/icons-react'
 import { useAuth } from '../hooks/useAuth'
+import { NAV_ITEMS, QUICK_ACTIONS } from '../constants/navItems'
 
 const AVATAR_PATH = 'https://ik.imagekit.io/mublin/tr:h-200,c-maintain_ratio/users/avatars/'
 
 export default function AppNavbar({ children }) {
   const navigate = useNavigate()
+  const { pathname } = useLocation()
+  const isActive = (path) => pathname === path
   const { colorScheme } = useMantineColorScheme()
   const { profile, user, signOut } = useAuth()
   const [searchParams] = useSearchParams()
@@ -74,23 +77,76 @@ export default function AppNavbar({ children }) {
     searchQuery.trim() === '' || s.query.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
+  console.log(isActive('/home'))
+
   return (
-    <Box h="100%" style={{ borderBottom: '1px solid var(--mantine-color-default-border)' }}>
+    <Box 
+      h="100%" 
+      // style={{ borderBottom: '1px solid var(--mantine-color-default-border)' }}
+      bg='var(--mantine-color-default)'
+    >
       <Container fluid h="100%">
         <Group justify="space-between" align="center" h="100%" gap="md">
+          {/* Logo + Nav items */}
           <Group gap="md">
             {children}
-            <Link
-              component={Link}
-              to="/home"
-            >
-              <Image 
-                src={colorScheme === 'light' ? MublinLogoBlack : MublinLogoWhite} 
-                h={26} 
+            <Link to="/home">
+              <Image
+                src={colorScheme === 'light' ? MublinLogoBlack : MublinLogoWhite}
+                h={26}
                 w="auto"
                 fit="contain"
               />
             </Link>
+            {/* Nav items — apenas desktop */}
+            <Group gap={2} visibleFrom="sm">
+              {NAV_ITEMS.map(item => {
+                const Icon = item.icon
+                return (
+                  <Button
+                    key={item.path}
+                    component={Link}
+                    to={item.path}
+                    variant={isActive('/home') ? "light" : "subtle"}
+                    color="gray"
+                    size="sm"
+                    leftSection={<Icon size={16} />}
+                  >
+                    {item.label}
+                  </Button>
+                )
+              })}
+              {/* Quick Actions — apenas desktop */}
+              <Menu shadow="md" radius="md" position="bottom-start" width={200}>
+                <Menu.Target>
+                  <Button
+                    variant='subtle'
+                    color="gray"
+                    size="sm"
+                    radius="md"
+                    leftSection={<IconPlus size={16} />}
+                  >
+                    Criar
+                  </Button>
+                </Menu.Target>
+                <Menu.Dropdown>
+                  {/* <Menu.Label>Criar novo</Menu.Label> */}
+                  {QUICK_ACTIONS.map(item => {
+                    const Icon = item.icon
+                    return (
+                      <Menu.Item
+                        key={item.path}
+                        component={Link}
+                        to={item.path}
+                        leftSection={<Icon size={15} />}
+                      >
+                        {item.label}
+                      </Menu.Item>
+                    )
+                  })}
+                </Menu.Dropdown>
+              </Menu>
+            </Group>
           </Group>
 
           {/* Busca Desktop */}

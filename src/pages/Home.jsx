@@ -156,7 +156,7 @@ export default function Home() {
             span={{ base: 12, md: 7 }}
             className="paddingX"
           >
-            <Title order={2} fz="h3" fw={600} lts="-0.02em" mb="md">
+            <Title order={2} fz="h3" fw={600} lts="-0.02em" mb="sm">
               Meus projetos
             </Title>
 
@@ -236,7 +236,7 @@ export default function Home() {
               fz="h3"
               fw={600} 
               lts="-0.02em" 
-              mb="md"
+              mb="sm"
               className="paddingX"
             >
               Feed
@@ -248,7 +248,7 @@ export default function Home() {
             ) : (
               <ScrollArea
                 h={{ base: 'auto', md: 'calc(100vh - 120px)' }}
-                scrollHideDelay={0}
+                scrollHideDelay={0} 
               >
                 {/* Caixa de novo post */}
                 <Paper
@@ -274,6 +274,7 @@ export default function Home() {
                       w="100%"
                       c="dimmed"
                       size="md"
+                      lh={0}
                       component={Link}
                       to="/new/post"
                     >
@@ -291,9 +292,9 @@ export default function Home() {
                   <>
                     <Stack gap={14}>
                       {feedPosts.map(post => (
-                        <Card className="paperWrapper" key={post.id}>
+                        <Card className="feedPostWrapper" key={post.id}>
                           <Group 
-                            gap="xs"
+                            gap={6}
                             align="center" 
                             justify="space-between"
                             className="paddingX"
@@ -316,11 +317,11 @@ export default function Home() {
                                   <Text
                                     component={Link}
                                     to={`/${post.author_username}`}
-                                    size="sm"
+                                    size="md"
                                     fw={600}
                                     lh={1}
                                     c="var(--mantine-color-text)"
-                                    className="link"
+                                    className="noDecoration"
                                   >
                                     {post.author_username}
                                   </Text>
@@ -335,6 +336,7 @@ export default function Home() {
                                   }
                                   <Text
                                     size="xs"
+                                    fw={400}
                                     c="dimmed"
                                     title={dayjs(post.created_at).format('dddd, D [de] MMMM [de] YYYY [às] HH:mm')}
                                     component={Link}
@@ -353,7 +355,10 @@ export default function Home() {
                             </Box>
                             <Menu shadow="md" radius="md" position="bottom-end">
                               <Menu.Target>
-                                <ActionIcon variant="subtle" color="gray" size="sm" radius="xl">
+                                <ActionIcon 
+                                  variant="subtle" color="gray" size="sm" radius="xl"
+                                  mr={{ base: 0, sm: "xs" }}
+                                >
                                   <IconDots size={18} color="gray" />
                                 </ActionIcon>
                               </Menu.Target>
@@ -385,20 +390,22 @@ export default function Home() {
                             </Menu>
                           </Group>
                           {/* Corpo */}
-                          <Text
-                            size="0.88em"
-                            fw={480}
-                            lh={1.5}
-                            my={4}
-                            opacity={0.85}
-                            component={Link}
-                            to={`/post/${post.id}`}
-                            c="var(--mantine-color-text)"
-                            style={{ textDecoration: 'none' }}
-                            className="paddingX"
-                          >
-                            {post.body}
-                          </Text>
+                          {post.body && 
+                            <Text
+                              size="0.88em"
+                              fw={480}
+                              lh={1.3}
+                              mt={6}
+                              mb={4}
+                              component={Link}
+                              to={`/post/${post.id}`}
+                              c="var(--mantine-color-text)"
+                              style={{ textDecoration: 'none' }}
+                              className="paddingX"
+                            >
+                              {post.body}
+                            </Text>
+                          }
                           {post.image && (
                             <Link to={`/post/${post.id}`}>
                               <Image

@@ -43,6 +43,7 @@ import Password from './pages/settings/Password'
 import Endorsements from './pages/settings/Endorsements'
 import MyGear from './pages/settings/MyGear'
 import Availability from './pages/settings/Availability'
+import Picture from './pages/settings/Picture'
 // -- Admin pages
 import AdminRoute from './pages/admin/AdminRoute'
 import AdminLayout from './pages/admin/AdminLayout'
@@ -106,6 +107,7 @@ export const router = createBrowserRouter([
           { path: 'endorsements',          element: <Endorsements /> },
           { path: 'gear',                  element: <MyGear /> },
           { path: 'availability',          element: <Availability /> },
+          { path: 'picture',          element: <Picture /> },
         ],
       },
     ],

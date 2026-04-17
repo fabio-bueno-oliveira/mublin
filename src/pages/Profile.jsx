@@ -17,7 +17,7 @@ import { Helmet } from 'react-helmet-async'
 import {
   Container, Modal, Grid, Scroller, Avatar, Paper, Box, Indicator, Spoiler,
   Card, Button, Title, Text, Group, Flex, Stack, ActionIcon, NativeSelect,
-  Skeleton, ScrollArea, Alert, Anchor, Image, Tooltip, Pill, Divider, em,
+  Skeleton, ScrollArea, Alert, Anchor, Image, Tooltip, Badge, Pill, Divider, em,
 } from '@mantine/core'
 import { useMediaQuery, useDisclosure } from '@mantine/hooks'
 import LoadingSkeleton from '../components/profile/LoadingSkeleton'
@@ -210,7 +210,7 @@ export default function Profile() {
         }
         <Grid>
           <Grid.Col span={{ base: 12, md: 8 }}>
-            <Group align="flex-start" gap="md" mb="lg" visibleFrom="sm">
+            <Group align="center" gap="md" mb="lg" visibleFrom="sm">
               <Indicator 
                 position='bottom-center' 
                 inline 
@@ -282,26 +282,19 @@ export default function Profile() {
                   )}
                 </Flex>
                 {profile.title && (
-                  <Text size="sm" maw={420} lh={1.3} my={3}>
+                  <Text size="sm" fw={450} maw={420} lh={1.3} my={3}>
                     {profile.title}
                   </Text>
                 )}
                 {roles && roles.length > 0 && (
-                  <Scroller>
-                    <Group gap={4} wrap="nowrap">
-                      {roles.map(({ id, main_activity, roles: role }) => (
-                        <Pill 
-                          key={id} 
-                          fw='500' 
-                          size="sm"
-                          radius="sm"
-                        >
-                          {role?.name_ptbr}
-                          {main_activity ? ' ★' : ''}
-                        </Pill>
-                      ))}
-                    </Group>
-                  </Scroller>
+                  <Text size="13px" mt={2} c="dimmed">
+                    {roles.map(({ id, roles: role }, index) => (
+                      <Text span key={id} c='dimmed'>
+                        {role?.name_ptbr}
+                        {index < roles.length - 1 ? ', ' : ''}
+                      </Text>
+                    ))}
+                  </Text>
                 )}
               </Stack>
             </Group>

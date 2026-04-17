@@ -13,11 +13,22 @@
   }
 }
 
+// Other styles
+
 .paperWrapper {
   padding: 1rem 0.7rem 0.5rem 0.7rem;
   @media (max-width: 48em) {
-    background-color: transparent!important;
-    padding: 0.2rem 0 0.2rem 0;
+    // background-color: transparent!important;
+    padding: 0.8rem 0 0.3rem 0;
+    border-radius: 0;
+  }
+}
+
+.feedPostWrapper {
+  padding: 1rem 0.7rem 0.5rem 0.7rem;
+  @media (max-width: 48em) {
+    // background-color: transparent!important;
+    padding: 0.8rem 0 0.3rem 0;
     border-radius: 0;
   }
 }
@@ -28,8 +39,6 @@
     border-color: transparent !important;
   }
 }
-
-// Other styles
 
 .paddingX {
   padding-left: 0;
@@ -60,6 +69,9 @@
 
 .noDecoration {
   text-decoration: none;
+  &:hover {
+    text-decoration: none;
+  }
 }
 
 .iconVerified {

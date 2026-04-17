@@ -10,6 +10,7 @@ import {
   IconHeartHandshake,
   IconRadar,
   IconBox,
+  IconCamera,
 } from '@tabler/icons-react'
 import classes from './settings.module.css'
 
@@ -21,6 +22,12 @@ const SETTINGS_TABS = [
     path: '/settings/profile',
   },
   {
+    value: 'picture',
+    label: 'Foto',
+    icon: IconCamera,
+    path: '/settings/picture',
+  },
+  {
     value: 'password',
     label: 'Senha',
     icon: IconLock,
@@ -28,7 +35,7 @@ const SETTINGS_TABS = [
   },
   {
     value: 'musical-preferences',
-    label: 'Preferências musicais',
+    label: 'Preferências',
     icon: IconMusic,
     path: '/settings/musical-preferences',
   },
