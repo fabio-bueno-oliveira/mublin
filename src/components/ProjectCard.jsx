@@ -7,7 +7,7 @@ import {
 } from '@tabler/icons-react'
 
 const IMG_PATH = 'https://ik.imagekit.io/mublin/'
-const AVATAR_PATH = 'https://ik.imagekit.io/mublin/tr:h-68,c-maintain_ratio/users/avatars/'
+const AVATAR_PATH = 'https://ik.imagekit.io/mublin/tr:h-28,c-maintain_ratio/users/avatars/'
 
 export default function ProjectCard({ item, profile }) {
   return (
@@ -55,29 +55,6 @@ export default function ProjectCard({ item, profile }) {
           </Box>
         </Card.Section>
         <Stack mt={8} gap={1} pos="relative" style={{ minWidth: 0 }}>
-          <Text size="sm" fw={550} truncate="end">
-            {item.name}
-          </Text>
-          <Flex gap={4} align="center" style={{ minWidth: 0 }}>
-            {item.genre && (
-              <>
-                <Text
-                  size="11px"
-                  c="dimmed"
-                  truncate="end"
-                  style={{ minWidth: 0, flexShrink: 1 }}
-                  title={item.genre}
-                >
-                  {item.genre}
-                </Text>
-                <Text size="11px" c="dimmed" style={{ flexShrink: 0 }}>·</Text>
-              </>
-            )}
-            <Flex gap={0} align="center" style={{ flexShrink: 0 }}>
-              <IconUser size={12} color="gray" />
-              <Text size="11px" c="dimmed" ml={2}>{item.totalMembers} pessoas</Text>
-            </Flex>
-          </Flex>
           <Flex gap={3} align="center" style={{ minWidth: 0 }}>
             <Avatar
               size={14}
@@ -85,10 +62,24 @@ export default function ProjectCard({ item, profile }) {
               radius="xl"
               style={{ flexShrink: 0 }}
             />
-            <Text size="xs" c="dimmed" truncate="end" style={{ minWidth: 0 }}>
-              {item.main_role}
+            <Text size="11px" opacity={0.6} truncate="end">
+              {item.main_role} em
             </Text>
           </Flex>
+          <Text size="md" fw={550} truncate="end" title={item.name}>
+            {item.name}
+          </Text>
+          <Text
+            size="12px"
+            truncate="end"
+            opacity={0.8}
+            style={{ minWidth: 0, flexShrink: 1 }}
+          >
+            {item.type}{item.genre && ' · ' + item.genre}
+          </Text>
+          <Text mt={3} size="11px" c="dimmed">
+            {item.totalMembers} {item.totalMembers === 1 ? 'pessoa' : 'pessoas'}
+          </Text>
         </Stack>
       </Card>
     </Link>

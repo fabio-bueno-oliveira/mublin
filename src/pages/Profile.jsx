@@ -350,7 +350,7 @@ export default function Profile() {
                               fit="cover"
                               src={
                                 item.picture
-                                  ? `https://ik.imagekit.io/mublin/projects/tr:h-320,w-320,c-maintain_ratio/${item.picture}`
+                                  ? `https://ik.imagekit.io/mublin/projects/${item.id}/tr:h-320,w-320,c-maintain_ratio/${item.picture}`
                                   : undefined
                               }
                               fallbackSrc="https://placehold.co/180x180?text=Sem+foto"

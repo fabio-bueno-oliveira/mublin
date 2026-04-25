@@ -29,6 +29,7 @@ export async function fetchUserProjects(userId) {
       projects ( 
         id, name, slug, picture, description,
         genres ( name ),
+        project_types ( name_ptbr ),
         project_members ( count )
       )
     `)

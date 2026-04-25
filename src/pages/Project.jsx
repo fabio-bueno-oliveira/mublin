@@ -139,12 +139,13 @@ export default function Project() {
       <Container fluid pb="lg" px={0}>
 
         <Card 
+          mx={{ base: 0, sm: "lg" }}
+          mt={{ base: 0, sm: "lg" }}
           px={0}
           pt={0}
           pb={4}
-          bg="transparent"
           shadow="xs"
-          radius={false}        
+          radius={{ base: false, sm: "lg" }}
         >
           {/* ── Cabeçalho / Cover ── */}
           <Box pos="relative" mb={44}>

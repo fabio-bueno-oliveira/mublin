@@ -18,7 +18,7 @@ import './styles.scss'
 
 const theme = createTheme({
   autoContrast: true,
-  primaryColor: "lime",
+  primaryColor: "orange",
   fontFamily: 'Geist, Helvetica, Arial, sans-serif',
   fontFamilyMonospace: 'monospace',
   headings: {

@@ -38,7 +38,7 @@ export default function AppSidebar() {
 
   return (
     <Box p="md" h="100%">
-      <Card withBorder radius="md" p={0} mt={8} mb={20} style={{ overflow: 'hidden' }}>
+      <Card withBorder radius="md" p={0} mt={4} mb={20} style={{ overflow: 'hidden' }}>
         {/* Cover */}
         <Box
           h={52}
@@ -85,11 +85,11 @@ export default function AppSidebar() {
               )}
             </Group>
             <Group gap={4} align="center">
-              <Text size="xs" c="dimmed" fw={400} lineClamp={2} lh={1}>
+              <Text size="xs" fw={400} lineClamp={2} lh={1}>
                 @{profile.username}
               </Text>
               {profile.plan &&
-                <Badge size="xs" color="yellow" variant="light">PRO</Badge>
+                <Badge size="xs" color="gray" variant="light">PRO</Badge>
               }
             </Group>
             {profile?.title && (
@@ -120,9 +120,9 @@ export default function AppSidebar() {
               size="md"
               tt="none"
               radius="xl"
-              fw={550}
               style={{ cursor: 'pointer' }}
-              color={item.type === gigsToShow ? "indigo" : "gray"}
+              autoContrast={false}
+              color={item.type === gigsToShow ? undefined : "gray"}
               onClick={() => setGigsToShow(item.type)}
             >
               {item.label}

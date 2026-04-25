@@ -62,11 +62,7 @@ export default function PublicNavbar() {
       {opened && (
         <Box
           hiddenFrom="sm"
-          style={{
-            borderTop: '1px solid #f0f0f0',
-            background: '#fff',
-            padding: '16px 24px',
-          }}
+          p={12}
         >
           {/* <Group justify="space-between" align="center" mb="md">
             <Text
@@ -94,7 +90,7 @@ export default function PublicNavbar() {
               to="/login"
               variant="default"
               radius="xl"
-              size="sm"
+              size="compact-sm"
               onClick={close}
             >
               Entrar
@@ -104,7 +100,7 @@ export default function PublicNavbar() {
               to="/signup"
               color="indigo"
               radius="xl"
-              size="sm"
+              size="compact-sm"
               onClick={close}
             >
               Criar conta

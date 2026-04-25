@@ -25,9 +25,10 @@ export async function searchGear(keyword) {
 }
 
 export async function searchBrands(keyword) {
-  const words = keyword.trim().split(/\s+/).filter(Boolean)
+  const words = keyword.trim().split(/\s+/).filter(w => w.length > 2)
 
-  // Monta filtros ilike para cada palavra em name e slug
+  if (!words.length) return []
+
   const filters = words.flatMap(word => [
     `name.ilike.%${word}%`,
     `slug.ilike.%${word}%`,
@@ -75,4 +76,10 @@ export async function clearSearchHistory(profileId) {
     .delete()
     .eq('profile_id', profileId)
   if (error) throw new Error(error.message)
+}
+
+export async function fetchRandomSearchPhrase() {
+  const { data, error } = await supabase.rpc('get_random_search_phrase')
+  if (error) throw new Error(error.message)
+  return data
 }

@@ -12,7 +12,7 @@ import MublinLogoBlack from '../assets/svg/mublin-logo-black.svg'
 import MublinLogoWhite from '../assets/svg/mublin-logo-white.svg'
 import {
   useMantineColorScheme, Box, Container, Grid, Flex, Stack, Group, 
-  Text, Title, Loader, Avatar, Button, ActionIcon, Menu,
+  Text, Title, Loader, Avatar, Button, ActionIcon, Menu, Badge,
   ScrollArea, Scroller, Skeleton, Image, Modal, Paper, Card, Spoiler
 } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
@@ -71,22 +71,23 @@ export default function Home() {
 
   const feedPosts = feedData?.pages.flat() ?? []
 
-  const { data: savedProjects = [], isLoading: loadingProjects } = useQuery({
+  const { data: projects = [], isLoading: loadingProjects } = useQuery({
     queryKey: ['user-projects', user?.id],
     queryFn: () => fetchUserProjects(user.id),
     enabled: !!user?.id,
     staleTime: 1000 * 60 * 4,
   })
 
-  const userProjects = savedProjects.map((r) => ({
-    id: r.projects.id,
-    name: r.projects.name,
-    slug: r.projects.slug,
-    picture: r.projects.picture,
-    status: r.status,
-    main_role: r.roles.name_ptbr,
-    genre: r.projects.genres?.name,
-    totalMembers: r.projects.project_members?.length || 0
+  const userProjects = projects.map((p) => ({
+    id: p.projects.id,
+    name: p.projects.name,
+    slug: p.projects.slug,
+    picture: p.projects.picture,
+    status: p.status,
+    main_role: p.roles.name_ptbr,
+    genre: p.projects.genres?.name,
+    type: p.projects.project_types?.name_ptbr,
+    totalMembers: p.projects.project_members?.length || 0
   }))
 
   const feedPostIds = feedPosts.map(p => p.id)
@@ -156,9 +157,14 @@ export default function Home() {
             span={{ base: 12, md: 7 }}
             className="paddingX"
           >
-            <Title order={2} fz="h3" fw={600} lts="-0.02em" mb="sm">
-              Meus projetos
-            </Title>
+            <Flex align="center" mb="sm" gap={6}>
+              <Title order={2} fz="h3" fw={600} lts="-0.02em">
+                Meus projetos
+              </Title>
+              {userProjects.length > 0 &&
+                <Badge size="md">{userProjects.length}</Badge>
+              }
+            </Flex>
 
             {/* Desktop — Spoiler com grid wrap */}
             <Box visibleFrom="sm">
@@ -168,7 +174,7 @@ export default function Home() {
                 </Group>
               ) : (
                 <Spoiler
-                  maxHeight={220}
+                  maxHeight={238}
                   showLabel={
                     <IconCircleChevronDownFilled
                       size={24}

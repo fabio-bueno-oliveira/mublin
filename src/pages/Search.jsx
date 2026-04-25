@@ -11,9 +11,10 @@ import {
 } from '../queries/search'
 import {
   Grid, Box, NavLink, Flex, Container,
-  Loader, Group, Marquee, Center, 
+  Loader, Group, Marquee, Center, Table, 
   Card, Scroller, Title, Text, Image, Avatar,
-  TextInput, ActionIcon, Button
+  TextInput, ActionIcon, Button,
+  Pill
 } from '@mantine/core'
 import { useDebouncedCallback } from '@mantine/hooks'
 import {
@@ -25,6 +26,12 @@ const PATH_USER_AVATAR = 'https://ik.imagekit.io/mublin/tr:h-200,c-maintain_rati
 const PATH_PROJECT_AVATAR = 'https://ik.imagekit.io/mublin/projects/tr:h-200,w-200,c-maintain_ratio/'
 const PATH_PRODUCT_IMAGE_MOBILE = 'https://ik.imagekit.io/mublin/products/tr:w-200,bg-FFFFFF,fo-x/'
 const PATH_PRODUCT_IMAGE_DESKTOP = 'https://ik.imagekit.io/mublin/products/tr:w-300,h-300,cm-pad_resize,bg-FFFFFF,fo-x/'
+
+const SEARCH_TYPE_ITEMS = [
+  { id: 1, label: 'Pessoas', url: 'people' },
+  { id: 2, label: 'Projetos', url: 'projects' },
+  { id: 3, label: 'Equipamento', url: 'gear' },
+]
 
 export default function Search() {
   const navigate = useNavigate()
@@ -180,27 +187,38 @@ export default function Search() {
       </Box>
       {q ? (
         <>
-          <Title 
-            order={1} 
-            fz="h2" 
-            fw={700} 
-            lts="-0.02em" 
-            mb={4}
+          <Title
+            order={1}
+            fz="h2"
+            fw={700}
+            mt={4}
+            mb="md"
             visibleFrom="sm"
           >
             {`Buscando por "${q}"`}
           </Title>
+          {/* <Scroller mb={20}>
+            <Group gap={8} wrap="nowrap" miw={300}>
+              {SEARCH_TYPE_ITEMS.map(item => (
+                <Button
+                  key={item.id}
+                  variant="filled"
+                  size="xs"
+                  tt="none"
+                  radius="xl"
+                  style={{ cursor: 'pointer' }}
+                  autoContrast={false}
+                  // color={item.type === gigsToShow ? undefined : "gray"}
+                  component={Link}
+                  href={`#${item.url}`}
+                >
+                  {item.label}
+                </Button>
+              ))}
+            </Group>
+          </Scroller> */}
           <Grid>
             <Grid.Col span={{ base: 12, md: 6, lg: 3 }} visibleFrom="sm">
-              <Title 
-                order={4} 
-                fw={400} 
-                fz="h5" 
-                mb="sm" 
-                c="dimmed" 
-              >
-                Resultados nesta página
-              </Title>
               <NavLink
                 href="#people"
                 label={loadingProfiles ? 'Pessoas...' : `Pessoas (${profileResults.length})`}
@@ -231,7 +249,7 @@ export default function Search() {
 
               {/* Pessoas */}
               <Box id="people" mb="md">
-                <Title order={4} fw={600} fz="h5" mb="sm">
+                <Title order={3} fw={600} mb="sm">
                   Pessoas
                 </Title>
                 {loadingProfiles ? (
@@ -239,56 +257,73 @@ export default function Search() {
                 ) : profileResults.length === 0 ? (
                   <Text c="dimmed">Nenhum resultado encontrado.</Text>
                 ) : (
-                  profileResults.map(profile => (
-                    <Flex
-                      key={profile.id}
-                      component={Link}
-                      to={`/${profile.username}`}
-                      justify="flex-start"
-                      mb="lg"
-                      gap="md"
-                      style={{ textDecoration: 'none', color: 'inherit' }}
-                    >
-                      <Avatar
-                        src={profile.avatar ? PATH_USER_AVATAR + profile.avatar : undefined}
-                        size={80}
-                        radius="sm"
-                      />
-                      <Flex direction="column" justify="flex-start">
-                        <Group gap={2}>
-                          <Group gap={0}>
-                            <Text size="sm" fw={600}>{profile.full_name}</Text>
-                            {!!profile.is_verified &&
-                              <IconRosetteDiscountCheckFilled
-                                className="iconVerified"
-                                title="Usuário verificado"
-                              />
-                            }
-                          </Group>
-                          <Text size="sm" fw={600} span c="dimmed" ml={3}>
-                            @{profile.username}
-                          </Text>
-                        </Group>
-                        {profile.title && (
-                          <Text size="sm">{profile.title}</Text>
-                        )}
-                        {locationLabel(profile.city_name, profile.region_name) && (
-                          <Text size="13px" opacity={0.7}>
-                            {locationLabel(profile.city_name, profile.region_name)}
-                          </Text>
-                        )}
-                        <Text size="11px" fw={400} opacity={0.4} mt={4}>
-                          Ativo em {profile.total_active_projects} projeto{profile.total_active_projects !== 1 ? 's' : ''}
-                        </Text>
-                      </Flex>
-                    </Flex>
-                  ))
+                  <Table highlightOnHover withRowBorders={false}>
+                    <Table.Tbody>
+                      {profileResults.map(profile => (
+                        <Table.Tr key={profile.id}>
+                          <Table.Td w={80}>
+                            <Avatar
+                              src={profile.avatar ? PATH_USER_AVATAR + profile.avatar : undefined}
+                              size={80}
+                              radius="sm"
+                            />
+                          </Table.Td>
+                          <Table.Td style={{ width: '100%' }}>
+                            <Flex
+                              key={profile.id}
+                              component={Link}
+                              to={`/${profile.username}`}
+                              justify="flex-start"
+                              gap="md"
+                              style={{ textDecoration: 'none', color: 'inherit' }}
+                            >
+                              <Flex direction="column" justify="center">
+                                <Group gap={2}>
+                                  <Group gap={0}>
+                                    <Text size="md" fw={600}>{profile.full_name}</Text>
+                                    {!!profile.is_verified &&
+                                      <IconRosetteDiscountCheckFilled
+                                        className="iconVerified"
+                                        title="Usuário verificado"
+                                      />
+                                    }
+                                  </Group>
+                                  <Text size="md" fw={600} span c="dimmed" ml={3}>
+                                    @{profile.username}
+                                  </Text>
+                                </Group>
+                                {profile.title && (
+                                  <Text size="sm">{profile.title}</Text>
+                                )}
+                                {locationLabel(profile.city_name, profile.region_name) && (
+                                  <Text size="13px" opacity={0.7}>
+                                    {locationLabel(profile.city_name, profile.region_name)}
+                                  </Text>
+                                )}
+                                <Text size="13px" opacity={0.4} mt={6}>
+                                  Ativo em {profile.total_active_projects} projeto{profile.total_active_projects !== 1 ? 's' : ''}
+                                </Text>
+                              </Flex>
+                            </Flex>
+                          </Table.Td>
+                          <Table.Td w={80}>
+                            <Pill size="md">Perfil</Pill>
+                          </Table.Td>
+                          <Table.Td w={100}>
+                            <Button variant="outline" radius="xl" size="xs">
+                              Ver perfil
+                            </Button>
+                          </Table.Td>
+                        </Table.Tr>
+                      ))}
+                    </Table.Tbody>
+                  </Table>
                 )}
               </Box>
 
               {/* Projetos */}
               <Box id="projects" mb="md">
-                <Title order={4} fw={600} fz="h5" mb="sm">
+                <Title order={3} fw={600} mb="sm">
                   Projetos
                 </Title>
                 {loadingProjects ? (
@@ -340,7 +375,7 @@ export default function Search() {
 
               {/* Equipamentos */}
               <Box id="gear">
-                <Title order={4} fw={600} fz="h5" mb="xs">
+                <Title order={3} fw={600} mb="xs">
                   Equipamentos
                 </Title>
 

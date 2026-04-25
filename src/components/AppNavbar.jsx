@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom'
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query'
-import { fetchRecentSearches, saveSearchQuery, clearSearchHistory } from '../queries/search'
+import { fetchRecentSearches, saveSearchQuery, clearSearchHistory, fetchRandomSearchPhrase } from '../queries/search'
 import MublinLogoBlack from '../assets/svg/mublin-logo-black.svg'
 import MublinLogoWhite from '../assets/svg/mublin-logo-white.svg'
 import {
@@ -11,7 +11,8 @@ import {
 } from '@mantine/core'
 import {
   IconSearch, IconArrowRight, IconPlus,
-  IconBell, IconChevronDown, IconSun, IconMoon, IconClock
+  IconBell, IconChevronDown, IconSun, IconMoon, IconClock,
+  IconSquareRoundedPlus
 } from '@tabler/icons-react'
 import { useAuth } from '../hooks/useAuth'
 import { NAV_ITEMS, QUICK_ACTIONS } from '../constants/navItems'
@@ -20,8 +21,8 @@ const AVATAR_PATH = 'https://ik.imagekit.io/mublin/tr:h-200,c-maintain_ratio/use
 
 export default function AppNavbar({ children }) {
   const navigate = useNavigate()
-  const { pathname } = useLocation()
   const isActive = (path) => pathname === path
+  const { pathname } = useLocation()
   const { colorScheme } = useMantineColorScheme()
   const { profile, user, signOut } = useAuth()
   const [searchParams] = useSearchParams()
@@ -29,10 +30,11 @@ export default function AppNavbar({ children }) {
   const computedColorScheme = useComputedColorScheme('light')
   const isDark = computedColorScheme === 'dark'
   const toggleColorScheme = () => setColorScheme(isDark ? 'light' : 'dark')
+  const [searchFocused, setSearchFocused] = useState(false)
 
   const currentQ = searchParams.get('q') ?? ''
-  const [inputValue, setInputValue] = useState('')
-  const searchQuery = inputValue || currentQ
+  const [inputValue, setInputValue] = useState(null)
+  const searchQuery = inputValue !== null ? inputValue : currentQ
 
   const combobox = useCombobox({
     onDropdownClose: () => combobox.resetSelectedOption(),
@@ -43,6 +45,12 @@ export default function AppNavbar({ children }) {
     queryFn: () => fetchRecentSearches(user.id),
     enabled: !!user?.id,
     staleTime: 1000 * 60 * 5,
+  })
+
+  const { data: searchPhrase } = useQuery({
+    queryKey: ['search-phrase'],
+    queryFn: fetchRandomSearchPhrase,
+    staleTime: 1000 * 60 * 10,
   })
 
   const queryClient = useQueryClient()
@@ -58,7 +66,7 @@ export default function AppNavbar({ children }) {
       await saveSearchQuery(user.id, trimmed)
       queryClient.invalidateQueries({ queryKey: ['recent-searches', user?.id] })
     }
-    setInputValue('')
+    setInputValue(null)
     combobox.closeDropdown()
     navigate(trimmed ? `/search?q=${encodeURIComponent(trimmed)}` : '/search')
   }
@@ -77,8 +85,6 @@ export default function AppNavbar({ children }) {
     searchQuery.trim() === '' || s.query.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
-  console.log(isActive('/home'))
-
   return (
     <Box 
       h="100%" 
@@ -93,13 +99,13 @@ export default function AppNavbar({ children }) {
             <Link to="/home">
               <Image
                 src={colorScheme === 'light' ? MublinLogoBlack : MublinLogoWhite}
-                h={26}
+                h={28}
                 w="auto"
                 fit="contain"
               />
             </Link>
             {/* Nav items — apenas desktop */}
-            <Group gap={2} visibleFrom="sm">
+            <Group gap={6} ml="lg" align="center" visibleFrom="sm">
               {NAV_ITEMS.map(item => {
                 const Icon = item.icon
                 return (
@@ -107,10 +113,11 @@ export default function AppNavbar({ children }) {
                     key={item.path}
                     component={Link}
                     to={item.path}
-                    variant={isActive('/home') ? "light" : "subtle"}
+                    variant="transparent"
                     color="gray"
-                    size="sm"
-                    leftSection={<Icon size={16} />}
+                    size="compact-sm"
+                    opacity={isActive('/home') ? 1 : 0.8}
+                    leftSection={<Icon size={24} stroke={1.7} />}
                   >
                     {item.label}
                   </Button>
@@ -120,11 +127,12 @@ export default function AppNavbar({ children }) {
               <Menu shadow="md" radius="md" position="bottom-start" width={200}>
                 <Menu.Target>
                   <Button
-                    variant='subtle'
+                    variant="transparent"
                     color="gray"
-                    size="sm"
+                    size="compact-sm"
                     radius="md"
-                    leftSection={<IconPlus size={16} />}
+                    opacity={isActive('/create') ? 1 : 0.8}
+                    leftSection={<IconSquareRoundedPlus size={24} stroke={1.7} />}
                   >
                     Criar
                   </Button>
@@ -157,12 +165,15 @@ export default function AppNavbar({ children }) {
               doSearch(val)
             }}
             visibleFrom="sm"
-            flex={1}
-            maw={400}
+            flex={2}
+            maw="42%"
           >
             <Combobox.Target>
               <TextInput
-                placeholder="Buscar músicos, projetos, gigs..."
+                placeholder={searchFocused
+                  ? (searchPhrase ? `ex: ${searchPhrase}` : 'PRS Silversky')
+                  : 'Músicos, projetos, gigs, instrumentos...'
+                }
                 leftSection={<IconSearch size={15} />}
                 rightSection={
                   <ActionIcon
@@ -182,8 +193,14 @@ export default function AppNavbar({ children }) {
                   setInputValue(e.target.value)
                   combobox.openDropdown()
                 }}
-                onFocus={() => suggestions.length > 0 && combobox.openDropdown()}
-                onBlur={() => combobox.closeDropdown()}
+                onFocus={() => {
+                  setSearchFocused(true)
+                  suggestions.length > 0 && combobox.openDropdown()
+                }}
+                onBlur={() => {
+                  setSearchFocused(false)
+                  combobox.closeDropdown()
+                }}
                 onKeyDown={(e) => e.key === 'Enter' && handleSearch(e)}
               />
             </Combobox.Target>
