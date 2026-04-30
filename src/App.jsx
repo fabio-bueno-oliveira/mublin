@@ -17,7 +17,7 @@ import '@mantine/schedule/styles.css'
 import './styles.scss'
 
 const theme = createTheme({
-  autoContrast: true,
+  // autoContrast: true,
   primaryColor: "orange",
   fontFamily: 'Geist, Helvetica, Arial, sans-serif',
   fontFamilyMonospace: 'monospace',

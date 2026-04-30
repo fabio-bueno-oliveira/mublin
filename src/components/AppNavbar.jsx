@@ -116,6 +116,7 @@ export default function AppNavbar({ children }) {
                     variant="transparent"
                     color="gray"
                     size="compact-sm"
+                    radius="0"
                     opacity={isActive('/home') ? 1 : 0.8}
                     leftSection={<Icon size={24} stroke={1.7} />}
                   >
@@ -130,7 +131,7 @@ export default function AppNavbar({ children }) {
                     variant="transparent"
                     color="gray"
                     size="compact-sm"
-                    radius="md"
+                    radius="0"
                     opacity={isActive('/create') ? 1 : 0.8}
                     leftSection={<IconSquareRoundedPlus size={24} stroke={1.7} />}
                   >
