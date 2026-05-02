@@ -22,7 +22,10 @@ export default function PublicNavbar() {
             to="/"
             style={{ cursor: 'pointer', textDecoration: 'none' }}
           >
-            <Image src={colorScheme === 'light' ? MublinLogoBlack : MublinLogoWhite} h={22} />
+            <Image 
+              src={colorScheme === 'light' ? MublinLogoBlack : MublinLogoWhite} 
+              h={28} 
+            />
           </Link>
 
           {/* CTAs — desktop */}
@@ -42,7 +45,7 @@ export default function PublicNavbar() {
               to="/signup"
               radius="xl"
               size="sm"
-              color="indigo"
+              color="mublinColor"
             >
               Criar conta
             </Button>

@@ -1,5 +1,5 @@
 import { Outlet, Navigate } from 'react-router-dom'
-import { AppShell, Center, Loader } from '@mantine/core'
+import { AppShell, Flex, Center, Box, Container, Loader } from '@mantine/core'
 import { useMediaQuery } from '@mantine/hooks'
 import { useAuth } from '../../hooks/useAuth'
 import { useUI } from '../../contexts/UIContext'
@@ -10,11 +10,12 @@ import AppFooterMobile from '../AppFooterMobile'
 export default function AppLayout({ children }) {
   const { session, loading } = useAuth()
   const isMobile = useMediaQuery('(max-width: 48em)')
+  const isDesktop = !isMobile
   const { hideFooter } = useUI()
 
   if (loading) return (
     <Center h="100vh">
-      <Loader color="indigo" />
+      <Loader />
     </Center>
   )
 
@@ -23,29 +24,32 @@ export default function AppLayout({ children }) {
   return (
     <AppShell
       withBorder={false}
-      header={isMobile ? undefined : { height: 60 }}
-      navbar={{
-        width: 260,
-        breakpoint: 'sm',
-        collapsed: { mobile: true },
-      }}
+      header={isDesktop ? { height: 60 } : undefined}
       padding={0}
       style={{ '--app-shell-footer-height': '70px' }}
     >
-      {!isMobile && (
+      {isDesktop && (
         <AppShell.Header>
           <AppNavbar />
         </AppShell.Header>
       )}
 
-      <AppShell.Navbar>
-        <AppSidebar />
-      </AppShell.Navbar>
+      <AppShell.Main pb={{ base: 'calc(70px + var(--mantine-spacing-md))', sm: 'md' }}>
+        <Container size="lg" px={0}>
+          <Flex gap="md" align="flex-start">
 
-      <AppShell.Main
-        pb={{ base: 'calc(70px + var(--mantine-spacing-md))', sm: 'md' }}
-      >
-        {children ?? <Outlet />}
+            {isDesktop && (
+              <Box w={260} style={{ flexShrink: 0, position: 'sticky', top: 'calc(60px)' }}>
+                <AppSidebar />
+              </Box>
+            )}
+
+            <Box mt={10} style={{ flex: 1, minWidth: 0 }}>
+              {children ?? <Outlet />}
+            </Box>
+
+          </Flex>
+        </Container>
       </AppShell.Main>
 
       {!hideFooter && <AppFooterMobile />}

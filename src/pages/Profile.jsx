@@ -19,7 +19,7 @@ import {
   Card, Button, Title, Text, Group, Flex, Stack, ActionIcon, NativeSelect,
   Skeleton, ScrollArea, Alert, Anchor, Image, Tooltip, Badge, Pill, Divider, em,
 } from '@mantine/core'
-import { useMediaQuery, useDisclosure } from '@mantine/hooks'
+import { useMediaQuery } from '@mantine/hooks'
 import LoadingSkeleton from '../components/profile/LoadingSkeleton'
 import LinkedItem from '../components/feed/LinkedItem'
 import VideoPlayer from '../components/feed/VideoPlayer'
@@ -51,7 +51,6 @@ export default function Profile() {
   const { username } = useParams()
   const { loading: authLoading, user } = useAuth()
   const isMobile = useMediaQuery(`(max-width: ${em(750)})`)
-  const [modalBioOpened, { open: openModalBio, close: closeModalBio }] = useDisclosure(false)
 
   const { data: profile, isLoading : isLoadingProfileInfo, isError } = useQuery({
     queryKey: ['profile', username],
@@ -186,7 +185,7 @@ export default function Profile() {
         <meta property="og:image" content={profile.avatar ? AVATAR_PATH + profile.avatar : undefined} />
       </Helmet>
       {profile.cover_image && 
-        <Card hiddenFrom='sm' shadow={false} padding={0} radius={0} mb={14}>
+        <Card shadow={false} padding={0} radius="md" mb={8} mt={{ base: 0, md: 10 }}>
           <Card.Section>
             <Image
               src={profile.cover_image 
@@ -198,7 +197,7 @@ export default function Profile() {
           </Card.Section>
         </Card>
       }
-      <Container size="xl" py="sm">
+      <Container size="xl" py="sm" px={0}>
         {isMobile &&
           <ProfileHeaderMobile 
             profile={profile} 
@@ -300,18 +299,18 @@ export default function Profile() {
             </Group>
             <Stack gap={12}>
               {profile.bio && (
-                <Paper px={14} pt={6} pb={10}>
-                <Spoiler 
-                  maxHeight={66} 
-                  showLabel={<Text size='xs' fw={550}>...ver mais</Text>} 
-                  hideLabel={<Text size='xs' fw={550}>mostrar menos</Text>}
-                  mb={8}
-                >
-                  <Text size='sm' mt={10} lh={1.3}>
-                    {profile.bio}
-                  </Text>
-                </Spoiler>
-                </Paper>
+                <SectionPanel>
+                  <SectionTitle text="Sobre" mb="sm" />
+                  <Spoiler 
+                    maxHeight={66} 
+                    showLabel={<Text size='xs'>...ver mais</Text>} 
+                    hideLabel={false}
+                  >
+                    <Text size='sm' lh={1.3}>
+                      {profile.bio}
+                    </Text>
+                  </Spoiler>
+                </SectionPanel>
               )}
               {loadingProjects && (
                 <>
@@ -628,48 +627,46 @@ export default function Profile() {
           </Grid.Col>
           <Grid.Col span={{ base: 12, md: 4 }}>
             <Stack gap={10}>
-              <SectionPanel>
-                <SectionTitle text="Disponibilidade" mb="sm" />
-                {isLoadingProfileInfo || loadingWorkAvailability || loadingWorkFocus ? (
-                  <Group gap={6} wrap="wrap">
-                    {[1, 2, 3, 4, 5].map(i => (
-                      // eslint-disable-next-line react-hooks/purity
-                      <Skeleton key={i} h={20} w={70 + Math.random() * 20} radius="xl" />
-                    ))}
-                  </Group>
-                ) : (
-                  <>
-                    <Title order={3} fz="sm" opacity={0.8} fw={300} mt="sm" mb="xs">
-                      Tipos de trabalho:
-                    </Title>
-                    {workAvailability.length > 0 ? (
-                      <Group gap={6} wrap="wrap">
-                        {workAvailability.map(item => (
-                          <Text span size="sm" key={item.id}>
-                            <IconCheck color="green" size={10} stroke={4} /> {item.work_types?.name_ptbr}
-                          </Text>
-                        ))}
-                      </Group>
-                    ) : (
-                      <Text size="sm" c="dimmed">Não informado</Text>
-                    )}
-                    <Title order={3} fz="sm" opacity={0.8} fw={300} mt="sm" mb="xs">
-                      Vínculos de preferência:
-                    </Title>
-                    {workFocus.length > 0 ? (
-                      <Group gap={6} wrap="wrap">
-                        {workFocus.map(item => (
-                          <Text span size="sm" key={item.id}>
-                            <IconCheck color="green" size={10} stroke={4} /> {item.work_focuses?.title_ptbr}
-                          </Text>
-                        ))}
-                      </Group>
-                    ) : (
-                      <Text size="sm" c="dimmed">Não informado</Text>
-                    )}
-                  </>
-                )}
-              </SectionPanel>
+              {isLoadingProfileInfo || loadingWorkAvailability || loadingWorkFocus || loadingSimilar && (
+                <Flex direction="column" gap="md" wrap="wrap">
+                  {[1, 2, 3].map(i => (
+                    <Skeleton key={i} h={90} w="100%" radius="md" />
+                  ))}
+                </Flex>
+              )}
+              {(workAvailability.length > 0 && workFocus.length > 0) && (
+                <SectionPanel>
+                  <SectionTitle text="Disponibilidade" mb="sm" />
+                  <Title order={3} fz="sm" opacity={0.8} fw={300} mt="sm" mb="xs">
+                    Tipos de trabalho:
+                  </Title>
+                  {workAvailability.length > 0 ? (
+                    <Group gap={6} wrap="wrap">
+                      {workAvailability.map(item => (
+                        <Text span size="sm" key={item.id}>
+                          <IconCheck color="green" size={10} stroke={4} /> {item.work_types?.name_ptbr}
+                        </Text>
+                      ))}
+                    </Group>
+                  ) : (
+                    <Text size="sm" c="dimmed">Não informado</Text>
+                  )}
+                  <Title order={3} fz="sm" opacity={0.8} fw={300} mt="sm" mb="xs">
+                    Vínculos de preferência:
+                  </Title>
+                  {workFocus.length > 0 ? (
+                    <Group gap={6} wrap="wrap">
+                      {workFocus.map(item => (
+                        <Text span size="sm" key={item.id}>
+                          <IconCheck color="green" size={10} stroke={4} /> {item.work_focuses?.title_ptbr}
+                        </Text>
+                      ))}
+                    </Group>
+                  ) : (
+                    <Text size="sm" c="dimmed">Não informado</Text>
+                  )}
+                </SectionPanel>
+              )}
               <SectionPanel>
                 <SectionTitle text="Contato" mb="sm" />
                 {/* Telefone — só exibe se phone_number_is_public */}
@@ -747,26 +744,14 @@ export default function Profile() {
               </SectionPanel>
               <SectionPanel>
                 <SectionTitle text="Mais perfis parecidos" mb="sm" />
-                {loadingSimilar ? (
-                  <Stack gap="md">
-                    {[1, 2, 3, 4].map(i => (
-                      <Group key={i} gap="sm">
-                        <Skeleton circle height={40} />
-                        <Stack gap={4} style={{ flex: 1 }}>
-                          <Skeleton height={12} width="70%" radius="xl" />
-                          <Skeleton height={10} width="50%" radius="xl" />
-                        </Stack>
-                      </Group>
-                    ))}
-                  </Stack>
-                ) : similarProfiles.length === 0 ? (
+                {similarProfiles.length === 0 ? (
                   <Text size="sm" c="dimmed">Nenhum perfil similar encontrado.</Text>
                 ) : (
                   <Stack gap="md">
                     {similarProfiles.map(p => (
                       <Group
                         key={p.id}
-                        gap="sm"
+                        gap="xs"
                         component={Link}
                         to={`/${p.username}`}
                         style={{ textDecoration: 'none', color: 'inherit' }}
@@ -776,7 +761,7 @@ export default function Profile() {
                           radius="xl"
                           src={p.avatar ? AVATAR_PATH + p.avatar : undefined}
                         />
-                        <Stack gap={2} style={{ flex: 1 }}>
+                        <Stack gap={1} style={{ flex: 1 }}>
                           <Group gap={4} align="center">
                             <Text size="sm" fw={600} lineClamp={1}>
                               {p.full_name}
@@ -790,11 +775,11 @@ export default function Profile() {
                             )}
                           </Group>
                           {p.title && (
-                            <Text size="xs" lineClamp={1} maw={250}>
+                            <Text size="xs" lineClamp={1} truncate="end" maw={148}>
                               {p.title}
                             </Text>
                           )}
-                          <Text size="xs" c="dimmed" truncate="end" maw={236}>
+                          <Text size="xs" c="dimmed" truncate="end" maw={160}>
                             {p.roles?.map((role, index) => (
                               <Text span key={role.id}>
                                 {role.name_ptbr}
@@ -812,34 +797,6 @@ export default function Profile() {
           </Grid.Col>
         </Grid>
       </Container>
-      <Modal 
-        opened={modalBioOpened} 
-        onClose={closeModalBio} 
-        title={`Sobre ${profile.full_name}`} 
-        overlayProps={{
-          backgroundOpacity: 0.55,
-          blur: 3,
-        }}
-        centered
-        scrollAreaComponent={ScrollArea.Autosize}
-      >
-        {profile.cover_image && 
-          <Card shadow={false} padding={0} radius={0} mb={14}>
-            <Card.Section>
-              <Image
-                src={profile.cover_image 
-                  ? `https://ik.imagekit.io/mublin/tr:h-200,c-maintain_ratio/users/avatars/${profile.cover_image}` 
-                  : 'https://ik.imagekit.io/mublin/bg/tr:w-1920,h-200,bg-F3F3F3,fo-bottom/open-air-concert.jpg'}
-                height={100}
-                alt={`Imagem de capa de ${profile.name}`}
-              />
-            </Card.Section>
-          </Card>
-        }
-        <Text size="sm" style={{ whiteSpace: 'pre-wrap' }}>
-          {profile.bio || 'Nenhuma informação fornecida.'}
-        </Text>
-      </Modal>
     </>
   )
 }

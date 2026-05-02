@@ -129,7 +129,6 @@ export default function Login() {
               </Anchor>
               <Button
                 type="submit"
-                color="indigo"
                 radius="xl"
                 size="md"
                 fw={700}
@@ -172,7 +171,7 @@ export default function Login() {
 
         <Text ta="center" size="sm" c="dimmed">
           Ainda não tem conta?{' '}
-          <Anchor component={Link} to="/signup" c="indigo" fw={600} underline="hover">
+          <Anchor component={Link} to="/signup" fw={600} underline="hover">
             Criar conta grátis
           </Anchor>
         </Text>

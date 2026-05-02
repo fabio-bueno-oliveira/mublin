@@ -9,7 +9,14 @@ export default function PublicLayout() {
       header={{ height: 60 }}
       footer={{ height: 80 }}
     >
-      <AppShell.Header>
+      <AppShell.Header
+        style={{
+          background: 'rgba(var(--header-bg-rgb), 0.75)',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
+          borderBottom: '1px solid rgba(255,255,255,0.08)',
+        }}
+      >
         <PublicNavbar />
       </AppShell.Header>
 
@@ -21,5 +28,5 @@ export default function PublicLayout() {
         <PublicFooter />
       </AppShell.Footer>
     </AppShell>
-  )
+  );
 }

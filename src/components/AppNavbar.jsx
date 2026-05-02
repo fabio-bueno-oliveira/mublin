@@ -91,7 +91,7 @@ export default function AppNavbar({ children }) {
       // style={{ borderBottom: '1px solid var(--mantine-color-default-border)' }}
       bg='var(--mantine-color-default)'
     >
-      <Container fluid h="100%">
+      <Container size="lg" h="100%">
         <Group justify="space-between" align="center" h="100%" gap="md">
           {/* Logo + Nav items */}
           <Group gap="md">

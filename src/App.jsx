@@ -18,7 +18,22 @@ import './styles.scss'
 
 const theme = createTheme({
   // autoContrast: true,
-  primaryColor: "orange",
+  primaryColor: "mublinColor",
+  primaryShade: 6,
+  colors: {
+    mublinColor: [
+      "#ecefff",
+      "#d5dafb",
+      "#a9b1f1",
+      "#7a87e9",
+      "#5362e1",
+      "#3a4bdd",
+      "#2c40dc",
+      "#1f32c4",
+      "#182cb0",
+      "#0a259c"
+    ]
+  },
   fontFamily: 'Geist, Helvetica, Arial, sans-serif',
   fontFamilyMonospace: 'monospace',
   headings: {

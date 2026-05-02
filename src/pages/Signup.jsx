@@ -154,11 +154,11 @@ export default function Signup() {
 
               <Text size="xs" c="dimmed" lh={1.5}>
                 Ao criar sua conta, você concorda com nossos{' '}
-                <Anchor component={Link} to="/terms" size="xs" c="indigo" underline="hover">
+                <Anchor component={Link} to="/terms" size="xs" underline="hover">
                   Termos de uso
                 </Anchor>
                 {' '}e{' '}
-                <Anchor component={Link} to="/privacy" size="xs" c="indigo" underline="hover">
+                <Anchor component={Link} to="/privacy" size="xs" underline="hover">
                   Política de privacidade
                 </Anchor>
                 .
@@ -166,7 +166,6 @@ export default function Signup() {
 
               <Button
                 type="submit"
-                color="indigo"
                 radius="xl"
                 size="md"
                 fw={700}
@@ -210,7 +209,7 @@ export default function Signup() {
         {/* Link para login */}
         <Text ta="center" size="sm" c="dimmed">
           Já tem uma conta?{' '}
-          <Anchor component={Link} to="/login" c="indigo" fw={600} underline="hover">
+          <Anchor component={Link} to="/login" fw={600} underline="hover">
             Entrar
           </Anchor>
         </Text>

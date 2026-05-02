@@ -1,5 +1,13 @@
 // Mantine styles
 
+[data-mantine-color-scheme='light'] {
+  --header-bg-rgb: 255, 255, 255;
+}
+
+[data-mantine-color-scheme='dark'] {
+  --header-bg-rgb: 26, 27, 30; /* cor de fundo dark do Mantine */
+}
+
 .mantine-Checkbox-label {
   padding-inline-start: 0.3rem;
 }
@@ -9,7 +17,7 @@
     top: 98%;
   }
   &[data-has-spoiler='true'] {
-    margin-bottom: 20px!important;
+    margin-bottom: 8px!important;
   }
 }
 
