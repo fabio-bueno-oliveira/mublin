@@ -151,7 +151,7 @@ export default function Home() {
         />
       </Flex>
 
-      <Container size="xl" py="lg" px={{ base: 0, sm: "lg" }}>
+      <Container size="xl" pt="xs" px={{ base: 0, sm: "lg" }}>
         <Grid gutter="md">
           <Grid.Col
             span={{ base: 12, md: 7 }}

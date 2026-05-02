@@ -24,6 +24,7 @@ export async function fetchBasicProfile(profileUsername) {
       phone_number,
       phone_number_is_public,
       phone_number_is_whatsapp,
+      available_from,
       cities (
         name
       ),

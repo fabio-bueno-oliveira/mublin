@@ -7,7 +7,6 @@ import {
   Avatar, Card, Anchor, Image
 } from '@mantine/core'
 import { NAV_ITEMS, QUICK_ACTIONS } from '../constants/navItems'
-import { isProfileLive } from '../utils/live'
 import {
   IconHome2, IconPlus, IconCubePlus, 
   IconBulb, IconPencilPlus, IconCalendarPlus,
@@ -85,7 +84,7 @@ export default function AppSidebar() {
               )}
             </Group>
             <Group gap={4} align="center">
-              <Text size="xs" fw={400} lineClamp={2} lh={1}>
+              <Text size="xs" fw={400} c="mublinColor.3" lineClamp={2} lh={1}>
                 @{profile.username}
               </Text>
               {profile.plan &&
@@ -93,17 +92,9 @@ export default function AppSidebar() {
               }
             </Group>
             {profile?.title && (
-              <Text size="xs" mt={2} opacity={0.6} lineClamp={2} lh={1.3}>
+              <Text size="xs" mt={2} c="dimmed" lineClamp={2}>
                 {profile.title}
               </Text>
-            )}
-            {isProfileLive(profile) && (
-              <Group gap={5} align="center" mt={4}>
-                <Box component="span" className="live-dot" style={{ flexShrink: 0 }} />
-                <Text size="10px" fw={600} c="red.7" tt="uppercase" lts="0.02em">
-                  Ao vivo em {profile.live_platform}
-                </Text>
-              </Group>
             )}
           </Stack>
         </Box>

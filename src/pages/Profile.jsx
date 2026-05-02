@@ -44,7 +44,7 @@ dayjs.locale('pt-br')
 const AVATAR_PATH = 'https://ik.imagekit.io/mublin/tr:h-200,c-maintain_ratio/users/avatars/'
 
 function SectionTitle({ text, mb, mt = 0 }) {
-  return <Text fw={600} size="17px" mb={mb} mt={mt}>{text}</Text>
+  return <Text fw={600} size="18px" mb={mb} mt={mt}>{text}</Text>
 }
 
 export default function Profile() {
@@ -185,7 +185,13 @@ export default function Profile() {
         <meta property="og:image" content={profile.avatar ? AVATAR_PATH + profile.avatar : undefined} />
       </Helmet>
       {profile.cover_image && 
-        <Card shadow={false} padding={0} radius="md" mb={8} mt={{ base: 0, md: 10 }}>
+        <Card 
+          shadow={false} 
+          padding={0} 
+          radius={isMobile ? 0 : "md"} 
+          mb={{ base: 4, md: 8 }}
+          mt={{ base: 0, md: 10 }}
+        >
           <Card.Section>
             <Image
               src={profile.cover_image 
@@ -247,7 +253,8 @@ export default function Profile() {
                       to="/settings/profile"
                       radius="sm"
                       size="compact-xs"
-                      variant="default"
+                      variant="light"
+                      color="var(--mantine-color-text)"
                       ml={4}
                     >
                       Editar meu perfil
@@ -297,12 +304,12 @@ export default function Profile() {
                 )}
               </Stack>
             </Group>
-            <Stack gap={12}>
+            <Stack gap={12} mt={{ base: "md", md: 0 }}>
               {profile.bio && (
                 <SectionPanel>
                   <SectionTitle text="Sobre" mb="sm" />
                   <Spoiler 
-                    maxHeight={66} 
+                    maxHeight={40} 
                     showLabel={<Text size='xs'>...ver mais</Text>} 
                     hideLabel={false}
                   >
@@ -314,7 +321,6 @@ export default function Profile() {
               )}
               {loadingProjects && (
                 <>
-                  <SectionTitle text="Projetos" mb="0" />
                   <Flex gap={15}>    
                     <Skeleton width={180} height={180} radius="md" />
                     <Skeleton width={180} height={180} radius="md" />
@@ -324,7 +330,6 @@ export default function Profile() {
               )}
               {profileProjects.length > 0 && (
                 <>
-                  <SectionTitle text="Projetos" mb="0" />
                   <ScrollArea w="100%" type="never" mb="sm">
                     <Flex gap={15}>
                       {!loadingProjects && profileProjects?.map(item => (
@@ -627,23 +632,22 @@ export default function Profile() {
           </Grid.Col>
           <Grid.Col span={{ base: 12, md: 4 }}>
             <Stack gap={10}>
-              {isLoadingProfileInfo || loadingWorkAvailability || loadingWorkFocus || loadingSimilar && (
-                <Flex direction="column" gap="md" wrap="wrap">
-                  {[1, 2, 3].map(i => (
-                    <Skeleton key={i} h={90} w="100%" radius="md" />
-                  ))}
-                </Flex>
-              )}
               {(workAvailability.length > 0 && workFocus.length > 0) && (
                 <SectionPanel>
                   <SectionTitle text="Disponibilidade" mb="sm" />
-                  <Title order={3} fz="sm" opacity={0.8} fw={300} mt="sm" mb="xs">
+                  <Title order={3} fz="sm" fw={600} mt="sm" mb={4}>
+                    Disponível a partir de:
+                  </Title>
+                  <Text size="xs" fw={300}>
+                    {profile.available_from ? profile.available_from : "Não informado"}
+                  </Text>
+                  <Title order={3} fz="sm" fw={600} mt="sm" mb={4}>
                     Tipos de trabalho:
                   </Title>
                   {workAvailability.length > 0 ? (
                     <Group gap={6} wrap="wrap">
                       {workAvailability.map(item => (
-                        <Text span size="sm" key={item.id}>
+                        <Text span size="xs" fw={300} key={item.id}>
                           <IconCheck color="green" size={10} stroke={4} /> {item.work_types?.name_ptbr}
                         </Text>
                       ))}
@@ -651,13 +655,13 @@ export default function Profile() {
                   ) : (
                     <Text size="sm" c="dimmed">Não informado</Text>
                   )}
-                  <Title order={3} fz="sm" opacity={0.8} fw={300} mt="sm" mb="xs">
+                  <Title order={3} fz="sm" fw={600} mt="sm" mb={4}>
                     Vínculos de preferência:
                   </Title>
                   {workFocus.length > 0 ? (
                     <Group gap={6} wrap="wrap">
                       {workFocus.map(item => (
-                        <Text span size="sm" key={item.id}>
+                        <Text span size="xs" fw={300} key={item.id}>
                           <IconCheck color="green" size={10} stroke={4} /> {item.work_focuses?.title_ptbr}
                         </Text>
                       ))}

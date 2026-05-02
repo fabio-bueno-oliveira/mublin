@@ -44,7 +44,7 @@ export default function AppLayout({ children }) {
               </Box>
             )}
 
-            <Box mt={10} style={{ flex: 1, minWidth: 0 }}>
+            <Box mt={{ base: 0, md: 10 }} style={{ flex: 1, minWidth: 0 }}>
               {children ?? <Outlet />}
             </Box>
 

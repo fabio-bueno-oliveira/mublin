@@ -15,7 +15,7 @@ const AVATAR_PATH = 'https://ik.imagekit.io/mublin/tr:h-200,c-maintain_ratio/use
 
 export default function ProfileHeaderMobile({ profile, roles, city, regionUf, user }) {
   return (
-    <Box px='0' py='0'>
+    <Box px="sm" py={0}>
       <Flex
         justify="flex-start"
         align="center"
@@ -38,7 +38,7 @@ export default function ProfileHeaderMobile({ profile, roles, city, regionUf, us
           />
         </Indicator>
         <Box style={{overflow:'hidden'}}>
-          <Flex align="center" gap={2} mb={2}>
+          <Flex align="center" gap={3} mb={2}>
             <Title order={1} size="22px" lts='-0.02em' lh='1'>
               {profile.full_name}
             </Title>
@@ -54,12 +54,12 @@ export default function ProfileHeaderMobile({ profile, roles, city, regionUf, us
                 title='Lenda da Música'
               />
             }
-            {profile.plan === 'Pro' && 
+            {profile.plan === "Pro" && 
               <Badge
-                title='Usuário PRO'
-                radius='sm'
-                size='sm'
-                variant="light"
+                title="Usuário PRO"
+                radius="sm"
+                size="sm"
+                variant="outline"
                 color="gray"
               >
                 PRO
@@ -120,17 +120,16 @@ export default function ProfileHeaderMobile({ profile, roles, city, regionUf, us
         </Anchor>
       }
       {roles && roles.length > 0 && (
-        <Scroller mt={13}>
+        <Scroller mt={8}>
           <Group gap={4} wrap="nowrap" style={{ width: "max-content" }}>
             {roles.map(({ id, main_activity, roles: role }) => (
               <Pill 
                 key={id} 
                 fw='500' 
-                size="sm"
-                radius="sm"
+                size="xs"
+                radius="xl"
               >
                 {role?.description_ptbr}
-                {main_activity ? ' ★' : ''}
               </Pill>
             ))}
           </Group>
@@ -138,11 +137,11 @@ export default function ProfileHeaderMobile({ profile, roles, city, regionUf, us
       )}
       {user?.id === profile.id && (
         <Button
+          mt={10}
           component={Link}
           to="/settings/profile"
           size="sm"
-          variant="default"
-          mt={10}
+          variant="filled"
           fullWidth
         >
           Editar meu perfil
