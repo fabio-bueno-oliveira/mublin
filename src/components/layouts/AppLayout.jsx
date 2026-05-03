@@ -13,13 +13,17 @@ export default function AppLayout({ children }) {
   const isDesktop = !isMobile
   const { hideFooter } = useUI()
 
-  if (loading) return (
-    <Center h="100vh">
-      <Loader />
-    </Center>
-  )
+  if (loading) {
+    return (
+      <Center h="100vh">
+        <Loader />
+      </Center>
+    )
+  }
 
-  if (!session) return <Navigate to="/" replace />
+  if (!session) {
+    return <Navigate to="/" replace />
+  }
 
   return (
     <AppShell
@@ -34,12 +38,16 @@ export default function AppLayout({ children }) {
         </AppShell.Header>
       )}
 
-      <AppShell.Main pb={{ base: 'calc(70px + var(--mantine-spacing-md))', sm: 'md' }}>
+      <AppShell.Main
+        pb={{ base: 'calc(70px + var(--mantine-spacing-md))', sm: 'md' }}
+      >
         <Container size="lg" px={0}>
-          <Flex gap="md" align="flex-start">
-
+          <Flex gap="xs" align="flex-start">
             {isDesktop && (
-              <Box w={260} style={{ flexShrink: 0, position: 'sticky', top: 'calc(60px)' }}>
+              <Box
+                w={260}
+                style={{ flexShrink: 0, position: 'sticky', top: 'calc(60px)' }}
+              >
                 <AppSidebar />
               </Box>
             )}
@@ -47,7 +55,6 @@ export default function AppLayout({ children }) {
             <Box mt={{ base: 0, md: 10 }} style={{ flex: 1, minWidth: 0 }}>
               {children ?? <Outlet />}
             </Box>
-
           </Flex>
         </Container>
       </AppShell.Main>

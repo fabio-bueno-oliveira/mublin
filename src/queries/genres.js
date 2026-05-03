@@ -5,6 +5,8 @@ export async function fetchGenreCategories() {
     .from('genre_categories')
     .select('id, name_ptbr')
     .order('name_ptbr')
-  if (error) throw new Error(error.message)
+  if (error) {
+    throw new Error(error.message)
+  }
   return data
 }

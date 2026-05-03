@@ -14,6 +14,7 @@ import ResetPassword from './pages/ResetPassword'
 import Menu from './pages/Menu' // used only for mobile devices
 import Onboarding from './pages/Onboarding'
 import Home from './pages/Home'
+import Feed from './pages/Feed'
 // -- Search pages
 import Search from './pages/Search'
 // -- Profile pages
@@ -84,6 +85,7 @@ export const router = createBrowserRouter([
     children: [
       { path: 'menu', element: <Menu /> },
       { path: 'home', element: <Home /> },
+      { path: 'feed', element: <Feed /> },
       { path: 'search', element: <Search /> },
       { path: 'gigs', element: <Gigs /> },
       { path: 'projects', element: <Projects /> },
@@ -93,7 +95,7 @@ export const router = createBrowserRouter([
       { path: 'new/post', element: <NewPost /> },
       { path: 'gear', element: <Gear /> },
       { path: 'gear/:slug', element: <GearItem /> },
-      { path: 'new/gear', element: <NewGear />},
+      { path: 'new/gear', element: <NewGear /> },
       { path: 'backstage', element: <Backstage /> },
       { path: 'new/event', element: <NewEvent /> },
       { path: 'new/venue', element: <NewVenue /> },
@@ -109,13 +111,13 @@ export const router = createBrowserRouter([
         element: <SettingsLayout />,
         children: [
           { index: true, element: <Navigate to="settings/profile" replace /> },
-          { path: 'profile',               element: <EditMyProfile /> },
-          { path: 'musical-preferences',   element: <MusicalPreferences /> },
-          { path: 'password',              element: <Password /> },
-          { path: 'endorsements',          element: <Endorsements /> },
-          { path: 'gear',                  element: <MyGear /> },
-          { path: 'availability',          element: <Availability /> },
-          { path: 'picture',          element: <Picture /> },
+          { path: 'profile', element: <EditMyProfile /> },
+          { path: 'musical-preferences', element: <MusicalPreferences /> },
+          { path: 'password', element: <Password /> },
+          { path: 'endorsements', element: <Endorsements /> },
+          { path: 'gear', element: <MyGear /> },
+          { path: 'availability', element: <Availability /> },
+          { path: 'picture', element: <Picture /> },
         ],
       },
     ],
@@ -123,18 +125,18 @@ export const router = createBrowserRouter([
   // ── Admin ───────────────────────────────────────
   {
     path: 'admin',
-    element: <AdminRoute />,   // guard: verifica sessão + is_admin
+    element: <AdminRoute />, // guard: verifica sessão + is_admin
     children: [
       {
         element: <AdminLayout />, // sidebar + shell compartilhados
         children: [
-          { index: true,          element: <AdminIndex /> },
-          { path: 'users',        element: <AdminUsers /> },
-          { path: 'brands',       element: <AdminBrands /> },
-          { path: 'products',     element: <AdminProducts /> },
-          { path: 'venues',       element: <AdminVenues /> },
-          { path: 'plans',        element: <AdminPlans /> },
-          { path: 'colors',       element: <AdminColors /> },
+          { index: true, element: <AdminIndex /> },
+          { path: 'users', element: <AdminUsers /> },
+          { path: 'brands', element: <AdminBrands /> },
+          { path: 'products', element: <AdminProducts /> },
+          { path: 'venues', element: <AdminVenues /> },
+          { path: 'plans', element: <AdminPlans /> },
+          { path: 'colors', element: <AdminColors /> },
         ],
       },
     ],

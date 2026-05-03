@@ -2,11 +2,21 @@ import { useState } from 'react'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import {
-  Drawer, Button, Avatar, Stack
+  Drawer,
+  Button,
+  Avatar,
+  Stack,
+  UnstyledButton,
+  Indicator,
 } from '@mantine/core'
 import {
-  IconBulb, IconCubePlus, IconHome, IconSearch,
-  IconHexagonPlusFilled, IconMusic, IconPencilPlus
+  IconBulb,
+  IconCubePlus,
+  IconHome,
+  IconSearch,
+  IconPlus,
+  IconRss,
+  IconPencilPlus,
 } from '@tabler/icons-react'
 import './AppFooterMobile.css'
 
@@ -17,7 +27,7 @@ export default function AppFooterMobile() {
   const [drawerOpen, setDrawerOpen] = useState(false)
 
   const isActive = (path) => pathname === path
-  const isActivePrefix = (prefix) => pathname.startsWith(prefix)
+  // const isActivePrefix = (prefix) => pathname.startsWith(prefix)
 
   const navItemClass = (active) =>
     ['nav-item', active ? 'active' : ''].filter(Boolean).join(' ')
@@ -26,36 +36,48 @@ export default function AppFooterMobile() {
     <>
       <footer className="footer-mobile mantine-hidden-from-sm">
         <div className="footer-inner">
-
-          <div
+          <UnstyledButton
             className={navItemClass(isActive('/home'))}
             onClick={() => navigate('/home')}
           >
             <IconHome />
-          </div>
+          </UnstyledButton>
 
-          <div
+          <UnstyledButton
+            className={navItemClass(isActive('/feed'))}
+            onClick={() => navigate('/feed')}
+          >
+            <Indicator color="red" top="4px">
+              <IconRss />
+            </Indicator>
+          </UnstyledButton>
+
+          <UnstyledButton
+            className={['nav-item plus', drawerOpen ? 'active' : '']
+              .filter(Boolean)
+              .join(' ')}
+            onClick={() => setDrawerOpen((v) => !v)}
+          >
+            <IconPlus />
+          </UnstyledButton>
+
+          <UnstyledButton
             className={navItemClass(isActive('/search'))}
             onClick={() => navigate('/search')}
           >
             <IconSearch />
-          </div>
+          </UnstyledButton>
 
-          <div
-            className={['nav-item plus', drawerOpen ? 'active' : ''].filter(Boolean).join(' ')}
-            onClick={() => setDrawerOpen(v => !v)}
-          >
-            <IconHexagonPlusFilled />
-          </div>
-
-          <div
-            className={navItemClass(isActive('/projects') || isActivePrefix('/project'))}
+          {/* <UnstyledButton
+            className={navItemClass(
+              isActive('/projects') || isActivePrefix('/project'),
+            )}
             onClick={() => navigate('/projects')}
           >
             <IconMusic />
-          </div>
+          </UnstyledButton> */}
 
-          <div
+          <UnstyledButton
             className={navItemClass(isActive('/menu'))}
             onClick={() => navigate('/menu')}
           >
@@ -69,8 +91,7 @@ export default function AppFooterMobile() {
               }
               alt={profile?.username}
             />
-          </div>
-
+          </UnstyledButton>
         </div>
       </footer>
 

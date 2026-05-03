@@ -1,17 +1,25 @@
 import { supabase } from '../lib/supabaseClient'
 
-export async function fetchFeed(limit = 20, offset = 0) {
-  const { data, error } = await supabase.rpc('get_feed', {
-    limit_count: limit,
-    offset_count: offset,
-  })
-  if (error) throw new Error(error.message)
+export async function fetchFeed(limit = 20, offset = 0, userId = null) {
+  // Define qual RPC chamar baseado na presença do userId
+  const rpcName = userId ? 'get_following_feed' : 'get_feed'
+  const rpcParams = userId
+    ? { limit_count: limit, offset_count: offset, viewer_id: userId }
+    : { limit_count: limit, offset_count: offset }
+
+  const { data, error } = await supabase.rpc(rpcName, rpcParams)
+
+  if (error) {
+    throw new Error(error.message)
+  }
   return data
 }
 
 export async function fetchPostById(id) {
   const { data, error } = await supabase.rpc('get_feed_post', { post_id: id })
-  if (error) throw new Error(error.message)
+  if (error) {
+    throw new Error(error.message)
+  }
   return data?.[0] ?? null
 }
 
@@ -20,17 +28,23 @@ export async function fetchPostLikes(postId) {
     .from('feed_likes')
     .select('*', { count: 'exact', head: true })
     .eq('id_post', postId)
-  if (error) throw new Error(error.message)
+  if (error) {
+    throw new Error(error.message)
+  }
   return count ?? 0
 }
 
 export async function fetchLikesCountByPosts(postIds) {
-  if (!postIds.length) return {}
+  if (!postIds.length) {
+    return {}
+  }
   const { data, error } = await supabase
     .from('feed_likes')
     .select('id_post')
     .in('id_post', postIds)
-  if (error) throw new Error(error.message)
+  if (error) {
+    throw new Error(error.message)
+  }
   // Agrupa e conta no cliente
   return data.reduce((acc, row) => {
     acc[row.id_post] = (acc[row.id_post] ?? 0) + 1
@@ -39,14 +53,18 @@ export async function fetchLikesCountByPosts(postIds) {
 }
 
 export async function fetchUserLikedPosts(userId, postIds) {
-  if (!postIds.length) return []
+  if (!postIds.length) {
+    return []
+  }
   const { data, error } = await supabase
     .from('feed_likes')
     .select('id_post')
     .eq('id_user', userId)
     .in('id_post', postIds)
-  if (error) throw new Error(error.message)
-  return data.map(r => r.id_post)
+  if (error) {
+    throw new Error(error.message)
+  }
+  return data.map((r) => r.id_post)
 }
 
 export async function toggleLike({ postId, userId, liked }) {
@@ -56,19 +74,24 @@ export async function toggleLike({ postId, userId, liked }) {
       .delete()
       .eq('id_post', postId)
       .eq('id_user', userId)
-    if (error) throw new Error(error.message)
+    if (error) {
+      throw new Error(error.message)
+    }
   } else {
     const { error } = await supabase
       .from('feed_likes')
       .insert({ id_post: postId, id_user: userId })
-    if (error) throw new Error(error.message)
+    if (error) {
+      throw new Error(error.message)
+    }
   }
 }
 
 export async function fetchPostComments(postId) {
   const { data, error } = await supabase
     .from('feed_comments')
-    .select(`
+    .select(
+      `
       id,
       body,
       created_at,
@@ -80,11 +103,14 @@ export async function fetchPostComments(postId) {
         avatar,
         is_verified
       )
-    `)
+    `,
+    )
     .eq('feed_id', postId)
     .eq('is_active', true)
     .order('created_at', { ascending: true })
-  if (error) throw new Error(error.message)
+  if (error) {
+    throw new Error(error.message)
+  }
   return data
 }
 
@@ -94,20 +120,23 @@ export async function postComment({ postId, authorId, body }) {
     .insert({ feed_id: postId, author_profile_id: authorId, body })
     .select()
     .single()
-  if (error) throw new Error(error.message)
+  if (error) {
+    throw new Error(error.message)
+  }
   return data
 }
 
 export async function fetchRandomFeedPhrase() {
   const { data, error } = await supabase.rpc('get_random_feed_phrase')
-  if (error) throw new Error(error.message)
+  if (error) {
+    throw new Error(error.message)
+  }
   return data
 }
 
 export async function deletePost(postId) {
-  const { error } = await supabase
-    .from('feed')
-    .delete()
-    .eq('id', postId)
-  if (error) throw new Error(error.message)
+  const { error } = await supabase.from('feed').delete().eq('id', postId)
+  if (error) {
+    throw new Error(error.message)
+  }
 }

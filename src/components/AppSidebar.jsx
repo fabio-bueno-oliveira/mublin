@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
+import { useQuery } from '@tanstack/react-query'
+import { fetchUserProjects } from '../queries/user'
 import {
   Stack,
   Box,
@@ -12,6 +14,7 @@ import {
   Avatar,
   Card,
   Anchor,
+  NativeSelect,
 } from '@mantine/core'
 import { IconRosetteDiscountCheckFilled } from '@tabler/icons-react'
 
@@ -29,8 +32,34 @@ const GIG_MENU_ITEMS = [
 ]
 
 export default function AppSidebar() {
-  const { profile } = useAuth()
+  const { profile, user } = useAuth()
   const [gigsToShow, setGigsToShow] = useState('confirmed')
+
+  const { data: projects = [], isLoading: loadingProjects } = useQuery({
+    queryKey: ['user-projects', user?.id],
+    queryFn: () => fetchUserProjects(user.id),
+    enabled: !!user?.id,
+    staleTime: 1000 * 60 * 4,
+  })
+
+  const userProjects = projects.map((p) => ({
+    id: p.projects.id,
+    name: p.projects.name,
+    slug: p.projects.slug,
+    picture: p.projects.picture,
+    status: p.status,
+    main_role: p.roles.name_ptbr,
+    genre: p.projects.genres?.name,
+    type: p.projects.project_types?.name_ptbr,
+    totalMembers: p.projects.project_members?.length || 0,
+  }))
+
+  const [selectedProjectSlug, setSelectedProjectSlug] = useState('')
+  const projectsByStatus = {
+    accepted: userProjects?.filter((p) => p.status === 2) || [],
+    pending: userProjects?.filter((p) => p.status === 1) || [],
+    declined: userProjects?.filter((p) => p.status === 3) || [],
+  }
 
   return (
     <Box p="md" h="100%">
@@ -107,6 +136,51 @@ export default function AppSidebar() {
           </Stack>
         </Box>
       </Card>
+      <NativeSelect
+        mb="md"
+        value={selectedProjectSlug}
+        onChange={(e) => setSelectedProjectSlug(e.currentTarget.value)}
+        disabled={loadingProjects}
+      >
+        <option value="" disabled hidden>
+          Selecionar projeto...
+        </option>
+
+        {loadingProjects ? (
+          <option value="" disabled>
+            Carregando...
+          </option>
+        ) : (
+          <>
+            {projectsByStatus.accepted.length > 0 &&
+              projectsByStatus.accepted.map((project) => (
+                <option key={project.id} value={project.slug}>
+                  {project.name}
+                </option>
+              ))}
+
+            {projectsByStatus.pending.length > 0 && (
+              <optgroup label="Pendentes de aprovação">
+                {projectsByStatus.pending.map((project) => (
+                  <option key={project.id} value={project.slug}>
+                    {project.name}
+                  </option>
+                ))}
+              </optgroup>
+            )}
+
+            {projectsByStatus.declined.length > 0 && (
+              <optgroup label="Declinados / Encerrados">
+                {projectsByStatus.declined.map((project) => (
+                  <option key={project.id} value={project.slug}>
+                    {project.name}
+                  </option>
+                ))}
+              </optgroup>
+            )}
+          </>
+        )}
+      </NativeSelect>
       <Title order={2} fz="md" ta="left" fw={600} lts="-0.02em" mb="md">
         Suas próximas gigs
       </Title>

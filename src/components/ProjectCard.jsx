@@ -1,29 +1,34 @@
+import { useAuth } from '../hooks/useAuth'
 import { Link } from 'react-router-dom'
 import {
-  Flex, Stack, Card, Box, Image, Text, Avatar, Badge
+  Flex,
+  Stack,
+  Card,
+  Box,
+  Image,
+  Text,
+  Avatar,
+  Badge,
 } from '@mantine/core'
-import {
-  IconUser, IconClock
-} from '@tabler/icons-react'
+import { IconClock } from '@tabler/icons-react'
 
 const IMG_PATH = 'https://ik.imagekit.io/mublin/'
-const AVATAR_PATH = 'https://ik.imagekit.io/mublin/tr:h-28,c-maintain_ratio/users/avatars/'
+const AVATAR_PATH =
+  'https://ik.imagekit.io/mublin/tr:h-28,c-maintain_ratio/users/avatars/'
 
-export default function ProjectCard({ item, profile }) {
+export default function ProjectCard({ item }) {
+  const { profile } = useAuth()
+
   return (
     <Link to={`/project/${item.slug}`} className="noDecoration">
-      <Card
-        w={140}
-        padding="xs"
-        withBorder
-      >
+      <Card w={140} padding="xs" withBorder>
         <Card.Section>
           <Box
             style={{
               position: 'relative',
               width: '100%',
               height: '100%',
-              overflow: 'hidden'
+              overflow: 'hidden',
             }}
           >
             <Image
@@ -75,7 +80,8 @@ export default function ProjectCard({ item, profile }) {
             opacity={0.8}
             style={{ minWidth: 0, flexShrink: 1 }}
           >
-            {item.type}{item.genre && ' · ' + item.genre}
+            {item.type}
+            {item.genre && ` · ${item.genre}`}
           </Text>
           <Text mt={3} size="11px" c="dimmed">
             {item.totalMembers} {item.totalMembers === 1 ? 'pessoa' : 'pessoas'}

@@ -35,7 +35,7 @@
 
 /* ── Item ativo ── */
 .nav-item.active::before {
-  content: "";
+  content: '';
   display: block;
   border-top: 2px solid #272727;
   position: absolute;
@@ -46,25 +46,28 @@
 }
 
 .nav-item.active svg {
-  stroke-width: 2.3;
+  stroke-width: 1.7;
 }
 
 /* ── Botão plus ── */
 .nav-item.plus svg {
-  stroke-width: 2.3;
+  width: 34px;
+  height: 34px;
+  stroke-width: 1.7;
+  /* stroke-width: 2.3;
   width: 48px;
-  height: 48px;
+  height: 48px; */
 }
 
-.nav-item.plus.active::before {
-  content: "";
+/* .nav-item.plus.active::before {
+  content: '';
   display: block;
   border-top: 2px solid #0977ff;
   position: absolute;
   top: -11px;
   left: 0;
   width: 100%;
-}
+} */
 
 /* ── Dark mode ── */
 [data-mantine-color-scheme='dark'] .footer-mobile {

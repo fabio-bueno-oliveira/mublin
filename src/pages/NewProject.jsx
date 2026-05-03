@@ -4,18 +4,45 @@ import { useAuth } from '../hooks/useAuth'
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../lib/supabaseClient'
 import { fetchGenreCategories } from '../queries/genres'
+import { fetchProjectStatuses } from '../queries/projects'
 import {
-  Container, Title, TextInput, Textarea, NativeSelect,
-  NumberInput, Checkbox, Radio, Grid, Group, Button,
-  Divider, Text, Paper, ScrollArea, Flex,
-  Avatar, Anchor, Image, Box, Input, Modal,
-  Loader, Stack, LoadingOverlay
+  Container,
+  Title,
+  TextInput,
+  Textarea,
+  NativeSelect,
+  NumberInput,
+  Checkbox,
+  Radio,
+  Grid,
+  Group,
+  Button,
+  Divider,
+  Text,
+  Paper,
+  ScrollArea,
+  Flex,
+  Avatar,
+  Anchor,
+  Image,
+  Box,
+  Input,
+  Modal,
+  Loader,
+  Stack,
+  LoadingOverlay,
+  FileInput,
 } from '@mantine/core'
 import { useForm, isNotEmpty, isInRange } from '@mantine/form'
 import { useDebouncedCallback, useDisclosure } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
 import { upload } from '@imagekit/react'
-import { IconTrash, IconCheck, IconSearch } from '@tabler/icons-react'
+import {
+  IconTrash,
+  IconCheck,
+  IconSearch,
+  IconPolaroid,
+} from '@tabler/icons-react'
 
 // ── Helpers ──────────────────────────────────────────────
 function generateSlug(name) {
@@ -37,7 +64,9 @@ async function fetchRoles() {
     .select('id, name_ptbr, instrumentalist, applies_to_a_project')
     .eq('applies_to_a_project', true)
     .order('name_ptbr')
-  if (error) throw new Error(error.message)
+  if (error) {
+    throw new Error(error.message)
+  }
   return data
 }
 async function fetchRegions() {
@@ -46,7 +75,9 @@ async function fetchRegions() {
     .select('id, name, uf')
     .eq('country_id', 27)
     .order('name')
-  if (error) throw new Error(error.message)
+  if (error) {
+    throw new Error(error.message)
+  }
   return data
 }
 async function searchProjectsByName(name) {
@@ -55,7 +86,9 @@ async function searchProjectsByName(name) {
     .select('id, name, slug, picture')
     .ilike('name', `%${name}%`)
     .limit(5)
-  if (error) throw new Error(error.message)
+  if (error) {
+    throw new Error(error.message)
+  }
   return data
 }
 async function searchCitiesByName(query, regionId) {
@@ -66,7 +99,9 @@ async function searchCitiesByName(query, regionId) {
     .ilike('name', `%${query}%`)
     .order('name')
     .limit(20)
-  if (error) throw new Error(error.message)
+  if (error) {
+    throw new Error(error.message)
+  }
   return data
 }
 
@@ -76,7 +111,9 @@ async function fetchAllGenres() {
     .select('id, name_ptbr, id_category')
     .eq('active', true)
     .order('name_ptbr')
-  if (error) throw new Error(error.message)
+  if (error) {
+    throw new Error(error.message)
+  }
   return data
 }
 
@@ -110,10 +147,16 @@ export default function NewProject() {
   const [cityResults, setCityResults] = useState([])
   const [citySearchLoading, setCitySearchLoading] = useState(false)
   const [noCityResults, setNoCityResults] = useState(false)
-  const [modalCityOpened, { open: openCityModal, close: closeCityModal }] = useDisclosure(false)
+  const [modalCityOpened, { open: openCityModal, close: closeCityModal }] =
+    useDisclosure(false)
   const [loadingStep, setLoadingStep] = useState('')
 
   // Queries
+  const { data: projectStatuses = [] } = useQuery({
+    queryKey: ['project-statuses'],
+    queryFn: fetchProjectStatuses,
+    staleTime: Infinity,
+  })
   const { data: roles = [] } = useQuery({
     queryKey: ['roles'],
     queryFn: fetchRoles,
@@ -126,7 +169,7 @@ export default function NewProject() {
   })
   const { data: genreCategories = [] } = useQuery({
     queryKey: ['genre-categories'],
-    queryFn: fetchGenreCategories,   // já existe em genres.js
+    queryFn: fetchGenreCategories,
     staleTime: Infinity,
   })
   const { data: allGenres = [] } = useQuery({
@@ -136,15 +179,15 @@ export default function NewProject() {
   })
 
   const sortedGenreCategories = [
-    ...genreCategories.filter(c => c.id !== 5),
-    ...genreCategories.filter(c => c.id === 5),
+    ...genreCategories.filter((c) => c.id !== 5),
+    ...genreCategories.filter((c) => c.id === 5),
   ]
   const rolesMusicians = roles
-    .filter(r => r.instrumentalist)
-    .map(r => ({ label: r.name_ptbr, value: String(r.id) }))
+    .filter((r) => r.instrumentalist)
+    .map((r) => ({ label: r.name_ptbr, value: String(r.id) }))
   const rolesManagement = roles
-    .filter(r => !r.instrumentalist)
-    .map(r => ({ label: r.name_ptbr, value: String(r.id) }))
+    .filter((r) => !r.instrumentalist)
+    .map((r) => ({ label: r.name_ptbr, value: String(r.id) }))
 
   // Form
   const form = useForm({
@@ -166,9 +209,14 @@ export default function NewProject() {
     },
     validate: {
       name: (v) => (v.length < 2 ? 'Mínimo de 2 caracteres' : null),
-      foundation_year: isInRange({ min: 1800, max: currentYear }, `Entre 1800 e ${currentYear}`),
+      foundation_year: isInRange(
+        { min: 1800, max: currentYear },
+        `Entre 1800 e ${currentYear}`,
+      ),
       end_year: (v, values) =>
-        (!v && values.activity_status === '2') ? 'Informe o ano de encerramento' : null,
+        !v && values.activity_status === '2'
+          ? 'Informe o ano de encerramento'
+          : null,
       main_role_id: isNotEmpty('Informe sua função principal'),
       project_type_id: isNotEmpty('Informe o tipo do projeto'),
       activity_status: isNotEmpty('Informe o status do projeto'),
@@ -177,7 +225,10 @@ export default function NewProject() {
   })
 
   const checkSlug = useDebouncedCallback(async (slug) => {
-    if (slug.length < 2) { setSlugAvailable(null); return }
+    if (slug.length < 2) {
+      setSlugAvailable(null)
+      return
+    }
     setSlugChecking(true)
     const { data } = await supabase
       .from('projects')
@@ -189,7 +240,10 @@ export default function NewProject() {
   }, 700)
 
   const checkSimilarProjects = useDebouncedCallback(async (name) => {
-    if (name.length < 3) { setSimilarProjects([]); return }
+    if (name.length < 3) {
+      setSimilarProjects([])
+      return
+    }
     const results = await searchProjectsByName(name)
     if (results.length > 0) {
       setSimilarProjects(results)
@@ -223,7 +277,9 @@ export default function NewProject() {
 
   const handleCitySearch = useDebouncedCallback(async (query) => {
     const regionId = form.getValues().region_id
-    if (!query || query.length < 2 || !regionId) return
+    if (!query || query.length < 2 || !regionId) {
+      return
+    }
     setCitySearchLoading(true)
     setNoCityResults(false)
     const results = await searchCitiesByName(query, regionId)
@@ -238,16 +294,16 @@ export default function NewProject() {
 
   // ── Upload helpers ────────────────────────────────────────
 
-  /**
-   * Busca os tokens de autenticação do ImageKit.
-   * Reutilizada por ambos os uploads.
-   */
   async function getIkAuthTokens() {
-    const { data: { session } } = await supabase.auth.getSession()
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
     const authRes = await fetch(import.meta.env.VITE_IMAGEKIT_AUTH_ENDPOINT, {
       headers: { Authorization: `Bearer ${session?.access_token}` },
     })
-    if (!authRes.ok) throw new Error('Falha na autenticação do ImageKit')
+    if (!authRes.ok) {
+      throw new Error('Falha na autenticação do ImageKit')
+    }
     return { session, ...(await authRes.json()) }
   }
 
@@ -259,7 +315,13 @@ export default function NewProject() {
    * @param {string[]} tags         - tags do ImageKit
    * @param {Function} onProgress   - callback de progresso
    */
-  async function uploadToImageKit({ file, fileName, folder, tags, onProgress }) {
+  async function uploadToImageKit({
+    file,
+    fileName,
+    folder,
+    tags,
+    onProgress,
+  }) {
     const { token: ikToken, expire, signature } = await getIkAuthTokens()
     return upload({
       file,
@@ -280,29 +342,38 @@ export default function NewProject() {
    * Remove um arquivo do ImageKit via Edge Function.
    */
   async function deleteFromImageKit(fileId) {
-    const { data: { session } } = await supabase.auth.getSession()
-    const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/imagekit-manage`, {
-      method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${session?.access_token}`,
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
+    const response = await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/imagekit-manage`,
+      {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session?.access_token}`,
+        },
+        body: JSON.stringify({ fileId }),
       },
-      body: JSON.stringify({ fileId }),
-    })
-    if (!response.ok) throw new Error('Erro ao deletar no servidor')
+    )
+    if (!response.ok) {
+      throw new Error('Erro ao deletar no servidor')
+    }
   }
 
-  // ── Handlers de imagem principal ─────────────────────────
-
   async function handleRemoveImage() {
-    if (!projectFileId) return
+    if (!projectFileId) {
+      return
+    }
     try {
       await deleteFromImageKit(projectFileId)
       setProjectImage('')
       setProjectFileId('')
       setProjectImageFile(null)
       const el = document.querySelector('#projectImage')
-      if (el) el.value = null
+      if (el) {
+        el.value = null
+      }
     } catch (err) {
       console.error(err)
     }
@@ -313,7 +384,9 @@ export default function NewProject() {
    * O caminho final será atualizado no handleSubmit após criação do projeto.
    */
   async function handleImageUpload(file) {
-    if (!file) return
+    if (!file) {
+      return
+    }
     setProjectImageFile(file)
     try {
       const response = await uploadToImageKit({
@@ -337,24 +410,28 @@ export default function NewProject() {
     }
   }
 
-  // ── Handlers de logo (novo) ───────────────────────────────
-
   async function handleRemoveLogo() {
-    if (!projectLogoFileId) return
+    if (!projectLogoFileId) {
+      return
+    }
     try {
       await deleteFromImageKit(projectLogoFileId)
       setProjectLogo('')
       setProjectLogoFileId('')
       setProjectLogoFile(null)
       const el = document.querySelector('#projectLogo')
-      if (el) el.value = null
+      if (el) {
+        el.value = null
+      }
     } catch (err) {
       console.error(err)
     }
   }
 
   async function handleLogoUpload(file) {
-    if (!file) return
+    if (!file) {
+      return
+    }
     setProjectLogoFile(file)
     try {
       const response = await uploadToImageKit({
@@ -382,7 +459,10 @@ export default function NewProject() {
 
   async function handleSubmit(values) {
     setIsSubmitting(true)
-    if (slugAvailable === false) { setIsSubmitting(false); return }
+    if (slugAvailable === false) {
+      setIsSubmitting(false)
+      return
+    }
 
     const finalName = values.name || nameValue
     const finalSlug = slugValue || generateSlug(finalName)
@@ -399,13 +479,19 @@ export default function NewProject() {
         genre_id: values.genre_id ? Number(values.genre_id) : null,
         on_tour: false,
         city_id: selectedCity?.id || null,
+        activity_status: values.activity_status,
+        is_featured: values.featured,
         is_public: values.is_public === '1',
       })
       .select('id')
       .single()
 
     if (projectError) {
-      notifications.show({ color: 'red', title: 'Erro', message: 'Não foi possível criar o projeto.' })
+      notifications.show({
+        color: 'red',
+        title: 'Erro',
+        message: 'Não foi possível criar o projeto.',
+      })
       setIsSubmitting(false)
       return
     }
@@ -418,7 +504,9 @@ export default function NewProject() {
 
     try {
       if (projectImageFile) {
-        if (projectFileId) await deleteFromImageKit(projectFileId).catch(() => {})
+        if (projectFileId) {
+          await deleteFromImageKit(projectFileId).catch(() => {})
+        }
         const res = await uploadToImageKit({
           file: projectImageFile,
           fileName: `${finalSlug}_.jpg`,
@@ -430,7 +518,9 @@ export default function NewProject() {
       }
 
       if (projectLogoFile) {
-        if (projectLogoFileId) await deleteFromImageKit(projectLogoFileId).catch(() => {})
+        if (projectLogoFileId) {
+          await deleteFromImageKit(projectLogoFileId).catch(() => {})
+        }
         const res = await uploadToImageKit({
           file: projectLogoFile,
           fileName: `${finalSlug}_logo_.png`,
@@ -476,7 +566,12 @@ export default function NewProject() {
       })
 
     if (memberError) {
-      notifications.show({ color: 'red', title: 'Erro', message: 'Projeto criado, mas não foi possível adicionar você como membro.' })
+      notifications.show({
+        color: 'red',
+        title: 'Erro',
+        message:
+          'Projeto criado, mas não foi possível adicionar você como membro.',
+      })
       setIsSubmitting(false)
       return
     }
@@ -486,7 +581,7 @@ export default function NewProject() {
       title: 'Projeto criado!',
       message: `"${finalName}" foi criado com sucesso.`,
     })
-    navigate('/home')
+    navigate(`/project/${finalSlug}`)
   }
 
   const activityStatus = form.getValues().activity_status
@@ -501,9 +596,11 @@ export default function NewProject() {
           children: (
             <Stack align="center" gap="xs">
               <Loader color="indigo" size="md" />
-              <Text size="sm" c="dimmed" ta="center">{loadingStep}</Text>
+              <Text size="sm" c="dimmed" ta="center">
+                {loadingStep}
+              </Text>
             </Stack>
-          )
+          ),
         }}
       />
       <Title order={1} fz="h3" ta="left" fw={600} lts="-0.02em" mb={20}>
@@ -543,12 +640,16 @@ export default function NewProject() {
                 maxLength={70}
                 rightSection={slugChecking ? <Loader size={16} /> : undefined}
                 leftSection={
-                  slugValue.length >= 2 && !slugChecking && slugAvailable === true
-                    ? <IconCheck size={18} color="green" />
-                    : undefined
+                  slugValue.length >= 2 &&
+                  !slugChecking &&
+                  slugAvailable === true ? (
+                    <IconCheck size={18} color="green" />
+                  ) : undefined
                 }
                 error={
-                  slugValue.length >= 2 && !slugChecking && slugAvailable === false
+                  slugValue.length >= 2 &&
+                  !slugChecking &&
+                  slugAvailable === false
                     ? 'Username não disponível'
                     : undefined
                 }
@@ -561,19 +662,39 @@ export default function NewProject() {
           {/* Projetos similares */}
           {similarProjects.length > 0 && (
             <Paper withBorder p="sm" radius="md">
-              <Text size="xs" fw={600} mb={4}>Projetos com nomes parecidos</Text>
-              <Text size="xs" c="dimmed" mb={8}>Será que já está cadastrado?</Text>
+              <Text size="xs" fw={600} mb={4}>
+                Projetos com nomes parecidos
+              </Text>
+              <Text size="xs" c="dimmed" mb={8}>
+                Será que já está cadastrado?
+              </Text>
               <ScrollArea w="100%" type="hover" scrollbarSize={6}>
                 <Flex gap={12} w="max-content">
-                  {similarProjects.map(p => (
-                    <Anchor key={p.id} href={`/project/${p.slug}`} underline="never">
+                  {similarProjects.map((p) => (
+                    <Anchor
+                      key={p.id}
+                      href={`/project/${p.slug}`}
+                      underline="never"
+                    >
                       <Flex direction="column" align="center" gap={4}>
                         <Avatar
                           size={48}
                           radius="md"
-                          src={p.picture ? `https://ik.imagekit.io/mublin/projects/tr:h-100/${p.picture}` : undefined}
+                          src={
+                            p.picture
+                              ? `https://ik.imagekit.io/mublin/projects/tr:h-100/${p.picture}`
+                              : undefined
+                          }
                         />
-                        <Text size="xs" fw={500} ta="center" maw={60} lineClamp={2}>{p.name}</Text>
+                        <Text
+                          size="xs"
+                          fw={500}
+                          ta="center"
+                          maw={60}
+                          lineClamp={2}
+                        >
+                          {p.name}
+                        </Text>
                       </Flex>
                     </Anchor>
                   ))}
@@ -588,18 +709,21 @@ export default function NewProject() {
           <Grid>
             {/* Imagem principal */}
             <Grid.Col span={{ base: 12, md: 6 }}>
-              <Text size="sm" fw={500}>Imagem do projeto</Text>
-              <Text size="xs" c="dimmed" mb={6}>Uma foto/imagem que representa o projeto</Text>
               {!projectImage ? (
                 <>
-                  <input
+                  <FileInput
                     id="projectImage"
-                    type="file"
                     accept="image/png,image/jpeg,image/gif"
-                    onChange={(e) => handleImageUpload(e.target.files?.[0])}
+                    label="Imagem do projeto"
+                    description="Uma foto/imagem que representa o projeto"
+                    placeholder="Escolher arquivo"
+                    leftSection={<IconPolaroid size={18} />}
+                    onChange={(file) => handleImageUpload(file)}
                   />
                   {projectImageProgress > 0 && projectImageProgress < 100 && (
-                    <Text size="xs" c="dimmed" mt={4}>Enviando... {projectImageProgress}%</Text>
+                    <Text size="xs" c="dimmed" mt={4}>
+                      Enviando... {projectImageProgress}%
+                    </Text>
                   )}
                 </>
               ) : (
@@ -625,18 +749,21 @@ export default function NewProject() {
 
             {/* Logo */}
             <Grid.Col span={{ base: 12, md: 6 }}>
-              <Text size="sm" fw={500}>Logo do projeto</Text>
-              <Text size="xs" c="dimmed" mb={6}>Logotipo/símbolo do projeto</Text>
               {!projectLogo ? (
                 <>
-                  <input
+                  <FileInput
                     id="projectLogo"
-                    type="file"
-                    accept="image/png,image/jpeg,image/svg+xml"
-                    onChange={(e) => handleLogoUpload(e.target.files?.[0])}
+                    accept="image/png,image/jpeg,image/gif"
+                    label="Logo do projeto (opcional)"
+                    description="Logotipo/símbolo do projeto"
+                    placeholder="Escolher arquivo"
+                    leftSection={<IconPolaroid size={18} />}
+                    onChange={(file) => handleLogoUpload(file)}
                   />
                   {projectLogoProgress > 0 && projectLogoProgress < 100 && (
-                    <Text size="xs" c="dimmed" mt={4}>Enviando... {projectLogoProgress}%</Text>
+                    <Text size="xs" c="dimmed" mt={4}>
+                      Enviando... {projectLogoProgress}%
+                    </Text>
                   )}
                 </>
               ) : (
@@ -702,12 +829,11 @@ export default function NewProject() {
             {...form.getInputProps('activity_status')}
           >
             <option value="">Selecione</option>
-            <option value="1">Em atividade</option>
-            <option value="2">Encerrado</option>
-            <option value="3">Ativo de vez em quando</option>
-            <option value="4">Sazonal / de temporada</option>
-            <option value="5">Ainda em construção</option>
-            <option value="6">Em hiato</option>
+            {projectStatuses.map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.description_ptbr}
+              </option>
+            ))}
           </NativeSelect>
 
           <Grid>
@@ -741,16 +867,15 @@ export default function NewProject() {
             {...form.getInputProps('genre_id')}
           >
             <option value="">Selecione (opcional)</option>
-            {sortedGenreCategories.map(category => (
+            {sortedGenreCategories.map((category) => (
               <optgroup key={category.id} label={category.name_ptbr}>
                 {allGenres
-                  .filter(g => g.id_category === category.id)
-                  .map(genre => (
+                  .filter((g) => g.id_category === category.id)
+                  .map((genre) => (
                     <option key={genre.id} value={String(genre.id)}>
                       {genre.name_ptbr}
                     </option>
-                  ))
-                }
+                  ))}
               </optgroup>
             ))}
           </NativeSelect>
@@ -768,8 +893,10 @@ export default function NewProject() {
                 }}
               >
                 <option value="">Selecione</option>
-                {regions.map(r => (
-                  <option key={r.id} value={String(r.id)}>{r.name}</option>
+                {regions.map((r) => (
+                  <option key={r.id} value={String(r.id)}>
+                    {r.name}
+                  </option>
                 ))}
               </NativeSelect>
             </Grid.Col>
@@ -778,11 +905,17 @@ export default function NewProject() {
                 <Input
                   pointer
                   readOnly
-                  placeholder={regionId ? 'Selecionar...' : 'Selecione o Estado'}
+                  placeholder={
+                    regionId ? 'Selecionar...' : 'Selecione o Estado'
+                  }
                   disabled={!regionId}
                   value={selectedCity?.name ?? ''}
                   rightSection={regionId ? <IconSearch size={15} /> : undefined}
-                  onClick={() => { if (regionId) openCityModal() }}
+                  onClick={() => {
+                    if (regionId) {
+                      openCityModal()
+                    }
+                  }}
                 />
               </Input.Wrapper>
             </Grid.Col>
@@ -815,7 +948,7 @@ export default function NewProject() {
           />
 
           <Checkbox.Group
-            defaultValue={["initial"]}
+            defaultValue={['initial']}
             disabled
             label="Minhas atribuições"
             description="Você poderá alterar isto depois"
@@ -845,7 +978,12 @@ export default function NewProject() {
             <Button
               type="submit"
               color="indigo"
-              disabled={slugChecking || slugAvailable === false || slugValue.length < 2 || !nameValue}
+              disabled={
+                slugChecking ||
+                slugAvailable === false ||
+                slugValue.length < 2 ||
+                !nameValue
+              }
             >
               Cadastrar projeto
             </Button>
@@ -865,19 +1003,27 @@ export default function NewProject() {
             placeholder="Digite o nome da cidade..."
             data-autofocus
             value={citySearchQuery}
-            rightSection={citySearchLoading ? <Loader size={16} /> : <IconSearch size={16} />}
+            rightSection={
+              citySearchLoading ? (
+                <Loader size={16} />
+              ) : (
+                <IconSearch size={16} />
+              )
+            }
             onChange={(e) => {
               setCitySearchQuery(e.target.value)
               handleCitySearch(e.target.value)
             }}
           />
           {noCityResults && (
-            <Text size="xs" c="dimmed">Nenhuma cidade encontrada neste Estado.</Text>
+            <Text size="xs" c="dimmed">
+              Nenhuma cidade encontrada neste Estado.
+            </Text>
           )}
           {cityResults.length > 0 && (
             <ScrollArea h={200} type="auto">
               <Stack gap={0}>
-                {cityResults.map(city => (
+                {cityResults.map((city) => (
                   <Box key={city.id}>
                     <Anchor
                       size="sm"
