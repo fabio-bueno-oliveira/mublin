@@ -95,7 +95,7 @@ export default function Menu() {
 
   // ── Logout ──────────────────────────────────────────────
   async function handleLogout() {
-    setColorScheme('light')
+    // setColorScheme('light')
     await signOut()
     navigate('/', { replace: true })
   }
