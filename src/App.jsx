@@ -86,7 +86,7 @@ const theme = createTheme({
     }),
     Switch: Switch.extend({
       defaultProps: {
-        color: "lime",
+        color: "mublinColor",
       },
     }),
     Divider: Divider.extend({

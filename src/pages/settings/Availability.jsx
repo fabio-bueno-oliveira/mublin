@@ -4,11 +4,23 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabaseClient'
 import {
   Stack, Box, Text, Divider,
-  Switch, Skeleton, Indicator, Avatar, Checkbox
+  Switch, Skeleton, Indicator, Avatar, Checkbox,
+  Radio, Group, Loader,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 
 const AVATAR_PATH = 'https://ik.imagekit.io/mublin/tr:h-60,w-60,c-maintain_ratio/users/avatars/'
+
+// Mapeamento de valores do banco para labels exibidos ao usuário
+const AVAILABLE_FROM_OPTIONS = [
+  { value: 'immediate',    label: 'Disponibilidade imediata'        },
+  { value: 'negotiable',   label: 'A combinar'      },
+  { value: 'few_days',     label: 'Em alguns dias'  },
+  { value: 'one_month',    label: 'Daqui a 1 mês'   },
+  { value: 'three_months', label: 'Daqui a 3 meses' },
+  { value: 'six_months',   label: 'Daqui a 6 meses' },
+  { value: 'one_year',     label: 'Daqui a 1 ano'   },
+]
 
 // ── Queries locais ────────────────────────────────────────
 
@@ -57,11 +69,14 @@ export default function Availability() {
   // ── Open to Work ──────────────────────────────────────
   const [isSavingOpenToWork, setIsSavingOpenToWork] = useState(false)
 
+  // ── Available From ────────────────────────────────────
+  const [isSavingAvailableFrom, setIsSavingAvailableFrom] = useState(false)
+
   // ── Estados de loading por item ───────────────────────
-  const [isDeletingWorkType, setIsDeletingWorkType] = useState(null)
-  const [isAddingWorkType, setIsAddingWorkType] = useState(null)
+  const [isDeletingWorkType,  setIsDeletingWorkType]  = useState(null)
+  const [isAddingWorkType,    setIsAddingWorkType]    = useState(null)
   const [isDeletingWorkFocus, setIsDeletingWorkFocus] = useState(null)
-  const [isAddingWorkFocus, setIsAddingWorkFocus] = useState(null)
+  const [isAddingWorkFocus,   setIsAddingWorkFocus]   = useState(null)
 
   // ── Queries ───────────────────────────────────────────
   const { data: workTypes = [] } = useQuery({
@@ -110,6 +125,22 @@ export default function Availability() {
     setIsSavingOpenToWork(false)
   }
 
+  // ── Handler: Available From ───────────────────────────
+  async function handleAvailableFromChange(value) {
+    setIsSavingAvailableFrom(true)
+    const { error } = await supabase
+      .from('profiles')
+      .update({ available_from: value })
+      .eq('id', user.id)
+    if (error) {
+      notifications.show({ color: 'red', position: 'top-center', message: 'Erro ao atualizar. Tente novamente.' })
+    } else {
+      queryClient.invalidateQueries({ queryKey: ['profile', user.id] })
+    }
+    setIsSavingAvailableFrom(false)
+  }
+
+  // ── Handler: Work Types ───────────────────────────────
   async function handleDeleteWorkType(id) {
     setIsDeletingWorkType(id)
     const { error } = await supabase
@@ -139,10 +170,9 @@ export default function Availability() {
     setIsDeletingWorkFocus(null)
   }
 
-  // ── Render ────────────────────────────────────────────
   return (
     <>
-      <Stack gap="lg">
+      <Stack gap="md">
 
         {/* ── Open to Work ────────────────────────────── */}
         <Stack gap="md">
@@ -159,10 +189,8 @@ export default function Availability() {
             label="Estou disponível para trabalhos"
             checked={isOpenToWork}
             disabled={isSavingOpenToWork}
-            onChange={(e) => {
-              const checked = e.currentTarget.checked
-              handleToggleOpenToWork(checked)
-            }}
+            color="green"
+            onChange={(e) => handleToggleOpenToWork(e.currentTarget.checked)}
           />
 
           <Box h={70}>
@@ -172,11 +200,7 @@ export default function Availability() {
               pos="absolute"
               color="green"
               size={16}
-              label={
-                <Text size="8px" fw={600}>
-                  Disponível
-                </Text>
-              }
+              label={<Text size="8px">Disponível</Text>}
               withBorder
               disabled={!isOpenToWork}
             >
@@ -188,6 +212,41 @@ export default function Availability() {
               />
             </Indicator>
           </Box>
+        </Stack>
+
+        <Divider />
+
+        {/* ── Disponibilidade a partir de ──────────────── */}
+        <Stack gap="md">
+          <div>
+            <Group gap="xs" align="center">
+              <Text fw={600} size="sm" tt="uppercase" lts="0.05em">
+                Disponível a partir de
+              </Text>
+              {isSavingAvailableFrom && <Loader size={12} />}
+            </Group>
+            <Text size="xs" c="dimmed" mt={2}>
+              Quando você estaria disponível para iniciar novos trabalhos?
+            </Text>
+          </div>
+
+          <Radio.Group
+            key={authProfile?.available_from || 'loading'} 
+            defaultValue={authProfile?.available_from ?? ''}
+            onChange={handleAvailableFromChange}
+          >
+            <Stack gap="xs">
+              {AVAILABLE_FROM_OPTIONS.map(opt => (
+                <Radio
+                  key={opt.value}
+                  value={opt.value}
+                  label={opt.label}
+                  color="indigo"
+                  disabled={isSavingAvailableFrom}
+                />
+              ))}
+            </Stack>
+          </Radio.Group>
         </Stack>
 
         <Divider />
@@ -209,7 +268,7 @@ export default function Availability() {
           ) : (
             <Stack gap="xs">
               {workTypes.map(type => {
-                const existing = userWorkAvailability.find(i => i.id_work_type === type.id)
+                const existing  = userWorkAvailability.find(i => i.id_work_type === type.id)
                 const isChecked = !!existing
                 const isLoading = isDeletingWorkType === existing?.id || isAddingWorkType === type.id
                 return (
@@ -261,7 +320,7 @@ export default function Availability() {
           ) : (
             <Stack gap="xs">
               {workFocuses.map(focus => {
-                const existing = userWorkFocus.find(i => i.id_work_focus === focus.id)
+                const existing  = userWorkFocus.find(i => i.id_work_focus === focus.id)
                 const isChecked = !!existing
                 const isLoading = isDeletingWorkFocus === existing?.id || isAddingWorkFocus === focus.id
                 return (

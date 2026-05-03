@@ -4,16 +4,19 @@ import { useAuth } from '../hooks/useAuth'
 import { useQuery, useInfiniteQuery, useQueryClient } from '@tanstack/react-query'
 import { 
   fetchFeed, fetchUserLikedPosts,
-  fetchRandomFeedPhrase, fetchLikesCountByPosts, 
+  fetchLikesCountByPosts, 
   deletePost
 } from '../queries/feed'
 import { fetchUserProjects } from '../queries/user'
+import { fetchProjectDashboardInfo } from '../queries/projects'
 import MublinLogoBlack from '../assets/svg/mublin-logo-black.svg'
 import MublinLogoWhite from '../assets/svg/mublin-logo-white.svg'
 import {
-  useMantineColorScheme, Box, Container, Grid, Flex, Stack, Group, 
-  Text, Title, Loader, Avatar, Button, ActionIcon, Menu, Badge,
-  ScrollArea, Scroller, Skeleton, Image, Modal, Paper, Card, Spoiler
+  useMantineColorScheme, Box, Container, Grid, Flex, Stack, Group, NativeSelect,
+  Text, Title, Loader, Avatar, Button, ActionIcon, Menu, Badge, Pill,
+  ScrollArea, Scroller, Skeleton, Image, Modal, Paper, Card, Spoiler,
+  Combobox, InputBase,
+  Center,
 } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
@@ -24,7 +27,7 @@ import ProjectCard from '../components/ProjectCard'
 import {
   IconCircleArrowLeftFilled, IconCircleArrowRightFilled,
   IconRosetteDiscountCheckFilled, IconMessageCircle, 
-  IconDots, IconLink, IconTrash, 
+  IconDots, IconLink, IconTrash, IconCircleFilled,
 IconCircleChevronDownFilled, IconCircleChevronUpFilled
 } from '@tabler/icons-react'
 import dayjs from 'dayjs'
@@ -35,6 +38,7 @@ dayjs.extend(relativeTime)
 dayjs.locale('pt-br')
 
 const AVATAR_PATH = 'https://ik.imagekit.io/mublin/tr:h-68,c-maintain_ratio/users/avatars/'
+const PROJECT_AVATAR_PATH = 'https://ik.imagekit.io/mublin/projects/'
 
 function ProjectSkeletons({ count = 4 }) {
   return Array.from({ length: count }).map((_, i) => (
@@ -45,7 +49,6 @@ function ProjectSkeletons({ count = 4 }) {
   ))
 }
 
-// ── Página principal ─────────────────────────────────────
 export default function Home() {
   const { colorScheme } = useMantineColorScheme()
   const queryClient = useQueryClient()
@@ -106,12 +109,6 @@ export default function Home() {
     staleTime: 1000 * 60 * 2,
   })
 
-  const { data: feedPhrase } = useQuery({
-    queryKey: ['feed-phrase'],
-    queryFn: fetchRandomFeedPhrase,
-    staleTime: 1000 * 60 * 10,
-  })
-
   async function handleDeletePost() {
     setIsDeletingPost(true)
     try {
@@ -125,6 +122,23 @@ export default function Home() {
       setIsDeletingPost(false)
     }
   }
+
+  const [selectedProjectSlug, setSelectedProjectSlug] = useState('');
+
+  const { 
+    data: projectDashboard, 
+    isLoading: isLoadingDashboard 
+  } = useQuery({
+    queryKey: ['project-dashboard', selectedProjectSlug],
+    queryFn: () => fetchProjectDashboardInfo(selectedProjectSlug),
+    enabled: !!selectedProjectSlug, 
+  });
+
+  const projectsByStatus = {
+    accepted: userProjects?.filter(p => p.status === 2) || [],
+    pending: userProjects?.filter(p => p.status === 1) || [],
+    declined: userProjects?.filter(p => p.status === 3) || [],
+  };
 
   return (
     <>
@@ -162,19 +176,137 @@ export default function Home() {
                 Meus projetos
               </Title>
               {userProjects.length > 0 &&
-                <Badge size="md">{userProjects.length}</Badge>
+                <Pill size="sm">{userProjects.length}</Pill>
               }
             </Flex>
 
+            <NativeSelect
+              mb="md"
+              description="Selecione um projeto para gerenciar"
+              value={selectedProjectSlug}
+              onChange={(e) => setSelectedProjectSlug(e.target.value)}
+            >
+              <option value="">Todos os projetos</option>
+              
+              {projectsByStatus.accepted.length > 0 && (
+                <optgroup label="Aceitos / Ativos">
+                  {projectsByStatus.accepted.map((project) => (
+                    <option key={project.id} value={project.slug}>
+                      {project.name}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
+
+              {projectsByStatus.pending.length > 0 && (
+                <optgroup label="Pendentes de aprovação">
+                  {projectsByStatus.pending.map((project) => (
+                    <option key={project.id} value={project.slug}>
+                      {project.name}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
+
+              {projectsByStatus.declined.length > 0 && (
+                <optgroup label="Declinados / Encerrados">
+                  {projectsByStatus.declined.map((project) => (
+                    <option key={project.id} value={project.slug}>
+                      {project.name}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
+            </NativeSelect>
+
+            {isLoadingDashboard && (
+              <Paper withBorder p="md" radius="md" mt="md" bg="var(--mantine-color-body)">
+                <Stack>
+                  <Skeleton height={20} width="70%" />
+                  <Skeleton height={100} />
+                </Stack>
+              </Paper>
+            )}
+
+            {!selectedProjectSlug && (
+              <Paper withBorder p="md" radius="md" mt="md" bg="var(--mantine-color-body)">
+                <Text size="xs">Você possui {userProjects.length} projetos</Text>
+                <Grid>
+                  <Grid.Col span={6}>
+                    <IconCircleFilled size={10} color="#eba800" /> Pendentes
+                  </Grid.Col>
+                  <Grid.Col span={6}>
+                    <IconCircleFilled size={10} color="#198a4c" /> Aceitos
+                  </Grid.Col>
+                </Grid>
+              </Paper>
+            )}
+
+            {projectDashboard && !isLoadingDashboard && (
+              <Paper withBorder p="md" radius="md" mt="md" bg="var(--mantine-color-body)">
+                <Group justify="space-between" align="flex-start" mb="xs">
+                  <Flex gap={8}>
+                    <Avatar
+                      src={
+                        projectDashboard.picture
+                          ? `${PROJECT_AVATAR_PATH}${projectDashboard.id}/tr:h-180,w-180,c-maintain_ratio/${projectDashboard.picture}`
+                          : undefined
+                      }
+                      alt={projectDashboard.name}
+                      size={100}
+                      radius="lg"
+                      style={
+                        colorScheme === "light" 
+                          ? { border: '3px solid white' }
+                          : { border: '3px solid #1c1c1c' }
+                      }
+                    />
+                    <Flex direction="column">
+                      <Title order={5}>{projectDashboard.name}</Title>
+                      <Text size="sm">{projectDashboard.project_types.name_ptbr}</Text>
+                    </Flex>
+                  </Flex>
+                  <Badge color="green" variant="light">Ativo</Badge>
+                </Group>
+                
+                <Text size="sm" c="dimmed" mb="md" lineClamp={2}>
+                  {projectDashboard.description}
+                </Text>
+
+                {/* Exemplo de exibição de dados vindos da sua query projects.js */}
+                <Grid>
+                  <Grid.Col span={6}>
+                    <Text size="xs" fw={700} tt="uppercase">Membros</Text>
+                    <Text size="sm">{projectDashboard.project_members?.length || 0} integrantes</Text>
+                  </Grid.Col>
+                  <Grid.Col span={6}>
+                    <Text size="xs" fw={700} tt="uppercase">Gênero</Text>
+                    <Text size="sm">{projectDashboard.genres?.name_ptbr || 'N/A'}</Text>
+                  </Grid.Col>
+                </Grid>
+
+                <Button 
+                  component={Link} 
+                  to={`/projects/${projectDashboard.slug}`} 
+                  variant="light" 
+                  fullWidth 
+                  mt="md" 
+                  size="xs"
+                >
+                  Ver página completa do projeto
+                </Button>
+              </Paper>
+            )}
+
             {/* Desktop — Spoiler com grid wrap */}
-            <Box visibleFrom="sm">
+            <Box visibleFrom="sm" mt={200}>
               {loadingProjects ? (
                 <Group gap="xs" wrap="wrap">
                   <ProjectSkeletons count={4} />
                 </Group>
               ) : (
                 <Spoiler
-                  maxHeight={238}
+                  maxHeight={268}
                   showLabel={
                     <IconCircleChevronDownFilled
                       size={24}
@@ -284,7 +416,7 @@ export default function Home() {
                       component={Link}
                       to="/new/post"
                     >
-                      {feedPhrase ?? 'Quais são as novidades?'}
+                      Quais as novidades?
                     </Text>
                   </Flex>
                 </Paper>
@@ -301,7 +433,7 @@ export default function Home() {
                         <Card className="feedPostWrapper" key={post.id}>
                           <Group 
                             gap={6}
-                            align="center" 
+                            align="flex-start" 
                             justify="space-between"
                             className="paddingX"
                           >
@@ -333,7 +465,7 @@ export default function Home() {
                                   </Text>
                                   {!!post.author_is_verified &&
                                     <IconRosetteDiscountCheckFilled
-                                      className="iconVerified"
+                                      className="iconVerified small"
                                       title="Usuário verificado"
                                     />
                                   }
@@ -354,7 +486,13 @@ export default function Home() {
                                     {dayjs(post.created_at).fromNow()}
                                   </Text>
                                 </Flex>
-                                <Text size="xs" c="dimmed" truncate="end" title={post.author_title}>
+                                <Text 
+                                  size="xs" 
+                                  c="dimmed"
+                                  maw={200} 
+                                  truncate="end" 
+                                  title={post.author_title}
+                                >
                                   {post.author_title}
                                 </Text>
                               </Stack>
@@ -398,15 +536,15 @@ export default function Home() {
                           {/* Corpo */}
                           {post.body && 
                             <Text
-                              size="0.88em"
-                              fw={480}
+                              size='sm' 
+                              opacity={0.8}
                               lh={1.3}
                               mt={6}
                               mb={4}
                               component={Link}
                               to={`/post/${post.id}`}
                               c="var(--mantine-color-text)"
-                              style={{ textDecoration: 'none' }}
+                              style={{ textDecoration: 'none', whiteSpace: 'pre-line' }}
                               className="paddingX"
                             >
                               {post.body}

@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import {
-  Box, Container, Tabs, Title, Text, Group,
+  Box, Container, Tabs, Title, Text, Group, Scroller
 } from '@mantine/core'
 import {
   IconUser,
@@ -100,14 +100,9 @@ export default function SettingsLayout() {
       {/* Cabeçalho da seção */}
       <Box py="md">
         <Container size="lg">
-          <Group gap="xs" align="baseline">
-            <Title order={2} fw={700} size="h3">
-              Configurações
-            </Title>
-            <Text size="sm" c="dimmed">
-              Gerencie sua conta e preferências
-            </Text>
-          </Group>
+          <Title order={2} fw={700} size="h3">
+            Configurações
+          </Title>
         </Container>
       </Box>
 
@@ -120,6 +115,7 @@ export default function SettingsLayout() {
           zIndex: 100,
           backgroundColor: 'var(--mantine-color-body)',
         }}
+        hiddenFrom="sm"
       >
         <Container size="lg">
           <Tabs
@@ -129,6 +125,7 @@ export default function SettingsLayout() {
             classNames={classes}
           >
             <Tabs.List 
+              grow
               ref={scrollerRef} 
               style={{ 
                 overflowX: 'auto', 
@@ -138,23 +135,24 @@ export default function SettingsLayout() {
                 msOverflowStyle: 'none', // IE/Edge
               }}
             >
-              {SETTINGS_TABS.map(({ value, label, icon: Icon }) => ( // eslint-disable-line
-                <Tabs.Tab
-                  key={value}
-                  value={value}
-                  data-value={value} // Garantimos que o atributo exista para o querySelector
-                  leftSection={<Icon size={15} stroke={1.7} />}
-                >
-                  {label}
-                </Tabs.Tab>
-              ))}
+              <Scroller>
+                {SETTINGS_TABS.map(({ value, label, icon: Icon }) => ( // eslint-disable-line
+                  <Tabs.Tab
+                    key={value}
+                    value={value}
+                    data-value={value}
+                    leftSection={<Icon size={15} stroke={1.7} />}
+                  >
+                    {label}
+                  </Tabs.Tab>
+                ))}
+              </Scroller>
             </Tabs.List>
           </Tabs>
         </Container>
       </Box>
 
-      {/* Conteúdo da página filha */}
-      <Container size="lg" py="xl">
+      <Container size="lg" py={{ base: "xl", md: "xs" }}>
         <Outlet />
       </Container>
     </Box>

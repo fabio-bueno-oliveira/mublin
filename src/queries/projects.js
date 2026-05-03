@@ -142,3 +142,31 @@ export async function fetchProjectBackstageInfo(projectSlug) {
   if (error) throw new Error(error.message)
   return data
 }
+
+export async function fetchProjectDashboardInfo(projectSlug) {
+  const { data, error } = await supabase
+    .from('projects')
+    .select(`
+      id,
+      slug,
+      name,
+      description,
+      purpose,
+      picture,
+      cover_picture,
+      on_tour,
+      genres ( id, name_ptbr ),
+      project_types ( name_ptbr ),
+      cities (
+        id,
+        name,
+        regions (
+          name, uf
+        )
+      )
+    `)
+    .eq('slug', projectSlug)
+    .single()
+  if (error) throw new Error(error.message)
+  return data
+}

@@ -19,7 +19,7 @@ import {
   Card, Button, Title, Text, Group, Flex, Stack, ActionIcon, NativeSelect,
   Skeleton, ScrollArea, Alert, Anchor, Image, Tooltip, Badge, Pill, Divider, em,
 } from '@mantine/core'
-import { useMediaQuery } from '@mantine/hooks'
+import { useMediaQuery, useDisclosure } from '@mantine/hooks'
 import LoadingSkeleton from '../components/profile/LoadingSkeleton'
 import LinkedItem from '../components/feed/LinkedItem'
 import VideoPlayer from '../components/feed/VideoPlayer'
@@ -29,10 +29,11 @@ import {
   IconMoodSad, IconRosetteDiscountCheckFilled,
   IconWorld, IconShieldCheckFilled, IconArrowsMaximize, IconPlus, IconSettings,
   IconCircleArrowLeftFilled, IconCircleArrowRightFilled, IconCheck,
-  IconBrandWhatsapp
+  IconBrandWhatsapp, IconPencil
 } from '@tabler/icons-react'
 import { truncateString } from '../utils/formatter'
 import { isProfileLive } from '../utils/live'
+import { AVAILABLE_FROM_LABELS } from '../constants/availability'
 import { SOCIAL_CONFIG } from '../constants/socialConfig'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
@@ -51,6 +52,7 @@ export default function Profile() {
   const { username } = useParams()
   const { loading: authLoading, user } = useAuth()
   const isMobile = useMediaQuery(`(max-width: ${em(750)})`)
+  const [contactInfoOpened, { open: openContactInfo, close: closeContactInfo }] = useDisclosure(false)
 
   const { data: profile, isLoading : isLoadingProfileInfo, isError } = useQuery({
     queryKey: ['profile', username],
@@ -247,31 +249,49 @@ export default function Profile() {
                       title='Lenda da música'
                     />
                   }
+                  {profile.plan === "Pro" && 
+                    <Badge
+                      title="Usuário PRO"
+                      radius="sm"
+                      size="xs"
+                      variant="transparent"
+                      color="gray"
+                      ml={2}
+                    >
+                      PRO
+                    </Badge>
+                  }
                   {user?.id === profile.id && (
-                    <Button
+                    <ActionIcon 
                       component={Link}
                       to="/settings/profile"
-                      radius="sm"
-                      size="compact-xs"
-                      variant="light"
-                      color="var(--mantine-color-text)"
+                      radius="xl" 
+                      variant="subtle" 
+                      aria-label="Editar meu perfil"
+                      title="Editar meu perfil"
                       ml={4}
                     >
-                      Editar meu perfil
-                    </Button>
+                      <IconPencil size={14} stroke={2} />
+                    </ActionIcon>
                   )}
                 </Flex>
-                <Flex align="center" gap={4}>
-                  <Text size="sm" opacity={0.6}>
+                <Flex align="center" gap={4} opacity={0.7}>
+                  <Text span size="sm">
                     @{profile.username}
                   </Text>
                   {(city || regionUf) && (
-                    <Text size="sm" opacity={0.6}>
+                    <Text size="sm">
                       · {[city, regionUf]
                         .filter(Boolean)
                         .join('/')}
                     </Text>
                   )}
+                  <Text size="sm">
+                    · 
+                  </Text>
+                  <Anchor size="sm" onClick={openContactInfo}>
+                    Dados de contato
+                  </Anchor>
                   {isProfileLive(profile) && (
                     <Group gap={6} ml={10} align="center" wrap="nowrap">
                       <Box component="span" className="live-dot" style={{ flexShrink: 0 }} />
@@ -288,37 +308,40 @@ export default function Profile() {
                   )}
                 </Flex>
                 {profile.title && (
-                  <Text size="sm" fw={450} maw={420} lh={1.3} my={3}>
+                  <Text size="14px" fw={400} maw={420} lh={1.3} my={3}>
                     {profile.title}
-                  </Text>
-                )}
-                {roles && roles.length > 0 && (
-                  <Text size="13px" mt={2} c="dimmed">
-                    {roles.map(({ id, roles: role }, index) => (
-                      <Text span key={id} c='dimmed'>
-                        {role?.name_ptbr}
-                        {index < roles.length - 1 ? ', ' : ''}
-                      </Text>
-                    ))}
                   </Text>
                 )}
               </Stack>
             </Group>
             <Stack gap={12} mt={{ base: "md", md: 0 }}>
-              {profile.bio && (
-                <SectionPanel>
-                  <SectionTitle text="Sobre" mb="sm" />
+              <SectionPanel>
+                <SectionTitle text="Sobre" mb="sm" />
+                {profile.bio && (
                   <Spoiler 
                     maxHeight={40} 
-                    showLabel={<Text size='xs'>...ver mais</Text>} 
-                    hideLabel={false}
+                    showLabel={<Text size='sm'>...ver mais</Text>} 
+                    hideLabel={<Text size='sm'>...ver menos</Text>} 
                   >
-                    <Text size='sm' lh={1.3}>
+                    <Text size='sm' lh={1.3} opacity={0.8} style={{ whiteSpace: 'pre-line' }}>
                       {profile.bio}
                     </Text>
                   </Spoiler>
-                </SectionPanel>
-              )}
+                )}
+                <Paper withBorder shadow="xs" p="xs" mt="md">
+                  <Text size='sm' fw={500}>Atividades na música</Text>
+                  {roles && roles.length > 0 && (
+                    <Text size="xs">
+                      {roles.map(({ id, roles: role }, index) => (
+                        <Text key={id} span fw={400}>
+                          {role?.name_ptbr}
+                          {index < roles.length - 1 ? ' · ' : ''}
+                        </Text>
+                      ))}
+                    </Text>
+                  )}
+                </Paper>
+              </SectionPanel>
               {loadingProjects && (
                 <>
                   <Flex gap={15}>    
@@ -639,7 +662,9 @@ export default function Profile() {
                     Disponível a partir de:
                   </Title>
                   <Text size="xs" fw={300}>
-                    {profile.available_from ? profile.available_from : "Não informado"}
+                    {profile.available_from 
+                      ? (AVAILABLE_FROM_LABELS[profile.available_from] || profile.available_from) 
+                      : "Não informado"}
                   </Text>
                   <Title order={3} fz="sm" fw={600} mt="sm" mb={4}>
                     Tipos de trabalho:
@@ -671,32 +696,6 @@ export default function Profile() {
                   )}
                 </SectionPanel>
               )}
-              <SectionPanel>
-                <SectionTitle text="Contato" mb="sm" />
-                {/* Telefone — só exibe se phone_number_is_public */}
-                {profile.phone_number && profile.phone_number_is_public && (
-                  <Group gap="xs">
-                    {profile.phone_number_is_whatsapp ? (
-                      <Anchor
-                        href={`https://wa.me/${profile.phone_number.replace(/\D/g, '')}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        underline="never"
-                      >
-                        <Group gap="xs">
-                          <IconBrandWhatsapp size={16} color="var(--mantine-color-green-6)" />
-                          <Text size="sm">{profile.phone_number}</Text>
-                        </Group>
-                      </Anchor>
-                    ) : (
-                      <>
-                        <IconPhone size={16} opacity={0.6} />
-                        <Text size="sm">{profile.phone_number}</Text>
-                      </>
-                    )}
-                  </Group>
-                )}
-              </SectionPanel>
               <SectionPanel>
                 <SectionTitle text="Redes" mb="sm" />
                 {(profile.profile_social_links.length > 0 || profile.website) && (
@@ -801,6 +800,34 @@ export default function Profile() {
           </Grid.Col>
         </Grid>
       </Container>
+      <Modal opened={contactInfoOpened} onClose={closeContactInfo} title="Dados de contato" centered>
+        <SectionTitle text="Telefone" mb="sm" />
+        {/* Telefone — só exibe se phone_number_is_public */}
+        {profile.phone_number && profile.phone_number_is_public ? (
+          <Group gap="xs">
+            {profile.phone_number_is_whatsapp ? (
+              <Anchor
+                href={`https://wa.me/${profile.phone_number.replace(/\D/g, '')}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                underline="never"
+              >
+                <Group gap="xs">
+                  <IconBrandWhatsapp size={16} color="var(--mantine-color-green-6)" />
+                  <Text size="sm">{profile.phone_number}</Text>
+                </Group>
+              </Anchor>
+            ) : (
+              <>
+                <IconPhone size={16} opacity={0.6} />
+                <Text size="sm">{profile.phone_number}</Text>
+              </>
+            )}
+          </Group>
+        ) : (
+          <Text size="sm" c="dimmed">Não disponível</Text>
+        )}
+      </Modal>
     </>
   )
 }

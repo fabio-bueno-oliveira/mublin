@@ -14,10 +14,14 @@
 
 .mantine-Spoiler-root {
   .mantine-Spoiler-control {
-    top: 98%;
+    top: 100%;
+    color: gray;
+    &:hover {
+      text-decoration: none;
+    }
   }
   &[data-has-spoiler='true'] {
-    margin-bottom: 8px!important;
+    bottom: 8px!important;
   }
 }
 

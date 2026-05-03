@@ -63,7 +63,7 @@ export default function AppSidebar() {
               }}
             />
           </Box>
-          <Stack gap={2}>
+          <Stack gap={1}>
             <Group gap={4} align="center">
               <Anchor
                 component={Link}
@@ -71,8 +71,10 @@ export default function AppSidebar() {
                 underline="hover"
                 c="var(--mantine-color-text)"
                 fw={600}
-                size="md"
+                size="lg"
+                maw={180} 
                 lineClamp={1}
+                truncate="end" 
               >
                 {profile?.full_name}
               </Anchor>
@@ -84,7 +86,7 @@ export default function AppSidebar() {
               )}
             </Group>
             <Group gap={4} align="center">
-              <Text size="xs" fw={400} c="mublinColor.3" lineClamp={2} lh={1}>
+              <Text size="xs" fw={400} lineClamp={2} lh={1}>
                 @{profile.username}
               </Text>
               {profile.plan &&

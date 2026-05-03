@@ -1,6 +1,7 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom'
 import PublicLayout from './components/layouts/PublicLayout'
 import AppLayout from './components/layouts/AppLayout'
+import AppSettingsLayout from './components/layouts/AppSettingsLayout'
 // Public pages
 import AuthCallback from './pages/AuthCallback'
 import Landing from './pages/Landing'
@@ -97,7 +98,12 @@ export const router = createBrowserRouter([
       { path: 'new/event', element: <NewEvent /> },
       { path: 'new/venue', element: <NewVenue /> },
       { path: '/:username/gear', element: <ProfileGear /> },
-      // ── Settings ──────────────────────────────────
+    ],
+  },
+  // ── Settings ──────────────────────────
+  {
+    element: <AppSettingsLayout />,
+    children: [
       {
         path: 'settings',
         element: <SettingsLayout />,
