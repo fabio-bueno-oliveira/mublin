@@ -14,9 +14,13 @@ import {
   Avatar,
   Card,
   Anchor,
-  NativeSelect,
+  Combobox,
+  useCombobox,
+  InputBase,
+  ScrollArea,
+  Indicator,
 } from '@mantine/core'
-import { IconRosetteDiscountCheckFilled } from '@tabler/icons-react'
+import { IconCheck, IconRosetteDiscountCheckFilled } from '@tabler/icons-react'
 
 const AVATAR_PATH =
   'https://ik.imagekit.io/mublin/tr:h-96,c-maintain_ratio/users/avatars/'
@@ -24,6 +28,7 @@ const COVER_PATH =
   'https://ik.imagekit.io/mublin/tr:h-200,c-maintain_ratio/users/avatars/'
 const DEFAULT_COVER_PICTURE =
   'https://ik.imagekit.io/mublin/bg/tr:h-52,bg-F3F3F3,fo-top/mublin-hero-chatgpt-musicians2.png'
+const PROJECT_AVATAR_PATH = 'https://ik.imagekit.io/mublin/projects/'
 
 const GIG_MENU_ITEMS = [
   { label: 'Confirmadas', confirmed: true, path: '#', type: 'confirmed' },
@@ -31,9 +36,54 @@ const GIG_MENU_ITEMS = [
   { label: 'Sugeridas', confirmed: false, path: '#', type: 'suggested' },
 ]
 
+const ProjectOption = ({ project, active = false }) => (
+  <Combobox.Option value={project.slug} key={project.id} active={active}>
+    <Group gap={10}>
+      {active && <IconCheck size={12} />}
+      <Indicator
+        size={10}
+        color={project.activity_status_color}
+        disabled={!project.activity_status_color}
+        inline
+        withBorder
+        offset={2}
+      >
+        <Avatar
+          src={
+            project.picture
+              ? `${PROJECT_AVATAR_PATH}${project.id}/tr:h-52,w-52,c-maintain_ratio/${project.picture}`
+              : undefined
+          }
+          size="sm"
+          radius="xl"
+        />
+      </Indicator>
+      <div>
+        <Text size="sm" fw={500} truncate="end" w={110}>
+          {project.name}
+        </Text>
+        <Text size="xs" opacity={0.5} truncate="end" w={110}>
+          {project.type}
+        </Text>
+      </div>
+    </Group>
+  </Combobox.Option>
+)
+
 export default function AppSidebar() {
   const { profile, user } = useAuth()
   const [gigsToShow, setGigsToShow] = useState('confirmed')
+
+  const [search, setSearch] = useState('')
+  const combobox = useCombobox({
+    onDropdownClose: () => {
+      combobox.resetSelectedOption()
+      setSearch('') // Limpa a busca ao fechar
+    },
+    onDropdownOpen: () => {
+      combobox.focusSearchInput() // Foca no input automaticamente ao abrir
+    },
+  })
 
   const { data: projects = [], isLoading: loadingProjects } = useQuery({
     queryKey: ['user-projects', user?.id],
@@ -47,7 +97,10 @@ export default function AppSidebar() {
     name: p.projects.name,
     slug: p.projects.slug,
     picture: p.projects.picture,
-    status: p.status,
+    request_status: p.status,
+    activity_status: p.projects.activity_status,
+    activity_status_name: p.projects.project_statuses?.description_ptbr,
+    activity_status_color: p.projects.project_statuses?.color,
     main_role: p.roles.name_ptbr,
     genre: p.projects.genres?.name,
     type: p.projects.project_types?.name_ptbr,
@@ -55,21 +108,33 @@ export default function AppSidebar() {
   }))
 
   const [selectedProjectSlug, setSelectedProjectSlug] = useState('')
+  const selectedProject = userProjects.find(
+    (p) => p.slug === selectedProjectSlug,
+  )
+
+  const filteredProjects = userProjects.filter((p) =>
+    p.name.toLowerCase().includes(search.toLowerCase().trim()),
+  )
+
   const projectsByStatus = {
-    accepted: userProjects?.filter((p) => p.status === 2) || [],
-    pending: userProjects?.filter((p) => p.status === 1) || [],
-    declined: userProjects?.filter((p) => p.status === 3) || [],
+    accepted: filteredProjects?.filter((p) => p.request_status === 2) || [],
+    pending: filteredProjects?.filter((p) => p.request_status === 1) || [],
   }
+
+  const hasResults =
+    projectsByStatus.accepted.length > 0 || projectsByStatus.pending.length > 0
 
   return (
     <Box p="md" h="100%">
       <Card
-        withBorder
+        withBorder={false}
+        shadow="xs"
         radius="md"
         p={0}
         mt={4}
         mb={20}
         style={{ overflow: 'hidden' }}
+        pos="relative"
       >
         {/* Cover */}
         <Box
@@ -82,7 +147,8 @@ export default function AppSidebar() {
             // : isDark ? DEFAULT_GRADIENT_DARK : DEFAULT_GRADIENT_LIGHT,
           }}
         />
-        {/* Avatar flutuando sobre a cover */}
+
+        {/* Avatar sobre a cover */}
         <Box px="sm" pb="sm">
           <Box mt={-24} mb={4}>
             <Avatar
@@ -119,7 +185,7 @@ export default function AppSidebar() {
               )}
             </Group>
             <Group gap={4} align="center">
-              <Text size="xs" fw={400} lineClamp={2} lh={1}>
+              <Text size="sm" fw={400} lineClamp={1} lh={1}>
                 @{profile.username}
               </Text>
               {profile.plan === 'Pro' && (
@@ -136,52 +202,90 @@ export default function AppSidebar() {
           </Stack>
         </Box>
       </Card>
-      <NativeSelect
+
+      <Combobox
+        w="100%"
         mb="md"
-        value={selectedProjectSlug}
-        onChange={(e) => setSelectedProjectSlug(e.currentTarget.value)}
-        disabled={loadingProjects}
+        store={combobox}
+        onOptionSubmit={(val) => {
+          setSelectedProjectSlug(val)
+          combobox.closeDropdown()
+        }}
       >
-        <option value="" disabled hidden>
-          Selecionar projeto...
-        </option>
-
-        {loadingProjects ? (
-          <option value="" disabled>
-            Carregando...
-          </option>
-        ) : (
-          <>
-            {projectsByStatus.accepted.length > 0 &&
-              projectsByStatus.accepted.map((project) => (
-                <option key={project.id} value={project.slug}>
-                  {project.name}
-                </option>
-              ))}
-
-            {projectsByStatus.pending.length > 0 && (
-              <optgroup label="Pendentes de aprovação">
-                {projectsByStatus.pending.map((project) => (
-                  <option key={project.id} value={project.slug}>
-                    {project.name}
-                  </option>
-                ))}
-              </optgroup>
+        <Combobox.Target>
+          <InputBase
+            component="button"
+            type="button"
+            variant="unstyled"
+            pointer
+            disabled={loadingProjects}
+            rightSection={<Combobox.Chevron />}
+            onClick={() => combobox.toggleDropdown()}
+          >
+            {loadingProjects ? (
+              'Carregando projetos...'
+            ) : selectedProject ? (
+              <Group pl={3} gap="xs">
+                <Avatar
+                  src={
+                    selectedProject.picture
+                      ? `${PROJECT_AVATAR_PATH}${selectedProject.id}/tr:h-40,w-40,c-maintain_ratio/${selectedProject.picture}`
+                      : undefined
+                  }
+                  size={20}
+                  radius="xl"
+                />
+                <Title order={2} fz="lg" fw={600} lts="-0.02em" truncate="end">
+                  {selectedProject.name}
+                </Title>
+              </Group>
+            ) : (
+              <Title order={2} fz="md" fw={600} lts="-0.02em">
+                Selecionar projeto
+              </Title>
             )}
+          </InputBase>
+        </Combobox.Target>
 
-            {projectsByStatus.declined.length > 0 && (
-              <optgroup label="Declinados / Encerrados">
-                {projectsByStatus.declined.map((project) => (
-                  <option key={project.id} value={project.slug}>
-                    {project.name}
-                  </option>
-                ))}
-              </optgroup>
-            )}
-          </>
-        )}
-      </NativeSelect>
-      <Title order={2} fz="md" ta="left" fw={600} lts="-0.02em" mb="md">
+        <Combobox.Dropdown>
+          <Combobox.Search
+            value={search}
+            onChange={(event) => setSearch(event.currentTarget.value)}
+            placeholder="Pesquisar projetos..."
+          />
+          <Combobox.Options>
+            <ScrollArea.Autosize mah={170} type="always" scrollHideDelay={0}>
+              {hasResults ? (
+                <>
+                  {projectsByStatus.accepted.map((project) => (
+                    <ProjectOption
+                      key={project.id}
+                      project={project}
+                      active={
+                        String(project.slug) === String(selectedProjectSlug)
+                      }
+                    />
+                  ))}
+
+                  {projectsByStatus.pending.map((project) => (
+                    <ProjectOption
+                      key={project.id}
+                      project={project}
+                      active={
+                        String(project.slug) === String(selectedProjectSlug)
+                      }
+                    />
+                  ))}
+                </>
+              ) : (
+                <Combobox.Empty>Nenhum projeto encontrado</Combobox.Empty>
+              )}
+            </ScrollArea.Autosize>
+          </Combobox.Options>
+        </Combobox.Dropdown>
+      </Combobox>
+
+      <Title order={3} fz="md" ta="left" fw={600} lts="-0.02em" mb="md">
         Suas próximas gigs
       </Title>
       <Scroller mb={20}>

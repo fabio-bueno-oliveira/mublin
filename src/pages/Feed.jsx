@@ -77,6 +77,8 @@ export default function Projects() {
       lastPage.length === 10 ? allPages.flat().length : undefined,
     staleTime: 1000 * 60 * 2,
     retry: 1,
+    refetchInterval: 1000 * 60 * 3,
+    refetchIntervalInBackground: false,
   })
 
   useEffect(() => {

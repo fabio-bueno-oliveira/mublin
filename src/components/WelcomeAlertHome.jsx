@@ -1,10 +1,8 @@
 import { useState } from 'react'
-import { useAuth } from '../hooks/useAuth'
 import { Alert } from '@mantine/core'
 import { useMediaQuery } from '@mantine/hooks'
 
 export default function WelcomeAlert() {
-  const { profile } = useAuth()
   const [showWelcomeAlert, setShowWelcomeAlert] = useState(true)
   const isMobile = useMediaQuery('(max-width: 48em)')
 
@@ -18,7 +16,7 @@ export default function WelcomeAlert() {
       <Alert
         variant="light"
         color="mublinColor"
-        title={`Olá, ${profile.username}! Boas-vindas ao seu Dashboard`}
+        title="Boas-vindas ao seu Dashboard!"
         withCloseButton
         onClose={() => setShowWelcomeAlert(false)}
         mb="lg"

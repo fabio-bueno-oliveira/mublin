@@ -1,32 +1,31 @@
-import { Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useQuery } from '@tanstack/react-query'
 import { fetchUserProjects } from '../queries/user'
-import MublinLogoBlack from '../assets/svg/mublin-logo-black.svg'
-import MublinLogoWhite from '../assets/svg/mublin-logo-white.svg'
 import {
-  useMantineColorScheme,
   Grid,
-  Container,
-  Box,
-  Flex,
+  SimpleGrid,
   Group,
+  Container,
+  Stack,
+  Badge,
+  Box,
   Text,
   Title,
-  Avatar,
-  Scroller,
-  Skeleton,
-  Image,
   Paper,
+  ThemeIcon,
+  RingProgress,
 } from '@mantine/core'
 import { useMediaQuery } from '@mantine/hooks'
-import ProjectCard from '../components/ProjectCard'
+import AppNavbarMobile from '../components/AppNavbarMobile'
 import WelcomeAlert from '../components/WelcomeAlertHome'
 import Feed from './Feed'
 import {
-  IconCircleArrowLeftFilled,
-  IconCircleArrowRightFilled,
   IconCircleFilled,
+  IconMicrophone,
+  IconGuitarPick,
+  IconCalendarEvent,
+  IconClipboardCheck,
+  IconDeviceSpeaker,
 } from '@tabler/icons-react'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
@@ -39,17 +38,7 @@ const AVATAR_PATH =
   'https://ik.imagekit.io/mublin/tr:h-68,c-maintain_ratio/users/avatars/'
 const PROJECT_AVATAR_PATH = 'https://ik.imagekit.io/mublin/projects/'
 
-function ProjectSkeletons({ count = 4 }) {
-  return Array.from({ length: count }).map((_, i) => (
-    <Flex key={i} direction="column" align="center" gap={10}>
-      <Skeleton radius="md" width={90} height={130} />
-      <Skeleton radius="xl" width={50} height={10} />
-    </Flex>
-  ))
-}
-
 export default function Home() {
-  const { colorScheme } = useMantineColorScheme()
   const { profile, user, loading } = useAuth()
   const isDesktop = useMediaQuery('(min-width: 48em)')
 
@@ -72,36 +61,42 @@ export default function Home() {
     totalMembers: p.projects.project_members?.length || 0,
   }))
 
+  const statsData = [
+    {
+      label: 'Gigs Confirmadas',
+      value: '12',
+      icon: IconCalendarEvent,
+      color: 'blue',
+    },
+    {
+      label: 'Projetos Ativos',
+      value: '4',
+      icon: IconMicrophone,
+      color: 'teal',
+    },
+    {
+      label: 'Equipamentos',
+      value: '28',
+      icon: IconGuitarPick,
+      color: 'orange',
+    },
+    {
+      label: 'Candidaturas',
+      value: '7',
+      icon: IconClipboardCheck,
+      color: 'grape',
+    },
+  ]
+
   return (
     <>
-      <Flex
-        gap="xs"
-        align="center"
-        justify="space-between"
-        my="md"
-        hiddenFrom="sm"
-        px={{ base: '0.8rem', sm: 0 }}
-      >
-        <Image
-          src={colorScheme === 'light' ? MublinLogoBlack : MublinLogoWhite}
-          h={26}
-          w="auto"
-          fit="contain"
-        />
-        <Avatar
-          size={34}
-          src={profile?.avatar ? AVATAR_PATH + profile.avatar : undefined}
-          radius="xl"
-          component={Link}
-          to={`/${profile?.username}`}
-        />
-      </Flex>
+      <AppNavbarMobile />
 
       <Container size="xl" pt="xs" px={{ base: 0, sm: 0 }}>
         <Grid>
           <Grid.Col span={{ base: 12, md: 7 }} className="paddingX">
             <Title order={2} fz="h3" fw={600} lts="-0.02em" mb="sm">
-              Dashboard
+              Olá, {profile.username}!
             </Title>
 
             <WelcomeAlert />
@@ -118,32 +113,126 @@ export default function Home() {
               </Grid>
             </Paper>
 
-            {/* Mobile — Scroller horizontal */}
-            <Box hiddenFrom="sm">
-              {loadingProjects ? (
-                <Flex gap={14}>
-                  <ProjectSkeletons count={4} />
-                </Flex>
-              ) : (
-                <Scroller
-                  key={userProjects.length}
-                  draggable
-                  controlSize="xl"
-                  startControlIcon={<IconCircleArrowLeftFilled size={36} />}
-                  endControlIcon={<IconCircleArrowRightFilled size={36} />}
-                >
-                  <Group gap="xs" wrap="nowrap">
-                    {userProjects.map((item) => (
-                      <ProjectCard
-                        key={item.id}
-                        item={item}
-                        profile={profile}
+            <Stack gap="md">
+              {/* 1. Métricas Rápidas (Cards de Resumo) */}
+              <SimpleGrid cols={{ base: 1, sm: 2, md: 4 }}>
+                {statsData.map((stat) => (
+                  <Paper key={stat.label} withBorder p="md" radius="md">
+                    <Group justify="space-between">
+                      <Stack gap={0}>
+                        <Text size="xs" c="dimmed" fw={700} tt="uppercase">
+                          {stat.label}
+                        </Text>
+                        <Text fw={700} fz="xl">
+                          {stat.value}
+                        </Text>
+                      </Stack>
+                      <ThemeIcon
+                        color={stat.color}
+                        variant="light"
+                        size="xl"
+                        radius="md"
+                      >
+                        <stat.icon size="1.4rem" />
+                      </ThemeIcon>
+                    </Group>
+                  </Paper>
+                ))}
+              </SimpleGrid>
+
+              <Grid>
+                {/* 2. Gráfico de Distribuição de Atividade (Foco de Trabalho) */}
+                {/* Refere-se a public.profile_work_focus no seu DB */}
+                <Grid.Col span={{ base: 12, md: 5 }}>
+                  <Paper withBorder p="md" radius="md" h="100%">
+                    <Title order={4} mb="lg" fz="sm" fw={600} c="dimmed">
+                      FOCO DE ATIVIDADE
+                    </Title>
+                    <Group justify="center">
+                      <RingProgress
+                        size={170}
+                        thickness={16}
+                        label={
+                          <Text size="xs" ta="center" px="xs" lh="xs">
+                            Composição vs Performance
+                          </Text>
+                        }
+                        sections={[
+                          { value: 40, color: 'cyan', tooltip: 'Autoral' },
+                          {
+                            value: 35,
+                            color: 'orange',
+                            tooltip: 'Cover/Tributo',
+                          },
+                          {
+                            value: 25,
+                            color: 'gray',
+                            tooltip: 'Estudo/Outros',
+                          },
+                        ]}
                       />
-                    ))}
-                  </Group>
-                </Scroller>
-              )}
-            </Box>
+                      <Stack gap="xs">
+                        <Badge color="cyan" variant="dot">
+                          Autoral (40%)
+                        </Badge>
+                        <Badge color="orange" variant="dot">
+                          Cover (35%)
+                        </Badge>
+                        <Badge color="gray" variant="dot">
+                          Freelance (25%)
+                        </Badge>
+                      </Stack>
+                    </Group>
+                  </Paper>
+                </Grid.Col>
+
+                {/* 3. Próximos Compromissos (public.gigs + public.events) */}
+                <Grid.Col span={{ base: 12, md: 7 }}>
+                  <Paper withBorder p="md" radius="md" h="100%">
+                    <Title order={4} mb="md" fz="sm" fw={600} c="dimmed">
+                      PRÓXIMAS GIGS & ENSAIOS
+                    </Title>
+                    <Stack gap="sm">
+                      <Group justify="space-between" wrap="nowrap">
+                        <Group gap="sm">
+                          <ThemeIcon variant="light" color="blue">
+                            <IconDeviceSpeaker size="1rem" />
+                          </ThemeIcon>
+                          <Box>
+                            <Text size="sm" fw={500}>
+                              Show: Festival de Inverno
+                            </Text>
+                            <Text size="xs" c="dimmed">
+                              Sábado, 20:00 • Palco Principal
+                            </Text>
+                          </Box>
+                        </Group>
+                        <Badge size="sm">Confirmado</Badge>
+                      </Group>
+
+                      <Group justify="space-between" wrap="nowrap">
+                        <Group gap="sm">
+                          <ThemeIcon variant="light" color="teal">
+                            <IconMicrophone size="1rem" />
+                          </ThemeIcon>
+                          <Box>
+                            <Text size="sm" fw={500}>
+                              Ensaio: Banda Rock Indie
+                            </Text>
+                            <Text size="xs" c="dimmed">
+                              Terça, 18:00 • Estúdio X
+                            </Text>
+                          </Box>
+                        </Group>
+                        <Badge size="sm" color="yellow">
+                          Pendente
+                        </Badge>
+                      </Group>
+                    </Stack>
+                  </Paper>
+                </Grid.Col>
+              </Grid>
+            </Stack>
           </Grid.Col>
 
           {isDesktop && (
