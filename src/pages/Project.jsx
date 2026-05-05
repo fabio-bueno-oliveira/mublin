@@ -3,23 +3,46 @@ import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { supabase } from '../lib/supabaseClient'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { fetchProjectProfile, cancelParticipationRequest  } from '../queries/projects'
+import {
+  fetchProjectProfile,
+  cancelParticipationRequest,
+} from '../queries/projects'
 import { fetchRoles } from '../queries/roles'
 import JoinProjectModal from '../components/modals/JoinProjectModal'
 import { useDisclosure } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
 import {
   useMantineColorScheme,
-  Grid, Container, Flex, Box, Button, 
-  Avatar, Image, Menu,
-  Title, Text, Badge, Skeleton, 
-  Group, Stack, Card, Tooltip, 
-  ActionIcon, Pill
+  Grid,
+  Container,
+  Flex,
+  Box,
+  Button,
+  Avatar,
+  Image,
+  Menu,
+  Title,
+  Text,
+  Badge,
+  Skeleton,
+  Group,
+  Stack,
+  Card,
+  Tooltip,
+  ActionIcon,
+  Pill,
 } from '@mantine/core'
 import {
-  IconBrandInstagram, IconBrandSpotify, IconPencil, IconDoor,
-  IconBrandSoundcloud, IconSettings, IconX,
-  IconUserUp, IconLogout, IconUserCog
+  IconBrandInstagram,
+  IconBrandSpotify,
+  IconPencil,
+  IconDoor,
+  IconBrandSoundcloud,
+  IconSettings,
+  IconX,
+  IconUserUp,
+  IconLogout,
+  IconUserCog,
 } from '@tabler/icons-react'
 
 export default function Project() {
@@ -29,7 +52,11 @@ export default function Project() {
   const navigate = useNavigate()
   const { colorScheme } = useMantineColorScheme()
 
-  const { data: project, isLoading, isError } = useQuery({
+  const {
+    data: project,
+    isLoading,
+    isError,
+  } = useQuery({
     queryKey: ['project', slug],
     queryFn: () => fetchProjectProfile(slug),
     enabled: !!slug,
@@ -37,13 +64,16 @@ export default function Project() {
     retry: 1,
   })
 
-  const AVATAR_PATH = 'https://ik.imagekit.io/mublin/tr:h-240,c-maintain_ratio/users/avatars/'
+  const AVATAR_PATH =
+    'https://ik.imagekit.io/mublin/tr:h-240,c-maintain_ratio/users/avatars/'
   const PICTURE_AVATAR_PATH = `https://ik.imagekit.io/mublin/projects/${project?.id}/tr:h-200,w-200,c-maintain_ratio/`
   const PICTURE_COVER_PATH = `https://ik.imagekit.io/mublin/projects/${project?.id}/tr:h-100,w-1042,fo-top,c-maintain_ratio/`
-  const DEFAULT_COVER_PICTURE = 'https://ik.imagekit.io/mublin/bg/tr:w-1042,h-100,bg-F3F3F3,fo-bottom,bl-20/project-cover-default.png'
+  const DEFAULT_COVER_PICTURE =
+    'https://ik.imagekit.io/mublin/bg/tr:w-1042,h-100,bg-F3F3F3,fo-bottom,bl-20/project-cover-default.png'
 
   const currentYear = new Date().getFullYear()
-  const [modalJoinOpened, { open: openJoinModal, close: closeJoinModal }] = useDisclosure(false)
+  const [modalJoinOpened, { open: openJoinModal, close: closeJoinModal }] =
+    useDisclosure(false)
   const [joinRole, setJoinRole] = useState('')
   const [joinYear, setJoinYear] = useState(currentYear)
 
@@ -54,12 +84,12 @@ export default function Project() {
   })
 
   const rolesProjectMusicians = roles
-    .filter(r => r.applies_to_a_project && r.instrumentalist)
-    .map(r => ({ label: r.name_ptbr, value: String(r.id) }))
+    .filter((r) => r.applies_to_a_project && r.instrumentalist)
+    .map((r) => ({ label: r.name_ptbr, value: String(r.id) }))
 
   const rolesProjectManagement = roles
-    .filter(r => r.applies_to_a_project && !r.instrumentalist)
-    .map(r => ({ label: r.name_ptbr, value: String(r.id) }))
+    .filter((r) => r.applies_to_a_project && !r.instrumentalist)
+    .map((r) => ({ label: r.name_ptbr, value: String(r.id) }))
 
   const { mutate: cancelRequest, isPending: isCancelling } = useMutation({
     mutationFn: () => cancelParticipationRequest(project.id, user.id),
@@ -88,18 +118,18 @@ export default function Project() {
 
   const { mutate: joinProject, isPending: joiningProject } = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase
-        .from('project_members')
-        .insert({
-          project_id: project.id,
-          profile_id: user.id,
-          role_id: Number(joinRole),
-          joined_at: `${joinYear}-01-01`,
-          is_founder: false,
-          is_admin: false,
-          status: 1,
-        })
-      if (error) throw new Error(error.message)
+      const { error } = await supabase.from('project_members').insert({
+        project_id: project.id,
+        profile_id: user.id,
+        role_id: Number(joinRole),
+        joined_at: `${joinYear}-01-01`,
+        is_founder: false,
+        is_admin: false,
+        status: 1,
+      })
+      if (error) {
+        throw new Error(error.message)
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['project', slug] })
@@ -119,8 +149,8 @@ export default function Project() {
     },
   })
 
-  const confirmedMembers = project?.members?.filter(m => m.status === 2) ?? []
-  const userMembership = project?.members?.find(m => m.profile_id === user.id)
+  const confirmedMembers = project?.members?.filter((m) => m.status === 2) ?? []
+  const userMembership = project?.members?.find((m) => m.profile_id === user.id)
   const userHasRequestedParticipation = userMembership?.status === 1
   const userIsConfirmedMember = userMembership?.status === 2
   const userHasNoParticipation = !userMembership
@@ -129,7 +159,9 @@ export default function Project() {
   if (isError) {
     return (
       <Container size="md" py="xl">
-        <Text c="dimmed" ta="center">Projeto não encontrado.</Text>
+        <Text c="dimmed" ta="center">
+          Projeto não encontrado.
+        </Text>
       </Container>
     )
   }
@@ -137,26 +169,24 @@ export default function Project() {
   return (
     <>
       <Container fluid pb="lg" px={0}>
-
-        <Card 
-          mx={{ base: 0, sm: "lg" }}
-          mt={{ base: 0, sm: "lg" }}
+        <Card
+          mx={{ base: 0, sm: 'lg' }}
+          mt={{ base: 0, sm: 'xs' }}
           px={0}
           pt={0}
           pb={4}
           shadow="xs"
-          radius={{ base: false, sm: "lg" }}
+          radius={{ base: false, sm: 'lg' }}
         >
           {/* ── Cabeçalho / Cover ── */}
           <Box pos="relative" mb={44}>
-
             {/* Imagem de capa */}
             {isLoading ? (
               <Skeleton height={140} radius="md" />
             ) : (
               <Image
                 src={
-                  project?.cover_picture 
+                  project?.cover_picture
                     ? PICTURE_COVER_PATH + project?.cover_picture
                     : DEFAULT_COVER_PICTURE
                 }
@@ -165,7 +195,7 @@ export default function Project() {
                 radius={false}
                 fit="cover"
                 w="100%"
-                alt='Imagem de capa'
+                alt="Imagem de capa"
               />
             )}
 
@@ -177,16 +207,13 @@ export default function Project() {
               right={0}
               h={60}
               style={{
-                background: 'linear-gradient(to bottom, transparent, rgba(0,0,0,0.55))',
+                background:
+                  'linear-gradient(to bottom, transparent, rgba(0,0,0,0.55))',
                 pointerEvents: 'none',
               }}
             />
 
-            <Group
-              pos="absolute"
-              top={12}
-              right={30}
-            >
+            <Group pos="absolute" top={12} right={30}>
               {project?.on_tour && (
                 <Badge size="md" color="dark">
                   Em turnê
@@ -195,47 +222,43 @@ export default function Project() {
             </Group>
 
             {/* Avatar do projeto sobreposto */}
-            <Box
-              pos="absolute"
-              bottom={-30}
-              left={30}
-            >
+            <Box pos="absolute" bottom={-30} left={30}>
               {isLoading ? (
                 <Skeleton height={100} width={100} />
               ) : (
                 <Group align="flex-start" gap={18}>
                   <Avatar
-                    src={PICTURE_AVATAR_PATH+project?.picture}
+                    src={PICTURE_AVATAR_PATH + project?.picture}
                     size={100}
                     radius={0}
                     style={
-                      colorScheme === "light" 
+                      colorScheme === 'light'
                         ? { border: '3px solid white' }
                         : { border: '3px solid #1c1c1c' }
                     }
                   />
-                  {project?.logo && 
+                  {project?.logo && (
                     <Avatar
-                      src={PICTURE_AVATAR_PATH+project.logo}
+                      src={PICTURE_AVATAR_PATH + project.logo}
                       size={85}
                       radius={0}
                       style={
-                        colorScheme === "light" 
+                        colorScheme === 'light'
                           ? { border: '3px solid white' }
                           : { border: '3px solid #1c1c1c' }
                       }
                     />
-                  }
+                  )}
                 </Group>
               )}
             </Box>
           </Box>
 
           {/* ── Identidade ── */}
-          <Flex 
-            justify="space-between" 
-            align="flex-start" 
-            wrap="wrap" 
+          <Flex
+            justify="space-between"
+            align="flex-start"
+            wrap="wrap"
             gap="sm"
             px="xl"
           >
@@ -252,17 +275,24 @@ export default function Project() {
                       <Title order={1} fz="h2" fw={550} lts="-0.01em">
                         {project?.name}
                       </Title>
-                      {!isLoading && userIsConfirmedMember && ( 
-                        <Menu shadow="md" width={200} position="right-start" withArrow>
+                      {!isLoading && userIsConfirmedMember && (
+                        <Menu
+                          shadow="md"
+                          width={200}
+                          position="right-start"
+                          withArrow
+                        >
                           <Menu.Target>
                             <ActionIcon variant="subtle" color="gray" size="md">
                               <IconSettings stroke={1.4} size={24} />
                             </ActionIcon>
                           </Menu.Target>
                           <Menu.Dropdown>
-                            <Menu.Item 
+                            <Menu.Item
                               leftSection={<IconDoor size={14} />}
-                              onClick={() => navigate(`/backstage?project=${slug}`)}
+                              onClick={() =>
+                                navigate(`/backstage?project=${slug}`)
+                              }
                             >
                               Acessar Backstage
                             </Menu.Item>
@@ -273,11 +303,13 @@ export default function Project() {
                             <Menu.Item leftSection={<IconSettings size={14} />}>
                               Gerenciar minha participação
                             </Menu.Item>
-                            {userIsAdmin && 
-                              <Menu.Item leftSection={<IconUserCog size={14} />}>
+                            {userIsAdmin && (
+                              <Menu.Item
+                                leftSection={<IconUserCog size={14} />}
+                              >
                                 Gerenciar pessoas
                               </Menu.Item>
-                            }
+                            )}
                             <Menu.Divider />
                             <Menu.Item
                               color="red"
@@ -336,12 +368,22 @@ export default function Project() {
                   </Group>
                   <Group w="100%" gap={8} align="center">
                     {project?.project_type && (
-                      <Text size="sm" c="dimmed">{project.project_type}</Text>
+                      <Text size="sm" c="dimmed">
+                        {project.project_type}
+                      </Text>
                     )}
                     {project?.genre && (
                       <>
-                        <Text size="sm" opacity={0.4} style={{ cursor: 'default' }}>·</Text>
-                        <Text size="sm" c="dimmed">{project.genre}</Text>
+                        <Text
+                          size="sm"
+                          opacity={0.4}
+                          style={{ cursor: 'default' }}
+                        >
+                          ·
+                        </Text>
+                        <Text size="sm" c="dimmed">
+                          {project.genre}
+                        </Text>
                       </>
                     )}
                   </Group>
@@ -354,7 +396,7 @@ export default function Project() {
               <Group gap={6} align="center">
                 {userHasNoParticipation && (
                   <Button
-                    size='xs'
+                    size="xs"
                     variant="default"
                     onClick={openJoinModal}
                     leftSection={<IconUserUp size={16} />}
@@ -364,7 +406,7 @@ export default function Project() {
                 )}
                 {userHasRequestedParticipation && (
                   <Button
-                    size='xs'
+                    size="xs"
                     variant="light"
                     color="gray"
                     onClick={() => cancelRequest()}
@@ -380,7 +422,6 @@ export default function Project() {
         </Card>
 
         <Box px="lg" py="lg">
-
           {isLoading && (
             <Grid gap="md" rowGap="xl" columnGap="sm">
               <Grid.Col span={{ base: 12, sm: 6 }}>
@@ -397,7 +438,9 @@ export default function Project() {
               <Grid.Col span={{ base: 12, md: 6, lg: 6 }}>
                 <Stack gap="md">
                   <Card>
-                    <Title order={5} fw={600} mb="xs">Sobre</Title>
+                    <Title order={5} fw={600} mb="xs">
+                      Sobre
+                    </Title>
                     <Text size="sm">
                       {project?.description ? (
                         project.description
@@ -409,7 +452,9 @@ export default function Project() {
                     </Text>
                   </Card>
                   <Card>
-                    <Title order={5} fw={600} mb="xs">Objetivo</Title>
+                    <Title order={5} fw={600} mb="xs">
+                      Objetivo
+                    </Title>
                     <Text size="sm">
                       {project?.purpose ? (
                         project.purpose
@@ -439,12 +484,14 @@ export default function Project() {
                   )}
 
                   {!isLoading && confirmedMembers.length === 0 && (
-                    <Text size="sm" c="dimmed">Nenhum integrante confirmado.</Text>
+                    <Text size="sm" c="dimmed">
+                      Nenhum integrante confirmado.
+                    </Text>
                   )}
 
                   {!isLoading && confirmedMembers.length > 0 && (
                     <Flex gap={16} wrap="wrap">
-                      {confirmedMembers.map(member => (
+                      {confirmedMembers.map((member) => (
                         <Card p="xs" withBorder>
                           <Flex
                             key={member.id}
@@ -453,7 +500,11 @@ export default function Project() {
                             gap={6}
                             component={Link}
                             to={`/${member.username}`}
-                            style={{ textDecoration: 'none', color: 'inherit', cursor: 'pointer' }}
+                            style={{
+                              textDecoration: 'none',
+                              color: 'inherit',
+                              cursor: 'pointer',
+                            }}
                           >
                             <Avatar
                               src={AVATAR_PATH + member.avatar}
@@ -461,24 +512,36 @@ export default function Project() {
                               radius="xl"
                             />
                             <Stack gap={3} align="center">
-                              <Text size="xs" fw={500} ta="center" w={70} lineClamp={1}>
+                              <Text
+                                size="xs"
+                                fw={500}
+                                ta="center"
+                                w={70}
+                                lineClamp={1}
+                              >
                                 {member.name}
                               </Text>
                               <Text
-                                size="xs" 
-                                ta="center" 
-                                w={70} 
+                                size="xs"
+                                ta="center"
+                                w={70}
                                 lineClamp={1}
-                                title={[member.role, member.role_2].filter(Boolean).join(', ')}
+                                title={[member.role, member.role_2]
+                                  .filter(Boolean)
+                                  .join(', ')}
                               >
-                                {[member.role, member.role_2].filter(Boolean).join(', ')}
+                                {[member.role, member.role_2]
+                                  .filter(Boolean)
+                                  .join(', ')}
                               </Text>
                             </Stack>
                             {member.username === profile?.username && (
                               <Pill size="xs">Você</Pill>
                             )}
                             {member.is_founder && (
-                              <Badge size="xs" variant="light" color="green">Fundador</Badge>
+                              <Badge size="xs" variant="light" color="green">
+                                Fundador
+                              </Badge>
                             )}
                           </Flex>
                         </Card>

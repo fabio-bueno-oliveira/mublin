@@ -1,14 +1,11 @@
-import { Outlet } from 'react-router-dom';
-import { AppShell } from '@mantine/core';
-import PublicNavbar from '../PublicNavbar';
-import PublicFooter from '../PublicFooter';
+import { Outlet } from 'react-router-dom'
+import { AppShell } from '@mantine/core'
+import PublicNavbar from '../PublicNavbar'
+import PublicFooter from '../PublicFooter'
 
 export default function PublicLayout() {
   return (
-    <AppShell
-      header={{ height: 60 }}
-      footer={{ height: 80 }}
-    >
+    <AppShell header={{ height: 60 }} footer={{ height: 60 }}>
       <AppShell.Header
         style={{
           background: 'rgba(var(--header-bg-rgb), 0.75)',
@@ -24,9 +21,14 @@ export default function PublicLayout() {
         <Outlet />
       </AppShell.Main>
 
-      <AppShell.Footer>
+      <AppShell.Footer
+        style={{
+          border: 'none',
+          backgroundColor: '#000000',
+        }}
+      >
         <PublicFooter />
       </AppShell.Footer>
     </AppShell>
-  );
+  )
 }

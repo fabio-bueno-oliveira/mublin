@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useQuery } from '@tanstack/react-query'
 import { fetchUserProjects } from '../queries/user'
@@ -72,6 +72,7 @@ const ProjectOption = ({ project, active = false }) => (
 
 export default function AppSidebar() {
   const { profile, user } = useAuth()
+  const navigate = useNavigate()
   const [gigsToShow, setGigsToShow] = useState('confirmed')
 
   const [search, setSearch] = useState('')
@@ -210,6 +211,7 @@ export default function AppSidebar() {
         onOptionSubmit={(val) => {
           setSelectedProjectSlug(val)
           combobox.closeDropdown()
+          navigate(`/project/${val}`)
         }}
       >
         <Combobox.Target>
@@ -220,6 +222,7 @@ export default function AppSidebar() {
             pointer
             disabled={loadingProjects}
             rightSection={<Combobox.Chevron />}
+            rightSectionPointerEvents="none"
             onClick={() => combobox.toggleDropdown()}
           >
             {loadingProjects ? (

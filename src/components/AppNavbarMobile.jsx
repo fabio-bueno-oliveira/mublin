@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useAuth } from '../hooks/useAuth'
 import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { fetchUserProjects } from '../queries/user'
@@ -17,7 +18,7 @@ import {
   InputBase,
   ScrollArea,
 } from '@mantine/core'
-import { useAuth } from '../hooks/useAuth'
+import { IconCheck } from '@tabler/icons-react'
 
 const PROJECT_AVATAR_PATH = 'https://ik.imagekit.io/mublin/projects/'
 
@@ -117,6 +118,7 @@ export default function AppNavbarMobile() {
         onOptionSubmit={(val) => {
           setSelectedProjectSlug(val)
           combobox.closeDropdown()
+          navigate(`/project/${val}`)
         }}
       >
         <Combobox.Target>
@@ -124,8 +126,10 @@ export default function AppNavbarMobile() {
             component="button"
             type="button"
             pointer
+            size="md"
             disabled={loadingProjects}
             rightSection={<Combobox.Chevron />}
+            rightSectionPointerEvents="none"
             onClick={() => combobox.toggleDropdown()}
           >
             {loadingProjects ? (
@@ -141,7 +145,7 @@ export default function AppNavbarMobile() {
                   size={20}
                   radius="xl"
                 />
-                <Text size="sm" fw={500} truncate>
+                <Text size="md" fw={500} truncate>
                   {selectedProject.name}
                 </Text>
               </Group>
