@@ -5,8 +5,10 @@ export async function fetchEventTypes() {
     .from('event_types')
     .select('id, name')
     .order('name')
-  if (error) throw new Error(error.message)
-  return data.map(t => ({ value: String(t.id), label: t.name }))
+  if (error) {
+    throw new Error(error.message)
+  }
+  return data.map((t) => ({ value: String(t.id), label: t.name }))
 }
 
 export async function searchVenues(keyword) {
@@ -15,6 +17,8 @@ export async function searchVenues(keyword) {
     .select('id, name, neighborhood, address, cities ( name, regions (name) )')
     .ilike('name', `%${keyword}%`)
     .limit(8)
-  if (error) throw new Error(error.message)
+  if (error) {
+    throw new Error(error.message)
+  }
   return data
 }

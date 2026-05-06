@@ -1,9 +1,15 @@
 import React from 'react'
 import { RouterProvider } from 'react-router-dom'
 import {
-  MantineProvider, createTheme,
+  MantineProvider,
+  createTheme,
   localStorageColorSchemeManager,
-  Badge, Pill, Button, Paper, Divider, Switch
+  Badge,
+  Pill,
+  Button,
+  Paper,
+  Divider,
+  Switch,
 } from '@mantine/core'
 import { Notifications } from '@mantine/notifications'
 import { AuthProvider } from './contexts/AuthContext'
@@ -11,6 +17,7 @@ import { UIProvider } from './contexts/UIContext'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { router } from './routes'
 import '@mantine/core/styles.css'
+import '@mantine/charts/styles.css'
 import '@mantine/notifications/styles.css'
 import '@mantine/dates/styles.css'
 import '@mantine/schedule/styles.css'
@@ -18,21 +25,33 @@ import './styles.scss'
 
 const theme = createTheme({
   // autoContrast: true,
-  primaryColor: "mublinColor",
+  primaryColor: 'mublinColor',
   primaryShade: 6,
   colors: {
     mublinColor: [
-      "#ecefff",
-      "#d5dafb",
-      "#a9b1f1",
-      "#7a87e9",
-      "#5362e1",
-      "#3a4bdd",
-      "#2c40dc",
-      "#1f32c4",
-      "#182cb0",
-      "#0a259c"
-    ]
+      '#ecefff',
+      '#d5dafb',
+      '#a9b1f1',
+      '#7a87e9',
+      '#5362e1',
+      '#3a4bdd',
+      '#2c40dc',
+      '#1f32c4',
+      '#182cb0',
+      '#0a259c',
+    ],
+    mublinSecondary: [
+      '#fff7e6',
+      '#f8eed5',
+      '#ebd39b',
+      '#e5c680',
+      '#ddb55a',
+      '#d8aa42',
+      '#d6a534',
+      '#bd9026',
+      '#a87f1e',
+      '#926d10',
+    ],
   },
   fontFamily: 'Geist, Helvetica, Arial, sans-serif',
   fontFamilyMonospace: 'monospace',
@@ -45,7 +64,7 @@ const theme = createTheme({
     Badge: Badge.extend({
       defaultProps: {
         fw: '500',
-        radius: 'md'
+        radius: 'md',
       },
     }),
     Button: Button.extend({
@@ -76,17 +95,17 @@ const theme = createTheme({
     Pill: Pill.extend({
       styles: {
         root: {
-          backgroundColor: 'light-dark(#e4e4e4, #1c1c1c)'
+          backgroundColor: 'light-dark(#e4e4e4, #1c1c1c)',
         },
       },
       defaultProps: {
-        tt: "uppercase",
-        fw: 500
+        tt: 'uppercase',
+        fw: 500,
       },
     }),
     Switch: Switch.extend({
       defaultProps: {
-        color: "mublinColor",
+        color: 'mublinColor',
       },
     }),
     Divider: Divider.extend({
@@ -100,16 +119,16 @@ const theme = createTheme({
 const resolver = () => ({
   variables: {},
   light: {
-    '--mantine-color-body':           '#f0f2f5',
-    '--mantine-color-default':        '#ffffff',
+    '--mantine-color-body': '#f0f2f5',
+    '--mantine-color-default': '#ffffff',
     '--mantine-color-default-border': '#dde1e7',
   },
   dark: {
-    '--mantine-color-body':           '#101010',
-    '--mantine-color-default':        '#1c1c1c',
+    '--mantine-color-body': '#101010',
+    '--mantine-color-default': '#1c1c1c',
     '--mantine-color-default-border': '#101010',
-    '--mantine-color-anchor':         '#c9c9c9',
-    '--mantine-color-text':           '#e9ecef',
+    '--mantine-color-anchor': '#c9c9c9',
+    '--mantine-color-text': '#e9ecef',
   },
 })
 
@@ -121,7 +140,7 @@ const queryClient = new QueryClient()
 
 function App() {
   return (
-    <React.Fragment>
+    <>
       <MantineProvider
         theme={theme}
         defaultColorScheme="light"
@@ -137,7 +156,7 @@ function App() {
           </AuthProvider>
         </QueryClientProvider>
       </MantineProvider>
-    </React.Fragment>
+    </>
   )
 }
 

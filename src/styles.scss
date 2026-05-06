@@ -2,10 +2,16 @@
 
 [data-mantine-color-scheme='light'] {
   --header-bg-rgb: 255, 255, 255;
+  .alphaBg {
+    background-color: rgba(255, 255, 255, 0.5);
+  }
 }
 
 [data-mantine-color-scheme='dark'] {
-  --header-bg-rgb: 26, 27, 30; /* cor de fundo dark do Mantine */
+  --header-bg-rgb: 26, 27, 30;
+  .alphaBg {
+    background-color: rgba(255, 255, 255, 0.3);
+  }
 }
 
 .mantine-Checkbox-label {
@@ -21,7 +27,7 @@
     }
   }
   &[data-has-spoiler='true'] {
-    bottom: 8px!important;
+    bottom: 8px !important;
   }
 }
 
@@ -63,7 +69,7 @@
 
 .post-image {
   border-radius: var(--mantine-radius-md);
-  
+
   @media (max-width: 48em) {
     border-radius: 0;
   }
@@ -101,7 +107,7 @@
 }
 
 .iconLegend {
-  color: #DAA520;
+  color: #daa520;
   width: calc(1.1rem);
   height: calc(1.1rem);
   margin-left: 0px;
@@ -115,8 +121,15 @@
 }
 
 @keyframes live-pulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50%       { opacity: 0.5; transform: scale(0.92); }
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(0.92);
+  }
 }
 
 .icon-live {
@@ -156,8 +169,10 @@
 .live-dot::after {
   content: '';
   position: absolute;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
   border-radius: 50%;
   background: inherit;
 }

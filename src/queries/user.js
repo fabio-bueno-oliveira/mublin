@@ -50,3 +50,25 @@ export async function fetchUserProjects(userId) {
   }
   return data
 }
+
+export async function fetchUserGearCount(userId) {
+  const { count, error } = await supabase
+    .from('profile_gear')
+    .select('*', { count: 'exact', head: true })
+    .eq('id_user', userId)
+  if (error) {
+    throw new Error(error.message)
+  }
+  return count
+}
+
+export async function fetchUserGigsCount(userId) {
+  const { count, error } = await supabase
+    .from('gig_applications')
+    .select('*', { count: 'exact', head: true })
+    .eq('profile_id', userId)
+  if (error) {
+    throw new Error(error.message)
+  }
+  return count
+}

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Alert } from '@mantine/core'
+import { Alert, Text } from '@mantine/core'
 import { useMediaQuery } from '@mantine/hooks'
 
 export default function WelcomeAlert() {
@@ -15,13 +15,16 @@ export default function WelcomeAlert() {
     showWelcomeAlert && (
       <Alert
         variant="light"
-        color="mublinColor"
+        color="mublinSecondary"
         title="Boas-vindas ao seu Dashboard!"
         withCloseButton
         onClose={() => setShowWelcomeAlert(false)}
         mb="lg"
+        p="xs"
       >
-        {isMobile ? mobileText : desktopText}
+        <Text opacity={0.9} size="sm">
+          {isMobile ? mobileText : desktopText}
+        </Text>
       </Alert>
     )
   )

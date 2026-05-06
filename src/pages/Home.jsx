@@ -1,6 +1,11 @@
 import { useAuth } from '../hooks/useAuth'
 import { useQuery } from '@tanstack/react-query'
-import { fetchUserProjects } from '../queries/user'
+import {
+  fetchUserProjects,
+  fetchUserGigsCount,
+  fetchUserGearCount,
+} from '../queries/user'
+import { fetchUserGigs } from '../queries/gigs'
 import {
   Grid,
   SimpleGrid,
@@ -11,13 +16,17 @@ import {
   Box,
   Text,
   Title,
+  Table,
   Paper,
   ThemeIcon,
   RingProgress,
+  ActionIcon,
 } from '@mantine/core'
+import { BarChart } from '@mantine/charts'
 import { useMediaQuery } from '@mantine/hooks'
 import AppNavbarMobile from '../components/AppNavbarMobile'
 import WelcomeAlert from '../components/WelcomeAlertHome'
+import { PROJECT_ACTIVITY_STATUS } from '../constants/projects'
 import Feed from './Feed'
 import {
   IconCircleFilled,
@@ -26,6 +35,11 @@ import {
   IconCalendarEvent,
   IconClipboardCheck,
   IconDeviceSpeaker,
+  IconUsersGroup,
+  IconPlus,
+  IconMusic,
+  IconBox,
+  IconMicrophone2,
 } from '@tabler/icons-react'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
@@ -54,12 +68,42 @@ export default function Home() {
     name: p.projects.name,
     slug: p.projects.slug,
     picture: p.projects.picture,
-    status: p.status,
+    request_status: p.status,
+    activity_status: p.projects.activity_status,
+    activity_status_name: p.projects.project_statuses?.description_ptbr,
+    activity_status_color: p.projects.project_statuses?.color,
     main_role: p.roles.name_ptbr,
     genre: p.projects.genres?.name,
     type: p.projects.project_types?.name_ptbr,
     totalMembers: p.projects.project_members?.length || 0,
   }))
+
+  const userProjectsActive = userProjects.filter(
+    (p) => p.activity_status === PROJECT_ACTIVITY_STATUS.RUNNING,
+  )
+
+  const { data: gigs = [], isLoading: loadingGigs } = useQuery({
+    queryKey: ['user-gigs', user?.id],
+    queryFn: () => fetchUserGigs(user.id),
+    enabled: !!user?.id,
+    staleTime: 1000 * 60 * 4,
+  })
+
+  console.log(gigs)
+
+  const { data: gearCount = [], isLoading: loadingGearCount } = useQuery({
+    queryKey: ['user-gear-count', user?.id],
+    queryFn: () => fetchUserGearCount(user.id),
+    enabled: !!user?.id,
+    staleTime: 1000 * 60 * 10,
+  })
+
+  const { data: gigsCount = [], isLoading: loadingGigsCount } = useQuery({
+    queryKey: ['user-gigs-count', user?.id],
+    queryFn: () => fetchUserGigsCount(user.id),
+    enabled: !!user?.id,
+    staleTime: 1000 * 60 * 10,
+  })
 
   const statsData = [
     {
@@ -88,6 +132,51 @@ export default function Home() {
     },
   ]
 
+  const data = [
+    {
+      month: dayjs().month(0).format('MMMM'),
+      Shows: 0,
+      Ensaios: 0,
+      Lives: 0,
+      Workshops: 0,
+    },
+    {
+      month: dayjs().month(1).format('MMMM'),
+      Shows: 0,
+      Ensaios: 0,
+      Lives: 0,
+      Workshops: 0,
+    },
+    {
+      month: dayjs().month(2).format('MMMM'),
+      Shows: 0,
+      Ensaios: 0,
+      Lives: 0,
+      Workshops: 0,
+    },
+    {
+      month: dayjs().month(3).format('MMMM'),
+      Shows: 0,
+      Ensaios: 0,
+      Lives: 0,
+      Workshops: 0,
+    },
+    {
+      month: dayjs().month(4).format('MMMM'),
+      Shows: 0,
+      Ensaios: 0,
+      Lives: 0,
+      Workshops: 0,
+    },
+    {
+      month: dayjs().month(5).format('MMMM'),
+      Shows: 0,
+      Ensaios: 0,
+      Lives: 0,
+      Workshops: 0,
+    },
+  ]
+
   return (
     <>
       <AppNavbarMobile />
@@ -96,10 +185,150 @@ export default function Home() {
         <Grid>
           <Grid.Col span={{ base: 12, md: 7 }} className="paddingX">
             <Title order={2} fz="h3" fw={600} lts="-0.02em" mb="sm">
-              Olá, {profile.username}!
+              Olá, {profile.username}
             </Title>
 
-            <WelcomeAlert />
+            {/* <WelcomeAlert /> */}
+
+            <Grid mb="md">
+              <Grid.Col span={4} h={66}>
+                <Paper p="sm" pos="relative" className="alphaBg" h="100%">
+                  <Box pos="absolute" right={10} top={10}>
+                    <IconMusic size={16} color="gray" />
+                  </Box>
+                  <Title order={4} fw={400} size="xs" mb={4}>
+                    Total de Projetos
+                  </Title>
+                  <Group gap="xs">
+                    <Text size="lg" fw={600} lh={1}>
+                      {userProjects.length}
+                    </Text>
+                    <Badge size="xs" color="green">
+                      {userProjectsActive.length} ativos
+                    </Badge>
+                  </Group>
+                </Paper>
+              </Grid.Col>
+              <Grid.Col span={4}>
+                <Paper p="sm" pos="relative" className="alphaBg" h="100%">
+                  <Box pos="absolute" right={10} top={10}>
+                    <IconMicrophone2 size={16} color="gray" />
+                  </Box>
+                  <Title order={4} fw={400} size="xs" mb={4}>
+                    Total de Gigs
+                  </Title>
+                  <Text size="lg" fw={600} lh={1}>
+                    {gigsCount ?? 0}
+                  </Text>
+                </Paper>
+              </Grid.Col>
+              <Grid.Col span={4}>
+                <Paper p="sm" pos="relative" className="alphaBg" h="100%">
+                  <Box pos="absolute" right={10} top={10}>
+                    <IconBox size={16} color="gray" />
+                  </Box>
+                  <Title order={4} fw={400} size="xs" mb={4}>
+                    Equipamentos
+                  </Title>
+                  <Text size="lg" fw={600} lh={1}>
+                    {gearCount ?? 0}
+                  </Text>
+                </Paper>
+              </Grid.Col>
+            </Grid>
+
+            <Title order={3} fz="h5" fw={600} lts="-0.02em" mb="xs">
+              Próximas gigs
+            </Title>
+            <Table
+              mb="lg"
+              horizontalSpacing={4}
+              verticalSpacing={4}
+              highlightOnHover
+            >
+              <Table.Thead>
+                <Table.Tr>
+                  <Table.Th w="10%">Projeto</Table.Th>
+                  <Table.Th w="30%">Evento</Table.Th>
+                  <Table.Th w="15%">Data</Table.Th>
+                  <Table.Th w="10%">Status</Table.Th>
+                </Table.Tr>
+              </Table.Thead>
+              <Table.Tbody>
+                {gigs.map((gig) => (
+                  <Table.Tr>
+                    <Table.Td>
+                      <Text size="xs" lineClamp={2}>
+                        {gig.gigs?.projects?.name}
+                      </Text>
+                    </Table.Td>
+                    <Table.Td>
+                      <Text size="xs" fw={600} lineClamp={1}>
+                        {gig.gigs?.events?.name}
+                      </Text>
+                      <Text size="xs" lineClamp={2}>
+                        {gig.gigs?.title}
+                      </Text>
+                    </Table.Td>
+                    <Table.Td>
+                      <Text size="xs">
+                        {/* {dayjs(gig.gigs?.events?.date_start).fromNow()} */}
+                        {dayjs(gig.gigs?.events?.date_start).format(
+                          'dddd, D [de] MMMM [de] YYYY',
+                        )}
+                      </Text>
+                    </Table.Td>
+                    <Table.Td>
+                      <Badge size="xs" color="green">
+                        Aceito
+                      </Badge>
+                    </Table.Td>
+                  </Table.Tr>
+                ))}
+              </Table.Tbody>
+            </Table>
+
+            <Box mb="lg">
+              <Title order={3} fz="h5" fw={600} lts="-0.02em" mb="xs">
+                Gigs nos últimos meses
+              </Title>
+              <BarChart
+                h={160}
+                data={data}
+                dataKey="month"
+                withLegend
+                withTooltip
+                series={[
+                  { name: 'Shows', color: 'violet.6' },
+                  { name: 'Ensaios', color: 'blue.6' },
+                  { name: 'Lives', color: 'red.6' },
+                  { name: 'Workshops', color: 'gray.6' },
+                ]}
+              />
+            </Box>
+
+            <Table>
+              <Table.Thead>
+                <Table.Tr>
+                  <Table.Th>Projeto</Table.Th>
+                  <Table.Th>Tipo</Table.Th>
+                  <Table.Th>
+                    <IconUsersGroup size={18} />
+                  </Table.Th>
+                  <Table.Th>Atomic mass</Table.Th>
+                </Table.Tr>
+              </Table.Thead>
+              <Table.Tbody>
+                {userProjects.map((project) => (
+                  <Table.Tr key={project.id}>
+                    <Table.Td>{project.name}</Table.Td>
+                    <Table.Td>{project.type}</Table.Td>
+                    <Table.Td>{project.totalMembers}</Table.Td>
+                    <Table.Td>4</Table.Td>
+                  </Table.Tr>
+                ))}
+              </Table.Tbody>
+            </Table>
 
             <Paper withBorder p="md" radius="md" bg="var(--mantine-color-body)">
               <Text size="xs">Você possui {userProjects.length} projetos</Text>
@@ -237,16 +466,32 @@ export default function Home() {
 
           {isDesktop && (
             <Grid.Col span={{ base: 12, md: 5 }} px={0}>
-              <Title
-                order={2}
-                fz="h3"
-                fw={600}
-                lts="-0.02em"
-                mb="sm"
+              <Group
+                align="center"
+                justify="space-between"
+                mb="xs"
                 className="paddingX"
               >
-                Feed
-              </Title>
+                <Title order={2} fz="h3" fw={600} lts="-0.02em">
+                  Feed
+                </Title>
+                {/* <Button
+                  size="xs"
+                  variant="subtle"
+                  color="var(--mantine-color-text)"
+                  leftSection={<IconPencil size={16} />}
+                >
+                  Postar
+                </Button> */}
+                <ActionIcon
+                  size="lg"
+                  variant="subtle"
+                  color="var(--mantine-color-text)"
+                  aria-description="Nova postagem"
+                >
+                  <IconPlus size={16} />
+                </ActionIcon>
+              </Group>
               <Feed />
             </Grid.Col>
           )}

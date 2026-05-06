@@ -42,6 +42,7 @@ import {
   IconDots,
   IconLink,
   IconTrash,
+  IconCompass,
 } from '@tabler/icons-react'
 import LinkedItem from '../components/feed/LinkedItem'
 import VideoPlayer from '../components/feed/VideoPlayer'
@@ -77,8 +78,8 @@ export default function Projects() {
       lastPage.length === 10 ? allPages.flat().length : undefined,
     staleTime: 1000 * 60 * 2,
     retry: 1,
-    refetchInterval: 1000 * 60 * 3,
-    refetchIntervalInBackground: false,
+    // refetchInterval: 1000 * 60 * 10,
+    // refetchIntervalInBackground: false,
   })
 
   useEffect(() => {
@@ -184,6 +185,7 @@ export default function Projects() {
           {/* Caixa de novo post */}
           <Paper
             className="paperWrapper"
+            hiddenFrom="sm"
             mb="sm"
             py="xs"
             px={{ base: 'md', md: 0 }}
@@ -215,22 +217,28 @@ export default function Projects() {
           </Paper>
 
           <Tabs
-            variant="pills"
-            defaultValue="explore"
-            value={feedType}
-            onChange={setFeedType}
             visibleFrom="sm"
-            mb="lg"
+            defaultValue="explore"
+            mb="md"
+            color="gray"
+            grow
+            variant="default"
+            onChange={(value) => setFeedType(value)}
           >
             <Tabs.List>
-              <Tabs.Tab value="explore">Explorar</Tabs.Tab>
+              <Tabs.Tab
+                value="explore"
+                leftSection={<IconCompass size={18} stroke={1.6} />}
+              >
+                Explorar
+              </Tabs.Tab>
               <Tabs.Tab value="following">Seguindo</Tabs.Tab>
             </Tabs.List>
           </Tabs>
 
           {/* Feed */}
           {loadingFeed ? (
-            <Center mt="sm">
+            <Center mt="lg">
               <Loader type="bars" />
             </Center>
           ) : error ? (
