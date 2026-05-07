@@ -1,45 +1,43 @@
 import { useAuth } from '../hooks/useAuth'
 import { useQuery } from '@tanstack/react-query'
-import {
-  fetchUserProjects,
-  fetchUserGigsCount,
-  fetchUserGearCount,
-} from '../queries/user'
+import { fetchUserProjects, fetchUserGearCount } from '../queries/user'
 import { fetchUserGigs } from '../queries/gigs'
 import {
   Grid,
-  SimpleGrid,
   Group,
   Container,
   Stack,
   Badge,
-  Box,
+  Button,
   Text,
   Title,
   Table,
   Paper,
-  ThemeIcon,
+  Avatar,
   RingProgress,
   ActionIcon,
+  Scroller,
+  Card,
+  Flex,
+  Skeleton,
+  Indicator,
+  Tooltip,
 } from '@mantine/core'
-import { BarChart } from '@mantine/charts'
 import { useMediaQuery } from '@mantine/hooks'
 import AppNavbarMobile from '../components/AppNavbarMobile'
-import WelcomeAlert from '../components/WelcomeAlertHome'
 import { PROJECT_ACTIVITY_STATUS } from '../constants/projects'
 import Feed from './Feed'
 import {
-  IconCircleFilled,
-  IconMicrophone,
-  IconGuitarPick,
-  IconCalendarEvent,
-  IconClipboardCheck,
-  IconDeviceSpeaker,
   IconUsersGroup,
-  IconPlus,
-  IconMusic,
-  IconBox,
+  IconArrowRight,
   IconMicrophone2,
+  IconPlus,
+  IconMapPin,
+  IconCalendar,
+  IconBulb,
+  IconRadar,
+  IconStar,
+  IconGuitarPick,
 } from '@tabler/icons-react'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
@@ -50,7 +48,7 @@ dayjs.locale('pt-br')
 
 const AVATAR_PATH =
   'https://ik.imagekit.io/mublin/tr:h-68,c-maintain_ratio/users/avatars/'
-const PROJECT_AVATAR_PATH = 'https://ik.imagekit.io/mublin/projects/'
+const PROJECT_AVATAR_PATH = 'https://ik.imagekit.io/mublin/projects'
 
 export default function Home() {
   const { profile, user, loading } = useAuth()
@@ -89,93 +87,12 @@ export default function Home() {
     staleTime: 1000 * 60 * 4,
   })
 
-  console.log(gigs)
-
   const { data: gearCount = [], isLoading: loadingGearCount } = useQuery({
     queryKey: ['user-gear-count', user?.id],
     queryFn: () => fetchUserGearCount(user.id),
     enabled: !!user?.id,
     staleTime: 1000 * 60 * 10,
   })
-
-  const { data: gigsCount = [], isLoading: loadingGigsCount } = useQuery({
-    queryKey: ['user-gigs-count', user?.id],
-    queryFn: () => fetchUserGigsCount(user.id),
-    enabled: !!user?.id,
-    staleTime: 1000 * 60 * 10,
-  })
-
-  const statsData = [
-    {
-      label: 'Gigs Confirmadas',
-      value: '12',
-      icon: IconCalendarEvent,
-      color: 'blue',
-    },
-    {
-      label: 'Projetos Ativos',
-      value: '4',
-      icon: IconMicrophone,
-      color: 'teal',
-    },
-    {
-      label: 'Equipamentos',
-      value: '28',
-      icon: IconGuitarPick,
-      color: 'orange',
-    },
-    {
-      label: 'Candidaturas',
-      value: '7',
-      icon: IconClipboardCheck,
-      color: 'grape',
-    },
-  ]
-
-  const data = [
-    {
-      month: dayjs().month(0).format('MMMM'),
-      Shows: 0,
-      Ensaios: 0,
-      Lives: 0,
-      Workshops: 0,
-    },
-    {
-      month: dayjs().month(1).format('MMMM'),
-      Shows: 0,
-      Ensaios: 0,
-      Lives: 0,
-      Workshops: 0,
-    },
-    {
-      month: dayjs().month(2).format('MMMM'),
-      Shows: 0,
-      Ensaios: 0,
-      Lives: 0,
-      Workshops: 0,
-    },
-    {
-      month: dayjs().month(3).format('MMMM'),
-      Shows: 0,
-      Ensaios: 0,
-      Lives: 0,
-      Workshops: 0,
-    },
-    {
-      month: dayjs().month(4).format('MMMM'),
-      Shows: 0,
-      Ensaios: 0,
-      Lives: 0,
-      Workshops: 0,
-    },
-    {
-      month: dayjs().month(5).format('MMMM'),
-      Shows: 0,
-      Ensaios: 0,
-      Lives: 0,
-      Workshops: 0,
-    },
-  ]
 
   return (
     <>
@@ -184,128 +101,339 @@ export default function Home() {
       <Container size="xl" pt="xs" px={{ base: 0, sm: 0 }}>
         <Grid>
           <Grid.Col span={{ base: 12, md: 7 }} className="paddingX">
-            <Title order={2} fz="h3" fw={600} lts="-0.02em" mb="sm">
-              Olá, {profile.username}
-            </Title>
-
-            {/* <WelcomeAlert /> */}
-
-            <Grid mb="md">
-              <Grid.Col span={4} h={66}>
-                <Paper p="sm" pos="relative" className="alphaBg" h="100%">
-                  <Box pos="absolute" right={10} top={10}>
-                    <IconMusic size={16} color="gray" />
-                  </Box>
-                  <Title order={4} fw={400} size="xs" mb={4}>
-                    Total de Projetos
-                  </Title>
+            {loading || loadingProjects ? (
+              <Paper c="white" p="sm" className="alphaBg" mb="sm" radius="lg">
+                <Skeleton radius="xl" w={100} h={23} mt={2} mb={3} />
+                <Skeleton radius="xl" w={150} h={30} mt={6} mb={3} />
+                <Skeleton radius="xl" w={84} h={22} mb={3} />
+                <Group gap="xs" mt="xs">
+                  {[1, 2, 3, 4, 5, 6].map((i) => (
+                    <Skeleton key={i} radius="xl" w={35} h={35} />
+                  ))}
+                </Group>
+                <Skeleton mt="sm" radius="xl" w={230} h={34} />
+              </Paper>
+            ) : (
+              <Paper
+                c="white"
+                p="sm"
+                bg="mublinColor.9"
+                className="alphaBg"
+                mb="sm"
+                radius="lg"
+              >
+                <Title
+                  order={4}
+                  fz="h5"
+                  fw={300}
+                  lts="-0.02em"
+                  mb={2}
+                  opacity={0.8}
+                >
+                  Olá, {profile.username}
+                </Title>
+                <Text size="xl" fw={500} lts="-0.02em">
+                  Você está associado a {userProjects.length} projetos
+                </Text>
+                <Text size="sm" fw={300}>
+                  {userProjectsActive.length}{' '}
+                  {userProjectsActive.length === 1 ? 'projeto' : 'projetos'} em
+                  atividade
+                </Text>
+                <Scroller mt="xs">
                   <Group gap="xs">
-                    <Text size="lg" fw={600} lh={1}>
-                      {userProjects.length}
-                    </Text>
-                    <Badge size="xs" color="green">
-                      {userProjectsActive.length} ativos
-                    </Badge>
+                    {userProjects.map((project) => (
+                      <Indicator
+                        color={project.activity_status_color ?? undefined}
+                        disabled={!project.activity_status}
+                        key={project.id}
+                        offset={4}
+                        size={6}
+                      >
+                        <Tooltip
+                          withArrow
+                          label={project.name}
+                          position="bottom"
+                        >
+                          <Avatar
+                            size={35}
+                            src={
+                              project?.picture
+                                ? `${PROJECT_AVATAR_PATH}/${project?.id}/tr:h-70,w-70,c-maintain_ratio/${project?.picture}`
+                                : undefined
+                            }
+                            title={project.name}
+                          />
+                        </Tooltip>
+                      </Indicator>
+                    ))}
                   </Group>
-                </Paper>
-              </Grid.Col>
-              <Grid.Col span={4}>
-                <Paper p="sm" pos="relative" className="alphaBg" h="100%">
-                  <Box pos="absolute" right={10} top={10}>
-                    <IconMicrophone2 size={16} color="gray" />
-                  </Box>
-                  <Title order={4} fw={400} size="xs" mb={4}>
-                    Total de Gigs
-                  </Title>
-                  <Text size="lg" fw={600} lh={1}>
-                    {gigsCount ?? 0}
-                  </Text>
-                </Paper>
-              </Grid.Col>
-              <Grid.Col span={4}>
-                <Paper p="sm" pos="relative" className="alphaBg" h="100%">
-                  <Box pos="absolute" right={10} top={10}>
-                    <IconBox size={16} color="gray" />
-                  </Box>
-                  <Title order={4} fw={400} size="xs" mb={4}>
-                    Equipamentos
-                  </Title>
-                  <Text size="lg" fw={600} lh={1}>
-                    {gearCount ?? 0}
-                  </Text>
-                </Paper>
-              </Grid.Col>
-            </Grid>
+                </Scroller>
+                <Button
+                  size="sm"
+                  mt={10}
+                  radius="xl"
+                  leftSection={<IconPlus size={14} />}
+                >
+                  Criar novo projeto de música
+                </Button>
+              </Paper>
+            )}
 
-            <Title order={3} fz="h5" fw={600} lts="-0.02em" mb="xs">
+            <Button
+              fullWidth
+              variant="gradient"
+              gradient={{ from: 'grape.8', to: 'mublinColor.8', deg: 55 }}
+              radius="xl"
+              size="sm"
+              leftSection={<IconMicrophone2 size={18} />}
+              rightSection={<IconArrowRight size={18} />}
+              justify="space-between"
+              mt="md"
+              mb="lg"
+            >
+              Encontre gigs para tocar!
+            </Button>
+
+            <Title order={2} fz="h4" fw={600} lts="-0.02em" mb="xs">
               Próximas gigs
             </Title>
-            <Table
-              mb="lg"
-              horizontalSpacing={4}
-              verticalSpacing={4}
-              highlightOnHover
-            >
-              <Table.Thead>
-                <Table.Tr>
-                  <Table.Th w="10%">Projeto</Table.Th>
-                  <Table.Th w="30%">Evento</Table.Th>
-                  <Table.Th w="15%">Data</Table.Th>
-                  <Table.Th w="10%">Status</Table.Th>
-                </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>
-                {gigs.map((gig) => (
-                  <Table.Tr>
-                    <Table.Td>
-                      <Text size="xs" lineClamp={2}>
-                        {gig.gigs?.projects?.name}
-                      </Text>
-                    </Table.Td>
-                    <Table.Td>
-                      <Text size="xs" fw={600} lineClamp={1}>
-                        {gig.gigs?.events?.name}
-                      </Text>
-                      <Text size="xs" lineClamp={2}>
-                        {gig.gigs?.title}
-                      </Text>
-                    </Table.Td>
-                    <Table.Td>
-                      <Text size="xs">
-                        {/* {dayjs(gig.gigs?.events?.date_start).fromNow()} */}
-                        {dayjs(gig.gigs?.events?.date_start).format(
-                          'dddd, D [de] MMMM [de] YYYY',
-                        )}
-                      </Text>
-                    </Table.Td>
-                    <Table.Td>
-                      <Badge size="xs" color="green">
-                        Aceito
-                      </Badge>
-                    </Table.Td>
-                  </Table.Tr>
-                ))}
-              </Table.Tbody>
-            </Table>
 
-            <Box mb="lg">
-              <Title order={3} fz="h5" fw={600} lts="-0.02em" mb="xs">
-                Gigs nos últimos meses
-              </Title>
-              <BarChart
-                h={160}
-                data={data}
-                dataKey="month"
-                withLegend
-                withTooltip
-                series={[
-                  { name: 'Shows', color: 'violet.6' },
-                  { name: 'Ensaios', color: 'blue.6' },
-                  { name: 'Lives', color: 'red.6' },
-                  { name: 'Workshops', color: 'gray.6' },
-                ]}
-              />
-            </Box>
+            <Scroller mb="md">
+              <Group gap="xs" wrap="nowrap">
+                {loadingGigs
+                  ? [1, 2, 3, 4].map((i) => (
+                      <Skeleton key={i} w={250} h={111} />
+                    ))
+                  : gigs.map((gig) => (
+                      <Card key={gig.id} shadow="xs" padding="xs" w={250}>
+                        <Card.Section withBorder px="xs" py={8}>
+                          <Group gap={5} justify="space-between">
+                            <Text size="xs" lh={1} c="dimmed">
+                              {dayjs(gig.gigs?.events?.date_start).fromNow()}
+                            </Text>
+                            <Badge size="xs" color="green">
+                              Aceito
+                            </Badge>
+                          </Group>
+                        </Card.Section>
+                        <Stack gap={3} mt={6}>
+                          <Group gap={5} justify="flex-start">
+                            <Text size="xs" fw={600} key={gig.id} lh={1}>
+                              {gig.gig_roles?.roles?.description_ptbr}
+                            </Text>
+
+                            <Text size="xs" fw={300} key={gig.id} lh={1}>
+                              em
+                            </Text>
+                            <Avatar
+                              size={20}
+                              src={
+                                gig.gigs?.projects?.picture
+                                  ? `${PROJECT_AVATAR_PATH}/${gig.gigs?.projects?.id}/tr:h-40,w-40,c-maintain_ratio/${gig.gigs?.projects?.picture}`
+                                  : undefined
+                              }
+                            />
+                            <Text
+                              size="xs"
+                              fw={300}
+                              w={65}
+                              truncate="end"
+                              lh={1}
+                            >
+                              {gig.gigs?.projects?.name}
+                            </Text>
+                          </Group>
+                          <Text size="md" fw={200} lineClamp={1}>
+                            {gig.gigs?.events?.name}
+                          </Text>
+                          <Text size="xs" fw={400} lh={1}>
+                            {dayjs(gig.gigs?.events?.date_start).format(
+                              'dddd, D [de] MMMM [de] YYYY',
+                            )}
+                          </Text>
+                          <Group gap={2} align="center" mt={6}>
+                            <IconMapPin size={14} color="gray" />
+                            <Text size="xs" c="dimmed" lh={1}>
+                              {gig.gigs?.events?.venues?.name}{' '}
+                              {gig.gigs?.events?.venues?.cities?.name},{' '}
+                              {gig.gigs?.events?.venues?.cities?.regions?.uf
+                                ? gig.gigs?.events?.venues?.cities?.regions?.uf
+                                : gig.gigs?.events?.venues?.cities?.regions
+                                    ?.name}
+                            </Text>
+                          </Group>
+                        </Stack>
+                      </Card>
+                    ))}
+              </Group>
+            </Scroller>
+
+            <Title order={2} fz="h4" fw={600} lts="-0.02em" mb="xs">
+              Para o dia a dia
+            </Title>
+
+            <Scroller mb="lg">
+              <Group gap="xs" wrap="nowrap">
+                <Flex direction="column" align="center" w={80}>
+                  <ActionIcon
+                    variant="gradient"
+                    gradient={{ from: 'grape.8', to: 'mublinColor.8', deg: 55 }}
+                    size="xl"
+                    aria-label="Teste"
+                    w={80}
+                    h={80}
+                    mb="xs"
+                  >
+                    <IconCalendar size={32} stroke={1.5} />
+                  </ActionIcon>
+                  <Text
+                    ta="center"
+                    size="xs"
+                    style={{ wordBreak: 'break-word' }}
+                    w={80}
+                  >
+                    Novo
+                    <br />
+                    evento
+                  </Text>
+                </Flex>
+                <Flex direction="column" align="center" w={80}>
+                  <ActionIcon
+                    variant="default"
+                    color="gray"
+                    size="xl"
+                    aria-label="Teste"
+                    w={80}
+                    h={80}
+                    mb="xs"
+                  >
+                    <IconBulb size={32} stroke={1.5} />
+                  </ActionIcon>
+                  <Text
+                    ta="center"
+                    size="xs"
+                    style={{ wordBreak: 'break-word' }}
+                    w={80}
+                  >
+                    Nova
+                    <br />
+                    composição
+                  </Text>
+                </Flex>
+                <Flex direction="column" align="center" w={80}>
+                  <ActionIcon
+                    variant="default"
+                    color="gray"
+                    size="xl"
+                    aria-label="Teste"
+                    w={80}
+                    h={80}
+                    mb="xs"
+                  >
+                    <IconRadar size={32} stroke={1.5} />
+                  </ActionIcon>
+                  <Text
+                    ta="center"
+                    size="xs"
+                    style={{ wordBreak: 'break-word' }}
+                    w={80}
+                  >
+                    Gigs
+                    <br />
+                    próximas
+                  </Text>
+                </Flex>
+                <Flex direction="column" align="center" w={80}>
+                  <ActionIcon
+                    variant="default"
+                    color="gray"
+                    size="xl"
+                    aria-label="Teste"
+                    w={80}
+                    h={80}
+                    mb="xs"
+                  >
+                    <IconStar size={32} stroke={1.5} />
+                  </ActionIcon>
+                  <Text
+                    ta="center"
+                    size="xs"
+                    style={{ wordBreak: 'break-word' }}
+                    w={80}
+                  >
+                    Novos
+                    <br />
+                    artistas
+                  </Text>
+                </Flex>
+                <Flex direction="column" align="center" w={80}>
+                  <ActionIcon
+                    variant="default"
+                    color="gray"
+                    size="xl"
+                    aria-label="Teste"
+                    w={80}
+                    h={80}
+                    mb="xs"
+                  >
+                    <IconGuitarPick size={32} stroke={1.5} />
+                  </ActionIcon>
+                  <Text
+                    ta="center"
+                    size="xs"
+                    style={{ wordBreak: 'break-word' }}
+                    w={80}
+                  >
+                    Buscar
+                    <br />
+                    marcas
+                  </Text>
+                </Flex>
+              </Group>
+            </Scroller>
+
+            <Title order={2} fz="h4" fw={600} lts="-0.02em" mb="xs">
+              Foco de atividades nos últimos meses
+            </Title>
+
+            <Paper withBorder p="md" radius="md">
+              <Group justify="center">
+                <RingProgress
+                  size={170}
+                  thickness={16}
+                  label={
+                    <Text size="xs" ta="center" px="xs" lh="xs">
+                      Composição vs Performance
+                    </Text>
+                  }
+                  sections={[
+                    { value: 40, color: 'cyan', tooltip: 'Autoral' },
+                    {
+                      value: 35,
+                      color: 'orange',
+                      tooltip: 'Cover/Tributo',
+                    },
+                    {
+                      value: 25,
+                      color: 'gray',
+                      tooltip: 'Estudo/Outros',
+                    },
+                  ]}
+                />
+                <Stack gap="xs">
+                  <Badge color="cyan" variant="dot">
+                    Autoral (40%)
+                  </Badge>
+                  <Badge color="orange" variant="dot">
+                    Cover (35%)
+                  </Badge>
+                  <Badge color="gray" variant="dot">
+                    Freelance (25%)
+                  </Badge>
+                </Stack>
+              </Group>
+            </Paper>
 
             <Table>
               <Table.Thead>
@@ -329,169 +457,39 @@ export default function Home() {
                 ))}
               </Table.Tbody>
             </Table>
-
-            <Paper withBorder p="md" radius="md" bg="var(--mantine-color-body)">
-              <Text size="xs">Você possui {userProjects.length} projetos</Text>
-              <Grid>
-                <Grid.Col span={6}>
-                  <IconCircleFilled size={10} color="#eba800" /> Pendentes
-                </Grid.Col>
-                <Grid.Col span={6}>
-                  <IconCircleFilled size={10} color="#198a4c" /> Aceitos
-                </Grid.Col>
-              </Grid>
-            </Paper>
-
-            <Stack gap="md">
-              {/* 1. Métricas Rápidas (Cards de Resumo) */}
-              <SimpleGrid cols={{ base: 1, sm: 2, md: 4 }}>
-                {statsData.map((stat) => (
-                  <Paper key={stat.label} withBorder p="md" radius="md">
-                    <Group justify="space-between">
-                      <Stack gap={0}>
-                        <Text size="xs" c="dimmed" fw={700} tt="uppercase">
-                          {stat.label}
-                        </Text>
-                        <Text fw={700} fz="xl">
-                          {stat.value}
-                        </Text>
-                      </Stack>
-                      <ThemeIcon
-                        color={stat.color}
-                        variant="light"
-                        size="xl"
-                        radius="md"
-                      >
-                        <stat.icon size="1.4rem" />
-                      </ThemeIcon>
-                    </Group>
-                  </Paper>
-                ))}
-              </SimpleGrid>
-
-              <Grid>
-                {/* 2. Gráfico de Distribuição de Atividade (Foco de Trabalho) */}
-                {/* Refere-se a public.profile_work_focus no seu DB */}
-                <Grid.Col span={{ base: 12, md: 5 }}>
-                  <Paper withBorder p="md" radius="md" h="100%">
-                    <Title order={4} mb="lg" fz="sm" fw={600} c="dimmed">
-                      FOCO DE ATIVIDADE
-                    </Title>
-                    <Group justify="center">
-                      <RingProgress
-                        size={170}
-                        thickness={16}
-                        label={
-                          <Text size="xs" ta="center" px="xs" lh="xs">
-                            Composição vs Performance
-                          </Text>
-                        }
-                        sections={[
-                          { value: 40, color: 'cyan', tooltip: 'Autoral' },
-                          {
-                            value: 35,
-                            color: 'orange',
-                            tooltip: 'Cover/Tributo',
-                          },
-                          {
-                            value: 25,
-                            color: 'gray',
-                            tooltip: 'Estudo/Outros',
-                          },
-                        ]}
-                      />
-                      <Stack gap="xs">
-                        <Badge color="cyan" variant="dot">
-                          Autoral (40%)
-                        </Badge>
-                        <Badge color="orange" variant="dot">
-                          Cover (35%)
-                        </Badge>
-                        <Badge color="gray" variant="dot">
-                          Freelance (25%)
-                        </Badge>
-                      </Stack>
-                    </Group>
-                  </Paper>
-                </Grid.Col>
-
-                {/* 3. Próximos Compromissos (public.gigs + public.events) */}
-                <Grid.Col span={{ base: 12, md: 7 }}>
-                  <Paper withBorder p="md" radius="md" h="100%">
-                    <Title order={4} mb="md" fz="sm" fw={600} c="dimmed">
-                      PRÓXIMAS GIGS & ENSAIOS
-                    </Title>
-                    <Stack gap="sm">
-                      <Group justify="space-between" wrap="nowrap">
-                        <Group gap="sm">
-                          <ThemeIcon variant="light" color="blue">
-                            <IconDeviceSpeaker size="1rem" />
-                          </ThemeIcon>
-                          <Box>
-                            <Text size="sm" fw={500}>
-                              Show: Festival de Inverno
-                            </Text>
-                            <Text size="xs" c="dimmed">
-                              Sábado, 20:00 • Palco Principal
-                            </Text>
-                          </Box>
-                        </Group>
-                        <Badge size="sm">Confirmado</Badge>
-                      </Group>
-
-                      <Group justify="space-between" wrap="nowrap">
-                        <Group gap="sm">
-                          <ThemeIcon variant="light" color="teal">
-                            <IconMicrophone size="1rem" />
-                          </ThemeIcon>
-                          <Box>
-                            <Text size="sm" fw={500}>
-                              Ensaio: Banda Rock Indie
-                            </Text>
-                            <Text size="xs" c="dimmed">
-                              Terça, 18:00 • Estúdio X
-                            </Text>
-                          </Box>
-                        </Group>
-                        <Badge size="sm" color="yellow">
-                          Pendente
-                        </Badge>
-                      </Group>
-                    </Stack>
-                  </Paper>
-                </Grid.Col>
-              </Grid>
-            </Stack>
           </Grid.Col>
 
           {isDesktop && (
             <Grid.Col span={{ base: 12, md: 5 }} px={0}>
-              <Group
+              {/* <Group
                 align="center"
                 justify="space-between"
                 mb="xs"
                 className="paddingX"
               >
-                <Title order={2} fz="h3" fw={600} lts="-0.02em">
-                  Feed
-                </Title>
-                {/* <Button
-                  size="xs"
-                  variant="subtle"
-                  color="var(--mantine-color-text)"
-                  leftSection={<IconPencil size={16} />}
-                >
-                  Postar
-                </Button> */}
-                <ActionIcon
-                  size="lg"
-                  variant="subtle"
-                  color="var(--mantine-color-text)"
-                  aria-description="Nova postagem"
-                >
-                  <IconPlus size={16} />
-                </ActionIcon>
-              </Group>
+                <Flex gap="sm">
+                  <Title order={2} fz="h3" fw={600} lts="-0.02em">
+                    Feed
+                  </Title>
+                  <ActionIcon
+                    size="lg"
+                    variant="subtle"
+                    color="var(--mantine-color-text)"
+                    aria-description="Nova postagem"
+                  >
+                    <IconPlus size={16} />
+                  </ActionIcon>
+                </Flex>
+
+                <Flex gap="sm">
+                  <Title order={3} fz="h4" fw={600} lts="-0.02em">
+                    Explorar
+                  </Title>
+                  <Title order={3} fz="h4" fw={600} lts="-0.02em" opacity={0.3}>
+                    Seguindo
+                  </Title>
+                </Flex>
+              </Group> */}
               <Feed />
             </Grid.Col>
           )}

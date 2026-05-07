@@ -107,13 +107,13 @@ export default function AppNavbarMobile() {
     >
       <Image
         src={isDark ? MublinLogoWhite : MublinLogoBlack}
-        h={26}
+        h={24}
         w="auto"
         fit="contain"
       />
 
       <Combobox
-        w={190}
+        w={230}
         store={combobox}
         onOptionSubmit={(val) => {
           setSelectedProjectSlug(val)

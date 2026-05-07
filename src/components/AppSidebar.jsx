@@ -6,7 +6,6 @@ import { fetchUserProjects } from '../queries/user'
 import {
   Stack,
   Box,
-  Scroller,
   Badge,
   Group,
   Text,
@@ -29,12 +28,6 @@ const COVER_PATH =
 const DEFAULT_COVER_PICTURE =
   'https://ik.imagekit.io/mublin/bg/tr:h-52,bg-F3F3F3,fo-top/mublin-hero-chatgpt-musicians2.png'
 const PROJECT_AVATAR_PATH = 'https://ik.imagekit.io/mublin/projects/'
-
-const GIG_MENU_ITEMS = [
-  { label: 'Confirmadas', confirmed: true, path: '#', type: 'confirmed' },
-  { label: 'Pendentes', confirmed: false, path: '#', type: 'pending' },
-  { label: 'Sugeridas', confirmed: false, path: '#', type: 'suggested' },
-]
 
 const ProjectOption = ({ project, active = false }) => (
   <Combobox.Option value={project.slug} key={project.id} active={active}>
@@ -73,13 +66,12 @@ const ProjectOption = ({ project, active = false }) => (
 export default function AppSidebar() {
   const { profile, user } = useAuth()
   const navigate = useNavigate()
-  const [gigsToShow, setGigsToShow] = useState('confirmed')
 
   const [search, setSearch] = useState('')
   const combobox = useCombobox({
     onDropdownClose: () => {
       combobox.resetSelectedOption()
-      setSearch('') // Limpa a busca ao fechar
+      setSearch('')
     },
     onDropdownOpen: () => {
       combobox.focusSearchInput() // Foca no input automaticamente ao abrir
@@ -243,7 +235,7 @@ export default function AppSidebar() {
                 </Title>
               </Group>
             ) : (
-              <Title order={2} fz="md" fw={600} lts="-0.02em">
+              <Title order={2} fz="lg" fw={600} lts="-0.02em">
                 Selecionar projeto
               </Title>
             )}
@@ -287,29 +279,6 @@ export default function AppSidebar() {
           </Combobox.Options>
         </Combobox.Dropdown>
       </Combobox>
-
-      <Title order={3} fz="md" ta="left" fw={600} lts="-0.02em" mb="md">
-        Suas próximas gigs
-      </Title>
-      <Scroller mb={20}>
-        <Group gap={4} wrap="nowrap" miw={300}>
-          {GIG_MENU_ITEMS.map((item, index) => (
-            <Badge
-              key={index}
-              variant={item.type === gigsToShow ? 'filled' : 'light'}
-              size="md"
-              tt="none"
-              radius="xl"
-              style={{ cursor: 'pointer' }}
-              autoContrast={false}
-              color={item.type === gigsToShow ? undefined : 'gray'}
-              onClick={() => setGigsToShow(item.type)}
-            >
-              {item.label}
-            </Badge>
-          ))}
-        </Group>
-      </Scroller>
     </Box>
   )
 }
