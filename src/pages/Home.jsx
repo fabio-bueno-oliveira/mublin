@@ -14,7 +14,6 @@ import {
   Table,
   Paper,
   Avatar,
-  RingProgress,
   ActionIcon,
   Scroller,
   Card,
@@ -22,7 +21,10 @@ import {
   Skeleton,
   Indicator,
   Tooltip,
+  Box,
+  Progress,
 } from '@mantine/core'
+import { BorderAnimate } from '@gfazioli/mantine-border-animate'
 import { useMediaQuery } from '@mantine/hooks'
 import AppNavbarMobile from '../components/AppNavbarMobile'
 import { PROJECT_ACTIVITY_STATUS } from '../constants/projects'
@@ -94,6 +96,12 @@ export default function Home() {
     staleTime: 1000 * 60 * 10,
   })
 
+  const stats = [
+    { label: 'Rock', value: 60, color: 'blue.7' },
+    { label: 'Pop', value: 20, color: 'pink.6' },
+    { label: 'Reggae', value: 20, color: 'green.8' },
+  ]
+
   return (
     <>
       <AppNavbarMobile />
@@ -102,9 +110,16 @@ export default function Home() {
         <Grid>
           <Grid.Col span={{ base: 12, md: 7 }} className="paddingX">
             {loading || loadingProjects ? (
-              <Paper c="white" p="sm" className="alphaBg" mb="sm" radius="lg">
+              <Paper
+                c="white"
+                p="md"
+                className="alphaBg"
+                mb="sm"
+                radius="lg"
+                h={212}
+              >
                 <Skeleton radius="xl" w={100} h={23} mt={2} mb={3} />
-                <Skeleton radius="xl" w={150} h={30} mt={6} mb={3} />
+                <Skeleton radius="xl" w={180} h={28} mt={6} mb={3} />
                 <Skeleton radius="xl" w={84} h={22} mb={3} />
                 <Group gap="xs" mt="xs">
                   {[1, 2, 3, 4, 5, 6].map((i) => (
@@ -116,23 +131,16 @@ export default function Home() {
             ) : (
               <Paper
                 c="white"
-                p="sm"
+                p="md"
                 bg="mublinColor.9"
                 className="alphaBg"
                 mb="sm"
                 radius="lg"
               >
-                <Title
-                  order={4}
-                  fz="h5"
-                  fw={300}
-                  lts="-0.02em"
-                  mb={2}
-                  opacity={0.8}
-                >
+                <Text fz="19px" fw={500} lts="-0.02em" mb={1}>
                   Olá, {profile.username}
-                </Title>
-                <Text size="xl" fw={500} lts="-0.02em">
+                </Text>
+                <Text fz="19px" fw={500}>
                   Você está associado a {userProjects.length} projetos
                 </Text>
                 <Text size="sm" fw={300}>
@@ -180,94 +188,134 @@ export default function Home() {
               </Paper>
             )}
 
-            <Button
-              fullWidth
-              variant="gradient"
-              gradient={{ from: 'grape.8', to: 'mublinColor.8', deg: 55 }}
+            <BorderAnimate
+              beamMode="path"
+              size="lg"
               radius="xl"
-              size="sm"
-              leftSection={<IconMicrophone2 size={18} />}
-              rightSection={<IconArrowRight size={18} />}
-              justify="space-between"
+              borderWidth="xs"
               mt="md"
               mb="lg"
             >
-              Encontre gigs para tocar!
-            </Button>
+              <Button
+                fullWidth
+                variant="gradient"
+                gradient={{ from: 'grape.8', to: 'mublinColor.8', deg: 55 }}
+                radius="xl"
+                size="sm"
+                leftSection={<IconMicrophone2 size={18} />}
+                rightSection={<IconArrowRight size={18} />}
+                justify="space-between"
+              >
+                Encontre gigs para tocar!
+              </Button>
+            </BorderAnimate>
 
             <Title order={2} fz="h4" fw={600} lts="-0.02em" mb="xs">
               Próximas gigs
             </Title>
 
-            <Scroller mb="md">
-              <Group gap="xs" wrap="nowrap">
-                {loadingGigs
-                  ? [1, 2, 3, 4].map((i) => (
-                      <Skeleton key={i} w={250} h={111} />
-                    ))
-                  : gigs.map((gig) => (
-                      <Card key={gig.id} shadow="xs" padding="xs" w={250}>
-                        <Card.Section withBorder px="xs" py={8}>
-                          <Group gap={5} justify="space-between">
-                            <Text size="xs" lh={1} c="dimmed">
-                              {dayjs(gig.gigs?.events?.date_start).fromNow()}
-                            </Text>
-                            <Badge size="xs" color="green">
-                              Aceito
-                            </Badge>
-                          </Group>
-                        </Card.Section>
-                        <Stack gap={3} mt={6}>
-                          <Group gap={5} justify="flex-start">
-                            <Text size="xs" fw={600} key={gig.id} lh={1}>
-                              {gig.gig_roles?.roles?.description_ptbr}
-                            </Text>
+            {loadingGigs ? (
+              <Scroller mb="md">
+                <Group gap="xs" wrap="nowrap">
+                  {[1, 2, 3, 4].map((i) => (
+                    <Skeleton key={i} w={250} h={111} radius="md" />
+                  ))}
+                </Group>
+              </Scroller>
+            ) : gigs.length > 0 ? (
+              <Scroller mb="md">
+                <Group gap="xs" wrap="nowrap">
+                  {gigs.map((gig) => (
+                    <Card
+                      key={gig.id}
+                      shadow="xs"
+                      padding="xs"
+                      w={250}
+                      withBorder
+                    >
+                      <Card.Section withBorder px="xs" py={8}>
+                        <Group gap={5} justify="space-between">
+                          <Text size="xs" lh={1} c="dimmed">
+                            {dayjs(gig.gigs?.events?.date_start).fromNow()}
+                          </Text>
+                          <Badge size="xs" color="green" variant="light">
+                            Aceito
+                          </Badge>
+                        </Group>
+                      </Card.Section>
 
-                            <Text size="xs" fw={300} key={gig.id} lh={1}>
-                              em
-                            </Text>
-                            <Avatar
-                              size={20}
-                              src={
-                                gig.gigs?.projects?.picture
-                                  ? `${PROJECT_AVATAR_PATH}/${gig.gigs?.projects?.id}/tr:h-40,w-40,c-maintain_ratio/${gig.gigs?.projects?.picture}`
-                                  : undefined
-                              }
-                            />
-                            <Text
-                              size="xs"
-                              fw={300}
-                              w={65}
-                              truncate="end"
-                              lh={1}
-                            >
-                              {gig.gigs?.projects?.name}
-                            </Text>
-                          </Group>
-                          <Text size="md" fw={200} lineClamp={1}>
-                            {gig.gigs?.events?.name}
+                      <Stack gap={3} mt={6}>
+                        <Group gap={5} justify="flex-start" wrap="nowrap">
+                          <Text size="xs" fw={600} lh={1} truncate>
+                            {gig.gig_roles?.roles?.description_ptbr}
                           </Text>
-                          <Text size="xs" fw={400} lh={1}>
-                            {dayjs(gig.gigs?.events?.date_start).format(
-                              'dddd, D [de] MMMM [de] YYYY',
-                            )}
+                          <Text size="xs" fw={300} lh={1}>
+                            em
                           </Text>
-                          <Group gap={2} align="center" mt={6}>
-                            <IconMapPin size={14} color="gray" />
-                            <Text size="xs" c="dimmed" lh={1}>
-                              {gig.gigs?.events?.venues?.name}{' '}
-                              {gig.gigs?.events?.venues?.cities?.name},{' '}
-                              {gig.gigs?.events?.venues?.cities?.regions?.uf
-                                ? gig.gigs?.events?.venues?.cities?.regions?.uf
-                                : gig.gigs?.events?.venues?.cities?.regions
-                                    ?.name}
-                            </Text>
-                          </Group>
-                        </Stack>
-                      </Card>
-                    ))}
-              </Group>
-            </Scroller>
+                          <Avatar
+                            size={20}
+                            radius="xl"
+                            src={
+                              gig.gigs?.projects?.picture
+                                ? `${PROJECT_AVATAR_PATH}/${gig.gigs?.projects?.id}/tr:h-40,w-40,c-maintain_ratio/${gig.gigs?.projects?.picture}`
+                                : undefined
+                            }
+                          />
+                          <Text size="xs" fw={300} w={65} truncate="end" lh={1}>
+                            {gig.gigs?.projects?.name}
+                          </Text>
+                        </Group>
+
+                        <Text size="md" fw={500} lineClamp={1} lts="-0.01em">
+                          {gig.gigs?.events?.name}
+                        </Text>
+
+                        <Text size="xs" fw={400} lh={1} c="dimmed">
+                          {dayjs(gig.gigs?.events?.date_start).format(
+                            'dddd, D [de] MMMM',
+                          )}
+                        </Text>
+
+                        <Group gap={2} align="center" mt={4}>
+                          <IconMapPin size={12} color="gray" />
+                          <Text size="xs" c="dimmed" lh={1} truncate>
+                            {gig.gigs?.events?.venues?.name}
+                          </Text>
+                        </Group>
+                      </Stack>
+                    </Card>
+                  ))}
+                </Group>
+              </Scroller>
+            ) : (
+              <Paper
+                withBorder
+                radius="md"
+                mb="md"
+                h={110}
+                display="flex"
+                style={{
+                  flexDirection: 'column',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                }}
+              >
+                <Stack align="center" gap="xs">
+                  <Text size="sm" c="dimmed" ta="center" fw={500}>
+                    Nenhuma gig agendada no momento :(
+                  </Text>
+                  <Button
+                    size="xs"
+                    variant="transparent"
+                    radius="xl"
+                    color="gray"
+                    onClick={() => navigate('/search')}
+                  >
+                    Encontrar gigs
+                  </Button>
+                </Stack>
+              </Paper>
+            )}
 
             <Title order={2} fz="h4" fw={600} lts="-0.02em" mb="xs">
               Para o dia a dia
@@ -394,46 +442,59 @@ export default function Home() {
             </Scroller>
 
             <Title order={2} fz="h4" fw={600} lts="-0.02em" mb="xs">
-              Foco de atividades nos últimos meses
+              Gêneros mais tocados nas gigs
             </Title>
 
-            <Paper withBorder p="md" radius="md">
-              <Group justify="center">
-                <RingProgress
-                  size={170}
-                  thickness={16}
-                  label={
-                    <Text size="xs" ta="center" px="xs" lh="xs">
-                      Composição vs Performance
-                    </Text>
-                  }
-                  sections={[
-                    { value: 40, color: 'cyan', tooltip: 'Autoral' },
-                    {
-                      value: 35,
-                      color: 'orange',
-                      tooltip: 'Cover/Tributo',
-                    },
-                    {
-                      value: 25,
-                      color: 'gray',
-                      tooltip: 'Estudo/Outros',
-                    },
-                  ]}
-                />
-                <Stack gap="xs">
-                  <Badge color="cyan" variant="dot">
-                    Autoral (40%)
-                  </Badge>
-                  <Badge color="orange" variant="dot">
-                    Cover (35%)
-                  </Badge>
-                  <Badge color="gray" variant="dot">
-                    Freelance (25%)
-                  </Badge>
+            <Paper c="white" p="md" className="alphaBg" mb="sm" radius="lg">
+              <Stack gap="xs">
+                {/* Gráfico de Barras Segmentado */}
+                <Progress.Root size={24} radius="xl">
+                  {stats.map((stat) => (
+                    <Progress.Section
+                      value={stat.value}
+                      color={stat.color}
+                      key={stat.label}
+                    >
+                      {/* O label dentro da seção aparece se houver espaço (opcional) */}
+                      {stat.value > 10 && (
+                        <Progress.Label>{stat.value}%</Progress.Label>
+                      )}
+                    </Progress.Section>
+                  ))}
+                </Progress.Root>
+
+                <Stack gap={4} mt="sm">
+                  {stats.map((stat) => (
+                    <Group
+                      key={stat.label}
+                      justify="space-between"
+                      wrap="nowrap"
+                    >
+                      <Group gap={8}>
+                        <Box
+                          w={12}
+                          h={12}
+                          style={{
+                            backgroundColor: `var(--mantine-color-${stat.color.split('.')[0]}-${stat.color.split('.')[1] || '6'})`,
+                            borderRadius: '50%',
+                          }}
+                        />
+                        <Text size="sm" fw={500}>
+                          {stat.label}
+                        </Text>
+                      </Group>
+                      <Text size="xs" c="dimmed" fw={600}>
+                        {stat.value}%
+                      </Text>
+                    </Group>
+                  ))}
                 </Stack>
-              </Group>
+              </Stack>
             </Paper>
+
+            <Title order={2} fz="h4" fw={600} lts="-0.02em" mb="xs">
+              Lista de projetos
+            </Title>
 
             <Table>
               <Table.Thead>
@@ -443,18 +504,26 @@ export default function Home() {
                   <Table.Th>
                     <IconUsersGroup size={18} />
                   </Table.Th>
-                  <Table.Th>Atomic mass</Table.Th>
+                  <Table.Th>Status</Table.Th>
                 </Table.Tr>
               </Table.Thead>
               <Table.Tbody>
-                {userProjects.map((project) => (
-                  <Table.Tr key={project.id}>
-                    <Table.Td>{project.name}</Table.Td>
-                    <Table.Td>{project.type}</Table.Td>
-                    <Table.Td>{project.totalMembers}</Table.Td>
-                    <Table.Td>4</Table.Td>
+                {userProjects.length > 0 ? (
+                  userProjects.map((project) => (
+                    <Table.Tr key={project.id}>
+                      <Table.Td>{project.name}</Table.Td>
+                      <Table.Td>{project.type}</Table.Td>
+                      <Table.Td>{project.totalMembers}</Table.Td>
+                      <Table.Td>4</Table.Td>
+                    </Table.Tr>
+                  ))
+                ) : (
+                  <Table.Tr>
+                    <Table.Td c="dimmed" colSpan={4} ta="center">
+                      Nenhum projeto associado ao seu perfil
+                    </Table.Td>
                   </Table.Tr>
-                ))}
+                )}
               </Table.Tbody>
             </Table>
           </Grid.Col>

@@ -21,6 +21,7 @@ import '@mantine/charts/styles.css'
 import '@mantine/notifications/styles.css'
 import '@mantine/dates/styles.css'
 import '@mantine/schedule/styles.css'
+import '@gfazioli/mantine-border-animate/styles.css'
 import './styles.scss'
 
 const theme = createTheme({

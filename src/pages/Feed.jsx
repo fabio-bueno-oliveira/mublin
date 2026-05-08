@@ -32,7 +32,6 @@ import {
   Menu,
   Loader,
   Modal,
-  Tabs,
   Title,
   Anchor,
 } from '@mantine/core'
@@ -44,8 +43,6 @@ import {
   IconDots,
   IconLink,
   IconTrash,
-  IconCompass,
-  IconPlus,
 } from '@tabler/icons-react'
 import LinkedItem from '../components/feed/LinkedItem'
 import VideoPlayer from '../components/feed/VideoPlayer'
@@ -189,19 +186,9 @@ export default function Projects() {
             className="paddingX"
             visibleFrom="sm"
           >
-            <Flex gap="sm">
-              <Title order={2} fz="h3" fw={600} lts="-0.02em">
-                Feed
-              </Title>
-              <ActionIcon
-                size="md"
-                variant="subtle"
-                color="var(--mantine-color-text)"
-                aria-description="Nova postagem"
-              >
-                <IconPlus size={16} />
-              </ActionIcon>
-            </Flex>
+            <Title order={2} fz="h3" fw={600} lts="-0.02em">
+              Feed
+            </Title>
 
             <Flex gap="sm">
               <Title
@@ -212,6 +199,7 @@ export default function Projects() {
                 opacity={feedType === 'explore' ? 1 : 0.4}
                 component={Anchor}
                 underline="never"
+                c="var(--mantine-color-text)"
                 onClick={() => setFeedType('explore')}
               >
                 Explorar
@@ -224,6 +212,7 @@ export default function Projects() {
                 opacity={feedType === 'following' ? 1 : 0.4}
                 component={Anchor}
                 underline="never"
+                c="var(--mantine-color-text)"
                 onClick={() => setFeedType('following')}
               >
                 Seguindo

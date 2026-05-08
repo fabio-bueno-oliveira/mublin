@@ -101,7 +101,8 @@ export default function AppNavbarMobile() {
       gap="xs"
       align="center"
       justify="space-between"
-      my="md"
+      my="sm"
+      mb="sm"
       hiddenFrom="sm"
       px={{ base: '0.8rem', sm: 0 }}
     >
@@ -123,7 +124,9 @@ export default function AppNavbarMobile() {
       >
         <Combobox.Target>
           <InputBase
+            mt={6}
             component="button"
+            variant="unstyled"
             type="button"
             pointer
             size="md"
@@ -158,6 +161,14 @@ export default function AppNavbarMobile() {
         <Combobox.Dropdown>
           <Combobox.Options>
             <ScrollArea.Autosize mah={300} type="scroll" scrollHideDelay={0}>
+              {projectsByStatus.accepted.length === 0 && (
+                <Combobox.Option value="" disabled>
+                  <Text size="sm" fw={500}>
+                    Nenhum projeto associado
+                  </Text>
+                </Combobox.Option>
+              )}
+
               {projectsByStatus.accepted.length > 0 && (
                 <>
                   {projectsByStatus.accepted.map((project) => (
