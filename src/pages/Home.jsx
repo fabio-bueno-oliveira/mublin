@@ -23,8 +23,8 @@ import {
   Tooltip,
   Box,
   Progress,
+  Image,
 } from '@mantine/core'
-import { BorderAnimate } from '@gfazioli/mantine-border-animate'
 import { useMediaQuery } from '@mantine/hooks'
 import AppNavbarMobile from '../components/AppNavbarMobile'
 import { PROJECT_ACTIVITY_STATUS } from '../constants/projects'
@@ -40,10 +40,14 @@ import {
   IconRadar,
   IconStar,
   IconGuitarPick,
+  IconExclamationCircleFilled,
+  IconClock,
+  IconCheck,
 } from '@tabler/icons-react'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import 'dayjs/locale/pt-br'
+import { Link } from 'react-router-dom'
 
 dayjs.extend(relativeTime)
 dayjs.locale('pt-br')
@@ -67,6 +71,8 @@ export default function Home() {
     id: p.projects.id,
     name: p.projects.name,
     slug: p.projects.slug,
+    is_founder: p.is_founder,
+    is_ex_member: p.is_ex_member,
     picture: p.projects.picture,
     request_status: p.status,
     activity_status: p.projects.activity_status,
@@ -101,6 +107,40 @@ export default function Home() {
     { label: 'Pop', value: 20, color: 'pink.6' },
     { label: 'Reggae', value: 20, color: 'green.8' },
   ]
+
+  // Deriva gêneros dos projetos com percentual
+  const genreStats = (() => {
+    const projectsWithGenre = userProjects.filter((p) => p.genre)
+    if (!projectsWithGenre.length) {
+      return []
+    }
+
+    const counts = projectsWithGenre.reduce((acc, p) => {
+      acc[p.genre] = (acc[p.genre] ?? 0) + 1
+      return acc
+    }, {})
+
+    const total = projectsWithGenre.length
+
+    const COLORS = [
+      'blue.7',
+      'pink.6',
+      'green.8',
+      'orange.6',
+      'violet.7',
+      'teal.6',
+      'red.7',
+      'yellow.6',
+    ]
+
+    return Object.entries(counts)
+      .sort((a, b) => b[1] - a[1])
+      .map(([label, count], i) => ({
+        label,
+        value: Math.round((count / total) * 100),
+        color: COLORS[i % COLORS.length],
+      }))
+  })()
 
   return (
     <>
@@ -183,34 +223,27 @@ export default function Home() {
                   radius="xl"
                   leftSection={<IconPlus size={14} />}
                 >
-                  Criar novo projeto de música
+                  Novo projeto de música
                 </Button>
               </Paper>
             )}
 
-            <BorderAnimate
-              beamMode="path"
-              size="lg"
-              radius="xl"
-              borderWidth="xs"
+            <Button
+              fullWidth
               mt="md"
               mb="lg"
+              variant="gradient"
+              gradient={{ from: 'grape.8', to: 'mublinColor.8', deg: 55 }}
+              radius="xl"
+              size="sm"
+              leftSection={<IconMicrophone2 size={18} />}
+              rightSection={<IconArrowRight size={18} />}
+              justify="space-between"
             >
-              <Button
-                fullWidth
-                variant="gradient"
-                gradient={{ from: 'grape.8', to: 'mublinColor.8', deg: 55 }}
-                radius="xl"
-                size="sm"
-                leftSection={<IconMicrophone2 size={18} />}
-                rightSection={<IconArrowRight size={18} />}
-                justify="space-between"
-              >
-                Encontre gigs para tocar!
-              </Button>
-            </BorderAnimate>
+              Encontre gigs para tocar!
+            </Button>
 
-            <Title order={2} fz="h4" fw={600} lts="-0.02em" mb="xs">
+            <Title order={2} fz="h3" fw={600} lts="-0.02em" mb="xs">
               Próximas gigs
             </Title>
 
@@ -235,10 +268,40 @@ export default function Home() {
                     >
                       <Card.Section withBorder px="xs" py={8}>
                         <Group gap={5} justify="space-between">
-                          <Text size="xs" lh={1} c="dimmed">
-                            {dayjs(gig.gigs?.events?.date_start).fromNow()}
-                          </Text>
-                          <Badge size="xs" color="green" variant="light">
+                          <Group gap={3}>
+                            <Text size="xs" lh={1}>
+                              {dayjs(gig.gigs?.events?.date_start).fromNow()}
+                            </Text>
+                            {dayjs(gig.gigs?.events?.date_start).diff(
+                              dayjs(),
+                              'day',
+                            ) <= 2 && (
+                              <IconExclamationCircleFilled
+                                color="orange"
+                                size={15}
+                                title="Gig próxima! Verifique os detalhes e prepare-se para arrasar no palco."
+                              />
+                            )}
+                            <Indicator
+                              ml="xs"
+                              color="orange"
+                              processing
+                              size={10}
+                              disabled={
+                                dayjs(gig.gigs?.events?.date_start).diff(
+                                  dayjs(),
+                                  'day',
+                                ) >= 2
+                              }
+                              title="Gig próxima! Verifique os detalhes e prepare-se para arrasar no palco."
+                            />
+                          </Group>
+                          <Badge
+                            size="xs"
+                            color="green"
+                            variant="light"
+                            leftSection={<IconCheck size={12} />}
+                          >
                             Aceito
                           </Badge>
                         </Group>
@@ -266,11 +329,12 @@ export default function Home() {
                           </Text>
                         </Group>
 
-                        <Text size="md" fw={500} lineClamp={1} lts="-0.01em">
+                        <Text size="md" fw={300} lineClamp={1} lts="-0.01em">
                           {gig.gigs?.events?.name}
                         </Text>
 
-                        <Text size="xs" fw={400} lh={1} c="dimmed">
+                        <Text size="xs" fw={400} lh={1}>
+                          📅{' '}
                           {dayjs(gig.gigs?.events?.date_start).format(
                             'dddd, D [de] MMMM',
                           )}
@@ -279,7 +343,9 @@ export default function Home() {
                         <Group gap={2} align="center" mt={4}>
                           <IconMapPin size={12} color="gray" />
                           <Text size="xs" c="dimmed" lh={1} truncate>
-                            {gig.gigs?.events?.venues?.name}
+                            {gig.gigs?.events?.venues?.name} (
+                            {gig.gigs?.events?.venues?.cities?.name},{' '}
+                            {gig.gigs?.events?.venues?.cities?.regions?.uf})
                           </Text>
                         </Group>
                       </Stack>
@@ -317,7 +383,7 @@ export default function Home() {
               </Paper>
             )}
 
-            <Title order={2} fz="h4" fw={600} lts="-0.02em" mb="xs">
+            <Title order={2} fz="h3" fw={600} lts="-0.02em" mb="xs">
               Para o dia a dia
             </Title>
 
@@ -325,8 +391,10 @@ export default function Home() {
               <Group gap="xs" wrap="nowrap">
                 <Flex direction="column" align="center" w={80}>
                   <ActionIcon
-                    variant="gradient"
-                    gradient={{ from: 'grape.8', to: 'mublinColor.8', deg: 55 }}
+                    variant="default"
+                    color="gray"
+                    // variant="gradient"
+                    // gradient={{ from: 'grape.8', to: 'mublinColor.8', deg: 55 }}
                     size="xl"
                     aria-label="Teste"
                     w={80}
@@ -441,67 +509,71 @@ export default function Home() {
               </Group>
             </Scroller>
 
-            <Title order={2} fz="h4" fw={600} lts="-0.02em" mb="xs">
-              Gêneros mais tocados nas gigs
-            </Title>
+            {genreStats.length > 0 && (
+              <Title order={2} fz="h3" fw={600} lts="-0.02em" mb="xs">
+                Gêneros mais tocados por você
+              </Title>
+            )}
 
-            <Paper c="white" p="md" className="alphaBg" mb="sm" radius="lg">
-              <Stack gap="xs">
-                {/* Gráfico de Barras Segmentado */}
-                <Progress.Root size={24} radius="xl">
-                  {stats.map((stat) => (
-                    <Progress.Section
-                      value={stat.value}
-                      color={stat.color}
-                      key={stat.label}
-                    >
-                      {/* O label dentro da seção aparece se houver espaço (opcional) */}
-                      {stat.value > 10 && (
-                        <Progress.Label>{stat.value}%</Progress.Label>
-                      )}
-                    </Progress.Section>
-                  ))}
-                </Progress.Root>
-
-                <Stack gap={4} mt="sm">
-                  {stats.map((stat) => (
-                    <Group
-                      key={stat.label}
-                      justify="space-between"
-                      wrap="nowrap"
-                    >
-                      <Group gap={8}>
-                        <Box
-                          w={12}
-                          h={12}
-                          style={{
-                            backgroundColor: `var(--mantine-color-${stat.color.split('.')[0]}-${stat.color.split('.')[1] || '6'})`,
-                            borderRadius: '50%',
-                          }}
-                        />
-                        <Text size="sm" fw={500}>
-                          {stat.label}
+            {genreStats.length > 0 ? (
+              <Paper c="white" p="md" className="alphaBg" mb="lg" radius="lg">
+                <Stack gap="xs">
+                  <Progress.Root size={20} radius="xl">
+                    {genreStats.map((stat) => (
+                      <Progress.Section
+                        value={stat.value}
+                        color={stat.color}
+                        key={stat.label}
+                      >
+                        {stat.value > 10 && (
+                          <Progress.Label>{stat.value}%</Progress.Label>
+                        )}
+                      </Progress.Section>
+                    ))}
+                  </Progress.Root>
+                  <Stack gap={4} mt="xs">
+                    {genreStats.map((stat) => (
+                      <Group
+                        key={stat.label}
+                        justify="space-between"
+                        wrap="nowrap"
+                      >
+                        <Group gap={8}>
+                          <Box
+                            w={12}
+                            h={12}
+                            style={{
+                              backgroundColor: `var(--mantine-color-${stat.color.split('.')[0]}-${stat.color.split('.')[1] || '6'})`,
+                              borderRadius: '50%',
+                            }}
+                          />
+                          <Text size="sm" fw={500}>
+                            {stat.label}
+                          </Text>
+                        </Group>
+                        <Text size="xs" c="dimmed" fw={600}>
+                          {stat.value}%
                         </Text>
                       </Group>
-                      <Text size="xs" c="dimmed" fw={600}>
-                        {stat.value}%
-                      </Text>
-                    </Group>
-                  ))}
+                    ))}
+                  </Stack>
                 </Stack>
-              </Stack>
-            </Paper>
+              </Paper>
+            ) : null}
 
-            <Title order={2} fz="h4" fw={600} lts="-0.02em" mb="xs">
+            <Title order={2} fz="h3" fw={600} lts="-0.02em" mb="xs">
               Lista de projetos
             </Title>
 
-            <Table>
+            <Table withRowBorders={false} highlightOnHover>
               <Table.Thead>
                 <Table.Tr>
                   <Table.Th>Projeto</Table.Th>
-                  <Table.Th>Tipo</Table.Th>
-                  <Table.Th>
+                  <Table.Th>Atividade principal</Table.Th>
+                  <Table.Th
+                    style={{ textAlign: 'center' }}
+                    title="Total de pessoas associadas"
+                  >
                     <IconUsersGroup size={18} />
                   </Table.Th>
                   <Table.Th>Status</Table.Th>
@@ -510,11 +582,101 @@ export default function Home() {
               <Table.Tbody>
                 {userProjects.length > 0 ? (
                   userProjects.map((project) => (
-                    <Table.Tr key={project.id}>
-                      <Table.Td>{project.name}</Table.Td>
-                      <Table.Td>{project.type}</Table.Td>
-                      <Table.Td>{project.totalMembers}</Table.Td>
-                      <Table.Td>4</Table.Td>
+                    <Table.Tr
+                      key={project.id}
+                      opacity={project.request_status === 1 ? 0.4 : 1}
+                    >
+                      <Table.Td>
+                        <Link
+                          to={`/project/${project.slug}`}
+                          className="noDecoration"
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 8,
+                            color: 'var(--mantine-color-text)',
+                          }}
+                        >
+                          <Avatar
+                            size={30}
+                            src={
+                              project?.picture
+                                ? `${PROJECT_AVATAR_PATH}/${project?.id}/tr:h-70,w-70,c-maintain_ratio/${project?.picture}`
+                                : undefined
+                            }
+                            alt={project.name}
+                          />
+                          <Flex direction="column">
+                            <Text size="sm">{project.name}</Text>
+                            <Text size="xs" c="dimmed" truncate="end">
+                              {project.type}{' '}
+                            </Text>
+                            {project.genre && (
+                              <Text size="xs" c="dimmed" truncate="end">
+                                {project.genre}
+                              </Text>
+                            )}
+                          </Flex>
+                        </Link>
+                      </Table.Td>
+                      <Table.Td>
+                        <Flex direction="column" gap={2}>
+                          <Text size="sm">{project.main_role}</Text>
+                          <Group>
+                            {project.request_status === 1 && (
+                              <Badge
+                                color="orange"
+                                size="xs"
+                                autoContrast
+                                leftSection={<IconClock size={12} />}
+                              >
+                                Pendente
+                              </Badge>
+                            )}
+                            {project.is_founder && (
+                              <Badge
+                                color="mublinColor.8"
+                                size="xs"
+                                autoContrast
+                              >
+                                Fundador
+                              </Badge>
+                            )}
+                            {project.is_ex_member && (
+                              <Badge color="red.9" size="xs" autoContrast>
+                                Ex integrante
+                              </Badge>
+                            )}
+                          </Group>
+                        </Flex>
+                      </Table.Td>
+                      <Table.Td
+                        style={{ textAlign: 'center' }}
+                        title={`${project.totalMembers} pessoas`}
+                      >
+                        {project.totalMembers}
+                      </Table.Td>
+                      <Table.Td>
+                        <Group gap={10} wrap="nowrap">
+                          <Indicator
+                            color={project.activity_status_color ?? 'gray'}
+                            processing={project.activity_status === 1}
+                            size={6}
+                          />
+                          <Text
+                            size="sm"
+                            c={
+                              !project.activity_status_color
+                                ? 'dimmed'
+                                : undefined
+                            }
+                          >
+                            {project.activity_status_name
+                              ? project.activity_status_name
+                              : 'Não informado'}
+                          </Text>
+                        </Group>
+                      </Table.Td>
                     </Table.Tr>
                   ))
                 ) : (
@@ -526,39 +688,35 @@ export default function Home() {
                 )}
               </Table.Tbody>
             </Table>
+
+            <Title order={2} fz="h3" fw={600} lts="-0.02em" mt="lg" mb="xs">
+              Último equipamento adicionado
+            </Title>
+
+            <Card shadow="sm" padding="lg" radius="md" withBorder>
+              <Group justify="flex-start" wrap="nowrap">
+                <Image
+                  src="https://ik.imagekit.io/mublin/products/tr:w-200,h-200,cm-pad_resize,bg-FFFFFF,fo-x/guitar-fender-stratocaster-artist-series-john-mayer-signature-2013.webp"
+                  h={100}
+                  fit="contain"
+                  radius="lg"
+                  alt="Item"
+                />
+                <Flex direction="column" gap={4}>
+                  <Text fw={500}>Norway Fjord Adventures</Text>
+
+                  <Text size="sm" c="dimmed">
+                    With Fjord Tours you can explore more of the magical fjord
+                    landscapes with tours and activities on and around the
+                    fjords of Norway
+                  </Text>
+                </Flex>
+              </Group>
+            </Card>
           </Grid.Col>
 
           {isDesktop && (
             <Grid.Col span={{ base: 12, md: 5 }} px={0}>
-              {/* <Group
-                align="center"
-                justify="space-between"
-                mb="xs"
-                className="paddingX"
-              >
-                <Flex gap="sm">
-                  <Title order={2} fz="h3" fw={600} lts="-0.02em">
-                    Feed
-                  </Title>
-                  <ActionIcon
-                    size="lg"
-                    variant="subtle"
-                    color="var(--mantine-color-text)"
-                    aria-description="Nova postagem"
-                  >
-                    <IconPlus size={16} />
-                  </ActionIcon>
-                </Flex>
-
-                <Flex gap="sm">
-                  <Title order={3} fz="h4" fw={600} lts="-0.02em">
-                    Explorar
-                  </Title>
-                  <Title order={3} fz="h4" fw={600} lts="-0.02em" opacity={0.3}>
-                    Seguindo
-                  </Title>
-                </Flex>
-              </Group> */}
               <Feed />
             </Grid.Col>
           )}

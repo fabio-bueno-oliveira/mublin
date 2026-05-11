@@ -32,6 +32,8 @@ export async function fetchUserProjects(userId) {
       `
       project_id,
       status,
+      is_founder,
+      is_ex_member,
       roles!project_members_role_id_fkey ( name_ptbr ),
       projects ( 
         id, name, slug, picture, description,

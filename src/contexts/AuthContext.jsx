@@ -15,30 +15,34 @@ export function AuthProvider({ children }) {
   async function fetchProfile(userId) {
     const { data, error } = await supabase
       .from('profiles')
-      .select('id, full_name, username, avatar, cover_image, bio, title, available_from, plan, is_verified, is_open_to_work, is_admin')
+      .select(
+        'id, full_name, username, avatar, cover_image, bio, title, available_from, plan, is_verified, is_open_to_work, is_admin',
+      )
       .eq('id', userId)
       .single()
 
-    if (!error) setProfile(data)
+    if (!error) {
+      setProfile(data)
+    }
     setLoading(false)
   }
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session)
-        setUser(session?.user ?? null)
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      setSession(session)
+      setUser(session?.user ?? null)
 
-        if (session?.user && !profileFetched.current) {
-          profileFetched.current = true
-          fetchProfile(session.user.id)
-        } else if (!session) {
-          profileFetched.current = false
-          setProfile(null)
-          setLoading(false)
-        }
+      if (session?.user && !profileFetched.current) {
+        profileFetched.current = true
+        fetchProfile(session.user.id)
+      } else if (!session) {
+        profileFetched.current = false
+        setProfile(null)
+        setLoading(false)
       }
-    )
+    })
     return () => subscription.unsubscribe()
   }, [])
 
@@ -55,7 +59,10 @@ export function AuthProvider({ children }) {
   }
 
   async function signInWithEmail(email, password) {
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    })
     return { data, error }
   }
 
@@ -106,9 +113,5 @@ export function AuthProvider({ children }) {
     signOut,
   }
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  )
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

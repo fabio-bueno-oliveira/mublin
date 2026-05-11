@@ -10,7 +10,6 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@gfazioli/mantine-border-animate": "^2.0.1",
     "@imagekit/react": "^5.0.2",
     "@mantine/charts": "^9.1.1",
     "@mantine/core": "^9.1.1-alpha.7",

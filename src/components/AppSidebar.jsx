@@ -4,6 +4,7 @@ import { useAuth } from '../hooks/useAuth'
 import { useQuery } from '@tanstack/react-query'
 import { fetchUserProjects } from '../queries/user'
 import {
+  useComputedColorScheme,
   Stack,
   Box,
   Badge,
@@ -66,6 +67,8 @@ const ProjectOption = ({ project, active = false }) => (
 export default function AppSidebar() {
   const { profile, user } = useAuth()
   const navigate = useNavigate()
+  const computedColorScheme = useComputedColorScheme('light')
+  const isDark = computedColorScheme === 'dark'
 
   const [search, setSearch] = useState('')
   const combobox = useCombobox({
@@ -130,20 +133,22 @@ export default function AppSidebar() {
         pos="relative"
       >
         {/* Cover */}
-        <Box
+        <Card.Section
           h={52}
+          withBorder
           style={{
-            background: profile?.cover_image
-              ? `url(${COVER_PATH + profile.cover_image}) center/cover no-repeat`
-              : `url(${DEFAULT_COVER_PICTURE}) center/cover no-repeat`,
-            // : DEFAULT_GRADIENT_LIGHT
-            // : isDark ? DEFAULT_GRADIENT_DARK : DEFAULT_GRADIENT_LIGHT,
+            border: isDark
+              ? '1px solid var(--mantine-color-dark-9)'
+              : '1px solid var(--mantine-color-gray-2)',
+            background: isDark
+              ? 'var(--mantine-color-dark-9)'
+              : 'var(--mantine-color-gray-0)',
           }}
         />
 
         {/* Avatar sobre a cover */}
         <Box px="sm" pb="sm">
-          <Box mt={-24} mb={4}>
+          <Box mt={-24} mb={5}>
             <Avatar
               size={48}
               radius="xl"
