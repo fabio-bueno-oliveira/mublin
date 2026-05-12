@@ -34,13 +34,16 @@ export async function fetchUserProjects(userId) {
       status,
       is_founder,
       is_ex_member,
+      joined_at,
+      left_at,
       roles!project_members_role_id_fkey ( name_ptbr ),
       projects ( 
         id, name, slug, picture, description,
+        foundation_year, end_year,
         activity_status,
         genres ( name ),
         project_types ( name_ptbr ),
-        project_members ( count ),
+        project_members ( status, profiles ( full_name, username, avatar ) ),
         project_statuses ( description_ptbr, color )
       )
     `,

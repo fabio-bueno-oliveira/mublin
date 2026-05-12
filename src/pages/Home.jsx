@@ -1,7 +1,9 @@
+import { Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useQuery } from '@tanstack/react-query'
 import { fetchUserProjects, fetchUserGearCount } from '../queries/user'
 import { fetchUserGigs } from '../queries/gigs'
+import { fetchFeaturedProducts } from '../queries/gear'
 import {
   Grid,
   Group,
@@ -30,7 +32,6 @@ import AppNavbarMobile from '../components/AppNavbarMobile'
 import { PROJECT_ACTIVITY_STATUS } from '../constants/projects'
 import Feed from './Feed'
 import {
-  IconUsersGroup,
   IconArrowRight,
   IconMicrophone2,
   IconPlus,
@@ -43,11 +44,13 @@ import {
   IconExclamationCircleFilled,
   IconClock,
   IconCheck,
+  IconCircleArrowLeftFilled,
+  IconCircleArrowRightFilled,
 } from '@tabler/icons-react'
+import { showYears } from '../utils/formatter'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import 'dayjs/locale/pt-br'
-import { Link } from 'react-router-dom'
 
 dayjs.extend(relativeTime)
 dayjs.locale('pt-br')
@@ -55,6 +58,8 @@ dayjs.locale('pt-br')
 const AVATAR_PATH =
   'https://ik.imagekit.io/mublin/tr:h-68,c-maintain_ratio/users/avatars/'
 const PROJECT_AVATAR_PATH = 'https://ik.imagekit.io/mublin/projects'
+const PATH_PRODUCT_IMAGE_MOBILE =
+  'https://ik.imagekit.io/mublin/products/tr:w-200,bg-FFFFFF,fo-x/'
 
 export default function Home() {
   const { profile, user, loading } = useAuth()
@@ -71,6 +76,7 @@ export default function Home() {
     id: p.projects.id,
     name: p.projects.name,
     slug: p.projects.slug,
+    end_year: p.projects.end_year,
     is_founder: p.is_founder,
     is_ex_member: p.is_ex_member,
     picture: p.projects.picture,
@@ -81,6 +87,8 @@ export default function Home() {
     main_role: p.roles.name_ptbr,
     genre: p.projects.genres?.name,
     type: p.projects.project_types?.name_ptbr,
+    joined_at: p.joined_at ? new Date(p.joined_at).getFullYear() : null,
+    left_at: p.left_at ? new Date(p.left_at).getFullYear() : null,
     totalMembers: p.projects.project_members?.length || 0,
   }))
 
@@ -102,11 +110,12 @@ export default function Home() {
     staleTime: 1000 * 60 * 10,
   })
 
-  const stats = [
-    { label: 'Rock', value: 60, color: 'blue.7' },
-    { label: 'Pop', value: 20, color: 'pink.6' },
-    { label: 'Reggae', value: 20, color: 'green.8' },
-  ]
+  const { data: featuredProducts = [], isLoading: loadingFeaturedProducts } =
+    useQuery({
+      queryKey: ['featured-products'],
+      queryFn: () => fetchFeaturedProducts(),
+      staleTime: 1000 * 60 * 10,
+    })
 
   // Deriva gêneros dos projetos com percentual
   const genreStats = (() => {
@@ -141,6 +150,8 @@ export default function Home() {
         color: COLORS[i % COLORS.length],
       }))
   })()
+
+  const currentYear = new Date().getFullYear()
 
   return (
     <>
@@ -516,7 +527,7 @@ export default function Home() {
             )}
 
             {genreStats.length > 0 ? (
-              <Paper c="white" p="md" className="alphaBg" mb="lg" radius="lg">
+              <Paper p="md" className="alphaBg" mb="lg" radius="lg">
                 <Stack gap="xs">
                   <Progress.Root size={20} radius="xl">
                     {genreStats.map((stat) => (
@@ -531,7 +542,7 @@ export default function Home() {
                       </Progress.Section>
                     ))}
                   </Progress.Root>
-                  <Stack gap={4} mt="xs">
+                  <Stack gap={4}>
                     {genreStats.map((stat) => (
                       <Group
                         key={stat.label}
@@ -540,8 +551,8 @@ export default function Home() {
                       >
                         <Group gap={8}>
                           <Box
-                            w={12}
-                            h={12}
+                            w={10}
+                            h={10}
                             style={{
                               backgroundColor: `var(--mantine-color-${stat.color.split('.')[0]}-${stat.color.split('.')[1] || '6'})`,
                               borderRadius: '50%',
@@ -551,7 +562,7 @@ export default function Home() {
                             {stat.label}
                           </Text>
                         </Group>
-                        <Text size="xs" c="dimmed" fw={600}>
+                        <Text size="sm" c="dimmed">
                           {stat.value}%
                         </Text>
                       </Group>
@@ -562,31 +573,29 @@ export default function Home() {
             ) : null}
 
             <Title order={2} fz="h3" fw={600} lts="-0.02em" mb="xs">
-              Lista de projetos
+              Meus projetos associados
             </Title>
 
-            <Table withRowBorders={false} highlightOnHover>
-              <Table.Thead>
+            <Table
+              withRowBorders
+              highlightOnHover={false}
+              horizontalSpacing={0}
+              verticalSpacing={10}
+            >
+              {/* <Table.Thead>
                 <Table.Tr>
-                  <Table.Th>Projeto</Table.Th>
-                  <Table.Th>Atividade principal</Table.Th>
-                  <Table.Th
-                    style={{ textAlign: 'center' }}
-                    title="Total de pessoas associadas"
-                  >
-                    <IconUsersGroup size={18} />
-                  </Table.Th>
-                  <Table.Th>Status</Table.Th>
+                  <Table.Th w="50%">Projeto</Table.Th>
+                  <Table.Th w="50%">Atividade principal</Table.Th>
                 </Table.Tr>
-              </Table.Thead>
+              </Table.Thead> */}
               <Table.Tbody>
                 {userProjects.length > 0 ? (
                   userProjects.map((project) => (
-                    <Table.Tr
-                      key={project.id}
-                      opacity={project.request_status === 1 ? 0.4 : 1}
-                    >
-                      <Table.Td>
+                    <Table.Tr key={project.id}>
+                      <Table.Td
+                        w="55%"
+                        opacity={project.request_status === 1 ? 0.4 : 1}
+                      >
                         <Link
                           to={`/project/${project.slug}`}
                           className="noDecoration"
@@ -598,30 +607,105 @@ export default function Home() {
                           }}
                         >
                           <Avatar
-                            size={30}
+                            size={40}
                             src={
                               project?.picture
-                                ? `${PROJECT_AVATAR_PATH}/${project?.id}/tr:h-70,w-70,c-maintain_ratio/${project?.picture}`
+                                ? `${PROJECT_AVATAR_PATH}/${project?.id}/tr:h-80,w-80,c-maintain_ratio/${project?.picture}`
                                 : undefined
                             }
                             alt={project.name}
                           />
-                          <Flex direction="column">
-                            <Text size="sm">{project.name}</Text>
-                            <Text size="xs" c="dimmed" truncate="end">
-                              {project.type}{' '}
+                          <Flex direction="column" gap={3}>
+                            <Text
+                              size="sm"
+                              fw={700}
+                              lh={1}
+                              w={100}
+                              truncate="end"
+                            >
+                              {project.name}{' '}
                             </Text>
-                            {project.genre && (
-                              <Text size="xs" c="dimmed" truncate="end">
-                                {project.genre}
-                              </Text>
+                            <Text size="xs" c="dimmed" w={100} truncate="end">
+                              {project.type}{' '}
+                              {project.genre ? `· ${project.genre}` : ''}
+                            </Text>
+                            {project.activity_status && (
+                              <Group gap={8} wrap="nowrap">
+                                <Indicator
+                                  color={
+                                    project.activity_status_color ?? 'gray'
+                                  }
+                                  processing={project.activity_status === 1}
+                                  size={5}
+                                />
+                                <Text
+                                  size="11px"
+                                  lh={1}
+                                  c={
+                                    !project.activity_status_color
+                                      ? 'dimmed'
+                                      : undefined
+                                  }
+                                >
+                                  {project.activity_status_name
+                                    ? project.activity_status_name
+                                    : 'Não informado'}
+                                  {project.end_year &&
+                                    ` em ${project.end_year}`}
+                                </Text>
+                              </Group>
                             )}
                           </Flex>
                         </Link>
                       </Table.Td>
-                      <Table.Td>
+                      <Table.Td w="45%">
                         <Flex direction="column" gap={2}>
-                          <Text size="sm">{project.main_role}</Text>
+                          <Text
+                            size="sm"
+                            fw={300}
+                            opacity={project.request_status === 1 ? 0.4 : 1}
+                            w={150}
+                            truncate="end"
+                          >
+                            {project.main_role}{' '}
+                            {project.is_founder && (
+                              <Text span c="dimmed" size="xs">
+                                (Fundador)
+                              </Text>
+                            )}
+                          </Text>
+                          {project.request_status !== 1 && (
+                            <>
+                              {!project.end_year ? (
+                                <Flex gap={8} align="center">
+                                  <Indicator
+                                    color={project.left_at ? 'red' : 'green'}
+                                    size={5}
+                                  />
+                                  <Text size="11px" className="lhNormal">
+                                    {`${project.joined_at} ➜ ${project.left_at ? project.left_at : currentYear}`}{' '}
+                                    {project.left_at
+                                      ? showYears(
+                                          project.left_at - project.joined_at,
+                                        )
+                                      : showYears(
+                                          currentYear - project.joined_at,
+                                        )}
+                                  </Text>
+                                </Flex>
+                              ) : (
+                                <Flex gap={8} align="center">
+                                  <Indicator color="red" size={5} />
+                                  <Text size="11px" className="lhNormal">
+                                    {`${project.joined_at} ➜ ${project.end_year}`}{' '}
+                                    {showYears(
+                                      project.end_year - project.joined_at,
+                                    )}
+                                  </Text>
+                                </Flex>
+                              )}
+                            </>
+                          )}
                           <Group>
                             {project.request_status === 1 && (
                               <Badge
@@ -633,49 +717,13 @@ export default function Home() {
                                 Pendente
                               </Badge>
                             )}
-                            {project.is_founder && (
-                              <Badge
-                                color="mublinColor.8"
-                                size="xs"
-                                autoContrast
-                              >
-                                Fundador
-                              </Badge>
-                            )}
                             {project.is_ex_member && (
-                              <Badge color="red.9" size="xs" autoContrast>
+                              <Text c="dimmed" size="xs">
                                 Ex integrante
-                              </Badge>
+                              </Text>
                             )}
                           </Group>
                         </Flex>
-                      </Table.Td>
-                      <Table.Td
-                        style={{ textAlign: 'center' }}
-                        title={`${project.totalMembers} pessoas`}
-                      >
-                        {project.totalMembers}
-                      </Table.Td>
-                      <Table.Td>
-                        <Group gap={10} wrap="nowrap">
-                          <Indicator
-                            color={project.activity_status_color ?? 'gray'}
-                            processing={project.activity_status === 1}
-                            size={6}
-                          />
-                          <Text
-                            size="sm"
-                            c={
-                              !project.activity_status_color
-                                ? 'dimmed'
-                                : undefined
-                            }
-                          >
-                            {project.activity_status_name
-                              ? project.activity_status_name
-                              : 'Não informado'}
-                          </Text>
-                        </Group>
                       </Table.Td>
                     </Table.Tr>
                   ))
@@ -689,30 +737,64 @@ export default function Home() {
               </Table.Tbody>
             </Table>
 
-            <Title order={2} fz="h3" fw={600} lts="-0.02em" mt="lg" mb="xs">
-              Último equipamento adicionado
+            <Title order={2} fz="h3" fw={600} lts="-0.02em" mt="lg" mb="md">
+              Itens em destaque
             </Title>
 
-            <Card shadow="sm" padding="lg" radius="md" withBorder>
-              <Group justify="flex-start" wrap="nowrap">
-                <Image
-                  src="https://ik.imagekit.io/mublin/products/tr:w-200,h-200,cm-pad_resize,bg-FFFFFF,fo-x/guitar-fender-stratocaster-artist-series-john-mayer-signature-2013.webp"
-                  h={100}
-                  fit="contain"
-                  radius="lg"
-                  alt="Item"
-                />
-                <Flex direction="column" gap={4}>
-                  <Text fw={500}>Norway Fjord Adventures</Text>
-
-                  <Text size="sm" c="dimmed">
-                    With Fjord Tours you can explore more of the magical fjord
-                    landscapes with tours and activities on and around the
-                    fjords of Norway
-                  </Text>
-                </Flex>
+            <Scroller
+              key={featuredProducts.length}
+              draggable
+              controlSize="xl"
+              showEndControl={featuredProducts.length > 4}
+              startControlIcon={<IconCircleArrowLeftFilled size={36} />}
+              endControlIcon={<IconCircleArrowRightFilled size={36} />}
+              mb="sm"
+            >
+              <Group gap="xs" wrap="nowrap">
+                {featuredProducts.map((item) => (
+                  <Flex key={item.id} direction="column" wrap="wrap">
+                    <Link to={`/gear/${item.slug}`}>
+                      <Image
+                        src={
+                          item.picture
+                            ? PATH_PRODUCT_IMAGE_MOBILE + item.picture
+                            : undefined
+                        }
+                        bg="white"
+                        h={120}
+                        mah={120}
+                        miw={90}
+                        fit="contain"
+                        mb={4}
+                        radius="md"
+                        alt={`${item.brand_name} ${item.name}`}
+                        style={{ pointerEvents: 'none' }}
+                      />
+                    </Link>
+                    <Text
+                      size="11px"
+                      truncate="end"
+                      fw={300}
+                      my={4}
+                      c="dimmed"
+                      w={75}
+                    >
+                      {item.brand_name}
+                    </Text>
+                    <Text
+                      size="xs"
+                      fw={500}
+                      fz="xs"
+                      h={40}
+                      w={75}
+                      truncate="end"
+                    >
+                      {item.name}
+                    </Text>
+                  </Flex>
+                ))}
               </Group>
-            </Card>
+            </Scroller>
           </Grid.Col>
 
           {isDesktop && (

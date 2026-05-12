@@ -1,15 +1,20 @@
 import { supabase } from '../lib/supabaseClient'
 
 export async function fetchRandomBrands() {
-  const { data, error } = await supabase.rpc('get_random_brands', { limit_count: 20 })
-  if (error) throw new Error(error.message)
+  const { data, error } = await supabase.rpc('get_random_brands', {
+    limit_count: 20,
+  })
+  if (error) {
+    throw new Error(error.message)
+  }
   return data
 }
 
 export async function fetchBrandInfo(slug) {
   const { data, error } = await supabase
     .from('brands')
-    .select(`
+    .select(
+      `
       id,
       name,
       slug,
@@ -20,12 +25,15 @@ export async function fetchBrandInfo(slug) {
       brands_categories (
         name_ptbr
       )
-    `)
+    `,
+    )
     .eq('slug', slug)
     .eq('active', true)
     .single()
 
-  if (error) throw new Error(error.message)
+  if (error) {
+    throw new Error(error.message)
+  }
 
   return data
 }
@@ -33,7 +41,8 @@ export async function fetchBrandInfo(slug) {
 export async function fetchBrandArtists(brandId) {
   const { data, error } = await supabase
     .from('profile_partners')
-    .select(`
+    .select(
+      `
       id,
       type,
       since_year,
@@ -44,11 +53,14 @@ export async function fetchBrandArtists(brandId) {
         full_name,
         avatar
       )
-    `)
+    `,
+    )
     .eq('id_brand', brandId)
     .eq('active', true)
     .order('featured', { ascending: false })
-  if (error) throw new Error(error.message)
+  if (error) {
+    throw new Error(error.message)
+  }
   return data
 }
 
@@ -58,7 +70,9 @@ export async function fetchProductCategories() {
     .select('id, name_ptbr, macro_category')
     .order('name_ptbr', { ascending: true })
 
-  if (error) throw new Error(error.message)
+  if (error) {
+    throw new Error(error.message)
+  }
 
   return data
 }
@@ -69,24 +83,30 @@ export async function fetchTunings(instrumentType) {
     .select('id, name_ptbr, description, instrument_type')
     .order('id')
 
-  if (instrumentType) query = query.eq('instrument_type', instrumentType)
+  if (instrumentType) {
+    query = query.eq('instrument_type', instrumentType)
+  }
 
   const { data, error } = await query
-  if (error) throw new Error(error.message)
+  if (error) {
+    throw new Error(error.message)
+  }
   return data
 }
 
 export async function fetchFeaturedProducts() {
-  const { data, error } = await supabase
-    .rpc('get_featured_products')
-  if (error) throw new Error(error.message)
+  const { data, error } = await supabase.rpc('get_featured_products')
+  if (error) {
+    throw new Error(error.message)
+  }
   return data
 }
 
 export async function fetchProductColors(productId) {
   const { data, error } = await supabase
     .from('product_colors')
-    .select(`
+    .select(
+      `
       id,
       picture,
       is_main,
@@ -97,17 +117,21 @@ export async function fetchProductColors(productId) {
         rgb,
         img_sample
       )
-    `)
+    `,
+    )
     .eq('id_product', productId)
     .order('is_main', { ascending: false })
-  if (error) throw new Error(error.message)
+  if (error) {
+    throw new Error(error.message)
+  }
   return data
 }
 
 export async function fetchProductInfo(slug) {
   const { data, error } = await supabase
     .from('products')
-    .select(`
+    .select(
+      `
       id,
       name,
       slug,
@@ -135,17 +159,21 @@ export async function fetchProductInfo(slug) {
         id,
         name
       )
-    `)
+    `,
+    )
     .eq('slug', slug)
     .single()
-  if (error) throw new Error(error.message)
+  if (error) {
+    throw new Error(error.message)
+  }
   return data
 }
 
 export async function fetchProductOwners(productId) {
   const { data, error } = await supabase
     .from('profile_gear')
-    .select(`
+    .select(
+      `
       id,
       is_currently_using,
       is_for_sale,
@@ -165,9 +193,12 @@ export async function fetchProductOwners(productId) {
           name, uf
         )
       )
-    `)
+    `,
+    )
     .eq('id_product', productId)
     .order('is_currently_using', { ascending: false })
-  if (error) throw new Error(error.message)
+  if (error) {
+    throw new Error(error.message)
+  }
   return data
 }

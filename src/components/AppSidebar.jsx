@@ -187,13 +187,13 @@ export default function AppSidebar() {
                 @{profile.username}
               </Text>
               {profile.plan === 'Pro' && (
-                <Badge size="xs" color="gray" variant="outline" radius="sm">
+                <Badge size="xs" variant="transparent" color="gray" radius="sm">
                   PRO
                 </Badge>
               )}
             </Group>
             {profile?.title && (
-              <Text size="xs" mt={2} c="dimmed" lineClamp={2}>
+              <Text size="13px" lh={1.3} mt={4} c="dimmed" lineClamp={2}>
                 {profile.title}
               </Text>
             )}
