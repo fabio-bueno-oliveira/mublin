@@ -92,9 +92,9 @@ export default function Home() {
     totalMembers: p.projects.project_members?.length || 0,
   }))
 
-  const userProjectsActive = userProjects.filter(
-    (p) => p.activity_status === PROJECT_ACTIVITY_STATUS.RUNNING,
-  )
+  // const userProjectsActive = userProjects.filter(
+  //   (p) => p.activity_status === PROJECT_ACTIVITY_STATUS.RUNNING,
+  // )
 
   const { data: gigs = [], isLoading: loadingGigs } = useQuery({
     queryKey: ['user-gigs', user?.id],
@@ -180,27 +180,22 @@ export default function Home() {
                 <Skeleton mt="sm" radius="xl" w={230} h={34} />
               </Paper>
             ) : (
-              <Paper
-                c="white"
-                p="md"
-                bg="mublinColor.9"
-                className="alphaBg"
-                mb="sm"
-                radius="lg"
-              >
-                <Text fz="19px" fw={500} lts="-0.02em" mb={1}>
+              <Box>
+                <Text fz="h2" fw={700} lts="-0.02em">
                   Olá, {profile.username}
                 </Text>
-                <Text fz="19px" fw={500}>
+                <Text fz="md" opacity={0.8} lh={1}>
                   Você está associado a {userProjects.length} projetos
                 </Text>
-                <Text size="sm" fw={300}>
-                  {userProjectsActive.length}{' '}
-                  {userProjectsActive.length === 1 ? 'projeto' : 'projetos'} em
-                  atividade
-                </Text>
-                <Scroller mt="xs">
-                  <Group gap="xs">
+                <Scroller
+                  mt="lg"
+                  key={userProjects.length}
+                  draggable
+                  controlSize="xl"
+                  startControlIcon={<IconCircleArrowLeftFilled size={36} />}
+                  endControlIcon={<IconCircleArrowRightFilled size={36} />}
+                >
+                  <Group gap="sm" wrap="nowrap" pr="md">
                     {userProjects.map((project) => (
                       <Indicator
                         color={project.activity_status_color ?? undefined}
@@ -214,35 +209,46 @@ export default function Home() {
                           label={project.name}
                           position="bottom"
                         >
-                          <Avatar
-                            size={35}
-                            src={
-                              project?.picture
-                                ? `${PROJECT_AVATAR_PATH}/${project?.id}/tr:h-70,w-70,c-maintain_ratio/${project?.picture}`
-                                : undefined
-                            }
-                            title={project.name}
-                          />
+                          <Stack gap={6} size={80}>
+                            <Avatar
+                              size={80}
+                              radius="md"
+                              src={
+                                project?.picture
+                                  ? `${PROJECT_AVATAR_PATH}/${project?.id}/tr:h-160,w-160,c-maintain_ratio/${project?.picture}`
+                                  : undefined
+                              }
+                              title={project.name}
+                            />
+                            <Flex direction="column">
+                              <Text w={80} size="xs" fw={700} truncate="end">
+                                {project.name}
+                              </Text>
+                              <Text w={80} size="xs" c="dimmed" truncate="end">
+                                {project.type}
+                              </Text>
+                            </Flex>
+                          </Stack>
                         </Tooltip>
                       </Indicator>
                     ))}
                   </Group>
                 </Scroller>
-                <Button
+                {/* <Button
                   size="sm"
                   mt={10}
                   radius="xl"
                   leftSection={<IconPlus size={14} />}
                 >
                   Novo projeto de música
-                </Button>
-              </Paper>
+                </Button> */}
+              </Box>
             )}
 
             <Button
               fullWidth
-              mt="md"
-              mb="lg"
+              mt="lg"
+              mb="xl"
               variant="gradient"
               gradient={{ from: 'grape.8', to: 'mublinColor.8', deg: 55 }}
               radius="xl"
@@ -254,7 +260,7 @@ export default function Home() {
               Encontre gigs para tocar!
             </Button>
 
-            <Title order={2} fz="h3" fw={600} lts="-0.02em" mb="xs">
+            <Title order={2} fz="xl" fw={700} lts="-0.02em" mb="xs">
               Próximas gigs
             </Title>
 
@@ -277,10 +283,31 @@ export default function Home() {
                       w={250}
                       withBorder
                     >
-                      <Card.Section withBorder px="xs" py={8}>
+                      <Card.Section px="xs" py={8}>
+                        <Group gap={5} justify="space-between" wrap="nowrap">
+                          <Text size="xs" truncate="end">
+                            <Text span fw={600}>
+                              {gig.gig_roles?.roles?.description_ptbr}
+                            </Text>{' '}
+                            em {gig.gigs?.projects?.name}
+                          </Text>
+
+                          <Avatar
+                            size={24}
+                            radius="xl"
+                            src={
+                              gig.gigs?.projects?.picture
+                                ? `${PROJECT_AVATAR_PATH}/${gig.gigs?.projects?.id}/tr:h-48,w-48,c-maintain_ratio/${gig.gigs?.projects?.picture}`
+                                : undefined
+                            }
+                          />
+                        </Group>
+                      </Card.Section>
+
+                      <Card.Section px="xs" py={2}>
                         <Group gap={5} justify="space-between">
                           <Group gap={3}>
-                            <Text size="xs" lh={1}>
+                            <Text size="xs" c="dimmed" lh={1}>
                               {dayjs(gig.gigs?.events?.date_start).fromNow()}
                             </Text>
                             {dayjs(gig.gigs?.events?.date_start).diff(
@@ -290,75 +317,38 @@ export default function Home() {
                               <IconExclamationCircleFilled
                                 color="orange"
                                 size={15}
-                                title="Gig próxima! Verifique os detalhes e prepare-se para arrasar no palco."
+                                title="Gig próxima! Verifique os detalhes e prepare-se para se sair bem!"
                               />
                             )}
-                            <Indicator
-                              ml="xs"
-                              color="orange"
-                              processing
-                              size={10}
-                              disabled={
-                                dayjs(gig.gigs?.events?.date_start).diff(
-                                  dayjs(),
-                                  'day',
-                                ) >= 2
-                              }
-                              title="Gig próxima! Verifique os detalhes e prepare-se para arrasar no palco."
-                            />
                           </Group>
                           <Badge
                             size="xs"
-                            color="green"
+                            color="green.9"
+                            autoContrast
                             variant="light"
-                            leftSection={<IconCheck size={12} />}
+                            leftSection={<IconCheck stroke={3} size={12} />}
                           >
                             Aceito
                           </Badge>
                         </Group>
                       </Card.Section>
 
-                      <Stack gap={3} mt={6}>
-                        <Group gap={5} justify="flex-start" wrap="nowrap">
-                          <Text size="xs" fw={600} lh={1} truncate>
-                            {gig.gig_roles?.roles?.description_ptbr}
-                          </Text>
-                          <Text size="xs" fw={300} lh={1}>
-                            em
-                          </Text>
-                          <Avatar
-                            size={20}
-                            radius="xl"
-                            src={
-                              gig.gigs?.projects?.picture
-                                ? `${PROJECT_AVATAR_PATH}/${gig.gigs?.projects?.id}/tr:h-40,w-40,c-maintain_ratio/${gig.gigs?.projects?.picture}`
-                                : undefined
-                            }
-                          />
-                          <Text size="xs" fw={300} w={65} truncate="end" lh={1}>
-                            {gig.gigs?.projects?.name}
-                          </Text>
-                        </Group>
-
-                        <Text size="md" fw={300} lineClamp={1} lts="-0.01em">
+                      <Stack gap={0} mt={6}>
+                        <Text size="lg" fw={600} lineClamp={1} lts="-0.01em">
                           {gig.gigs?.events?.name}
                         </Text>
 
-                        <Text size="xs" fw={400} lh={1}>
-                          📅{' '}
+                        <Text size="sm" truncate>
+                          {gig.gigs?.events?.venues?.name} (
+                          {gig.gigs?.events?.venues?.cities?.name},{' '}
+                          {gig.gigs?.events?.venues?.cities?.regions?.uf})
+                        </Text>
+
+                        <Text size="sm" fw={400} c="dimmed">
                           {dayjs(gig.gigs?.events?.date_start).format(
                             'dddd, D [de] MMMM',
                           )}
                         </Text>
-
-                        <Group gap={2} align="center" mt={4}>
-                          <IconMapPin size={12} color="gray" />
-                          <Text size="xs" c="dimmed" lh={1} truncate>
-                            {gig.gigs?.events?.venues?.name} (
-                            {gig.gigs?.events?.venues?.cities?.name},{' '}
-                            {gig.gigs?.events?.venues?.cities?.regions?.uf})
-                          </Text>
-                        </Group>
                       </Stack>
                     </Card>
                   ))}
@@ -394,7 +384,7 @@ export default function Home() {
               </Paper>
             )}
 
-            <Title order={2} fz="h3" fw={600} lts="-0.02em" mb="xs">
+            <Title order={2} fz="xl" fw={700} lts="-0.02em" mb="xs">
               Para o dia a dia
             </Title>
 
@@ -577,7 +567,6 @@ export default function Home() {
             </Title>
 
             <Table
-              withRowBorders
               highlightOnHover={false}
               horizontalSpacing={0}
               verticalSpacing={10}
@@ -736,6 +725,224 @@ export default function Home() {
                 )}
               </Table.Tbody>
             </Table>
+
+            {userProjects.length > 0 ? (
+              <Stack gap="xs">
+                {userProjects.map((project) => (
+                  <Paper key={project.id} p="sm">
+                    <Grid>
+                      <Grid.Col
+                        span={{ base: 12, md: 6, lg: 6 }}
+                        opacity={project.request_status === 1 ? 0.4 : 1}
+                      >
+                        <Link
+                          to={`/project/${project.slug}`}
+                          className="noDecoration"
+                          mb="md"
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 10,
+                            color: 'var(--mantine-color-text)',
+                          }}
+                        >
+                          <Avatar
+                            size={50}
+                            src={
+                              project?.picture
+                                ? `${PROJECT_AVATAR_PATH}/${project?.id}/tr:h-100,w-100,c-maintain_ratio/${project?.picture}`
+                                : undefined
+                            }
+                            alt={project.name}
+                          />
+                          <Flex direction="column" gap={3}>
+                            <Title
+                              order={3}
+                              size="md"
+                              fw={600}
+                              lh={1}
+                              w={120}
+                              truncate="end"
+                            >
+                              {project.name}{' '}
+                            </Title>
+                            <Text size="sm" c="dimmed" w={120} truncate="end">
+                              {project.type}{' '}
+                              {project.genre ? `· ${project.genre}` : ''}
+                            </Text>
+                            {project.activity_status && (
+                              <Group gap={8} wrap="nowrap">
+                                <Indicator
+                                  color={
+                                    project.activity_status_color ?? 'gray'
+                                  }
+                                  processing={project.activity_status === 1}
+                                  size={5}
+                                />
+                                <Text
+                                  size="11px"
+                                  lh={1}
+                                  c={
+                                    !project.activity_status_color
+                                      ? 'dimmed'
+                                      : undefined
+                                  }
+                                >
+                                  {project.activity_status_name
+                                    ? project.activity_status_name
+                                    : 'Não informado'}
+                                  {project.end_year &&
+                                    ` em ${project.end_year}`}
+                                </Text>
+                              </Group>
+                            )}
+                          </Flex>
+                        </Link>
+                        <Text
+                          size="sm"
+                          fw={300}
+                          opacity={project.request_status === 1 ? 0.4 : 1}
+                          w={150}
+                          truncate="end"
+                        >
+                          {project.main_role}{' '}
+                          {project.is_founder && (
+                            <Text span c="dimmed" size="xs">
+                              (Fundador)
+                            </Text>
+                          )}
+                        </Text>
+                        {project.request_status !== 1 && (
+                          <>
+                            {!project.end_year ? (
+                              <Flex gap={8} align="center">
+                                <Indicator
+                                  color={project.left_at ? 'red' : 'green'}
+                                  size={5}
+                                />
+                                <Text size="11px" className="lhNormal">
+                                  {`${project.joined_at} ➜ ${project.left_at ? project.left_at : currentYear}`}{' '}
+                                  {project.left_at
+                                    ? showYears(
+                                        project.left_at - project.joined_at,
+                                      )
+                                    : showYears(
+                                        currentYear - project.joined_at,
+                                      )}
+                                </Text>
+                              </Flex>
+                            ) : (
+                              <Flex gap={8} align="center">
+                                <Indicator color="red" size={5} />
+                                <Text size="11px" className="lhNormal">
+                                  {`${project.joined_at} ➜ ${project.end_year}`}{' '}
+                                  {showYears(
+                                    project.end_year - project.joined_at,
+                                  )}
+                                </Text>
+                              </Flex>
+                            )}
+                          </>
+                        )}
+                        <Group>
+                          {project.request_status === 1 && (
+                            <Badge
+                              color="orange"
+                              size="xs"
+                              autoContrast
+                              leftSection={<IconClock size={12} />}
+                            >
+                              Pendente
+                            </Badge>
+                          )}
+                          {project.is_ex_member && (
+                            <Text c="dimmed" size="xs">
+                              Ex integrante
+                            </Text>
+                          )}
+                        </Group>
+                      </Grid.Col>
+                      <Grid.Col
+                        span={{ base: 12, md: 6, lg: 6 }}
+                        opacity={project.request_status === 1 ? 0.4 : 1}
+                      >
+                        <Flex direction="column" gap={2}>
+                          <Text
+                            size="sm"
+                            fw={300}
+                            opacity={project.request_status === 1 ? 0.4 : 1}
+                            w={150}
+                            truncate="end"
+                          >
+                            {project.main_role}{' '}
+                            {project.is_founder && (
+                              <Text span c="dimmed" size="xs">
+                                (Fundador)
+                              </Text>
+                            )}
+                          </Text>
+                          {project.request_status !== 1 && (
+                            <>
+                              {!project.end_year ? (
+                                <Flex gap={8} align="center">
+                                  <Indicator
+                                    color={project.left_at ? 'red' : 'green'}
+                                    size={5}
+                                  />
+                                  <Text size="11px" className="lhNormal">
+                                    {`${project.joined_at} ➜ ${project.left_at ? project.left_at : currentYear}`}{' '}
+                                    {project.left_at
+                                      ? showYears(
+                                          project.left_at - project.joined_at,
+                                        )
+                                      : showYears(
+                                          currentYear - project.joined_at,
+                                        )}
+                                  </Text>
+                                </Flex>
+                              ) : (
+                                <Flex gap={8} align="center">
+                                  <Indicator color="red" size={5} />
+                                  <Text size="11px" className="lhNormal">
+                                    {`${project.joined_at} ➜ ${project.end_year}`}{' '}
+                                    {showYears(
+                                      project.end_year - project.joined_at,
+                                    )}
+                                  </Text>
+                                </Flex>
+                              )}
+                            </>
+                          )}
+                          <Group>
+                            {project.request_status === 1 && (
+                              <Badge
+                                color="orange"
+                                size="xs"
+                                autoContrast
+                                leftSection={<IconClock size={12} />}
+                              >
+                                Pendente
+                              </Badge>
+                            )}
+                            {project.is_ex_member && (
+                              <Text c="dimmed" size="xs">
+                                Ex integrante
+                              </Text>
+                            )}
+                          </Group>
+                        </Flex>
+                      </Grid.Col>
+                    </Grid>
+                  </Paper>
+                ))}
+              </Stack>
+            ) : (
+              <Paper>
+                <Text c="dimmed" ta="center">
+                  Nenhum projeto associado ao seu perfil
+                </Text>
+              </Paper>
+            )}
 
             <Title order={2} fz="h3" fw={600} lts="-0.02em" mt="lg" mb="md">
               Itens em destaque
