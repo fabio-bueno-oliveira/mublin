@@ -64,13 +64,14 @@ const theme = createTheme({
     Badge: Badge.extend({
       defaultProps: {
         fw: '500',
-        radius: 'md',
+        radius: 'sm',
       },
     }),
     Button: Button.extend({
       defaultProps: {
         size: 'md',
         variant: 'filled',
+        radius: 'xl',
       },
     }),
     Card: Paper.extend({

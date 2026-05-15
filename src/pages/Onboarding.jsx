@@ -2,23 +2,54 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useQuery } from '@tanstack/react-query'
-import { fetchUserProfile, fetchUserRoles, fetchUserProjects } from '../queries/user'
+import {
+  fetchUserProfile,
+  fetchUserRoles,
+  fetchUserProjects,
+} from '../queries/user'
 import { fetchCityById } from '../queries/locations'
 import { supabase } from '../lib/supabaseClient'
 import {
-  Container, Stepper, Stack, Group, Title, Text, Button,
-  Avatar, Textarea, TextInput, NativeSelect, Grid, Input,
-  Modal, ScrollArea, Box, Anchor, Divider, Badge, Pill, 
-  Loader, ThemeIcon
+  Container,
+  Stepper,
+  Stack,
+  Group,
+  Title,
+  Text,
+  Button,
+  Avatar,
+  Textarea,
+  TextInput,
+  NativeSelect,
+  Grid,
+  Input,
+  Modal,
+  ScrollArea,
+  Box,
+  Anchor,
+  Divider,
+  Badge,
+  Pill,
+  Loader,
+  ThemeIcon,
 } from '@mantine/core'
 import JoinProjectModal from '../components/modals/JoinProjectModal'
 import { useForm } from '@mantine/form'
-import { useDebouncedCallback, useDisclosure, useMediaQuery } from '@mantine/hooks'
+import {
+  useDebouncedCallback,
+  useDisclosure,
+  useMediaQuery,
+} from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
 import { upload } from '@imagekit/react'
 import {
-  IconArrowLeft, IconArrowRight, IconSearch,
-  IconCheck, IconX, IconUpload, IconCircuitResistor
+  IconArrowLeft,
+  IconArrowRight,
+  IconSearch,
+  IconCheck,
+  IconX,
+  IconUpload,
+  IconCircuitResistor,
 } from '@tabler/icons-react'
 
 // ── Queries ──────────────────────────────────────────────
@@ -28,7 +59,9 @@ async function fetchRoles() {
     .from('roles')
     .select('id, name_ptbr, instrumentalist, applies_to_a_project')
     .order('name_ptbr')
-  if (error) throw new Error(error.message)
+  if (error) {
+    throw new Error(error.message)
+  }
   return data
 }
 
@@ -38,7 +71,9 @@ async function fetchRegions() {
     .select('id, name')
     .eq('country_id', 27)
     .order('name')
-  if (error) throw new Error(error.message)
+  if (error) {
+    throw new Error(error.message)
+  }
   return data
 }
 
@@ -50,7 +85,9 @@ async function searchCitiesByName(query, regionId) {
     .ilike('name', `%${query}%`)
     .order('name')
     .limit(20)
-  if (error) throw new Error(error.message)
+  if (error) {
+    throw new Error(error.message)
+  }
   return data
 }
 
@@ -60,7 +97,9 @@ async function searchProjectsByName(name) {
     .select('id, name, slug, picture, description')
     .ilike('name', `%${name}%`)
     .limit(8)
-  if (error) throw new Error(error.message)
+  if (error) {
+    throw new Error(error.message)
+  }
   return data
 }
 
@@ -85,13 +124,15 @@ export default function Onboarding() {
   // ── Step 2: Perfil ────────────────────────────────────
   const [usernameChecking, setUsernameChecking] = useState(false)
   const [usernameAvailable, setUsernameAvailable] = useState(null)
-  const [usernameUnavailableReason, setUsernameUnavailableReason] = useState(null)
+  const [usernameUnavailableReason, setUsernameUnavailableReason] =
+    useState(null)
   const [selectedCity, setSelectedCity] = useState(null)
   const [citySearchQuery, setCitySearchQuery] = useState('')
   const [cityResults, setCityResults] = useState([])
   const [citySearchLoading, setCitySearchLoading] = useState(false)
   const [noCityResults, setNoCityResults] = useState(false)
-  const [modalCityOpened, { open: openCityModal, close: closeCityModal }] = useDisclosure(false)
+  const [modalCityOpened, { open: openCityModal, close: closeCityModal }] =
+    useDisclosure(false)
 
   const profileForm = useForm({
     initialValues: {
@@ -101,9 +142,15 @@ export default function Onboarding() {
     },
     validate: {
       username: (v) => {
-        if (!v) return 'Escolha um username'
-        if (v.length < 3) return 'Mínimo 3 caracteres'
-        if (!/^[a-z0-9_]+$/.test(v)) return 'Apenas letras minúsculas, números e _'
+        if (!v) {
+          return 'Escolha um username'
+        }
+        if (v.length < 3) {
+          return 'Mínimo 3 caracteres'
+        }
+        if (!/^[a-z0-9_]+$/.test(v)) {
+          return 'Apenas letras minúsculas, números e _'
+        }
         return null
       },
       region_id: (v) => (!v ? 'Selecione seu Estado' : null),
@@ -120,7 +167,8 @@ export default function Onboarding() {
   const [projectSearchLoading, setProjectSearchLoading] = useState(false)
   const [userProjects, setUserProjects] = useState([])
   const [selectedProject, setSelectedProject] = useState(null)
-  const [modalJoinOpened, { open: openJoinModal, close: closeJoinModal }] = useDisclosure(false)
+  const [modalJoinOpened, { open: openJoinModal, close: closeJoinModal }] =
+    useDisclosure(false)
   const [joinRole, setJoinRole] = useState('')
   const [joinYear, setJoinYear] = useState(currentYear)
   const [joiningProject, setJoiningProject] = useState(false)
@@ -161,28 +209,29 @@ export default function Onboarding() {
   })
 
   const rolesMusicians = roles
-    .filter(r => r.instrumentalist)
-    .map(r => ({ label: r.name_ptbr, value: String(r.id) }))
+    .filter((r) => r.instrumentalist)
+    .map((r) => ({ label: r.name_ptbr, value: String(r.id) }))
 
   const rolesManagement = roles
-    .filter(r => !r.instrumentalist)
-    .map(r => ({ label: r.name_ptbr, value: String(r.id) }))
+    .filter((r) => !r.instrumentalist)
+    .map((r) => ({ label: r.name_ptbr, value: String(r.id) }))
 
-  const rolesForProject = roles
-    .filter(r => r.applies_to_a_project)
+  const rolesForProject = roles.filter((r) => r.applies_to_a_project)
 
   const rolesProjectMusicians = rolesForProject
-    .filter(r => r.instrumentalist)
-    .map(r => ({ label: r.name_ptbr, value: String(r.id) }))
+    .filter((r) => r.instrumentalist)
+    .map((r) => ({ label: r.name_ptbr, value: String(r.id) }))
 
   const rolesProjectManagement = rolesForProject
-    .filter(r => !r.instrumentalist)
-    .map(r => ({ label: r.name_ptbr, value: String(r.id) }))
+    .filter((r) => !r.instrumentalist)
+    .map((r) => ({ label: r.name_ptbr, value: String(r.id) }))
 
   // ── Popula os estados iniciais ──
 
   useEffect(() => {
-    if (!savedProfile) return
+    if (!savedProfile) {
+      return
+    }
 
     // Popula username, bio e region_id no form
     profileForm.setValues({
@@ -194,14 +243,18 @@ export default function Onboarding() {
     // Busca e popula a cidade, se houver
     if (savedProfile.city_id) {
       fetchCityById(savedProfile.city_id).then((city) => {
-        if (city) setSelectedCity({ id: city.id, name: city.name })
+        if (city) {
+          setSelectedCity({ id: city.id, name: city.name })
+        }
       })
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [savedProfile])
 
   useEffect(() => {
-    if (!savedRoles.length) return
+    if (!savedRoles.length) {
+      return
+    }
     const mapped = savedRoles.map((r) => ({
       id: r.roles.id,
       name: r.roles.name_ptbr,
@@ -211,7 +264,9 @@ export default function Onboarding() {
   }, [savedRoles])
 
   useEffect(() => {
-    if (!savedProjects.length) return
+    if (!savedProjects.length) {
+      return
+    }
     const mapped = savedProjects.map((r) => ({
       id: r.projects.id,
       name: r.projects.name,
@@ -225,16 +280,22 @@ export default function Onboarding() {
 
   // Step 1 — Avatar
   function handleAvatarSelect(file) {
-    if (!file) return
+    if (!file) {
+      return
+    }
     setAvatarFile(file)
     setAvatarPreview(URL.createObjectURL(file))
   }
 
   async function handleAvatarUpload() {
-    if (!avatarFile) return
+    if (!avatarFile) {
+      return
+    }
     setAvatarUploading(true)
     try {
-      const { data: { session } } = await supabase.auth.getSession()
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
       const authRes = await fetch(import.meta.env.VITE_IMAGEKIT_AUTH_ENDPOINT, {
         headers: {
           Authorization: `Bearer ${session?.access_token}`,
@@ -253,7 +314,8 @@ export default function Onboarding() {
         token: ikToken,
         expire,
         signature,
-        onProgress: (e) => setUploadProgress(Math.round((e.loaded / e.total) * 100)),
+        onProgress: (e) =>
+          setUploadProgress(Math.round((e.loaded / e.total) * 100)),
       })
 
       const n = response.filePath.lastIndexOf('/')
@@ -324,7 +386,9 @@ export default function Onboarding() {
 
   const handleCitySearch = useDebouncedCallback(async (query) => {
     const regionId = profileForm.values.region_id
-    if (!query || query.length < 2 || !regionId) return
+    if (!query || query.length < 2 || !regionId) {
+      return
+    }
     setCitySearchLoading(true)
     setNoCityResults(false)
     const results = await searchCitiesByName(query, regionId)
@@ -350,7 +414,11 @@ export default function Onboarding() {
       })
       .eq('id', user.id)
     if (error) {
-      notifications.show({ color: 'red', position: 'top-center', message: 'Erro ao salvar. Tente novamente.' })
+      notifications.show({
+        color: 'red',
+        position: 'top-center',
+        message: 'Erro ao salvar. Tente novamente.',
+      })
       setIsSubmitting(false)
       return false
     }
@@ -360,21 +428,24 @@ export default function Onboarding() {
 
   // Step 3 — Roles
   async function handleAddRole(roleId) {
-    if (!roleId || userRoles.find(r => r.id === Number(roleId))) return
+    if (!roleId || userRoles.find((r) => r.id === Number(roleId))) {
+      return
+    }
     setAddingRole(true)
-    const role = roles.find(r => r.id === Number(roleId))
+    const role = roles.find((r) => r.id === Number(roleId))
     const isFirst = userRoles.length === 0
 
-    const { error } = await supabase
-      .from('profile_roles')
-      .insert({
-        id_profile: user.id,
-        id_role: Number(roleId),
-        main_activity: isFirst,
-      })
+    const { error } = await supabase.from('profile_roles').insert({
+      id_profile: user.id,
+      id_role: Number(roleId),
+      main_activity: isFirst,
+    })
 
     if (!error) {
-      setUserRoles(prev => [...prev, { id: role.id, name: role.name_ptbr, profileRoleId: null }])
+      setUserRoles((prev) => [
+        ...prev,
+        { id: role.id, name: role.name_ptbr, profileRoleId: null },
+      ])
     }
     setAddingRole(false)
   }
@@ -386,12 +457,15 @@ export default function Onboarding() {
       .eq('id_profile', user.id)
       .eq('id_role', roleId)
 
-    setUserRoles(prev => prev.filter(r => r.id !== roleId))
+    setUserRoles((prev) => prev.filter((r) => r.id !== roleId))
   }
 
   // Step 4 — Projetos
   const handleProjectSearch = useDebouncedCallback(async (query) => {
-    if (query.length < 2) { setProjectResults([]); return }
+    if (query.length < 2) {
+      setProjectResults([])
+      return
+    }
     setProjectSearchLoading(true)
     const results = await searchProjectsByName(query)
     setProjectResults(results)
@@ -399,7 +473,9 @@ export default function Onboarding() {
   }, 600)
 
   function handleSelectProject(project) {
-    if (userProjects.find(p => p.id === project.id)) return
+    if (userProjects.find((p) => p.id === project.id)) {
+      return
+    }
     setSelectedProject(project)
     setJoinYear(currentYear)
     setJoinRole('')
@@ -407,27 +483,30 @@ export default function Onboarding() {
   }
 
   async function handleJoinProject() {
-    if (!joinRole || !joinYear) return
+    if (!joinRole || !joinYear) {
+      return
+    }
     setJoiningProject(true)
 
-    const { error } = await supabase
-      .from('project_members')
-      .insert({
-        project_id: selectedProject.id,
-        profile_id: user.id,
-        role_id: Number(joinRole),
-        joined_at: `${joinYear}-01-01`,
-        is_founder: false,
-        is_admin: false,
-      })
+    const { error } = await supabase.from('project_members').insert({
+      project_id: selectedProject.id,
+      profile_id: user.id,
+      role_id: Number(joinRole),
+      joined_at: `${joinYear}-01-01`,
+      is_founder: false,
+      is_admin: false,
+    })
 
     if (!error) {
-      setUserProjects(prev => [...prev, {
-        id: selectedProject.id,
-        name: selectedProject.name,
-        picture: selectedProject.picture,
-        slug: selectedProject.slug,
-      }])
+      setUserProjects((prev) => [
+        ...prev,
+        {
+          id: selectedProject.id,
+          name: selectedProject.name,
+          picture: selectedProject.picture,
+          slug: selectedProject.slug,
+        },
+      ])
       closeJoinModal()
       notifications.show({
         color: 'green',
@@ -436,9 +515,11 @@ export default function Onboarding() {
         autoClose: 5000,
       })
     } else {
-      notifications.show(
-        { color: 'red', position: 'top-center', message: 'Erro ao tentar ingressar. Tente novamente.' }
-      )
+      notifications.show({
+        color: 'red',
+        position: 'top-center',
+        message: 'Erro ao tentar ingressar. Tente novamente.',
+      })
     }
     setJoiningProject(false)
   }
@@ -448,17 +529,25 @@ export default function Onboarding() {
   async function handleNext() {
     if (active === 1) {
       const valid = profileForm.validate()
-      if (valid.hasErrors) return
-      if (usernameAvailable === false) return
-      if (usernameChecking) return
+      if (valid.hasErrors) {
+        return
+      }
+      if (usernameAvailable === false) {
+        return
+      }
+      if (usernameChecking) {
+        return
+      }
       const ok = await saveProfile()
-      if (!ok) return
+      if (!ok) {
+        return
+      }
     }
-    setActive(s => s + 1)
+    setActive((s) => s + 1)
   }
 
   function handleBack() {
-    setActive(s => s - 1)
+    setActive((s) => s - 1)
   }
 
   async function handleFinish() {
@@ -471,12 +560,12 @@ export default function Onboarding() {
     setIsSubmitting(false)
   }
 
-  const AVATAR_PATH = 'https://ik.imagekit.io/mublin/tr:h-200,w-200,c-maintain_ratio/users/avatars/'
+  const AVATAR_PATH =
+    'https://ik.imagekit.io/mublin/tr:h-200,w-200,c-maintain_ratio/users/avatars/'
 
   return (
     <Container size="sm" py={32} mb={80}>
       <Stack gap="xl">
-
         <Stack gap={4} align="center">
           <IconCircuitResistor size={38} />
           <Title order={2} fw={800} lts="-0.02em" ta="center">
@@ -486,7 +575,6 @@ export default function Onboarding() {
             Leva menos de 2 minutos
           </Text>
         </Stack>
-
         <Stepper
           active={active}
           color="indigo"
@@ -497,23 +585,32 @@ export default function Onboarding() {
           <Stepper.Step label="Atividades" />
           <Stepper.Step label="Projetos" />
         </Stepper>
-
         {/* ── Step 0: Foto de perfil ───────────────────── */}
         {active === 0 && (
           <Stack gap="lg" align="center">
-            <Title order={3} fw={700} ta="center">Defina sua foto de perfil</Title>
+            <Title order={3} fw={700} ta="center">
+              Defina sua foto de perfil
+            </Title>
             <Text c="dimmed" size="sm" ta="center">
-              Uma boa foto aumenta suas chances de ser encontrado por outros músicos.
+              Uma boa foto aumenta suas chances de ser encontrado por outros
+              músicos.
             </Text>
 
             <Avatar
               size={120}
-              src={avatarPreview || (profile?.avatar ? AVATAR_PATH + profile.avatar : undefined)}
-              style={{ border: '3px solid var(--mantine-color-default-border)' }}
+              src={
+                avatarPreview ||
+                (profile?.avatar ? AVATAR_PATH + profile.avatar : undefined)
+              }
+              style={{
+                border: '3px solid var(--mantine-color-default-border)',
+              }}
             />
 
             {uploadProgress > 0 && uploadProgress < 100 && (
-              <Text size="xs" c="dimmed">Enviando... {uploadProgress}%</Text>
+              <Text size="xs" c="dimmed">
+                Enviando... {uploadProgress}%
+              </Text>
             )}
 
             <Group gap="sm">
@@ -547,11 +644,12 @@ export default function Onboarding() {
             </Group>
           </Stack>
         )}
-
         {/* ── Step 1: Sobre você ───────────────────────── */}
         {active === 1 && (
           <Stack gap="md">
-            <Title order={3} fw={700} ta="center">Conte um pouco sobre você</Title>
+            <Title order={3} fw={700} ta="center">
+              Conte um pouco sobre você
+            </Title>
 
             <TextInput
               withAsterisk
@@ -581,11 +679,11 @@ export default function Onboarding() {
                 handleUsernameCheck(value)
               }}
             />
-            {usernameAvailable === false &&
-              <Badge color='red' variant='light' size='xs' fw='500'>
+            {usernameAvailable === false && (
+              <Badge color="red" variant="light" size="xs" fw="500">
                 Username já em uso
               </Badge>
-            }
+            )}
 
             <Textarea
               label="Bio (opcional)"
@@ -610,8 +708,10 @@ export default function Onboarding() {
                   }}
                 >
                   <option value="">Selecione</option>
-                  {regions.map(r => (
-                    <option key={r.id} value={String(r.id)}>{r.name}</option>
+                  {regions.map((r) => (
+                    <option key={r.id} value={String(r.id)}>
+                      {r.name}
+                    </option>
                   ))}
                 </NativeSelect>
               </Grid.Col>
@@ -620,22 +720,36 @@ export default function Onboarding() {
                   <Input
                     pointer
                     readOnly
-                    placeholder={profileForm.values.region_id ? 'Selecionar...' : 'Selecione o Estado'}
+                    placeholder={
+                      profileForm.values.region_id
+                        ? 'Selecionar...'
+                        : 'Selecione o Estado'
+                    }
                     disabled={!profileForm.values.region_id}
                     value={selectedCity?.name ?? ''}
-                    rightSection={profileForm.values.region_id ? <IconSearch size={15} /> : undefined}
-                    onClick={() => { if (profileForm.values.region_id) openCityModal() }}
+                    rightSection={
+                      profileForm.values.region_id ? (
+                        <IconSearch size={15} />
+                      ) : undefined
+                    }
+                    onClick={() => {
+                      if (profileForm.values.region_id) {
+                        openCityModal()
+                      }
+                    }}
                   />
                 </Input.Wrapper>
               </Grid.Col>
             </Grid>
           </Stack>
         )}
-
+        De quais projetos ou bandas você participa ou já participou?
         {/* ── Step 2: Atividades musicais ──────────────── */}
         {active === 2 && (
           <Stack gap="md">
-            <Title order={3} fw={700} ta="center">Sua ligação com a música</Title>
+            <Title order={3} fw={700} ta="center">
+              Sua ligação com a música
+            </Title>
             <Text c="dimmed" size="sm" ta="center">
               Quais suas principais atividades? Selecione todas que se aplicam.
             </Text>
@@ -647,28 +761,38 @@ export default function Onboarding() {
               onChange={(e) => handleAddRole(e.target.value)}
               value=""
             >
-              <option value="">{addingRole ? 'Salvando...' : 'Selecione'}</option>
+              <option value="">
+                {addingRole ? 'Salvando...' : 'Selecione'}
+              </option>
               <optgroup label="Gestão, produção e outros">
                 {rolesManagement
-                  .filter(r => !userRoles.find(ur => ur.id === Number(r.value)))
-                  .map(r => <option key={r.value} value={r.value}>{r.label}</option>)
-                }
+                  .filter(
+                    (r) => !userRoles.find((ur) => ur.id === Number(r.value)),
+                  )
+                  .map((r) => (
+                    <option key={r.value} value={r.value}>
+                      {r.label}
+                    </option>
+                  ))}
               </optgroup>
               <optgroup label="Instrumentos">
                 {rolesMusicians
-                  .filter(r => !userRoles.find(ur => ur.id === Number(r.value)))
-                  .map(r => <option key={r.value} value={r.value}>{r.label}</option>)
-                }
+                  .filter(
+                    (r) => !userRoles.find((ur) => ur.id === Number(r.value)),
+                  )
+                  .map((r) => (
+                    <option key={r.value} value={r.value}>
+                      {r.label}
+                    </option>
+                  ))}
               </optgroup>
             </NativeSelect>
 
             {userRoles.length > 0 && (
               <Group gap={6}>
-                {userRoles.map(role => (
+                {userRoles.map((role) => (
                   <Badge
                     key={role.id}
-                    color={role.main_activity ? 'dark' : 'gray'}
-                    variant="filled"
                     size="md"
                     rightSection={
                       <IconX
@@ -691,18 +815,25 @@ export default function Onboarding() {
             )}
           </Stack>
         )}
-
         {/* ── Step 3: Projetos ─────────────────────────── */}
         {active === 3 && (
           <Stack gap="md">
-            <Title order={3} fw={700} ta="center">Seus projetos musicais</Title>
+            <Title order={3} fw={700} ta="center">
+              Seus projetos musicais
+            </Title>
             <Text c="dimmed" size="sm" ta="center">
               De quais projetos ou bandas você participa ou já participou?
             </Text>
 
             <TextInput
               placeholder="Buscar projeto ou banda..."
-              leftSection={projectSearchLoading ? <Loader size={15} /> : <IconSearch size={15} />}
+              leftSection={
+                projectSearchLoading ? (
+                  <Loader size={15} />
+                ) : (
+                  <IconSearch size={15} />
+                )
+              }
               value={projectSearch}
               onChange={(e) => {
                 setProjectSearch(e.target.value)
@@ -711,37 +842,52 @@ export default function Onboarding() {
             />
 
             {projectResults.length > 0 && (
-              <ScrollArea h={200} type="auto">
+              <ScrollArea h={140} type="auto">
                 <Stack gap={0}>
-                  {projectResults.map(project => {
-                    const alreadyAdded = userProjects.find(p => p.id === project.id)
+                  {projectResults.map((project) => {
+                    const alreadyAdded = userProjects.find(
+                      (p) => p.id === project.id,
+                    )
                     return (
                       <Box key={project.id}>
                         <Group
                           py="xs"
                           gap="sm"
-                          style={{ cursor: alreadyAdded ? 'default' : 'pointer', opacity: alreadyAdded ? 0.5 : 1 }}
-                          onClick={() => !alreadyAdded && handleSelectProject(project)}
+                          style={{
+                            cursor: alreadyAdded ? 'default' : 'pointer',
+                            opacity: alreadyAdded ? 0.5 : 1,
+                          }}
+                          onClick={() =>
+                            !alreadyAdded && handleSelectProject(project)
+                          }
                         >
                           <Avatar
                             size={40}
                             radius="md"
-                            src={project.picture
-                              ? `https://ik.imagekit.io/mublin/projects/tr:h-80/${project.picture}`
-                              : undefined
+                            src={
+                              project.picture
+                                ? `https://ik.imagekit.io/mublin/projects/${project.id}/tr:h-80/${project.picture}`
+                                : undefined
                             }
                           />
                           <Stack gap={2} style={{ flex: 1 }}>
                             <Group gap="xs">
-                              <Text size="sm" fw={600}>{project.name}</Text>
+                              <Text size="sm" fw={600}>
+                                {project.name}
+                              </Text>
                               {alreadyAdded && (
                                 <ThemeIcon size={18} radius="xl" color="indigo">
-                                  <IconCheck style={{ width: 12, height: 12 }} stroke={3} />
+                                  <IconCheck
+                                    style={{ width: 12, height: 12 }}
+                                    stroke={3}
+                                  />
                                 </ThemeIcon>
                               )}
                             </Group>
                             {project.description && (
-                              <Text size="xs" c="dimmed" lineClamp={1}>{project.description}</Text>
+                              <Text size="xs" c="dimmed" lineClamp={1}>
+                                {project.description}
+                              </Text>
                             )}
                           </Stack>
                         </Group>
@@ -755,26 +901,41 @@ export default function Onboarding() {
 
             {userProjects.length > 0 && (
               <Stack gap={4}>
-                <Text size="xs" fw={600} c="dimmed">
-                  {userProjects.length} {userProjects.length === 1 ? 'projeto adicionado' : 'projetos adicionados'}:
+                <Text size="sm" fw={600} c="dimmed">
+                  {userProjects.length}{' '}
+                  {userProjects.length === 1
+                    ? 'projeto adicionado'
+                    : 'projetos adicionados'}
+                  :
                 </Text>
                 <Group gap={6}>
-                  {userProjects.map(project => (
-                    <Pill 
+                  {userProjects.map((project) => (
+                    <Pill
                       key={project.id}
-                      withRemoveButton 
+                      withRemoveButton
                       onRemove={async () => {
                         await supabase
                           .from('project_members')
                           .delete()
                           .eq('project_id', project.id)
                           .eq('profile_id', user.id)
-                        setUserProjects(prev => prev.filter(p => p.id !== project.id))
+                        setUserProjects((prev) =>
+                          prev.filter((p) => p.id !== project.id),
+                        )
                       }}
-                      size='sm'
+                      size="sm"
                     >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <Avatar src={`https://ik.imagekit.io/mublin/projects/tr:h-150/${project.picture}`} size={16} />
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 6,
+                        }}
+                      >
+                        <Avatar
+                          src={`https://ik.imagekit.io/mublin/projects/${project.id}/tr:h-150/${project.picture}`}
+                          size={16}
+                        />
                         {project.name}
                       </div>
                     </Pill>
@@ -791,12 +952,11 @@ export default function Onboarding() {
             >
               Não encontrou? Cadastre um novo projeto →
             </Button>
-            <Text size='sm' c='dimmed' ta='center'>
+            <Text size="sm" c="dimmed" ta="center">
               Não se preocupe, você poderá adicionar mais projetos depois!
             </Text>
           </Stack>
         )}
-
         {/* ── Navegação ────────────────────────────────── */}
         <Group justify="space-between" mt="md">
           {active > 0 ? (
@@ -809,12 +969,20 @@ export default function Onboarding() {
             >
               Voltar
             </Button>
-          ) : <Box />}
+          ) : (
+            <Box />
+          )}
 
           {active < 3 ? (
             <Group gap="sm">
               {active === 0 && (
-                <Button variant="subtle" color="gray" radius="xl" size="md" onClick={() => setActive(1)}>
+                <Button
+                  variant="subtle"
+                  color="gray"
+                  radius="xl"
+                  size="md"
+                  onClick={() => setActive(1)}
+                >
                   Pular
                 </Button>
               )}
@@ -841,7 +1009,6 @@ export default function Onboarding() {
             </Button>
           )}
         </Group>
-
       </Stack>
 
       {/* ── Modal busca de cidade ─────────────────────── */}
@@ -858,17 +1025,27 @@ export default function Onboarding() {
             placeholder="Digite o nome da cidade..."
             data-autofocus
             value={citySearchQuery}
-            rightSection={citySearchLoading ? <Loader size={16} /> : <IconSearch size={16} />}
+            rightSection={
+              citySearchLoading ? (
+                <Loader size={16} />
+              ) : (
+                <IconSearch size={16} />
+              )
+            }
             onChange={(e) => {
               setCitySearchQuery(e.target.value)
               handleCitySearch(e.target.value)
             }}
           />
-          {noCityResults && <Text size="xs" c="dimmed">Nenhuma cidade encontrada.</Text>}
+          {noCityResults && (
+            <Text size="xs" c="dimmed">
+              Nenhuma cidade encontrada.
+            </Text>
+          )}
           {cityResults.length > 0 && (
             <ScrollArea h={200} type="auto">
               <Stack gap={0}>
-                {cityResults.map(city => (
+                {cityResults.map((city) => (
                   <Box key={city.id}>
                     <Anchor
                       size="sm"

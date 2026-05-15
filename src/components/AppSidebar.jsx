@@ -194,7 +194,7 @@ export default function AppSidebar() {
                 )}
               </Group>
               <Group gap={4} align="center">
-                <Text size="sm" fw={400} lineClamp={1} lh={1}>
+                <Text size="xs" opacity={0.7} fw={400} lineClamp={1} lh={1}>
                   @{profile?.username}
                 </Text>
                 {profile.plan === 'Pro' && (

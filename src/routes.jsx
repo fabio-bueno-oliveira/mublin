@@ -27,6 +27,7 @@ import NewProject from './pages/NewProject'
 import Backstage from './pages/Backstage'
 // -- Gigs pages
 import Gigs from './pages/Gigs'
+import Gig from './pages/Gig'
 // -- Gear pages
 import Gear from './pages/Gear'
 import GearItem from './pages/GearItem'
@@ -88,6 +89,7 @@ export const router = createBrowserRouter([
       { path: 'feed', element: <Feed /> },
       { path: 'search', element: <Search /> },
       { path: 'gigs', element: <Gigs /> },
+      { path: 'gig/:id', element: <Gig /> },
       { path: 'projects', element: <Projects /> },
       { path: 'new/project', element: <NewProject /> },
       { path: 'brand/:slug', element: <Brand /> },
@@ -141,7 +143,7 @@ export const router = createBrowserRouter([
       },
     ],
   },
-  // ── Perfil ──────────────────────────────────────
+  // ── Perfil (público ou autenticado) ─────────────
   {
     path: '/:username',
     element: <ProfileRouter />,
