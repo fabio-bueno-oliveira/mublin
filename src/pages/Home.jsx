@@ -1,9 +1,9 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useQuery } from '@tanstack/react-query'
-import { fetchUserProjects, fetchUserGearCount } from '../queries/user'
+import { fetchUserProjects } from '../queries/user'
 import { fetchUserGigs } from '../queries/gigs'
-import { fetchFeaturedProducts } from '../queries/gear'
 // prettier-ignore
 import {
   Grid, Group,Flex,
@@ -13,15 +13,13 @@ import {
   Text, Title,
   Paper, Card, Box,
   Anchor, ActionIcon,
-  Avatar, Image, Progress,
+  Avatar, Progress,
 } from '@mantine/core'
 import { useMediaQuery } from '@mantine/hooks'
 import AppNavbarMobile from '../components/AppNavbarMobile'
 // import { PROJECT_ACTIVITY_STATUS } from '../constants/projects'
 import Feed from './Feed'
 import {
-  IconArrowRight,
-  IconMicrophone2,
   IconCalendar,
   IconBulb,
   IconRadar,
@@ -43,12 +41,14 @@ dayjs.locale('pt-br')
 // const AVATAR_PATH =
 //   'https://ik.imagekit.io/mublin/tr:h-68,c-maintain_ratio/users/avatars/'
 const PROJECT_AVATAR_PATH = 'https://ik.imagekit.io/mublin/projects'
-const PATH_PRODUCT_IMAGE_MOBILE =
-  'https://ik.imagekit.io/mublin/products/tr:w-200,bg-FFFFFF,fo-x/'
+// const PATH_PRODUCT_IMAGE_MOBILE =
+//   'https://ik.imagekit.io/mublin/products/tr:w-200,bg-FFFFFF,fo-x/'
 
 export default function Home() {
   const { profile, user, loading } = useAuth()
   const isDesktop = useMediaQuery('(min-width: 48em)')
+
+  const [gigTypeToShow, setGigTypeToShow] = useState('confirmed')
 
   const { data: projects = [], isLoading: loadingProjects } = useQuery({
     queryKey: ['user-projects', user?.id],
@@ -98,19 +98,6 @@ export default function Home() {
     staleTime: 1000 * 60 * 4,
   })
 
-  const { data: gearCount = [], isLoading: loadingGearCount } = useQuery({
-    queryKey: ['user-gear-count', user?.id],
-    queryFn: () => fetchUserGearCount(user.id),
-    enabled: !!user?.id,
-    staleTime: 1000 * 60 * 10,
-  })
-
-  const { data: featuredProducts = [], isLoading: loadingFeaturedProducts } = useQuery({
-    queryKey: ['featured-products'],
-    queryFn: () => fetchFeaturedProducts(),
-    staleTime: 1000 * 60 * 10,
-  })
-
   // Deriva gêneros dos projetos com percentual
   const genreStats = (() => {
     const projectsWithGenre = userProjects.filter((p) => p.genre)
@@ -126,14 +113,14 @@ export default function Home() {
     const total = projectsWithGenre.length
 
     const COLORS = [
-      'blue.7',
-      'pink.6',
+      'blue.6',
+      'blue.8',
       'green.8',
-      'orange.6',
-      'violet.7',
+      'teal.6',
+      'violet.8',
       'teal.6',
       'red.7',
-      'yellow.6',
+      'cyan.7',
     ]
 
     return Object.entries(counts)
@@ -153,7 +140,7 @@ export default function Home() {
         <Grid>
           <Grid.Col span={{ base: 12, md: 7 }} className="paddingX">
             {loading || loadingProjects ? (
-              <Box mb="sm">
+              <Box mb="xl">
                 <Text fz="h2" fw={700} lts="-0.02em">
                   Carregando...
                 </Text>
@@ -174,18 +161,25 @@ export default function Home() {
                 </Group>
               </Box>
             ) : (
-              <Box>
+              <Box mb="xl">
                 <Text fz="h2" fw={700} lts="-0.02em">
                   Olá, {profile.username}
                 </Text>
                 <Group justify="space-between">
-                  <Text fz="md" opacity={0.9} lh={1}>
+                  <Text fz="sm" opacity={0.8} lh={1}>
                     Você está associado a{' '}
                     {userProjects.length === 1
                       ? '1 projeto'
                       : `${userProjects.length} projetos`}
                   </Text>
-                  <Anchor component={Link} lh={1} to="/projects" fz="sm" fw={500}>
+                  <Anchor
+                    c="dimmed"
+                    component={Link}
+                    lh={1}
+                    to="/projects"
+                    fz="sm"
+                    fw={500}
+                  >
                     Ver todos
                   </Anchor>
                 </Group>
@@ -250,6 +244,7 @@ export default function Home() {
                                   direction="column"
                                   gap="xs"
                                   inset={0}
+                                  style={{ borderRadius: '8px' }}
                                   bg="rgba(0,0,0,0.6)"
                                 >
                                   <IconClock size={24} color="#ffffff" stroke={1.2} />
@@ -307,7 +302,7 @@ export default function Home() {
               </Box>
             )}
 
-            <Button
+            {/* <Button
               fullWidth
               mt="xl"
               mb={3}
@@ -325,23 +320,58 @@ export default function Home() {
             </Button>
 
             <Flex justify="center" mb="xl">
-              <Anchor opacity={0.8} fz="xs" fw={300} component={Link} to="/new/project">
+              <Anchor
+                c="var(--mantine-color-text)"
+                opacity={0.8}
+                fz="xs"
+                fw={300}
+                component={Link}
+                to="/new/project"
+              >
                 ou associe-se a um projeto novo ou existente
               </Anchor>{' '}
-            </Flex>
+            </Flex> */}
 
             <Group justify="space-between">
-              <Title order={2} fz="xl" fw={700} lts="-0.02em" mb="xs">
+              {/* <Title order={2} fz="xl" fw={700} lts="-0.02em" mb="xs">
                 Próximas gigs
-              </Title>
-              <Anchor component={Link} to="/gigs" fz="sm" fw={500}>
-                Ver todas
+              </Title> */}
+              <Flex gap="xs" mb="xs">
+                <Title
+                  order={2}
+                  fz="xl"
+                  fw={700}
+                  lts="-0.02em"
+                  opacity={gigTypeToShow === 'confirmed' ? 1 : 0.4}
+                  component={Anchor}
+                  underline="never"
+                  c="var(--mantine-color-text)"
+                  onClick={() => setGigTypeToShow('confirmed')}
+                >
+                  Próximas gigs
+                </Title>
+                <Title
+                  order={2}
+                  fz="xl"
+                  fw={700}
+                  lts="-0.02em"
+                  opacity={gigTypeToShow === 'invites' ? 1 : 0.4}
+                  component={Anchor}
+                  underline="never"
+                  c="var(--mantine-color-text)"
+                  onClick={() => setGigTypeToShow('invites')}
+                >
+                  Convites (0)
+                </Title>
+              </Flex>
+              <Anchor c="dimmed" component={Link} to="/gigs" fz="sm" fw={500}>
+                Ver tudo
               </Anchor>
             </Group>
 
             {loadingGigs ? (
               <Group mb="md" gap="xs" wrap="nowrap">
-                <Card shadow="xs" padding="xs" w={250} h={143} withBorder>
+                <Card shadow="xs" padding="xs" w={300} h={150} withBorder>
                   <Stack gap="xs" pt={4}>
                     <Skeleton width={130} height={14} radius="md" />
                     <Group gap={5} justify="flex-start">
@@ -362,7 +392,7 @@ export default function Home() {
                       key={gig.id}
                       shadow="xs"
                       padding="xs"
-                      w={350}
+                      w={300}
                       withBorder
                       component={Link}
                       to={`/gig/${gig.gigs?.id}`}
@@ -611,51 +641,6 @@ export default function Home() {
                 </Paper>
               </>
             )}
-
-            <Title order={2} fz="h3" fw={600} lts="-0.02em" mt="lg" mb="md">
-              Itens em destaque
-            </Title>
-
-            <Scroller
-              key={featuredProducts.length}
-              draggable
-              controlSize="xl"
-              showEndControl={featuredProducts.length > 4}
-              startControlIcon={<IconCircleArrowLeftFilled size={36} />}
-              endControlIcon={<IconCircleArrowRightFilled size={36} />}
-              mb="sm"
-            >
-              <Group gap="xs" wrap="nowrap">
-                {featuredProducts.map((item) => (
-                  <Flex key={item.id} direction="column" wrap="wrap">
-                    <Link to={`/gear/${item.slug}`}>
-                      <Image
-                        src={
-                          item.picture
-                            ? PATH_PRODUCT_IMAGE_MOBILE + item.picture
-                            : undefined
-                        }
-                        bg="white"
-                        h={120}
-                        mah={120}
-                        miw={90}
-                        fit="contain"
-                        mb={4}
-                        radius="md"
-                        alt={`${item.brand_name} ${item.name}`}
-                        style={{ pointerEvents: 'none' }}
-                      />
-                    </Link>
-                    <Text size="11px" truncate="end" fw={300} my={4} c="dimmed" w={75}>
-                      {item.brand_name}
-                    </Text>
-                    <Text size="xs" fw={500} fz="xs" h={40} w={75} truncate="end">
-                      {item.name}
-                    </Text>
-                  </Flex>
-                ))}
-              </Group>
-            </Scroller>
           </Grid.Col>
 
           {isDesktop && (

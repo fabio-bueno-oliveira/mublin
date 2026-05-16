@@ -1,0 +1,42 @@
+.project-dashbar {
+  position: fixed;
+  bottom: 0;
+  background-color: #0b0b0b;
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+  height: 54px;
+  width: 100%;
+  z-index: 250;
+  box-shadow: -2px -7px 17px 0px rgba(0, 0, 0, 0.4);
+  -webkit-box-shadow: -2px -7px 17px 0px rgba(0, 0, 0, 0.4);
+  -moz-box-shadow: -2px -7px 17px 0px rgba(0, 0, 0, 0.4);
+}
+
+@media (max-width: 48em) {
+  .project-dashbar {
+    bottom: 70px;
+  }
+}
+
+.projectSelector {
+  cursor: 'pointer';
+}
+
+.projectSelector:active {
+  /* Mantém a cor original do texto, sem mudar no clique */
+  color: inherit !important;
+
+  /* Mantém a opacidade normal (caso o Mantine ou outro estilo aplique fade) */
+  opacity: 1 !important;
+
+  /* Remove qualquer background ou outline indesejado */
+  background: none !important;
+  outline: none !important;
+
+  /* Se houver algum efeito de escala/transformação */
+  transform: none !important;
+}
+
+.projectSelector {
+  -webkit-tap-highlight-color: transparent;
+}

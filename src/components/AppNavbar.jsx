@@ -1,10 +1,5 @@
 import { useState } from 'react'
-import {
-  Link,
-  useNavigate,
-  useSearchParams,
-  useLocation,
-} from 'react-router-dom'
+import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom'
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query'
 import {
   fetchRecentSearches,
@@ -17,18 +12,18 @@ import MublinLogoWhite from '../assets/svg/mublin-logo-white.svg'
 import {
   useMantineColorScheme,
   useComputedColorScheme,
+  Box,
+  Modal,
   Group,
+  Menu,
   Text,
   TextInput,
   ActionIcon,
   Avatar,
   Button,
-  Menu,
-  Box,
   Container,
   Combobox,
   useCombobox,
-  Modal,
   Stack,
   Image,
 } from '@mantine/core'
@@ -59,10 +54,8 @@ export default function AppNavbar({ children }) {
   const computedColorScheme = useComputedColorScheme('light')
   const isDark = computedColorScheme === 'dark'
   const toggleColorScheme = () => setColorScheme(isDark ? 'light' : 'dark')
-  const [
-    actionsMenuOpened,
-    { open: openActionsMenu, close: closeActionsMenu },
-  ] = useDisclosure(false)
+  const [actionsMenuOpened, { open: openActionsMenu, close: closeActionsMenu }] =
+    useDisclosure(false)
 
   const [searchParams] = useSearchParams()
   const [searchFocused, setSearchFocused] = useState(false)
@@ -139,9 +132,7 @@ export default function AppNavbar({ children }) {
               {children}
               <Link to="/home">
                 <Image
-                  src={
-                    colorScheme === 'light' ? MublinLogoBlack : MublinLogoWhite
-                  }
+                  src={colorScheme === 'light' ? MublinLogoBlack : MublinLogoWhite}
                   h={28}
                   w="auto"
                   fit="contain"
@@ -271,19 +262,6 @@ export default function AppNavbar({ children }) {
               >
                 <IconSearch size={18} />
               </ActionIcon>
-              <ActionIcon
-                variant="subtle"
-                color="gray"
-                radius="xl"
-                size="lg"
-                onClick={toggleColorScheme}
-                aria-label="Alternar tema"
-                title={
-                  isDark ? 'Mudar para tema claro' : 'Mudar para tema escuro'
-                }
-              >
-                {isDark ? <IconSun size={18} /> : <IconMoon size={18} />}
-              </ActionIcon>
               <ActionIcon variant="subtle" color="gray" radius="xl" size="lg">
                 <IconBell size={18} />
               </ActionIcon>
@@ -292,11 +270,7 @@ export default function AppNavbar({ children }) {
                   <Group gap={6} style={{ cursor: 'pointer' }}>
                     <Avatar
                       size={32}
-                      src={
-                        profile?.avatar
-                          ? AVATAR_PATH + profile.avatar
-                          : undefined
-                      }
+                      src={profile?.avatar ? AVATAR_PATH + profile.avatar : undefined}
                       radius="xl"
                     />
                     <Text size="sm" fw={600} visibleFrom="sm">
@@ -317,6 +291,10 @@ export default function AppNavbar({ children }) {
                     Configurações
                   </Menu.Item>
                   <Menu.Divider />
+                  <Menu.Item onClick={toggleColorScheme}>
+                    {isDark ? 'Mudar para tema claro' : 'Mudar para tema escuro'}
+                  </Menu.Item>
+                  <Menu.Divider />
                   <Menu.Item onClick={handleSignOut}>Sair</Menu.Item>
                 </Menu.Dropdown>
               </Menu>
@@ -325,11 +303,7 @@ export default function AppNavbar({ children }) {
         </Container>
       </Box>
       {actionsMenuOpened && (
-        <Modal
-          opened={openActionsMenu}
-          onClose={closeActionsMenu}
-          title="Criar"
-        >
+        <Modal opened={openActionsMenu} onClose={closeActionsMenu} title="Criar">
           <Stack mt="lg">
             {QUICK_ACTIONS.map((item) => {
               const Icon = item.icon

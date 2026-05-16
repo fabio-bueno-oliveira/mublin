@@ -1,14 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
-import {
-  Drawer,
-  Button,
-  Avatar,
-  Stack,
-  UnstyledButton,
-  Indicator,
-} from '@mantine/core'
+import { Drawer, Button, Avatar, Stack, UnstyledButton, Indicator } from '@mantine/core'
 import {
   IconBulb,
   IconCubePlus,
@@ -39,6 +32,7 @@ export default function AppFooterMobile() {
           <UnstyledButton
             className={navItemClass(isActive('/home'))}
             onClick={() => navigate('/home')}
+            opacity={isActive('/home') && !drawerOpen ? 1 : 0.65}
           >
             <IconHome />
           </UnstyledButton>
@@ -46,6 +40,7 @@ export default function AppFooterMobile() {
           <UnstyledButton
             className={navItemClass(isActive('/feed'))}
             onClick={() => navigate('/feed')}
+            opacity={isActive('/feed') && !drawerOpen ? 1 : 0.65}
           >
             <Indicator color="red" top="4px">
               <IconRss />
@@ -57,6 +52,7 @@ export default function AppFooterMobile() {
               .filter(Boolean)
               .join(' ')}
             onClick={() => setDrawerOpen((v) => !v)}
+            opacity={drawerOpen ? 1 : 0.65}
           >
             <IconPlus />
           </UnstyledButton>
@@ -64,6 +60,7 @@ export default function AppFooterMobile() {
           <UnstyledButton
             className={navItemClass(isActive('/search'))}
             onClick={() => navigate('/search')}
+            opacity={isActive('/search') && !drawerOpen ? 1 : 0.65}
           >
             <IconSearch />
           </UnstyledButton>
@@ -80,6 +77,7 @@ export default function AppFooterMobile() {
           <UnstyledButton
             className={navItemClass(isActive('/menu'))}
             onClick={() => navigate('/menu')}
+            opacity={isActive('/menu') && !drawerOpen ? 1 : 0.65}
           >
             <Avatar
               w={35}

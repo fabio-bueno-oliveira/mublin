@@ -4,52 +4,75 @@ import { useAuth } from '../hooks/useAuth'
 import { supabase } from '../lib/supabaseClient'
 import { upload } from '@imagekit/react'
 import {
-  Container, Center, Flex, Stack, Group,
-  Text, Avatar, ActionIcon,
-  Button, Modal, Image, LoadingOverlay,
-  useMantineColorScheme
+  Container,
+  Center,
+  Flex,
+  Stack,
+  Group,
+  Text,
+  Avatar,
+  ActionIcon,
+  Button,
+  Modal,
+  Image,
+  LoadingOverlay,
+  useMantineColorScheme,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import {
-  IconCircuitResistor, IconUser, IconSettings,
-  IconCamera, IconChevronRight, IconLogout, 
-  IconBrightnessUp, IconMoon, IconUpload, IconHome,
+  IconCircuitResistor,
+  IconUser,
+  IconSettings,
+  IconCamera,
+  IconChevronRight,
+  IconLogout,
+  IconBrightnessUp,
+  IconMoon,
+  IconUpload,
+  IconHome,
   // IconHeartHandshake, IconPackages, IconCalendarMonth, IconEdit,
   // IconLock, IconEye, IconAdjustmentsHorizontal, IconMusic, IconCalendarEvent,
 } from '@tabler/icons-react'
 import MublinLogoBlack from '../assets/svg/mublin-logo-black.svg'
 import MublinLogoWhite from '../assets/svg/mublin-logo-white.svg'
 
-const AVATAR_BASE = 'https://ik.imagekit.io/mublin/tr:h-200,w-200,c-maintain_ratio/users/avatars/'
-const iconStyle  = { width: 17, height: 17 }
+const AVATAR_BASE =
+  'https://ik.imagekit.io/mublin/tr:h-200,w-200,c-maintain_ratio/users/avatars/'
+const iconStyle = { width: 17, height: 17 }
 
 export default function Menu() {
   const { user, profile, signOut } = useAuth()
   const navigate = useNavigate()
   const { colorScheme, setColorScheme } = useMantineColorScheme()
 
-  const [modalOpen,  setModalOpen]  = useState(false)
-  const [uploading,  setUploading]  = useState(false)
+  const [modalOpen, setModalOpen] = useState(false)
+  const [uploading, setUploading] = useState(false)
   const [previewSrc, setPreviewSrc] = useState(null)
   const [avatarFile, setAvatarFile] = useState(null)
 
   const buttonColor = colorScheme === 'light' ? 'dark' : 'gray'
-  const avatarSrc   = previewSrc
-    ?? (profile?.avatar ? AVATAR_BASE + profile.avatar : undefined)
+  const avatarSrc =
+    previewSrc ?? (profile?.avatar ? AVATAR_BASE + profile.avatar : undefined)
 
   // ── Upload ──────────────────────────────────────────────
   function handleFileSelect(e) {
     const file = e.target.files?.[0]
-    if (!file) return
+    if (!file) {
+      return
+    }
     setAvatarFile(file)
     setPreviewSrc(URL.createObjectURL(file))
   }
 
   async function handleUpload() {
-    if (!avatarFile) return
+    if (!avatarFile) {
+      return
+    }
     setUploading(true)
     try {
-      const { data: { session } } = await supabase.auth.getSession()
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
       const authRes = await fetch(import.meta.env.VITE_IMAGEKIT_AUTH_ENDPOINT, {
         headers: { Authorization: `Bearer ${session?.access_token}` },
       })
@@ -70,10 +93,7 @@ export default function Menu() {
 
       const fileName = response.filePath.split('/').pop()
 
-      await supabase
-        .from('profiles')
-        .update({ avatar: fileName })
-        .eq('id', user.id)
+      await supabase.from('profiles').update({ avatar: fileName }).eq('id', user.id)
 
       notifications.show({
         color: 'green',
@@ -103,8 +123,8 @@ export default function Menu() {
   // ── Menu items ──────────────────────────────────────────
   const menuItems = [
     { icon: IconHome, label: 'Home', to: '/home' },
-    { icon: IconUser,                      label: 'Ir para meu perfil',            to: `/${profile?.username}` },
-    { icon: IconSettings,                  label: 'Configurações',                 to: `/settings` },
+    { icon: IconUser, label: 'Ir para meu perfil', to: `/${profile?.username}` },
+    { icon: IconSettings, label: 'Configurações', to: `/settings` },
     // { icon: IconCalendarEvent,          label: 'Gigs',                          to: '/gigs' },
     // { icon: IconCalendarMonth,          label: 'Disponibilidade para gigs',     to: '/settings/availability' },
     // { icon: IconMusic,                  label: 'Projetos musicais',             to: '/projects' },
@@ -121,18 +141,21 @@ export default function Menu() {
     <>
       <Flex
         gap={8}
-        align='flex-end'
-        justify='center'
+        align="flex-end"
+        justify="center"
         component={Link}
         to="/home"
         style={{ cursor: 'pointer', textDecoration: 'none' }}
         mb={10}
       >
-        <IconCircuitResistor size={22} stroke={2} color={colorScheme === 'light' ? 'black' : 'white'} />
+        <IconCircuitResistor
+          size={22}
+          stroke={2}
+          color={colorScheme === 'light' ? 'black' : 'white'}
+        />
         <Image src={colorScheme === 'light' ? MublinLogoBlack : MublinLogoWhite} w={96} />
       </Flex>
       <Container size="xs" mb={26} mt={20}>
-
         {/* ── Avatar + câmera ── */}
         <Center>
           <Avatar radius="lg" size={82} src={avatarSrc} alt="Foto de perfil" />
@@ -151,7 +174,11 @@ export default function Menu() {
 
         {/* ── Saudação ── */}
         <Text ta="center" size="lg" mt={9}>
-          Olá, <Text component="span" fw={500}>{profile?.full_name?.split(' ')[0]}</Text>!
+          Olá,{' '}
+          <Text component="span" fw={500}>
+            {profile?.full_name?.split(' ')[0]}
+          </Text>
+          !
         </Text>
 
         {/* ── Badge de plano ── */}
@@ -184,19 +211,23 @@ export default function Menu() {
             radius="xl"
             color={colorScheme === 'dark' ? 'white' : 'dark'}
             leftSection={
-              colorScheme === 'dark'
-                ? <IconBrightnessUp size="1.5rem" stroke={1.5} />
-                : <IconMoon size="1.5rem" stroke={1.5} />
+              colorScheme === 'dark' ? (
+                <IconBrightnessUp size="1.5rem" stroke={1.5} />
+              ) : (
+                <IconMoon size="1.5rem" stroke={1.5} />
+              )
             }
             onClick={() => setColorScheme(colorScheme === 'dark' ? 'light' : 'dark')}
           >
-            {colorScheme === 'dark' ? 'Mudar para o tema claro' : 'Mudar para o tema escuro'}
+            {colorScheme === 'dark'
+              ? 'Mudar para o tema claro'
+              : 'Mudar para o tema escuro'}
           </Button>
         </Center>
 
         {/* ── Menu items ── */}
         <Stack gap="0.2rem">
-          {menuItems.map(({ icon: Icon, label, to }) => ( // eslint-disable-line
+          {menuItems.map(({ icon: Icon, label, to }) => (
             <Button
               key={to}
               component={Link}
@@ -227,14 +258,17 @@ export default function Menu() {
             Sair
           </Button>
         </Stack>
-
       </Container>
 
       {/* ── Modal troca de foto ── */}
       <Modal
         centered
         opened={modalOpen}
-        onClose={() => { setModalOpen(false); setPreviewSrc(null); setAvatarFile(null) }}
+        onClose={() => {
+          setModalOpen(false)
+          setPreviewSrc(null)
+          setAvatarFile(null)
+        }}
         title="Alterar foto de perfil"
         size="xs"
         radius="md"
@@ -248,8 +282,8 @@ export default function Menu() {
           <Image
             radius="md"
             src={
-              previewSrc
-              ?? (profile?.avatar
+              previewSrc ??
+              (profile?.avatar
                 ? AVATAR_BASE + profile.avatar
                 : 'https://ik.imagekit.io/mublin/tr:h-140,w-140,r-max/sample-folder/avatar-undefined_Kblh5CBKPp.jpg')
             }

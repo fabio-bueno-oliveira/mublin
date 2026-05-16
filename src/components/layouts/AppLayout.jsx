@@ -6,6 +6,7 @@ import { useUI } from '../../contexts/UIContext'
 import AppNavbar from '../AppNavbar'
 import AppSidebar from '../AppSidebar'
 import AppFooterMobile from '../AppFooterMobile'
+import AppProjectDashbar from '../AppProjectDashbar'
 
 export default function AppLayout({ children }) {
   const { session, loading } = useAuth()
@@ -38,9 +39,7 @@ export default function AppLayout({ children }) {
         </AppShell.Header>
       )}
 
-      <AppShell.Main
-        pb={{ base: 'calc(70px + var(--mantine-spacing-md))', sm: 'md' }}
-      >
+      <AppShell.Main pb={{ base: 'calc(110px + var(--mantine-spacing-md))', sm: '60px' }}>
         <Container size="lg" px={0}>
           <Flex gap="xs" align="flex-start">
             {isDesktop && (
@@ -59,6 +58,7 @@ export default function AppLayout({ children }) {
         </Container>
       </AppShell.Main>
 
+      <AppProjectDashbar />
       {!hideFooter && <AppFooterMobile />}
     </AppShell>
   )
