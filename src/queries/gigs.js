@@ -5,16 +5,20 @@ export async function fetchGigDetails(gigId) {
     .from('gigs')
     .select(
       `
-      id, title, slug, description,
+      id, created_at, active, 
+      title, slug, description,
       has_remuneration,
+      time_stage_start, time_stage_end, 
+      profiles!gigs_posted_by_fkey ( id, full_name, username, avatar ),
       projects ( id, name, slug, picture, project_types ( name_ptbr ) ),
       events ( id, name, date_start, venues ( name, cities ( name, regions ( name, uf ) ) ) ),
       event_types ( name ),
       dress_code_types ( name ),
       gig_roles (
-        id, description, 
+        id, description, fee, is_filled, is_sub, sub_for,
         roles ( description_ptbr ),
-        experience_levels ( id, name_pt )
+        experience_levels ( id, name_pt ),
+        profiles ( avatar, username )
       )
     `,
     )

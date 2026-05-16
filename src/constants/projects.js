@@ -6,9 +6,3 @@ export const PROJECT_ACTIVITY_STATUS = Object.freeze({
   UNDER_DEVELOPMENT: 5,
   HIATUS: 6,
 })
-
-export const PROJECT_MEMBER_STATUS = Object.freeze({
-  PENDING: 1,
-  ACCEPTED: 2,
-  DECLINED: 3,
-})

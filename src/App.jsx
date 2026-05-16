@@ -26,7 +26,7 @@ import './styles.scss'
 const theme = createTheme({
   // autoContrast: true,
   primaryColor: 'mublinColor',
-  primaryShade: 6,
+  // primaryShade: 7,
   colors: {
     mublinColor: [
       '#ecefff',

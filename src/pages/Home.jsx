@@ -43,7 +43,8 @@ dayjs.locale('pt-br')
 // const AVATAR_PATH =
 //   'https://ik.imagekit.io/mublin/tr:h-68,c-maintain_ratio/users/avatars/'
 const PROJECT_AVATAR_PATH = 'https://ik.imagekit.io/mublin/projects'
-const PATH_PRODUCT_IMAGE_MOBILE = 'https://ik.imagekit.io/mublin/products/tr:w-200,bg-FFFFFF,fo-x/'
+const PATH_PRODUCT_IMAGE_MOBILE =
+  'https://ik.imagekit.io/mublin/products/tr:w-200,bg-FFFFFF,fo-x/'
 
 export default function Home() {
   const { profile, user, loading } = useAuth()
@@ -124,7 +125,16 @@ export default function Home() {
 
     const total = projectsWithGenre.length
 
-    const COLORS = ['blue.7', 'pink.6', 'green.8', 'orange.6', 'violet.7', 'teal.6', 'red.7', 'yellow.6']
+    const COLORS = [
+      'blue.7',
+      'pink.6',
+      'green.8',
+      'orange.6',
+      'violet.7',
+      'teal.6',
+      'red.7',
+      'yellow.6',
+    ]
 
     return Object.entries(counts)
       .sort((a, b) => b[1] - a[1])
@@ -170,7 +180,10 @@ export default function Home() {
                 </Text>
                 <Group justify="space-between">
                   <Text fz="md" opacity={0.9} lh={1}>
-                    Você está associado a {userProjects.length === 1 ? '1 projeto' : `${userProjects.length} projetos`}
+                    Você está associado a{' '}
+                    {userProjects.length === 1
+                      ? '1 projeto'
+                      : `${userProjects.length} projetos`}
                   </Text>
                   <Anchor component={Link} lh={1} to="/projects" fz="sm" fw={500}>
                     Ver todos
@@ -182,8 +195,12 @@ export default function Home() {
                     key={userProjects.length}
                     draggable={!isDesktop}
                     controlSize="xl"
-                    startControlIcon={isDesktop ? <IconCircleArrowLeftFilled size={36} /> : undefined}
-                    endControlIcon={isDesktop ? <IconCircleArrowRightFilled size={36} /> : undefined}
+                    startControlIcon={
+                      isDesktop ? <IconCircleArrowLeftFilled size={36} /> : undefined
+                    }
+                    endControlIcon={
+                      isDesktop ? <IconCircleArrowRightFilled size={36} /> : undefined
+                    }
                   >
                     <Group align="flex-start" gap="md" wrap="nowrap" pr="md">
                       {userProjects.map((project) => (
@@ -208,22 +225,23 @@ export default function Home() {
                                 }
                                 title={project.name}
                               />
-                              {project.activity_status && project.request_status !== 1 && (
-                                <Badge
-                                  pos="absolute"
-                                  top={2}
-                                  right={2}
-                                  color={project.activity_status_color ?? undefined}
-                                  size="xs"
-                                  fz="8px"
-                                  radius="md"
-                                  variant="light"
-                                  opacity={0.9}
-                                  title={project.activity_status_name}
-                                >
-                                  {project.activity_status_name}
-                                </Badge>
-                              )}
+                              {project.activity_status &&
+                                project.request_status !== 1 && (
+                                  <Badge
+                                    pos="absolute"
+                                    top={2}
+                                    right={2}
+                                    color={project.activity_status_color ?? undefined}
+                                    size="xs"
+                                    fz="8px"
+                                    radius="md"
+                                    variant="light"
+                                    opacity={0.9}
+                                    title={project.activity_status_name}
+                                  >
+                                    {project.activity_status_name}
+                                  </Badge>
+                                )}
                               {project.request_status === 1 && (
                                 <Flex
                                   align="center"
@@ -235,7 +253,12 @@ export default function Home() {
                                   bg="rgba(0,0,0,0.6)"
                                 >
                                   <IconClock size={24} color="#ffffff" stroke={1.2} />
-                                  <Badge size="xs" fw="400" variant="outline" color="#ffffff">
+                                  <Badge
+                                    size="xs"
+                                    fw="400"
+                                    variant="outline"
+                                    color="#ffffff"
+                                  >
                                     Pendente
                                   </Badge>
                                 </Flex>
@@ -260,7 +283,14 @@ export default function Home() {
                             >
                               {project.name}
                             </Text>
-                            <Text mt={2} lh={1} w={90} size="xs" opacity={0.6} truncate="end">
+                            <Text
+                              mt={2}
+                              lh={1}
+                              w={90}
+                              size="xs"
+                              opacity={0.6}
+                              truncate="end"
+                            >
                               {project.type}
                             </Text>
                             {project.genre && (
@@ -332,7 +362,7 @@ export default function Home() {
                       key={gig.id}
                       shadow="xs"
                       padding="xs"
-                      w={250}
+                      w={350}
                       withBorder
                       component={Link}
                       to={`/gig/${gig.gigs?.id}`}
@@ -364,7 +394,8 @@ export default function Home() {
                             <Badge size="xs" variant="default">
                               {dayjs(gig.gigs?.events?.date_start).fromNow()}
                             </Badge>
-                            {dayjs(gig.gigs?.events?.date_start).diff(dayjs(), 'day') <= 2 && (
+                            {dayjs(gig.gigs?.events?.date_start).diff(dayjs(), 'day') <=
+                              2 && (
                               <IconExclamationCircleFilled
                                 color="orange"
                                 size={15}
@@ -388,12 +419,15 @@ export default function Home() {
                         </Text>
 
                         <Text size="sm" truncate>
-                          {gig.gigs?.events?.venues?.name} ({gig.gigs?.events?.venues?.cities?.name},{' '}
+                          {gig.gigs?.events?.venues?.name} (
+                          {gig.gigs?.events?.venues?.cities?.name},{' '}
                           {gig.gigs?.events?.venues?.cities?.regions?.uf})
                         </Text>
 
                         <Text size="xs" c="dimmed">
-                          {dayjs(gig.gigs?.events?.date_start).format('dddd, D [de] MMMM [de] YYYY')}
+                          {dayjs(gig.gigs?.events?.date_start).format(
+                            'dddd, D [de] MMMM [de] YYYY',
+                          )}
                         </Text>
                       </Stack>
                     </Card>
@@ -417,7 +451,13 @@ export default function Home() {
                   <Text size="sm" c="dimmed" ta="center" fw={500}>
                     Nenhuma gig agendada no momento :(
                   </Text>
-                  <Button size="xs" variant="default" radius="xl" color="gray" onClick={() => navigate('/search')}>
+                  <Button
+                    size="xs"
+                    variant="default"
+                    radius="xl"
+                    color="gray"
+                    onClick={() => navigate('/search')}
+                  >
                     Encontrar gigs
                   </Button>
                 </Stack>
@@ -451,7 +491,15 @@ export default function Home() {
                   </Text>
                 </Flex>
                 <Flex direction="column" align="center" w={80}>
-                  <ActionIcon variant="default" color="gray" size="xl" aria-label="Teste" w={80} h={80} mb="xs">
+                  <ActionIcon
+                    variant="default"
+                    color="gray"
+                    size="xl"
+                    aria-label="Teste"
+                    w={80}
+                    h={80}
+                    mb="xs"
+                  >
                     <IconBulb size={32} stroke={1.5} />
                   </ActionIcon>
                   <Text ta="center" size="xs" style={{ wordBreak: 'break-word' }} w={80}>
@@ -461,7 +509,15 @@ export default function Home() {
                   </Text>
                 </Flex>
                 <Flex direction="column" align="center" w={80}>
-                  <ActionIcon variant="default" color="gray" size="xl" aria-label="Teste" w={80} h={80} mb="xs">
+                  <ActionIcon
+                    variant="default"
+                    color="gray"
+                    size="xl"
+                    aria-label="Teste"
+                    w={80}
+                    h={80}
+                    mb="xs"
+                  >
                     <IconRadar size={32} stroke={1.5} />
                   </ActionIcon>
                   <Text ta="center" size="xs" style={{ wordBreak: 'break-word' }} w={80}>
@@ -471,7 +527,15 @@ export default function Home() {
                   </Text>
                 </Flex>
                 <Flex direction="column" align="center" w={80}>
-                  <ActionIcon variant="default" color="gray" size="xl" aria-label="Teste" w={80} h={80} mb="xs">
+                  <ActionIcon
+                    variant="default"
+                    color="gray"
+                    size="xl"
+                    aria-label="Teste"
+                    w={80}
+                    h={80}
+                    mb="xs"
+                  >
                     <IconStar size={32} stroke={1.5} />
                   </ActionIcon>
                   <Text ta="center" size="xs" style={{ wordBreak: 'break-word' }} w={80}>
@@ -481,7 +545,15 @@ export default function Home() {
                   </Text>
                 </Flex>
                 <Flex direction="column" align="center" w={80}>
-                  <ActionIcon variant="default" color="gray" size="xl" aria-label="Teste" w={80} h={80} mb="xs">
+                  <ActionIcon
+                    variant="default"
+                    color="gray"
+                    size="xl"
+                    aria-label="Teste"
+                    w={80}
+                    h={80}
+                    mb="xs"
+                  >
                     <IconGuitarPick size={32} stroke={1.5} />
                   </ActionIcon>
                   <Text ta="center" size="xs" style={{ wordBreak: 'break-word' }} w={80}>
@@ -524,8 +596,14 @@ export default function Home() {
                     </Stack>
                     <Progress.Root size={20} radius="xl">
                       {genreStats.map((stat) => (
-                        <Progress.Section value={stat.value} color={stat.color} key={stat.label}>
-                          {stat.value > 10 && <Progress.Label>{stat.value}%</Progress.Label>}
+                        <Progress.Section
+                          value={stat.value}
+                          color={stat.color}
+                          key={stat.label}
+                        >
+                          {stat.value > 10 && (
+                            <Progress.Label>{stat.value}%</Progress.Label>
+                          )}
                         </Progress.Section>
                       ))}
                     </Progress.Root>
@@ -552,7 +630,11 @@ export default function Home() {
                   <Flex key={item.id} direction="column" wrap="wrap">
                     <Link to={`/gear/${item.slug}`}>
                       <Image
-                        src={item.picture ? PATH_PRODUCT_IMAGE_MOBILE + item.picture : undefined}
+                        src={
+                          item.picture
+                            ? PATH_PRODUCT_IMAGE_MOBILE + item.picture
+                            : undefined
+                        }
                         bg="white"
                         h={120}
                         mah={120}
