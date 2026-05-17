@@ -76,8 +76,7 @@ export default function AppFooterMobile() {
 
           <UnstyledButton
             className={navItemClass(isActive('/menu'))}
-            onClick={() => navigate('/menu')}
-            opacity={isActive('/menu') && !drawerOpen ? 1 : 0.65}
+            onClick={() => navigate(`/${profile?.username}`)}
           >
             <Avatar
               w={35}

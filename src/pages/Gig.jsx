@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Helmet } from 'react-helmet-async'
 import { useParams, Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useQuery } from '@tanstack/react-query'
@@ -156,6 +157,12 @@ export default function GigApplicationDetail() {
 
   return (
     <>
+      <Helmet>
+        <meta charSet="utf-8" />
+        <title>{`${gig?.events?.name} · Mublin`}</title>
+        <link rel="canonical" href={`https://mublin.com/gig/${gigs?.slug}`} />
+        <meta name="description" content={`Gig '${gig?.events?.name}' no Mublin`} />
+      </Helmet>
       <AppNavbarMobile />
 
       <Container size="xl" pt="xs" px={{ base: 'md', sm: 0 }}>

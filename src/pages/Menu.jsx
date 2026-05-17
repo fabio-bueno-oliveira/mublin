@@ -3,10 +3,10 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { supabase } from '../lib/supabaseClient'
 import { upload } from '@imagekit/react'
+import AppNavbarMobile from '../components/AppNavbarMobile'
 import {
   Container,
   Center,
-  Flex,
   Stack,
   Group,
   Text,
@@ -20,7 +20,6 @@ import {
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import {
-  IconCircuitResistor,
   IconUser,
   IconSettings,
   IconCamera,
@@ -30,11 +29,7 @@ import {
   IconMoon,
   IconUpload,
   IconHome,
-  // IconHeartHandshake, IconPackages, IconCalendarMonth, IconEdit,
-  // IconLock, IconEye, IconAdjustmentsHorizontal, IconMusic, IconCalendarEvent,
 } from '@tabler/icons-react'
-import MublinLogoBlack from '../assets/svg/mublin-logo-black.svg'
-import MublinLogoWhite from '../assets/svg/mublin-logo-white.svg'
 
 const AVATAR_BASE =
   'https://ik.imagekit.io/mublin/tr:h-200,w-200,c-maintain_ratio/users/avatars/'
@@ -139,22 +134,8 @@ export default function Menu() {
 
   return (
     <>
-      <Flex
-        gap={8}
-        align="flex-end"
-        justify="center"
-        component={Link}
-        to="/home"
-        style={{ cursor: 'pointer', textDecoration: 'none' }}
-        mb={10}
-      >
-        <IconCircuitResistor
-          size={22}
-          stroke={2}
-          color={colorScheme === 'light' ? 'black' : 'white'}
-        />
-        <Image src={colorScheme === 'light' ? MublinLogoBlack : MublinLogoWhite} w={96} />
-      </Flex>
+      <AppNavbarMobile />
+
       <Container size="xs" mb={26} mt={20}>
         {/* ── Avatar + câmera ── */}
         <Center>

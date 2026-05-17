@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react'
-// import { useNavigate, useLocation } from 'react-router-dom'
+import { Link } from 'react-router-dom'
+import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { fetchUserProjects } from '../queries/user'
-import { fetchProjectProfile } from '../queries/projects'
+import { fetchProjectForDashbar } from '../queries/projects'
 import { useAuth } from '../hooks/useAuth'
-import { motion, AnimatePresence } from 'motion/react'
 import { useDisclosure, useMediaQuery } from '@mantine/hooks'
+import DashbarTextLoop from './DashbarTextLoop'
 import {
   Grid,
   Group,
@@ -30,22 +30,18 @@ import {
   IconSwitchHorizontal,
 } from '@tabler/icons-react'
 import './AppProjectDashbar.css'
-import { Link } from 'react-router-dom'
 
 const PROJECT_AVATAR_PATH = 'https://ik.imagekit.io/mublin/projects/'
+const AVATAR_PATH =
+  'https://ik.imagekit.io/mublin/tr:h-68,c-maintain_ratio/users/avatars/'
 
 export default function AppProjectDashbar() {
   const { user } = useAuth()
   const isMobile = useMediaQuery('(max-width: 48em)')
-  // const { pathname } = useLocation()
 
   const [opened, { close, toggle }] = useDisclosure(false)
   const [search, setSearch] = useState('')
-  const [index, setIndex] = useState(0)
   const [selectedProjectSlug, setSelectedProjectSlug] = useState('')
-
-  // const isActive = (path) => pathname === path
-  // const isActivePrefix = (prefix) => pathname.startsWith(prefix)
 
   const { data: projects = [], isLoading: loadingProjects } = useQuery({
     queryKey: ['user-projects', user?.id],
@@ -54,13 +50,17 @@ export default function AppProjectDashbar() {
     staleTime: 1000 * 60 * 4,
   })
 
-  const { data: project, isLoading: loadingProject } = useQuery({
+  const { data: project, isLoading: loadingProjectDashbar } = useQuery({
     queryKey: ['project', selectedProjectSlug],
-    queryFn: () => fetchProjectProfile(selectedProjectSlug),
+    queryFn: () => fetchProjectForDashbar(selectedProjectSlug),
     enabled: !!selectedProjectSlug,
     staleTime: 1000 * 60 * 5,
     retry: 1,
   })
+
+  const MAX_VISIBLE_AVATARS = 6
+  const visibleAvatars = project?.members.slice(0, MAX_VISIBLE_AVATARS)
+  const remainingAvatars = project?.members.length - MAX_VISIBLE_AVATARS
 
   const userProjects = projects.map((p) => ({
     id: p.projects.id,
@@ -100,7 +100,6 @@ export default function AppProjectDashbar() {
         setSelectedProjectSlug(project.slug)
         close()
         setSearch('')
-        setIndex(0)
       }}
     >
       {active && <IconCheck size={12} />}
@@ -128,111 +127,11 @@ export default function AppProjectDashbar() {
         </Text>
         <Text size="xs" opacity={0.5} truncate="end">
           {project.type}
+          {project.genre && ` · ${project.genre}`}
         </Text>
       </Box>
     </Group>
   )
-
-  // Vertical Text Loop
-
-  const STATS_ITEMS = [
-    {
-      label: 'Evento 1',
-      showLabel: true,
-      content: (
-        <Text size="14px" truncate="end">
-          Próxima Gig: 22/Mai no Bar do Rock
-        </Text>
-      ),
-      active: true,
-    },
-    {
-      label: 'Notificação',
-      showLabel: true,
-      content: (
-        <Text size="14px" truncate="end">
-          3 novas candidaturas recebidas
-        </Text>
-      ),
-      active: true,
-    },
-    {
-      label: 'Evento 3',
-      showLabel: true,
-      content: (
-        <Text size="14px" truncate="end">
-          Ensaio Geral: Quinta às 20h
-        </Text>
-      ),
-      active: true,
-    },
-    {
-      label: 'People',
-      showLabel: false,
-      content: (
-        <Flex justify="center">
-          <Tooltip.Group openDelay={300} closeDelay={100}>
-            <Avatar.Group spacing={7}>
-              <Tooltip label="Salazar Troop" withArrow position="top">
-                <Avatar
-                  src="https://raw.githubusercontent.com/mantinedev/mantine/master/.demo/avatars/avatar-9.png"
-                  radius="xl"
-                  size={28}
-                />
-              </Tooltip>
-              <Tooltip label="Bandit Crimes" withArrow position="top">
-                <Avatar
-                  src="https://raw.githubusercontent.com/mantinedev/mantine/master/.demo/avatars/avatar-8.png"
-                  radius="xl"
-                  size={28}
-                />
-              </Tooltip>
-              <Tooltip label="Jane Rata" withArrow position="top">
-                <Avatar
-                  src="https://raw.githubusercontent.com/mantinedev/mantine/master/.demo/avatars/avatar-7.png"
-                  radius="xl"
-                  size={28}
-                />
-              </Tooltip>
-              <Tooltip label="Bandit Crimes" withArrow position="top">
-                <Avatar
-                  src="https://raw.githubusercontent.com/mantinedev/mantine/master/.demo/avatars/avatar-8.png"
-                  radius="xl"
-                  size={28}
-                />
-              </Tooltip>
-              <Tooltip
-                withArrow
-                position="top"
-                label={
-                  <>
-                    <div>John Outcast</div>
-                    <div>Levi Capitan</div>
-                  </>
-                }
-              >
-                <Avatar radius="xl" size={28}>
-                  +2
-                </Avatar>
-              </Tooltip>
-            </Avatar.Group>
-          </Tooltip.Group>
-        </Flex>
-      ),
-      active: !!isMobile,
-    },
-  ]
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setIndex(
-        (prevIndex) => (prevIndex + 1) % STATS_ITEMS.filter((x) => x.active).length,
-      )
-    }, 4000) // Alterna a cada 4 segundos
-
-    return () => clearInterval(timer)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isMobile])
 
   return (
     <>
@@ -294,14 +193,14 @@ export default function AppProjectDashbar() {
                 </>
               )}
             </Grid.Col>
-            {loadingProject && (
+            {loadingProjectDashbar && (
               <Grid.Col span={{ base: 7.5, md: 8.5 }} pt={8} pl={8} visibleFrom="sm">
                 <Text size="sm" fw={300}>
                   Carregando informações do projeto...
                 </Text>
               </Grid.Col>
             )}
-            {!selectedProject && !loadingProject && (
+            {!selectedProject && !loadingProjectDashbar && (
               <Grid.Col span={{ base: 7.5, md: 8.5 }} pt={8} pl={8} visibleFrom="sm">
                 <Group gap={4} opacity={0.4}>
                   <IconArrowLeft size={14} />
@@ -312,67 +211,47 @@ export default function AppProjectDashbar() {
                 </Group>
               </Grid.Col>
             )}
-            {selectedProject && !loadingProject && (
+            {selectedProject && !loadingProjectDashbar && (
               <>
                 <Grid.Col span={{ base: 6, md: 4 }} pt={4}>
-                  <Box style={{ height: 28, overflow: 'hidden', position: 'relative' }}>
-                    <AnimatePresence mode="wait">
-                      <motion.div
-                        key={index}
-                        initial={{ y: 20, opacity: 0 }}
-                        animate={{ y: 0, opacity: 1 }}
-                        exit={{ y: -20, opacity: 0 }}
-                        transition={{ duration: 0.8, ease: 'easeInOut' }}
-                        style={{ position: 'absolute', width: '100%' }}
-                      >
-                        {STATS_ITEMS[index]?.showLabel && (
-                          <Text size="10px">{STATS_ITEMS[index]?.label}</Text>
-                        )}
-                        {STATS_ITEMS[index]?.content}
-                      </motion.div>
-                    </AnimatePresence>
-                  </Box>
+                  <DashbarTextLoop project={project} />
                 </Grid.Col>
 
                 <Grid.Col span={{ base: 0, md: 4 }} visibleFrom="sm">
                   <Flex justify="flex-end">
                     <Tooltip.Group closeDelay={100}>
                       <Avatar.Group spacing="sm">
-                        <Tooltip label="Salazar Troop" withArrow position="top">
-                          <Avatar
-                            src="https://raw.githubusercontent.com/mantinedev/mantine/master/.demo/avatars/avatar-9.png"
-                            radius="xl"
-                            size={34}
-                          />
-                        </Tooltip>
-                        <Tooltip label="Bandit Crimes" withArrow position="top">
-                          <Avatar
-                            src="https://raw.githubusercontent.com/mantinedev/mantine/master/.demo/avatars/avatar-8.png"
-                            radius="xl"
-                            size={34}
-                          />
-                        </Tooltip>
-                        <Tooltip label="Jane Rata" withArrow position="top">
-                          <Avatar
-                            src="https://raw.githubusercontent.com/mantinedev/mantine/master/.demo/avatars/avatar-7.png"
-                            radius="xl"
-                            size={34}
-                          />
-                        </Tooltip>
-                        <Tooltip
-                          withArrow
-                          position="top"
-                          label={
-                            <>
-                              <div>John Outcast</div>
-                              <div>Levi Capitan</div>
-                            </>
-                          }
-                        >
+                        {visibleAvatars?.map((user) => (
+                          <Tooltip
+                            key={user.id}
+                            fz="xs"
+                            label={
+                              user.is_ex_member
+                                ? `${user.name} (ex-integrante)`
+                                : user.name
+                            }
+                            withArrow
+                            position="top"
+                          >
+                            <Avatar
+                              src={
+                                user.avatar ? `${AVATAR_PATH}${user.avatar}` : undefined
+                              }
+                              size={34}
+                              radius="xl"
+                              opacity={user.is_ex_member ? 0.5 : 1}
+                              component={Link}
+                              to={`/${user?.username}`}
+                            >
+                              {user.name}
+                            </Avatar>
+                          </Tooltip>
+                        ))}
+                        {remainingAvatars > 0 && (
                           <Avatar radius="xl" size={34}>
-                            +2
+                            +{remainingAvatars}
                           </Avatar>
-                        </Tooltip>
+                        )}
                       </Avatar.Group>
                     </Tooltip.Group>
                   </Flex>

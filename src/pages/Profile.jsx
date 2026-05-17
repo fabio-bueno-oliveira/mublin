@@ -40,7 +40,6 @@ import {
   Image,
   Tooltip,
   Badge,
-  Pill,
   Divider,
   em,
 } from '@mantine/core'
@@ -64,6 +63,7 @@ import {
   IconBrandWhatsapp,
   IconPencil,
 } from '@tabler/icons-react'
+import AppNavbarMobile from '../components/AppNavbarMobile'
 import { truncateString } from '../utils/formatter'
 import { isProfileLive } from '../utils/live'
 import { AVAILABLE_FROM_LABELS } from '../constants/availability'
@@ -90,10 +90,8 @@ export default function Profile() {
   const { username } = useParams()
   const { loading: authLoading, user } = useAuth()
   const isMobile = useMediaQuery(`(max-width: ${em(750)})`)
-  const [
-    contactInfoOpened,
-    { open: openContactInfo, close: closeContactInfo },
-  ] = useDisclosure(false)
+  const [contactInfoOpened, { open: openContactInfo, close: closeContactInfo }] =
+    useDisclosure(false)
 
   const {
     data: profile,
@@ -157,13 +155,12 @@ export default function Profile() {
     staleTime: 1000 * 60 * 5,
   })
 
-  const { data: workAvailability = [], isLoading: loadingWorkAvailability } =
-    useQuery({
-      queryKey: ['user-work-availability', profile?.id],
-      queryFn: () => fetchProfileWorkAvailability(profile.id),
-      enabled: !!profile?.id,
-      staleTime: 1000 * 60 * 5,
-    })
+  const { data: workAvailability = [], isLoading: loadingWorkAvailability } = useQuery({
+    queryKey: ['user-work-availability', profile?.id],
+    queryFn: () => fetchProfileWorkAvailability(profile.id),
+    enabled: !!profile?.id,
+    staleTime: 1000 * 60 * 5,
+  })
 
   const { data: workFocus = [], isLoading: loadingWorkFocus } = useQuery({
     queryKey: ['user-work-focus', profile?.id],
@@ -187,9 +184,7 @@ export default function Profile() {
       ].filter(Boolean),
     })) || []
 
-  const roles = profile?.profile_roles.sort(
-    (a, b) => b.main_activity - a.main_activity,
-  )
+  const roles = profile?.profile_roles.sort((a, b) => b.main_activity - a.main_activity)
   const city = profile?.cities?.name
   const regionUf = profile?.regions?.uf
 
@@ -229,10 +224,7 @@ export default function Profile() {
       <Helmet>
         <meta charSet="utf-8" />
         <title>{`${profile?.full_name} · Mublin`}</title>
-        <link
-          rel="canonical"
-          href={`https://mublin.com/${profile?.username}`}
-        />
+        <link rel="canonical" href={`https://mublin.com/${profile?.username}`} />
         <meta name="description" content={`${profile?.full_name} no Mublin`} />
         <meta
           property="og:image"
@@ -240,11 +232,14 @@ export default function Profile() {
         />
       </Helmet>
 
+      <AppNavbarMobile profile={profile} />
+
       <Card
         shadow={false}
         padding={0}
         radius={isMobile ? 0 : 'md'}
-        mb={{ base: 4, md: 8 }}
+        // mx="sm"
+        mb={8}
         mt={{ base: 0, md: 10 }}
       >
         <Card.Section>
@@ -285,7 +280,6 @@ export default function Profile() {
         {isMobile && (
           <ProfileHeaderMobile
             profile={profile}
-            roles={roles}
             city={city}
             regionUf={regionUf}
             user={user}
@@ -293,7 +287,7 @@ export default function Profile() {
         )}
         <Grid>
           <Grid.Col span={{ base: 12, md: 8 }}>
-            <Group align="center" gap="md" mb="lg" visibleFrom="sm">
+            <Group align="center" gap="md" mb="md" visibleFrom="sm">
               <Indicator
                 position="bottom-center"
                 inline
@@ -305,9 +299,7 @@ export default function Profile() {
               >
                 <Avatar
                   size={96}
-                  src={
-                    profile.avatar ? AVATAR_PATH + profile.avatar : undefined
-                  }
+                  src={profile.avatar ? AVATAR_PATH + profile.avatar : undefined}
                 />
               </Indicator>
               <Stack gap={2} flex={1}>
@@ -358,9 +350,7 @@ export default function Profile() {
                     @{profile.username}
                   </Text>
                   {(city || regionUf) && (
-                    <Text size="sm">
-                      · {[city, regionUf].filter(Boolean).join('/')}
-                    </Text>
+                    <Text size="sm">· {[city, regionUf].filter(Boolean).join('/')}</Text>
                   )}
                   <Text size="sm">·</Text>
                   <Anchor size="sm" onClick={openContactInfo}>
@@ -373,13 +363,7 @@ export default function Profile() {
                         className="live-dot"
                         style={{ flexShrink: 0 }}
                       />
-                      <Text
-                        size="11px"
-                        fw={600}
-                        c="red.7"
-                        tt="uppercase"
-                        lts="0.02em"
-                      >
+                      <Text size="11px" fw={600} c="red.7" tt="uppercase" lts="0.02em">
                         Ao vivo em {profile.live_platform}
                       </Text>
                     </Group>
@@ -411,21 +395,20 @@ export default function Profile() {
                     </Text>
                   </Spoiler>
                 )}
-                <Paper withBorder shadow="xs" p="xs" mt="md">
-                  <Text size="sm" fw={500}>
-                    Atividades na música
+
+                <Text size="sm" fw={500} mt="md">
+                  Atividades na música
+                </Text>
+                {roles && roles.length > 0 && (
+                  <Text size="xs">
+                    {roles.map(({ id, roles: role }, index) => (
+                      <Text key={id} span fw={400}>
+                        {role?.name_ptbr}
+                        {index < roles.length - 1 ? ' · ' : ''}
+                      </Text>
+                    ))}
                   </Text>
-                  {roles && roles.length > 0 && (
-                    <Text size="xs">
-                      {roles.map(({ id, roles: role }, index) => (
-                        <Text key={id} span fw={400}>
-                          {role?.name_ptbr}
-                          {index < roles.length - 1 ? ' · ' : ''}
-                        </Text>
-                      ))}
-                    </Text>
-                  )}
-                </Paper>
+                )}
               </SectionPanel>
               {loadingProjects && (
                 <>
@@ -518,12 +501,7 @@ export default function Profile() {
                                 >
                                   {item.name}
                                 </Text>
-                                <Text
-                                  c="white"
-                                  size="10px"
-                                  fw={300}
-                                  opacity={0.7}
-                                >
+                                <Text c="white" size="10px" fw={300} opacity={0.7}>
                                   {item.type}
                                 </Text>
                               </Flex>
@@ -599,12 +577,10 @@ export default function Profile() {
                               linked_product_slug: post.products?.slug,
                               linked_product_name: post.products?.name,
                               linked_product_picture: post.products?.picture,
-                              linked_product_brand_name:
-                                post.products?.brands?.name,
+                              linked_product_brand_name: post.products?.brands?.name,
                               linked_gig_slug: post.gigs?.slug,
                               linked_gig_title: post.gigs?.title,
-                              linked_gig_has_remuneration:
-                                post.gigs?.has_remuneration,
+                              linked_gig_has_remuneration: post.gigs?.has_remuneration,
                             }}
                           />
                         )}
@@ -676,9 +652,7 @@ export default function Profile() {
                     Nenhum equipamento adicionado
                   </Text>
                 )}
-                {loadingGear && (
-                  <Skeleton width="100%" height={120} radius="md" />
-                )}
+                {loadingGear && <Skeleton width="100%" height={120} radius="md" />}
                 <Scroller
                   key={gear.length}
                   draggable
@@ -807,8 +781,7 @@ export default function Profile() {
               )}
               <SectionPanel>
                 <SectionTitle text="Redes" mb="sm" />
-                {(profile.profile_social_links.length > 0 ||
-                  profile.website) && (
+                {(profile.profile_social_links.length > 0 || profile.website) && (
                   <Group gap={10} wrap="wrap">
                     {profile.website && (
                       <ActionIcon
@@ -892,12 +865,7 @@ export default function Profile() {
                             )}
                           </Group>
                           {p.title && (
-                            <Text
-                              size="xs"
-                              lineClamp={1}
-                              truncate="end"
-                              maw={148}
-                            >
+                            <Text size="xs" lineClamp={1} truncate="end" maw={148}>
                               {p.title}
                             </Text>
                           )}
@@ -937,10 +905,7 @@ export default function Profile() {
                 underline="never"
               >
                 <Group gap="xs">
-                  <IconBrandWhatsapp
-                    size={16}
-                    color="var(--mantine-color-green-6)"
-                  />
+                  <IconBrandWhatsapp size={16} color="var(--mantine-color-green-6)" />
                   <Text size="sm">{profile.phone_number}</Text>
                 </Group>
               </Anchor>
