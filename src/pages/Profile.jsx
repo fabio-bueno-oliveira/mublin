@@ -1,8 +1,10 @@
 import { useState } from 'react'
+import { supabase } from '../lib/supabaseClient'
 import { useParams, Link } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   fetchBasicProfile,
+  fetchFollowingInfo,
   fetchSimilarProfiles,
   fetchProfileProjects,
   fetchProfileFeed,
@@ -88,6 +90,7 @@ function SectionTitle({ text, mb, mt = 0 }) {
 
 export default function Profile() {
   const { username } = useParams()
+  const queryClient = useQueryClient()
   const { loading: authLoading, user } = useAuth()
   const isMobile = useMediaQuery(`(max-width: ${em(750)})`)
   const [contactInfoOpened, { open: openContactInfo, close: closeContactInfo }] =
@@ -103,6 +106,13 @@ export default function Profile() {
     enabled: !!username && !authLoading,
     staleTime: 1000 * 60 * 5,
     retry: 1,
+  })
+
+  const { data: followingInfo = [], isLoading: loadingFollowingInfo } = useQuery({
+    queryKey: ['profile-following-info', profile?.id],
+    queryFn: () => fetchFollowingInfo(profile.id, user.id),
+    enabled: !!profile?.id,
+    staleTime: 1000 * 60 * 10,
   })
 
   const { data: similarProfiles = [], isLoading: loadingSimilar } = useQuery({
@@ -219,6 +229,51 @@ export default function Profile() {
     )
   }
 
+  async function followProfile(currentUserId, targetUserId) {
+    if (currentUserId === targetUserId) {
+      throw new Error('Você não pode seguir seu próprio perfil.')
+    }
+
+    const { data, error } = await supabase
+      .from('profile_followers')
+      .insert([
+        {
+          follower_id: currentUserId,
+          following_id: targetUserId,
+          // Os campos is_favorite, is_muted e notifications_enabled
+          // assumirão os valores default definidos no seu schema.
+        },
+      ])
+      .select()
+
+    queryClient.invalidateQueries({ queryKey: ['profile-following-info', profile.id] })
+
+    if (error) {
+      if (error.code === '23505') {
+        throw new Error('Você já está seguindo este perfil.')
+      }
+      throw new Error(error.message)
+    }
+
+    return { success: true, action: 'followed', data }
+  }
+
+  async function unfollowProfile(currentUserId, targetUserId) {
+    const { error } = await supabase
+      .from('profile_followers')
+      .delete()
+      .eq('follower_id', currentUserId)
+      .eq('following_id', targetUserId)
+
+    queryClient.invalidateQueries({ queryKey: ['profile-following-info', profile.id] })
+
+    if (error) {
+      throw new Error(error.message)
+    }
+
+    return { success: true, action: 'unfollowed' }
+  }
+
   return (
     <>
       <Helmet>
@@ -302,7 +357,7 @@ export default function Profile() {
                   src={profile.avatar ? AVATAR_PATH + profile.avatar : undefined}
                 />
               </Indicator>
-              <Stack gap={2} flex={1}>
+              <Stack gap={1} flex={1}>
                 <Flex align="center" gap={2} wrap="wrap">
                   <Title order={1} size="25px" lts="-0.02em" lh="1">
                     {profile.full_name}
@@ -373,6 +428,32 @@ export default function Profile() {
                   <Text size="14px" fw={400} maw={420} lh={1.3} my={3}>
                     {profile.title}
                   </Text>
+                )}
+
+                {followingInfo?.id ? (
+                  <Button
+                    size="xs"
+                    radius="md"
+                    variant="default"
+                    color="gray"
+                    w={160}
+                    mt={4}
+                    onClick={() => unfollowProfile(user.id, profile.id)}
+                  >
+                    Deixar de seguir
+                  </Button>
+                ) : (
+                  <Button
+                    size="xs"
+                    radius="md"
+                    variant="default"
+                    color="gray"
+                    w={160}
+                    mt={4}
+                    onClick={() => followProfile(user.id, profile.id)}
+                  >
+                    Seguir
+                  </Button>
                 )}
               </Stack>
             </Group>
@@ -493,6 +574,7 @@ export default function Profile() {
                                   size="lg"
                                   w={140}
                                   fw={700}
+                                  lh={1.4}
                                   c="white"
                                   style={{
                                     textShadow: '0 1px 2px rgba(0,0,0,0.4)',
@@ -501,7 +583,14 @@ export default function Profile() {
                                 >
                                   {item.name}
                                 </Text>
-                                <Text c="white" size="10px" fw={300} opacity={0.7}>
+                                <Text
+                                  c="white"
+                                  truncate="end"
+                                  lh={1}
+                                  size="xs"
+                                  fw={300}
+                                  opacity={0.7}
+                                >
                                   {item.type}
                                 </Text>
                               </Flex>

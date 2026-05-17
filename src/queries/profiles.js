@@ -3,7 +3,8 @@ import { supabase } from '../lib/supabaseClient'
 export async function fetchBasicProfile(profileUsername) {
   const { data, error } = await supabase
     .from('profiles')
-    .select(`
+    .select(
+      `
       id,
       full_name,
       username,
@@ -47,30 +48,60 @@ export async function fetchBasicProfile(profileUsername) {
           instrumentalist
         )
       )
-    `)
+    `,
+    )
     .eq('username', profileUsername)
     .single()
 
-  if (error) throw new Error(error.message)
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  return data
+}
+
+export async function fetchFollowingInfo(profileUsername, userUsername) {
+  const { data, error } = await supabase
+    .from('profile_followers')
+    .select(
+      `
+      id,
+      created_at,
+      follower_id,
+      following_id,
+      is_favorite,
+      is_muted,
+      notifications_enabled
+    `,
+    )
+    .eq('following_id', profileUsername)
+    .eq('follower_id', userUsername)
+    .maybeSingle()
+
+  if (error) {
+    throw new Error(error.message)
+  }
 
   return data
 }
 
 export async function fetchSimilarProfiles(profileId, regionId, limit = 5) {
-  const { data, error } = await supabase
-    .rpc('get_similar_profiles', {
-      p_profile_id: profileId,
-      p_region_id:  regionId,
-      p_limit:      limit,
-    })
-  if (error) throw new Error(error.message)
+  const { data, error } = await supabase.rpc('get_similar_profiles', {
+    p_profile_id: profileId,
+    p_region_id: regionId,
+    p_limit: limit,
+  })
+  if (error) {
+    throw new Error(error.message)
+  }
   return data
 }
 
 export async function fetchProfileFeed(profileId, limit = 10) {
   const { data, error } = await supabase
     .from('feed')
-    .select(`
+    .select(
+      `
       id,
       created_at,
       body,
@@ -100,64 +131,82 @@ export async function fetchProfileFeed(profileId, limit = 10) {
         picture,
         brands ( name )
       )
-    `)
+    `,
+    )
     .eq('author_profile_id', profileId)
     .eq('is_active', true)
     .order('created_at', { ascending: false })
     .limit(limit)
-  if (error) throw new Error(error.message)
+  if (error) {
+    throw new Error(error.message)
+  }
   return data
 }
 
 export async function fetchProfileProjects(profileId) {
   const { data, error } = await supabase
     .from('project_members')
-    .select(`
+    .select(
+      `
       project_id,
       status,
       roles!project_members_role_id_fkey ( description_ptbr ),
       role2:roles!project_members_role_2_id_fkey ( description_ptbr ),
       role3:roles!project_members_role_3_id_fkey ( description_ptbr ),
       projects ( id, name, slug, picture, description, project_types ( name_ptbr ) )
-    `)
+    `,
+    )
     .eq('status', 2)
     .eq('profile_id', profileId)
-  if (error) throw new Error(error.message)
+  if (error) {
+    throw new Error(error.message)
+  }
   return data
 }
 
 export async function fetchProfileGear(profileId) {
   const { data, error } = await supabase
     .from('profile_gear')
-    .select(`
+    .select(
+      `
       id_product,
       is_featured,
       is_for_sale,
       products ( id, id_category, name, slug, picture, brands(name) )
-    `)
+    `,
+    )
     .eq('id_user', profileId)
-  if (error) throw new Error(error.message)
+  if (error) {
+    throw new Error(error.message)
+  }
   return data
 }
 
 export async function fetchProfileGearCategories(profileId) {
-  const { data, error } = await supabase
-    .rpc('get_profile_gear_categories', { p_profile_id: profileId })
-  if (error) throw new Error(error.message)
+  const { data, error } = await supabase.rpc('get_profile_gear_categories', {
+    p_profile_id: profileId,
+  })
+  if (error) {
+    throw new Error(error.message)
+  }
   return data
 }
 
 export async function fetchProfileGearSetups(profileId) {
-  const { data, error } = await supabase
-    .rpc('get_profile_gear_setups', { p_profile_id: profileId })
-  if (error) throw new Error(error.message)
+  const { data, error } = await supabase.rpc('get_profile_gear_setups', {
+    p_profile_id: profileId,
+  })
+  if (error) {
+    throw new Error(error.message)
+  }
   return data
 }
 
 export async function fetchProfileGearExpanded(profileId) {
   const { data, error } = await supabase
     .from('profile_gear')
-    .select(`
+    .select(
+      `
       id,
       id_product,
       is_featured,
@@ -172,26 +221,37 @@ export async function fetchProfileGearExpanded(profileId) {
         brands ( name, slug, logo ),
         product_categories ( name_ptbr )
       )
-    `)
+    `,
+    )
     .eq('id_user', profileId)
     .order('is_featured', { ascending: false })
-  if (error) throw new Error(error.message)
+  if (error) {
+    throw new Error(error.message)
+  }
   return data
 }
 
 export async function fetchProfileGearSetupNames(profileId) {
   const { data, error } = await supabase
     .from('gear_setup_items')
-    .select(`
+    .select(
+      `
       id_product,
       gear_setups ( id, name )
-    `)
+    `,
+    )
     .eq('id_user', profileId)
-  if (error) throw new Error(error.message)
+  if (error) {
+    throw new Error(error.message)
+  }
   // Agrupa por id_product: { [id_product]: ['Setup A', 'Setup B'] }
   return data.reduce((acc, item) => {
-    if (!item.gear_setups?.name) return acc
-    if (!acc[item.id_product]) acc[item.id_product] = []
+    if (!item.gear_setups?.name) {
+      return acc
+    }
+    if (!acc[item.id_product]) {
+      acc[item.id_product] = []
+    }
     acc[item.id_product].push(item.gear_setups.name)
     return acc
   }, {})
@@ -200,30 +260,38 @@ export async function fetchProfileGearSetupNames(profileId) {
 export async function fetchProfileWorkAvailability(profileId) {
   const { data, error } = await supabase
     .from('profile_work_availability')
-    .select(`
+    .select(
+      `
       id,
       work_types (
         id, name_ptbr
       )
-    `)
+    `,
+    )
     .eq('id_profile', profileId)
-  if (error) throw new Error(error.message)
-  return data?.sort((a, b) =>
-    a.work_types?.name_ptbr?.localeCompare(b.work_types?.name_ptbr ?? '') ?? 0
+  if (error) {
+    throw new Error(error.message)
+  }
+  return data?.sort(
+    (a, b) => a.work_types?.name_ptbr?.localeCompare(b.work_types?.name_ptbr ?? '') ?? 0,
   )
 }
 
 export async function fetchProfileWorkFocuses(profileId) {
   const { data, error } = await supabase
     .from('profile_work_focus')
-    .select(`
+    .select(
+      `
       id,
       work_focuses (
         id, title_ptbr
       )
-    `)
+    `,
+    )
     .eq('id_profile', profileId)
     .order('id', { ascending: true })
-  if (error) throw new Error(error.message)
+  if (error) {
+    throw new Error(error.message)
+  }
   return data
 }

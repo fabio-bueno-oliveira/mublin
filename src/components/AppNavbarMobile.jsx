@@ -82,7 +82,7 @@ export default function AppNavbarMobile({ profile = undefined }) {
             </ActionIcon>
           ) : (
             <>
-              {userProfile?.username === profile.username ? (
+              {userProfile?.username === profile?.username ? (
                 <ActionIcon
                   variant="transparent"
                   aria-label="Menu"
