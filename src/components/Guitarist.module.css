@@ -1,0 +1,44 @@
+.animationContainer {
+  position: relative;
+  width: 40%;
+  height: 40px;
+  overflow: hidden;
+  display: contents;
+  align-items: center;
+}
+
+.guitarist {
+  height: 100%; /* Mantém a proporção da altura */
+  width: auto;
+  position: absolute;
+  left: 0;
+
+  /* Garante que os pixels fiquem nítidos se o GIF for redimensionado */
+  image-rendering: pixelated;
+
+  /* Aplica a animação: 12 segundos para ir e voltar, em loop infinito */
+  animation: walkBackAndForth 12s linear infinite;
+}
+
+@keyframes walkBackAndForth {
+  0% {
+    left: 0%;
+    transform: scaleX(1); /* Olhando para a direita */
+  }
+  45% {
+    transform: scaleX(1); /* Continua olhando para a direita quase até o fim */
+  }
+  50% {
+    left: calc(
+      100% - 60px
+    ); /* Chega no limite direito (subtraia a largura estimada do GIF) */
+    transform: scaleX(-1); /* Gira horizontalmente para a esquerda */
+  }
+  95% {
+    transform: scaleX(-1); /* Continua olhando para a esquerda quase até o início */
+  }
+  100% {
+    left: 0%;
+    transform: scaleX(1); /* Gira de volta para a direita para reiniciar o loop */
+  }
+}

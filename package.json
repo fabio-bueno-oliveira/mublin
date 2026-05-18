@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@hello-pangea/dnd": "^18.0.1",
     "@imagekit/react": "^5.0.2",
     "@mantine/charts": "^9.2.0",
     "@mantine/core": "^9.2.0-alpha.7",

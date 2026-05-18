@@ -20,6 +20,7 @@ import Search from './pages/Search'
 // -- Profile pages
 import ProfileRouter from './components/ProfileRouter'
 import ProfileGear from './pages/ProfileGear'
+import Artist from './pages/Artist'
 // -- Project pages
 import ProjectRouter from './components/ProjectRouter'
 import Projects from './pages/Projects'
@@ -98,6 +99,7 @@ export const router = createBrowserRouter([
       { path: 'gear', element: <Gear /> },
       { path: 'gear/:slug', element: <GearItem /> },
       { path: 'new/gear', element: <NewGear /> },
+      { path: 'artist/:slug', element: <Artist /> },
       { path: 'backstage', element: <Backstage /> },
       { path: 'new/event', element: <NewEvent /> },
       { path: 'new/venue', element: <NewVenue /> },

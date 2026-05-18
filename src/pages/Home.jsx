@@ -13,7 +13,7 @@ import {
   Text, Title,
   Paper, Card, Box,
   Anchor, ActionIcon,
-  Avatar, Progress,
+  Avatar, Progress, Affix,
 } from '@mantine/core'
 import { useMediaQuery } from '@mantine/hooks'
 import AppNavbarMobile from '../components/AppNavbarMobile'
@@ -134,9 +134,13 @@ export default function Home() {
 
   return (
     <>
-      <AppNavbarMobile />
+      {!isDesktop && (
+        <Affix position={{ top: 0, left: 0 }}>
+          <AppNavbarMobile />
+        </Affix>
+      )}
 
-      <Container size="xl" pt="xs" px={{ base: 0, sm: 0 }}>
+      <Container size="xl" pt="xs" px={{ base: 0, sm: 0 }} mt={{ base: 51, sm: 0 }}>
         <Grid>
           <Grid.Col span={{ base: 12, md: 7 }} className="paddingX">
             {loading || loadingProjects ? (

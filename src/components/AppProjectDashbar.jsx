@@ -5,6 +5,7 @@ import { fetchUserProjects } from '../queries/user'
 import { fetchProjectForDashbar } from '../queries/projects'
 import { useAuth } from '../hooks/useAuth'
 import { useDisclosure, useMediaQuery } from '@mantine/hooks'
+// import Gif from '../assets/gif/electric-guitar-pixel-art.gif'
 import DashbarTextLoop from './DashbarTextLoop'
 import {
   Grid,
@@ -15,6 +16,7 @@ import {
   Avatar,
   Tooltip,
   Modal,
+  Image,
   Text,
   Input,
   Container,
@@ -201,13 +203,16 @@ export default function AppProjectDashbar() {
               </Grid.Col>
             )}
             {!selectedProject && !loadingProjectDashbar && (
-              <Grid.Col span={{ base: 7.5, md: 8.5 }} pt={8} pl={8} visibleFrom="sm">
-                <Group gap={4} opacity={0.4}>
-                  <IconArrowLeft size={14} />
-                  <Text size="sm" fw={300}>
-                    Selecione um projeto ao lado e visualize aqui informações em tempo
-                    real!
-                  </Text>
+              <Grid.Col span={{ base: 7.5, md: 8.5 }} pt={2} pl={8}>
+                <Group gap={4}>
+                  <Group gap={4} visibleFrom="sm">
+                    <IconArrowLeft size={14} style={{ opacity: '0.4' }} />
+                    <Text size="sm" fw={300} opacity={0.4}>
+                      Selecione um projeto ao lado e visualize aqui informações em tempo
+                      real!
+                    </Text>
+                  </Group>
+                  {/* <Image src={Gif} h={32} w="auto" fit="contain" /> */}
                 </Group>
               </Grid.Col>
             )}

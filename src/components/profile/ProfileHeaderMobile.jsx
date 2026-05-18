@@ -1,4 +1,6 @@
+import { Link } from 'react-router-dom'
 import {
+  useMantineColorScheme,
   Flex,
   Box,
   Title,
@@ -10,7 +12,6 @@ import {
   Group,
   Anchor,
 } from '@mantine/core'
-import { Link } from 'react-router-dom'
 import {
   IconRosetteDiscountCheckFilled,
   IconLink,
@@ -23,6 +24,9 @@ const AVATAR_PATH =
   'https://ik.imagekit.io/mublin/tr:h-200,c-maintain_ratio/users/avatars/'
 
 export default function ProfileHeaderMobile({ profile, city, regionUf, user }) {
+  const { colorScheme } = useMantineColorScheme()
+  const isDark = colorScheme === 'dark'
+
   return (
     <Box px="sm" py={0}>
       <Flex
@@ -116,7 +120,8 @@ export default function ProfileHeaderMobile({ profile, city, regionUf, user }) {
           to="/settings/profile"
           size="sm"
           radius="md"
-          variant="filled"
+          variant={isDark ? 'default' : 'light'}
+          color={isDark ? 'gray' : 'gray.3'}
           fullWidth
         >
           Editar meu perfil

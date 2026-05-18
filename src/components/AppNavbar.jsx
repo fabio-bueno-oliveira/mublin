@@ -34,8 +34,6 @@ import {
   IconPlus,
   IconBell,
   IconChevronDown,
-  IconSun,
-  IconMoon,
   IconClock,
 } from '@tabler/icons-react'
 import { useAuth } from '../hooks/useAuth'

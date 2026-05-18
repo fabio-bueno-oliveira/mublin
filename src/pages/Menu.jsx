@@ -136,7 +136,7 @@ export default function Menu() {
     <>
       <AppNavbarMobile />
 
-      <Container size="xs" mb={26} mt={20}>
+      <Container size="xs" mb={26} mt={100}>
         {/* ── Avatar + câmera ── */}
         <Center>
           <Avatar radius="lg" size={82} src={avatarSrc} alt="Foto de perfil" />

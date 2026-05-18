@@ -10,7 +10,6 @@ import {
   Button,
   Image,
   ActionIcon,
-  Title,
   Text,
   Drawer,
   Stack,
@@ -24,7 +23,7 @@ import {
   IconXFilled,
 } from '@tabler/icons-react'
 
-export default function AppNavbarMobile({ profile = undefined }) {
+export default function AppNavbarMobile({ pageName = undefined, profile = undefined }) {
   const { pathname } = useLocation()
   const navigate = useNavigate()
   const { profile: userProfile } = useAuth()
@@ -39,17 +38,19 @@ export default function AppNavbarMobile({ profile = undefined }) {
         gap="xs"
         align="center"
         justify="space-between"
-        mt={6}
-        mb={2}
         hiddenFrom="sm"
         px={{ base: '0.8rem', sm: 0 }}
+        pos="fixed"
+        bg={isDark ? 'black' : 'white'}
+        w="100%"
+        h={50}
       >
-        {profile ? (
+        {pageName ? (
           <Group gap="md">
-            <IconArrowLeft size={22} />
-            <Title order={1} fz="h4" fw={600}>
-              {profile.username}
-            </Title>
+            <IconArrowLeft size={22} onClick={() => navigate(-1) || navigate('/home')} />
+            <Text size="18px" lh={1} fw={600} maw={240} truncate="end" opacity={0.9}>
+              {pageName}
+            </Text>
           </Group>
         ) : (
           <Box
@@ -77,31 +78,37 @@ export default function AppNavbarMobile({ profile = undefined }) {
               size="lg"
               p={0}
               onClick={() => navigate(-1) || navigate('/home')}
+              c="var(--mantine-color-text)"
+              mt={8}
             >
               <IconXFilled size={32} />
             </ActionIcon>
           ) : (
             <>
-              {userProfile?.username === profile?.username ? (
+              {userProfile?.username === profile?.username || pathname === '/home' ? (
                 <ActionIcon
                   variant="transparent"
                   aria-label="Menu"
                   size="lg"
                   p={0}
                   onClick={() => navigate('/menu')}
+                  c="var(--mantine-color-text)"
+                  pt={8}
                 >
-                  <IconMenu2Filled size={22} />
+                  <IconMenu2Filled size={26} />
                 </ActionIcon>
               ) : (
-                <ActionIcon
-                  variant="transparent"
-                  aria-label="Menu"
-                  size="lg"
-                  p={0}
-                  onClick={open}
-                >
-                  <IconDotsVerticalFilled size={22} />
-                </ActionIcon>
+                profile && (
+                  <ActionIcon
+                    variant="transparent"
+                    aria-label="Menu"
+                    size="lg"
+                    p={0}
+                    onClick={open}
+                  >
+                    <IconDotsVerticalFilled size={22} />
+                  </ActionIcon>
+                )
               )}
             </>
           )}

@@ -1,29 +1,62 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { Helmet } from 'react-helmet-async'
 import { fetchProductInfo, fetchProductColors, fetchProductOwners } from '../queries/gear'
 import {
-  Container, Grid, Box, Group, Flex, Stack, Center,
-  Title, Text, Image, Anchor, Badge, ColorSwatch,
-  ActionIcon, Skeleton, Modal, ScrollArea, 
-  Affix, Transition, Paper, Avatar
+  Container,
+  Grid,
+  Box,
+  Group,
+  Flex,
+  Stack,
+  Center,
+  Title,
+  Text,
+  Image,
+  Anchor,
+  Badge,
+  ColorSwatch,
+  ActionIcon,
+  Skeleton,
+  Modal,
+  ScrollArea,
+  Affix,
+  Transition,
+  Paper,
+  Avatar,
+  em,
 } from '@mantine/core'
-import {
-  IconZoom, IconX, IconDiamond, IconChevronUp,
-  IconMessage
-} from '@tabler/icons-react'
-import parse from 'html-react-parser'
-import linkifyStr from 'linkify-string';
+import { useMediaQuery, useWindowScroll } from '@mantine/hooks'
 
-const PATH_BRAND_LOGO   = 'https://ik.imagekit.io/mublin/products/brands/tr:h-150,w-150,cm-pad_resize,bg-FFFFFF/'
-const PATH_PRODUCT_IMG  = 'https://ik.imagekit.io/mublin/products/tr:w-600,h-600,cm-pad_resize,bg-FFFFFF,fo-x/'
+import {
+  IconZoom,
+  IconX,
+  IconDiamond,
+  IconChevronUp,
+  IconMessage,
+} from '@tabler/icons-react'
+import AppNavbarMobile from '../components/AppNavbarMobile'
+import parse from 'html-react-parser'
+import linkifyStr from 'linkify-string'
+
+const PATH_BRAND_LOGO =
+  'https://ik.imagekit.io/mublin/products/brands/tr:h-150,w-150,cm-pad_resize,bg-FFFFFF/'
+const PATH_PRODUCT_IMG =
+  'https://ik.imagekit.io/mublin/products/tr:w-600,h-600,cm-pad_resize,bg-FFFFFF,fo-x/'
 const PATH_COLOR_SAMPLE = 'https://ik.imagekit.io/mublin/products/colors/'
 
 export default function GearItem() {
   const { slug } = useParams()
   const [modalZoomOpen, setModalZoomOpen] = useState(false)
   const [selectedColorId, setSelectedColorId] = useState(null)
+  const isMobile = useMediaQuery(`(max-width: ${em(750)})`)
+  const [, scrollTo] = useWindowScroll()
+
+  useEffect(() => {
+    scrollTo({ y: 0 })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const { data: product, isLoading } = useQuery({
     queryKey: ['product', slug],
@@ -39,8 +72,10 @@ export default function GearItem() {
     enabled: !!product?.id,
     staleTime: 1000 * 60 * 10,
     onSuccess: (data) => {
-      const main = data.find(c => c.is_main) ?? data[0]
-      if (main) setSelectedColorId(main.id)
+      const main = data.find((c) => c.is_main) ?? data[0]
+      if (main) {
+        setSelectedColorId(main.id)
+      }
     },
   })
 
@@ -51,16 +86,15 @@ export default function GearItem() {
     staleTime: 1000 * 60 * 5,
   })
 
-  const selectedColor = productColors.find(c => c.id === selectedColorId)
-    ?? productColors.find(c => c.is_main)
-    ?? productColors[0]
-    ?? null
+  const selectedColor =
+    productColors.find((c) => c.id === selectedColorId) ??
+    productColors.find((c) => c.is_main) ??
+    productColors[0] ??
+    null
 
-  const hasColors     = productColors.length > 0
+  const hasColors = productColors.length > 0
   const activePicture = hasColors ? selectedColor?.picture : product?.picture
-  const zoomSrc       = activePicture
-    ? PATH_PRODUCT_IMG + activePicture
-    : undefined
+  const zoomSrc = activePicture ? PATH_PRODUCT_IMG + activePicture : undefined
 
   if (isLoading) {
     return (
@@ -92,16 +126,28 @@ export default function GearItem() {
         <meta charSet="utf-8" />
         <title>{`${product.name} | ${product.brands?.name} | Mublin`}</title>
         <link rel="canonical" href={`https://mublin.com/gear/${product.slug}`} />
-        <meta name="description" content={product.description ?? `${product.brands?.name} ${product.name} no Mublin`} />
+        <meta
+          name="description"
+          content={
+            product.description ?? `${product.brands?.name} ${product.name} no Mublin`
+          }
+        />
       </Helmet>
 
-      <Container size="lg" mt={16} pb={60}>
+      {isMobile && (
+        <Affix position={{ top: 0, left: 0 }} w="100%">
+          <AppNavbarMobile pageName={`${product.brands?.name} ${product.name}`} />
+        </Affix>
+      )}
 
+      <Container size="lg" mt={{ base: 60, sm: 16 }} pb={60}>
         {/* Header: logo da marca + nome */}
         <Flex gap={14} align="center" mb={24}>
           <Anchor component={Link} to={`/brand/${product.brands?.slug}`}>
             <Image
-              src={product.brands?.logo ? PATH_BRAND_LOGO + product.brands.logo : undefined}
+              src={
+                product.brands?.logo ? PATH_BRAND_LOGO + product.brands.logo : undefined
+              }
               h={70}
               w={70}
               radius="md"
@@ -114,30 +160,37 @@ export default function GearItem() {
                 product.product_categories?.name_ptbr,
                 product.brands?.name,
                 product.product_series?.name,
-              ].filter(Boolean).join(' · ')}
+              ]
+                .filter(Boolean)
+                .join(' · ')}
             </Text>
             <Title order={1} fz="h3" fw={600} lts="-0.02em" lh={1.2}>
               {product.name}
             </Title>
             {product.subtitle && (
-              <Text size="sm" c="dimmed">{product.subtitle}</Text>
+              <Text size="sm" c="dimmed">
+                {product.subtitle}
+              </Text>
             )}
             <Group gap={6} mt={4}>
               {product.is_rare && (
                 <Group gap={4} align="center">
                   <IconDiamond size={14} color="var(--mantine-color-indigo-5)" />
-                  <Text size="xs" c="indigo" fw={500}>Item raro ou limitado</Text>
+                  <Text size="xs" c="indigo" fw={500}>
+                    Item raro ou limitado
+                  </Text>
                 </Group>
               )}
               {product.is_discontinued && (
-                <Text size="xs" c="dimmed">· Descontinuado pelo fabricante</Text>
+                <Text size="xs" c="dimmed">
+                  · Descontinuado pelo fabricante
+                </Text>
               )}
             </Group>
           </Box>
         </Flex>
 
         <Grid gutter="xl">
-
           {/* Coluna esquerda: imagem + swatches */}
           <Grid.Col span={{ base: 12, md: 4 }}>
             <Box pos="relative">
@@ -182,11 +235,15 @@ export default function GearItem() {
                   {selectedColor?.colors?.name_ptbr ?? selectedColor?.colors?.name}
                 </Text>
                 <Flex justify="center" gap={8} wrap="wrap">
-                  {productColors.map(item => (
+                  {productColors.map((item) => (
                     <Flex key={item.id} direction="column" align="center" gap={2}>
                       <ColorSwatch
                         component="div"
-                        color={item.colors?.img_sample ? 'transparent' : (item.colors?.rgb ?? '#ccc')}
+                        color={
+                          item.colors?.img_sample
+                            ? 'transparent'
+                            : (item.colors?.rgb ?? '#ccc')
+                        }
                         withShadow={false}
                         onClick={() => setSelectedColorId(item.id)}
                         title={item.colors?.name_ptbr ?? item.colors?.name}
@@ -202,11 +259,12 @@ export default function GearItem() {
                             cursor: 'pointer',
                             width: 28,
                             height: 28,
-                            outline: item.id === selectedColor?.id
-                              ? '2px solid var(--mantine-color-indigo-6)'
-                              : 'none',
+                            outline:
+                              item.id === selectedColor?.id
+                                ? '2px solid var(--mantine-color-indigo-6)'
+                                : 'none',
                             outlineOffset: 2,
-                          }
+                          },
                         }}
                       />
                       {item.id === selectedColor?.id && (
@@ -221,10 +279,11 @@ export default function GearItem() {
 
           {/* Coluna direita: descrição + owners */}
           <Grid.Col span={{ base: 12, md: 8 }}>
-
             {/* Descrição */}
             <Box mb={28}>
-              <Title size="md" fw={600} mb={6}>Sobre</Title>
+              <Title size="md" fw={600} mb={6}>
+                Sobre
+              </Title>
               {product.description ? (
                 <Stack gap={4}>
                   <Text size="sm" style={{ whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
@@ -248,7 +307,9 @@ export default function GearItem() {
                   )}
                 </Stack>
               ) : (
-                <Text size="sm" c="dimmed">Descrição não disponível</Text>
+                <Text size="sm" c="dimmed">
+                  Descrição não disponível
+                </Text>
               )}
             </Box>
 
@@ -259,20 +320,18 @@ export default function GearItem() {
               </Title>
               {isLoadingOwners ? (
                 <Stack gap={10}>
-                  {[1, 2, 3].map(i => (
+                  {[1, 2, 3].map((i) => (
                     <Skeleton key={i} height={60} radius="md" />
                   ))}
                 </Stack>
               ) : owners.length === 0 ? (
-                <Text size="sm" c="dimmed">Ninguém por aqui ainda.</Text>
+                <Text size="sm" c="dimmed">
+                  Ninguém por aqui ainda.
+                </Text>
               ) : (
                 <Stack gap={10}>
-                  {owners.map(owner => (
-                    <Box
-                      key={owner.id}
-                      radius="md"
-                      p="sm"
-                    >
+                  {owners.map((owner) => (
+                    <Box key={owner.id} radius="md" p="sm">
                       <Flex gap={10} align="center">
                         <Anchor
                           component={Link}
@@ -280,9 +339,11 @@ export default function GearItem() {
                           style={{ flexShrink: 0 }}
                         >
                           <Avatar
-                            src={owner.profiles?.avatar
-                              ? `https://ik.imagekit.io/mublin/users/avatars/tr:w-80,h-80,fo-face/${owner.profiles.avatar}`
-                              : undefined}
+                            src={
+                              owner.profiles?.avatar
+                                ? `https://ik.imagekit.io/mublin/users/avatars/tr:w-80,h-80,fo-face/${owner.profiles.avatar}`
+                                : undefined
+                            }
                             size={44}
                             radius="xl"
                           />
@@ -300,7 +361,8 @@ export default function GearItem() {
                               {owner.profiles?.full_name}
                             </Text>
                           </Anchor>
-                          {(owner.profiles?.cities?.name || owner.profiles?.regions?.uf) && (
+                          {(owner.profiles?.cities?.name ||
+                            owner.profiles?.regions?.uf) && (
                             <Text size="xs" c="dimmed" lh={1.3}>
                               {[owner.profiles.cities.name, owner.profiles.regions.uf]
                                 .filter(Boolean)
@@ -339,22 +401,25 @@ export default function GearItem() {
                             h={56}
                             radius="sm"
                             fit="contain"
-                            style={{ flexShrink: 0, border: '1px solid var(--mantine-color-default-border)' }}
+                            style={{
+                              flexShrink: 0,
+                              border: '1px solid var(--mantine-color-default-border)',
+                            }}
                           />
                         )}
                       </Flex>
 
                       {owner.owner_comments && (
-                        <Paper 
-                          p="xs" mt={8} w="100%"
-                        >
+                        <Paper p="xs" mt={8} w="100%">
                           <Group gap={6}>
                             <IconMessage size={16} color="gray" />
                             <Text
                               size="xs"
                               style={{ whiteSpace: 'pre-wrap', lineHeight: 1.6 }}
                             >
-                              {parse(linkifyStr(owner.owner_comments, {target: '_blank'}))}
+                              {parse(
+                                linkifyStr(owner.owner_comments, { target: '_blank' }),
+                              )}
                             </Text>
                           </Group>
                         </Paper>
@@ -376,7 +441,9 @@ export default function GearItem() {
         onClose={() => setModalZoomOpen(false)}
         title={
           <Box>
-            <Text size="md" fw={500}>{product.brands?.name} · {product.name}</Text>
+            <Text size="md" fw={500}>
+              {product.brands?.name} · {product.name}
+            </Text>
             {selectedColor?.colors && (
               <Text size="sm" c="dimmed">
                 Cor: {selectedColor.colors.name_ptbr ?? selectedColor.colors.name}
@@ -389,12 +456,7 @@ export default function GearItem() {
       >
         <ScrollArea w="auto">
           <Flex justify="center" mb={34}>
-            <Image
-              w="auto"
-              maw="100%"
-              src={zoomSrc}
-              fit="contain"
-            />
+            <Image w="auto" maw="100%" src={zoomSrc} fit="contain" />
           </Flex>
         </ScrollArea>
         <Affix position={{ bottom: 20, right: '48.5%' }}>

@@ -1,8 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
-import {
-  Box, Container, Tabs, Title, Text, Group, Scroller
-} from '@mantine/core'
+import { Box, Container, Tabs, Title, Scroller } from '@mantine/core'
 import {
   IconUser,
   IconMusic,
@@ -79,25 +77,28 @@ export default function SettingsLayout() {
   }, [location.pathname, navigate])
 
   useEffect(() => {
-    const activeTabEl = scrollerRef.current?.querySelector(`button[data-value="${activeTab}"]`);
+    const activeTabEl = scrollerRef.current?.querySelector(
+      `button[data-value="${activeTab}"]`,
+    )
 
     if (activeTabEl) {
       activeTabEl.scrollIntoView({
         behavior: 'smooth',
-        block: 'nearest',   // Não move a página verticalmente
-        inline: 'center'    // Centraliza a aba horizontalmente no scroll
-      });
+        block: 'nearest', // Não move a página verticalmente
+        inline: 'center', // Centraliza a aba horizontalmente no scroll
+      })
     }
-  }, [activeTab]);
+  }, [activeTab])
 
   function handleTabChange(value) {
     const tab = SETTINGS_TABS.find((t) => t.value === value)
-    if (tab) navigate(tab.path)
+    if (tab) {
+      navigate(tab.path)
+    }
   }
 
   return (
     <Box>
-      {/* Cabeçalho da seção */}
       <Box py="md">
         <Container size="lg">
           <Title order={2} fw={700} size="h3">
@@ -124,19 +125,19 @@ export default function SettingsLayout() {
             variant="default"
             classNames={classes}
           >
-            <Tabs.List 
+            <Tabs.List
               grow
-              ref={scrollerRef} 
-              style={{ 
-                overflowX: 'auto', 
-                flexWrap: 'nowrap', 
+              ref={scrollerRef}
+              style={{
+                overflowX: 'auto',
+                flexWrap: 'nowrap',
                 display: 'flex',
                 scrollbarWidth: 'none', // Firefox
                 msOverflowStyle: 'none', // IE/Edge
               }}
             >
               <Scroller>
-                {SETTINGS_TABS.map(({ value, label, icon: Icon }) => ( // eslint-disable-line
+                {SETTINGS_TABS.map(({ value, label, icon: Icon }) => (
                   <Tabs.Tab
                     key={value}
                     value={value}
@@ -152,7 +153,7 @@ export default function SettingsLayout() {
         </Container>
       </Box>
 
-      <Container size="lg" py={{ base: "xl", md: "xs" }}>
+      <Container size="lg" py={{ base: 'xl', md: 'xs' }}>
         <Outlet />
       </Container>
     </Box>

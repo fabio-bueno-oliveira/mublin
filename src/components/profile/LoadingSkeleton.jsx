@@ -1,11 +1,21 @@
 import {
-  Container, Skeleton, Grid, Group, Box, Flex, Stack, Paper
+  Container,
+  Skeleton,
+  Grid,
+  Group,
+  Flex,
+  Box,
+  Stack,
+  Paper,
+  em,
 } from '@mantine/core'
+import { useMediaQuery } from '@mantine/hooks'
 
 export default function LoadingSkeleton() {
+  const isMobile = useMediaQuery(`(max-width: ${em(750)})`)
 
   return (
-    <Container size="xl" py="sm">
+    <Container size="xl" py="sm" mt="sm">
       <Grid>
         {/* Coluna Principal (Esquerda) */}
         <Grid.Col span={{ base: 12, md: 8 }}>
@@ -29,13 +39,11 @@ export default function LoadingSkeleton() {
               <Skeleton height={14} width="95%" radius="sm" mt={6} />
               <Skeleton height={14} width="40%" radius="sm" mt={6} />
             </Box>
-
-            <Flex gap={15}>
-              <Skeleton width={180} height={180} radius="md" />
-              <Skeleton width={180} height={180} radius="md" />
-              <Skeleton width={180} height={180} radius="md" />
-            </Flex>
           </Stack>
+          <Flex mx={isMobile ? 'xs' : 0} mt="md" gap={15} justify="space-between">
+            <Skeleton height={160} radius="md" />
+            <Skeleton height={160} radius="md" />
+          </Flex>
         </Grid.Col>
 
         {/* Sidebar (Direita) */}

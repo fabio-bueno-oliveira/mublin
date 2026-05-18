@@ -41,7 +41,8 @@
 .mantine-Spoiler-root {
   .mantine-Spoiler-control {
     top: 100%;
-    color: gray;
+    // color: gray;
+    opacity: 0.6 !important;
     &:hover {
       text-decoration: none;
     }
@@ -127,7 +128,7 @@
 }
 
 .iconLegend {
-  color: #daa520;
+  // color: #daa520;
   width: calc(1.1rem);
   height: calc(1.1rem);
   margin-left: 0px;
@@ -137,6 +138,17 @@
     height: calc(1rem);
     margin-left: 2px;
     cursor: default;
+  }
+
+  &.big {
+    width: calc(1.4rem);
+    height: calc(1.4rem);
+    margin-left: 2px;
+    cursor: default;
+  }
+
+  &.white {
+    color: #ffffff;
   }
 }
 

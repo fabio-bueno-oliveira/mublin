@@ -295,3 +295,30 @@ export async function fetchProfileWorkFocuses(profileId) {
   }
   return data
 }
+
+export async function fetchProfileInspirations(profileId) {
+  const { data, error } = await supabase
+    .from('profile_inspirations')
+    .select(
+      `
+      id,
+      order_show,
+      artists (
+        id,
+        name,
+        slug,
+        picture,
+        is_band,
+        is_verified,
+        genres ( name, name_ptbr ),
+        countries ( name )
+      )
+    `,
+    )
+    .eq('profile_id', profileId)
+    .order('order_show', { ascending: true, nullsFirst: false })
+  if (error) {
+    throw new Error(error.message)
+  }
+  return data
+}
