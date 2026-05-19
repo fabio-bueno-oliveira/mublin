@@ -3,21 +3,40 @@ import { useAuth } from '../hooks/useAuth'
 import { useQuery } from '@tanstack/react-query'
 import { fetchRandomRoles } from '../queries/roles'
 import {
-  Skeleton, Box, Button, Text, Title, Group, Flex, Stack, Container,
-  SimpleGrid, Marquee, Badge, ThemeIcon
+  Skeleton,
+  Box,
+  Button,
+  Text,
+  Title,
+  Group,
+  Flex,
+  Stack,
+  Container,
+  SimpleGrid,
+  Marquee,
+  Badge,
+  ThemeIcon,
 } from '@mantine/core'
 import {
-  IconMusic, IconUsers, IconCalendarEvent, IconPlugConnected,
-  IconMicrophone2, IconBrandSpotify, IconArrowRight
+  IconMusic,
+  IconUsers,
+  IconCalendarEvent,
+  IconPlugConnected,
+  IconMicrophone2,
+  IconBrandSpotify,
+  IconArrowRight,
 } from '@tabler/icons-react'
 
 const FEATURES = [
-  { icon: IconUsers,          label: 'Conecte-se com músicos, produtores e roadies' },
-  { icon: IconCalendarEvent,  label: 'Encontre e candidate-se a gigs reais' },
-  { icon: IconMusic,          label: 'Gerencie projetos e bandas em um só lugar' },
-  { icon: IconMicrophone2,    label: 'Monte setlists e organize seu repertório' },
-  { icon: IconBrandSpotify,   label: 'Conecte seu Spotify ao seu perfil' },
-  { icon: IconPlugConnected,  label: 'Cadastre seu setup de equipamentos e informe o que você precisa para tocar' },
+  { icon: IconUsers, label: 'Conecte-se com músicos, produtores e roadies' },
+  { icon: IconCalendarEvent, label: 'Encontre e candidate-se a gigs reais' },
+  { icon: IconMusic, label: 'Gerencie projetos e bandas em um só lugar' },
+  { icon: IconMicrophone2, label: 'Monte setlists e organize seu repertório' },
+  { icon: IconBrandSpotify, label: 'Conecte seu Spotify ao seu perfil' },
+  {
+    icon: IconPlugConnected,
+    label: 'Cadastre seu setup de equipamentos e informe o que você precisa para tocar',
+  },
 ]
 
 export default function Landing() {
@@ -31,8 +50,12 @@ export default function Landing() {
     enabled: !authLoading && !session, // não executa se já tiver sessão
   })
 
-  if (authLoading) return null
-  if (session) return <Navigate to="/home" replace />
+  if (authLoading) {
+    return null
+  }
+  if (session) {
+    return <Navigate to="/home" replace />
+  }
 
   return (
     <Box style={{ overflowX: 'hidden', width: '100%' }}>
@@ -47,32 +70,41 @@ export default function Landing() {
       >
         <Container size="sm" py={50} w="100%">
           <Stack gap="lg" align="center">
-            <Badge fw='500' color="yellow" variant="light" size="md">
+            <Badge fw="500" color="yellow" variant="light" size="md">
               The professional network for musicians
             </Badge>
             <Title
               order={1}
-              ta='center'
-              lts='-0.03em'
+              ta="center"
+              lts="-0.03em"
               lh={1.1}
-              fz='clamp(40px, 6vw, 72px)'
-              fw='800'
+              fz="clamp(40px, 6vw, 72px)"
+              fw="800"
             >
               Sua carreira musical,{' '}
-              <Text component="span" inherit c='mublinColor'>
+              <Text component="span" inherit c="mublinColor">
                 conectada.
               </Text>
             </Title>
-            <Text ta='center' size="lg" c="dimmed" maw={480} lh={1.5}>
-              Mublin é a rede profissional para músicos, produtores, roadies
-              e todos que fazem a música acontecer.
+            <Text ta="center" size="lg" c="dimmed" maw={480} lh={1.5}>
+              Mublin é a rede profissional para músicos, produtores, roadies e todos que
+              fazem a música acontecer.
             </Text>
             <Group gap="sm" justify="center">
-              <Button size="md" radius="xl" fw='700' color="mublinColor" onClick={() => navigate('/signup')}>
+              <Button
+                size="md"
+                radius="xl"
+                fw="700"
+                color="mublinColor"
+                onClick={() => navigate('/signup')}
+              >
                 Criar conta grátis
               </Button>
               <Button
-                size="md" radius="xl" variant="subtle" color="gray"
+                size="md"
+                radius="xl"
+                variant="subtle"
+                color="gray"
                 rightSection={<IconArrowRight size={16} />}
                 onClick={() => navigate('/login')}
               >
@@ -87,12 +119,12 @@ export default function Landing() {
               </Group>
             ) : (
               <Marquee gap="md" mt="md" duration={26000}>
-                {roles.map(role => (
+                {roles.map((role) => (
                   <Badge
                     key={role.id}
                     variant="light"
                     size="md"
-                    fw='500'
+                    fw="500"
                     color="gray"
                     c="dimmed"
                   >
@@ -110,7 +142,7 @@ export default function Landing() {
         <Container size="md" w="100%">
           <Stack gap={48} align="center">
             <Stack gap={8} align="center" ta="center">
-              <Title order={2} fz={36} fw={800} lts='-0.02em'>
+              <Title order={2} fz={36} fw={800}>
                 Tudo que você precisa
               </Title>
               <Text c="dimmed" size="md" maw={400}>
@@ -118,7 +150,7 @@ export default function Landing() {
               </Text>
             </Stack>
             <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="lg" w="100%">
-              {FEATURES.map(({ icon: Icon, label }) => ( // eslint-disable-line
+              {FEATURES.map(({ icon: Icon, label }) => (
                 <Flex
                   key={label}
                   gap="md"
@@ -147,7 +179,7 @@ export default function Landing() {
       <Box py={40} style={{ width: '100%' }}>
         <Container size="sm" w="100%">
           <Stack gap="xl" align="center" ta="center">
-            <Title order={2} fz={36} fw={800} lts='-0.02em'>
+            <Title order={2} fz={36} fw={800}>
               Pronto para começar?
             </Title>
             <Text c="dimmed" maw={380} lh={1.7}>

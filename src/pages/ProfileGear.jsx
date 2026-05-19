@@ -2,30 +2,49 @@ import { useState, useEffect } from 'react'
 import { useUI } from '../contexts/UIContext'
 import { useParams, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { 
-  fetchBasicProfile, 
-  fetchProfileGearExpanded, 
-  fetchProfileGearSetupNames 
+import {
+  fetchBasicProfile,
+  fetchProfileGearExpanded,
+  fetchProfileGearSetupNames,
 } from '../queries/profiles'
 import { useAuth } from '../hooks/useAuth'
 import {
-  Container, Avatar, Title, Text, Group, Flex, Stack, Box,
-  Skeleton, Alert, Badge, Image, Card, Anchor, Modal,
-  Center, Paper,
+  Container,
+  Avatar,
+  Title,
+  Text,
+  Group,
+  Flex,
+  Stack,
+  Box,
+  Skeleton,
+  Alert,
+  Badge,
+  Image,
+  Card,
+  Anchor,
+  Modal,
+  Center,
+  Paper,
 } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
 import Masonry, { ResponsiveMasonry } from 'react-responsive-masonry'
 import {
-  IconMoodSad, IconRosetteDiscountCheckFilled,
-  IconShieldCheckFilled, IconArrowLeft,
+  IconMoodSad,
+  IconRosetteDiscountCheckFilled,
+  IconShieldCheckFilled,
+  IconArrowLeft,
   IconMusic,
 } from '@tabler/icons-react'
 import parse from 'html-react-parser'
-import linkifyStr from 'linkify-string';
+import linkifyStr from 'linkify-string'
 
-const AVATAR_PATH    = 'https://ik.imagekit.io/mublin/tr:h-100,c-maintain_ratio/users/avatars/'
-const PRODUCT_IMG    = 'https://ik.imagekit.io/mublin/products/tr:h-240,cm-pad_resize,bg-FFFFFF,fo-x/'
-const PRODUCT_IMG_LG = 'https://ik.imagekit.io/mublin/products/tr:w-400,cm-pad_resize,bg-FFFFFF/'
+const AVATAR_PATH =
+  'https://ik.imagekit.io/mublin/tr:h-100,c-maintain_ratio/users/avatars/'
+const PRODUCT_IMG =
+  'https://ik.imagekit.io/mublin/products/tr:h-240,cm-pad_resize,bg-FFFFFF,fo-x/'
+const PRODUCT_IMG_LG =
+  'https://ik.imagekit.io/mublin/products/tr:w-400,cm-pad_resize,bg-FFFFFF/'
 
 export default function ProfileGear() {
   const { username } = useParams()
@@ -47,7 +66,11 @@ export default function ProfileGear() {
   }
 
   // ── Queries ───────────────────────────────────────────
-  const { data: profile, isLoading: loadingProfile, isError } = useQuery({
+  const {
+    data: profile,
+    isLoading: loadingProfile,
+    isError,
+  } = useQuery({
     queryKey: ['profile', username],
     queryFn: () => fetchBasicProfile(username),
     enabled: !!username && !authLoading,
@@ -85,7 +108,7 @@ export default function ProfileGear() {
           gutterBreakpoints={{ 350: '8px', 750: '8px', 900: '8px' }}
         >
           <Masonry>
-            {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
+            {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
               <Skeleton key={i} height={180 + (i % 3) * 40} radius="md" mb={8} />
             ))}
           </Masonry>
@@ -124,7 +147,7 @@ export default function ProfileGear() {
           />
           <Box>
             <Flex align="center" gap={4}>
-              <Title order={1} size="h3" lts="-0.02em" lh={1}>
+              <Title order={1} size="h3" lh={1}>
                 {profile.full_name}
               </Title>
               {!!profile.is_verified && (
@@ -134,21 +157,14 @@ export default function ProfileGear() {
                 />
               )}
               {!!profile.is_legend && (
-                <IconShieldCheckFilled
-                  className="iconLegend"
-                  title="Lenda da música"
-                />
+                <IconShieldCheckFilled className="iconLegend" title="Lenda da música" />
               )}
             </Flex>
             <Text size="sm" c="dimmed">
-              {loadingGear ? '...' : gear.length} {gear.length === 1 ? 'item' : 'itens'} no equipamento
+              {loadingGear ? '...' : gear.length} {gear.length === 1 ? 'item' : 'itens'}{' '}
+              no equipamento
             </Text>
-            <Anchor
-              component={Link}
-              to={`/${username}`}
-              underline="hover"
-              size="xs"
-            >
+            <Anchor component={Link} to={`/${username}`} underline="hover" size="xs">
               <Group gap={3} mt={2}>
                 <IconArrowLeft size={13} />
                 <Text size="xs">Voltar ao perfil</Text>
@@ -170,14 +186,14 @@ export default function ProfileGear() {
             gutterBreakpoints={{ 350: '8px', 750: '8px', 900: '8px' }}
           >
             <Masonry>
-              {gear.map(item => (
+              {gear.map((item) => (
                 <Card
                   key={item.id}
                   withBorder
                   px={10}
                   pb={10}
                   pt={6}
-                  w='100%'
+                  w="100%"
                   bg="white"
                   radius="md"
                   style={{ cursor: 'pointer' }}
@@ -185,9 +201,11 @@ export default function ProfileGear() {
                 >
                   <Center>
                     <Image
-                      src={item.products?.picture
-                        ? PRODUCT_IMG + item.products.picture
-                        : undefined}
+                      src={
+                        item.products?.picture
+                          ? PRODUCT_IMG + item.products.picture
+                          : undefined
+                      }
                       h={120}
                       mah={120}
                       w="auto"
@@ -198,7 +216,8 @@ export default function ProfileGear() {
                   </Center>
 
                   <Text ta="center" size="xs" c="black" fw={400}>
-                    {item.products?.product_categories?.name_ptbr} · {item.products?.brands?.name}
+                    {item.products?.product_categories?.name_ptbr} ·{' '}
+                    {item.products?.brands?.name}
                   </Text>
                   <Text ta="center" size="md" c="black" fw={550} lh={1.3} mt={2}>
                     {item.products?.name}
@@ -212,7 +231,9 @@ export default function ProfileGear() {
 
                   {item.is_for_sale && (
                     <Flex direction="column" align="center" gap={2} mt={6}>
-                      <Badge size="xs" color="dark" variant="filled">À venda</Badge>
+                      <Badge size="xs" color="dark" variant="filled">
+                        À venda
+                      </Badge>
                       {item.price && (
                         <Text size="xs" c="black" fw={500}>
                           {Number(item.price).toLocaleString('pt-br', {
@@ -225,12 +246,16 @@ export default function ProfileGear() {
                   )}
                   {setupNames[item.id_product]?.length > 0 && (
                     <Text size="xs" c="dimmed" ta="center" mt={6}>
-                      Incluído no{setupNames[item.id_product]?.length !== 1 && 's'} setup{setupNames[item.id_product]?.length !== 1 && 's'} : <strong>{setupNames[item.id_product].join(', ')}</strong>
+                      Incluído no{setupNames[item.id_product]?.length !== 1 && 's'} setup
+                      {setupNames[item.id_product]?.length !== 1 && 's'} :{' '}
+                      <strong>{setupNames[item.id_product].join(', ')}</strong>
                     </Text>
                   )}
                   {item.owner_comments && (
                     <Paper p="xs" bg="#d3d3d3" mt={8} w="100%">
-                      <Text size="xs" c="black" lineClamp={2}>{item.owner_comments}</Text>
+                      <Text size="xs" c="black" lineClamp={2}>
+                        {item.owner_comments}
+                      </Text>
                     </Paper>
                   )}
                 </Card>
@@ -275,9 +300,10 @@ export default function ProfileGear() {
               {setupNames[selectedItem?.id_product]?.length > 0 && (
                 <Group gap={3} wrap="wrap">
                   <Text size="xs" c="dimmed">
-                    Incluído no{setupNames[selectedItem?.id_product]?.length !== 1 && 's'} setup{setupNames[selectedItem?.id_product]?.length !== 1 && 's'}
+                    Incluído no{setupNames[selectedItem?.id_product]?.length !== 1 && 's'}{' '}
+                    setup{setupNames[selectedItem?.id_product]?.length !== 1 && 's'}
                   </Text>
-                  {setupNames[selectedItem.id_product].map(name => (
+                  {setupNames[selectedItem.id_product].map((name) => (
                     <Badge key={name} size="sm" variant="light">
                       {name}
                     </Badge>
@@ -292,9 +318,11 @@ export default function ProfileGear() {
           <>
             <Center mt={10}>
               <Image
-                src={selectedItem.products?.picture
-                  ? PRODUCT_IMG_LG + selectedItem.products.picture
-                  : undefined}
+                src={
+                  selectedItem.products?.picture
+                    ? PRODUCT_IMG_LG + selectedItem.products.picture
+                    : undefined
+                }
                 w={200}
                 fit="contain"
                 mb={12}
@@ -318,7 +346,9 @@ export default function ProfileGear() {
             )}
             {selectedItem.is_for_sale && (
               <Flex align="center" justify="center" gap={6} mb={8}>
-                <Badge size="md" color="blue" variant="light">À venda</Badge>
+                <Badge size="md" color="blue" variant="light">
+                  À venda
+                </Badge>
                 {selectedItem.price && (
                   <Text size="sm" fw={500}>
                     {Number(selectedItem.price).toLocaleString('pt-br', {
@@ -335,7 +365,7 @@ export default function ProfileGear() {
                   Comentários de {profile.full_name}:
                 </Text>
                 <Text size="sm" lh={1.5}>
-                  {parse(linkifyStr(selectedItem.owner_comments, {target: '_blank'}))}
+                  {parse(linkifyStr(selectedItem.owner_comments, { target: '_blank' }))}
                 </Text>
               </Paper>
             )}

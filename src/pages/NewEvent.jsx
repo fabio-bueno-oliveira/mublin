@@ -6,29 +6,72 @@ import { supabase } from '../lib/supabaseClient'
 import { useQuery } from '@tanstack/react-query'
 import { fetchEventTypes, searchVenues } from '../queries/events'
 import {
-  Container, Flex, Title, Stack, TextInput, Textarea, Select, Button, Group,
-  Switch, NumberInput, Image, ActionIcon, Loader, Text, Box,
-  Divider, Combobox, useCombobox, InputBase, CloseButton, SimpleGrid,
-  Card, Anchor,
+  Container,
+  Flex,
+  Title,
+  Stack,
+  TextInput,
+  Textarea,
+  Select,
+  Button,
+  Group,
+  Switch,
+  NumberInput,
+  Image,
+  ActionIcon,
+  Loader,
+  Text,
+  Box,
+  Divider,
+  Combobox,
+  useCombobox,
+  InputBase,
+  CloseButton,
+  SimpleGrid,
+  Card,
+  Anchor,
 } from '@mantine/core'
 import { useDebouncedCallback } from '@mantine/hooks'
 import { DatePickerInput, TimeInput } from '@mantine/dates'
 import { notifications } from '@mantine/notifications'
 import {
-  IconCalendar, IconClock, IconPhoto, IconX,
-  IconWorld, IconTicket, IconMapPin, IconUsers, IconLock, IconLockOpen
+  IconCalendar,
+  IconClock,
+  IconPhoto,
+  IconX,
+  IconWorld,
+  IconTicket,
+  IconMapPin,
+  IconUsers,
+  IconLock,
+  IconLockOpen,
 } from '@tabler/icons-react'
 
 // ── Lookup tables ─────────────────────────────────────────
 
 const PRIVACY_TYPES = [
-  { value: '1', label: 'Público', description: 'Qualquer pessoa interessada', icon: IconLockOpen },
-  { value: '2', label: 'Privado', description: 'Apenas uma comunidade específica', icon: IconLock },
-  { value: '3', label: 'Apenas convidados', description: 'Somente quem for convidado', icon: IconUsers },
+  {
+    value: '1',
+    label: 'Público',
+    description: 'Qualquer pessoa interessada',
+    icon: IconLockOpen,
+  },
+  {
+    value: '2',
+    label: 'Privado',
+    description: 'Apenas uma comunidade específica',
+    icon: IconLock,
+  },
+  {
+    value: '3',
+    label: 'Apenas convidados',
+    description: 'Somente quem for convidado',
+    icon: IconUsers,
+  },
 ]
 
 const MIN_AGES = [
-  { value: '0',  label: 'Livre' },
+  { value: '0', label: 'Livre' },
   { value: '12', label: '12 anos' },
   { value: '14', label: '14 anos' },
   { value: '16', label: '16 anos' },
@@ -47,7 +90,11 @@ function VenueCombobox({ selected, onSelect, onClear }) {
   const [searching, setSearching] = useState(false)
 
   const fetchVenues = useDebouncedCallback(async (val) => {
-    if (val.trim().length < 2) { setResults([]); setSearching(false); return }
+    if (val.trim().length < 2) {
+      setResults([])
+      setSearching(false)
+      return
+    }
     try {
       const data = await searchVenues(val)
       setResults(data)
@@ -59,28 +106,47 @@ function VenueCombobox({ selected, onSelect, onClear }) {
 
   function handleChange(val) {
     setValue(val)
-    if (val.trim().length < 2) { setResults([]); return }
+    if (val.trim().length < 2) {
+      setResults([])
+      return
+    }
     setSearching(true)
     fetchVenues(val)
   }
 
-  if (selected) return (
-    <Group gap="xs">
-      <IconMapPin size={14} color="var(--mantine-color-dimmed)" />
-      <Text size="sm" fw={500}>{selected.name}</Text>
-      {selected.neighborhood && (
-        <Text size="xs" c="dimmed">{selected.neighborhood}</Text>
-      )}
-      <CloseButton size="sm" onClick={() => { onClear(); setValue('') }} />
-    </Group>
-  )
+  if (selected) {
+    return (
+      <Group gap="xs">
+        <IconMapPin size={14} color="var(--mantine-color-dimmed)" />
+        <Text size="sm" fw={500}>
+          {selected.name}
+        </Text>
+        {selected.neighborhood && (
+          <Text size="xs" c="dimmed">
+            {selected.neighborhood}
+          </Text>
+        )}
+        <CloseButton
+          size="sm"
+          onClick={() => {
+            onClear()
+            setValue('')
+          }}
+        />
+      </Group>
+    )
+  }
 
   return (
     <Combobox
       store={combobox}
       onOptionSubmit={(val) => {
-        const item = results.find(r => String(r.id) === val)
-        if (item) { onSelect(item); setValue(''); setResults([]) }
+        const item = results.find((r) => String(r.id) === val)
+        if (item) {
+          onSelect(item)
+          setValue('')
+          setResults([])
+        }
         combobox.closeDropdown()
       }}
     >
@@ -100,9 +166,11 @@ function VenueCombobox({ selected, onSelect, onClear }) {
           {results.length === 0 && !searching && (
             <Combobox.Empty>Nenhum resultado</Combobox.Empty>
           )}
-          {results.map(item => (
+          {results.map((item) => (
             <Combobox.Option key={item.id} value={String(item.id)}>
-              <Text size="sm">{item.name} ({item.cities?.name}, {item.cities?.regions?.name})</Text>
+              <Text size="sm">
+                {item.name} ({item.cities?.name}, {item.cities?.regions?.name})
+              </Text>
               {(item.neighborhood || item.address) && (
                 <Text size="xs" c="dimmed">
                   {[item.neighborhood, item.address].filter(Boolean).join(' · ')}
@@ -156,10 +224,14 @@ export default function NewEvent() {
   // ── Upload de imagem ────────────────────────────────────
 
   async function handleImageUpload(file) {
-    if (!file) return
+    if (!file) {
+      return
+    }
     setIsUploadingImage(true)
     try {
-      const { data: { session } } = await supabase.auth.getSession()
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
       const authRes = await fetch(import.meta.env.VITE_IMAGEKIT_AUTH_ENDPOINT, {
         headers: { Authorization: `Bearer ${session?.access_token}` },
       })
@@ -170,42 +242,60 @@ export default function NewEvent() {
         folder: '/events/',
         tags: ['event'],
         useUniqueFileName: true,
-        publicKey:   import.meta.env.VITE_IMAGEKIT_PUBLIC_KEY,
+        publicKey: import.meta.env.VITE_IMAGEKIT_PUBLIC_KEY,
         urlEndpoint: import.meta.env.VITE_IMAGEKIT_URL_ENDPOINT,
-        token: ikToken, expire, signature,
+        token: ikToken,
+        expire,
+        signature,
       })
       const n = response.filePath.lastIndexOf('/')
       const fileName = response.filePath.substring(n + 1)
       setPictureFileId(response.fileId)
       setPictureFileName(fileName)
     } catch {
-      notifications.show({ color: 'red', position: 'top-center', message: 'Erro ao enviar imagem. Tente novamente.' })
+      notifications.show({
+        color: 'red',
+        position: 'top-center',
+        message: 'Erro ao enviar imagem. Tente novamente.',
+      })
     } finally {
       setIsUploadingImage(false)
     }
   }
 
   async function handleRemoveImage() {
-    if (!pictureFileId) return
+    if (!pictureFileId) {
+      return
+    }
     try {
-      const { data: { session } } = await supabase.auth.getSession()
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/imagekit-manage`,
         {
           method: 'DELETE',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session?.access_token}`,
+            Authorization: `Bearer ${session?.access_token}`,
           },
           body: JSON.stringify({ fileId: pictureFileId }),
-        }
+        },
       )
-      if (!response.ok) throw new Error('Erro ao deletar no servidor')
+      if (!response.ok) {
+        throw new Error('Erro ao deletar no servidor')
+      }
       setPictureFileName('')
       setPictureFileId('')
-      if (imageInputRef.current) imageInputRef.current.value = ''
+      if (imageInputRef.current) {
+        imageInputRef.current.value = ''
+      }
     } catch {
-      notifications.show({ color: 'red', position: 'top-center', message: 'Erro ao remover imagem. Tente novamente.' })
+      notifications.show({
+        color: 'red',
+        position: 'top-center',
+        message: 'Erro ao remover imagem. Tente novamente.',
+      })
     }
   }
 
@@ -213,21 +303,33 @@ export default function NewEvent() {
 
   async function handleSubmit() {
     if (!name.trim()) {
-      notifications.show({ color: 'red', position: 'top-center', message: 'Informe o nome do evento.' })
+      notifications.show({
+        color: 'red',
+        position: 'top-center',
+        message: 'Informe o nome do evento.',
+      })
       return
     }
     if (!eventTypeId) {
-      notifications.show({ color: 'red', position: 'top-center', message: 'Selecione o tipo de evento.' })
+      notifications.show({
+        color: 'red',
+        position: 'top-center',
+        message: 'Selecione o tipo de evento.',
+      })
       return
     }
     if (!dateStart) {
-      notifications.show({ color: 'red', position: 'top-center', message: 'Informe a data de início.' })
+      notifications.show({
+        color: 'red',
+        position: 'top-center',
+        message: 'Informe a data de início.',
+      })
       return
     }
 
     setSubmitting(true)
 
-    const formatDate = (d) => d ? d.toISOString().split('T')[0] : null
+    const formatDate = (d) => (d ? d.toISOString().split('T')[0] : null)
 
     const payload = {
       name: name.trim(),
@@ -241,7 +343,7 @@ export default function NewEvent() {
       time_event_start: timeStart || null,
       time_event_end: timeEnd || null,
       is_free: isFree,
-      ticket_price: isFree ? 0 : (Number(ticketPrice) || 0),
+      ticket_price: isFree ? 0 : Number(ticketPrice) || 0,
       tickets_url: ticketsUrl.trim() || null,
       website_url: websiteUrl.trim() || null,
       min_age: Number(minAge),
@@ -257,12 +359,21 @@ export default function NewEvent() {
       .single()
 
     if (error) {
-      notifications.show({ color: 'red', title: 'Ops...', message: 'Não foi possível criar o evento. Tente novamente.', position: 'top-center' })
+      notifications.show({
+        color: 'red',
+        title: 'Ops...',
+        message: 'Não foi possível criar o evento. Tente novamente.',
+        position: 'top-center',
+      })
       setSubmitting(false)
       return
     }
 
-    notifications.show({ color: 'green', message: 'Evento criado com sucesso!', position: 'top-center' })
+    notifications.show({
+      color: 'green',
+      message: 'Evento criado com sucesso!',
+      position: 'top-center',
+    })
     navigate(`/events/${data.id}`)
   }
 
@@ -270,16 +381,19 @@ export default function NewEvent() {
 
   return (
     <Container size="sm" py="md" px={{ base: 'md', sm: 'lg' }}>
-      <Title order={1} fz="h3" fw={600} lts="-0.02em" mb="lg">
+      <Title order={1} fz="h3" fw={600} mb="lg">
         Cadastrar novo evento
       </Title>
 
       <Stack gap="sm">
-
         {/* Imagem de capa */}
         <Box>
           <Text size="xs" c="dimmed" fw={500} mb={6}>
-            <IconPhoto size={16} stroke={1.4} style={{ marginRight: 4, verticalAlign: 'middle' }} />
+            <IconPhoto
+              size={16}
+              stroke={1.4}
+              style={{ marginRight: 4, verticalAlign: 'middle' }}
+            />
             Imagem de capa
           </Text>
           {pictureFileName ? (
@@ -306,7 +420,9 @@ export default function NewEvent() {
             <Button
               variant="default"
               size="sm"
-              leftSection={isUploadingImage ? <Loader size={13} /> : <IconPhoto size={14} />}
+              leftSection={
+                isUploadingImage ? <Loader size={13} /> : <IconPhoto size={14} />
+              }
               component="label"
               htmlFor="event-image-input"
               disabled={isUploadingImage}
@@ -320,7 +436,11 @@ export default function NewEvent() {
             type="file"
             accept="image/png,image/jpeg,image/webp"
             style={{ display: 'none' }}
-            onChange={(e) => { if (e.target.files?.[0]) handleImageUpload(e.target.files[0]) }}
+            onChange={(e) => {
+              if (e.target.files?.[0]) {
+                handleImageUpload(e.target.files[0])
+              }
+            }}
           />
         </Box>
 
@@ -401,14 +521,18 @@ export default function NewEvent() {
           checked={isOnline}
           onChange={(e) => {
             setIsOnline(e.currentTarget.checked)
-            if (e.currentTarget.checked) setSelectedVenue(null)
+            if (e.currentTarget.checked) {
+              setSelectedVenue(null)
+            }
           }}
         />
 
         {!isOnline && (
           <Box>
             <Group mb={4} gap={10}>
-              <Text size="sm" fw={500}>Local ou Estabelecimento</Text>
+              <Text size="sm" fw={500}>
+                Local ou Estabelecimento
+              </Text>
               <Link to="/new/venue" className="noDecoration">
                 <Text size="sm" fw={500}>
                   Não encontrou? Cadastrar novo
@@ -430,7 +554,9 @@ export default function NewEvent() {
           checked={isFree}
           onChange={(e) => {
             setIsFree(e.currentTarget.checked)
-            if (e.currentTarget.checked) setTicketPrice('')
+            if (e.currentTarget.checked) {
+              setTicketPrice('')
+            }
           }}
         />
 
@@ -475,9 +601,11 @@ export default function NewEvent() {
 
         {/* Privacidade */}
         <Box>
-          <Text size="sm" fw={500} mb={8}>Privacidade</Text>
+          <Text size="sm" fw={500} mb={8}>
+            Privacidade
+          </Text>
           <Stack gap="xs">
-            {PRIVACY_TYPES.map(({ value, label, description, icon: Icon }) => ( // eslint-disable-line
+            {PRIVACY_TYPES.map(({ value, label, description, icon: Icon }) => (
               <Card
                 key={value}
                 padding="sm"
@@ -496,17 +624,21 @@ export default function NewEvent() {
                       size={18}
                       stroke={1.5}
                       color={
-                        privacyType === value 
-                          ? 'var(--mantine-color-violet-6)' 
+                        privacyType === value
+                          ? 'var(--mantine-color-violet-6)'
                           : 'var(--mantine-color-dimmed)'
-                      } 
+                      }
                     />
                   </Flex>
                 </Card.Section>
                 <Card.Section inheritPadding px="xs" withBorder>
                   <Box>
-                    <Text size="sm" fw={500}>{label}</Text>
-                    <Text size="xs" c="dimmed">{description}</Text>
+                    <Text size="sm" fw={500}>
+                      {label}
+                    </Text>
+                    <Text size="xs" c="dimmed">
+                      {description}
+                    </Text>
                   </Box>
                 </Card.Section>
               </Card>
@@ -517,21 +649,13 @@ export default function NewEvent() {
         <Divider />
 
         <Group justify="flex-end">
-          <Button
-            variant="default"
-            onClick={() => navigate(-1)}
-            disabled={submitting}
-          >
+          <Button variant="default" onClick={() => navigate(-1)} disabled={submitting}>
             Cancelar
           </Button>
-          <Button
-            loading={submitting}
-            onClick={handleSubmit}
-          >
+          <Button loading={submitting} onClick={handleSubmit}>
             Criar evento
           </Button>
         </Group>
-
       </Stack>
     </Container>
   )

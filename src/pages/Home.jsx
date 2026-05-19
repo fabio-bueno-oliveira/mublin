@@ -337,7 +337,7 @@ export default function Home() {
             </Flex> */}
 
             <Group justify="space-between">
-              {/* <Title order={2} fz="xl" fw={700} lts="-0.02em" mb="xs">
+              {/* <Title order={2} fz="xl" fw={700} mb="xs">
                 Próximas gigs
               </Title> */}
               <Flex gap="xs" mb="xs">
@@ -345,7 +345,6 @@ export default function Home() {
                   order={2}
                   fz="xl"
                   fw={700}
-                  lts="-0.02em"
                   opacity={gigTypeToShow === 'confirmed' ? 1 : 0.4}
                   component={Anchor}
                   underline="never"
@@ -358,7 +357,6 @@ export default function Home() {
                   order={2}
                   fz="xl"
                   fw={700}
-                  lts="-0.02em"
                   opacity={gigTypeToShow === 'invites' ? 1 : 0.4}
                   component={Anchor}
                   underline="never"
@@ -498,7 +496,7 @@ export default function Home() {
               </Paper>
             )}
 
-            <Title order={2} fz="xl" fw={700} lts="-0.02em" mb="xs">
+            <Title order={2} fz="xl" fw={700} mb="xs">
               Para o dia a dia
             </Title>
 
@@ -601,7 +599,7 @@ export default function Home() {
 
             {genreStats.length > 0 && (
               <>
-                <Title order={2} fz="xl" fw={700} lts="-0.02em" mb="xs">
+                <Title order={2} fz="xl" fw={700} mb="xs">
                   Gêneros mais tocados por você
                 </Title>
                 <Paper p="md" className="alphaBg" mb="lg" radius="lg">

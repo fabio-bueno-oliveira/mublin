@@ -1,11 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
-import {
-  useQuery,
-  useInfiniteQuery,
-  useQueryClient,
-} from '@tanstack/react-query'
+import { useQuery, useInfiniteQuery, useQueryClient } from '@tanstack/react-query'
 import {
   fetchFeed,
   fetchUserLikedPosts,
@@ -86,8 +82,7 @@ export default function Projects() {
     if (error) {
       notifications.show({
         title: 'Erro ao carregar feed',
-        message:
-          'Não conseguimos atualizar as postagens. Tente novamente em instantes.',
+        message: 'Não conseguimos atualizar as postagens. Tente novamente em instantes.',
         color: 'red',
         position: 'top-center',
       })
@@ -186,7 +181,7 @@ export default function Projects() {
             className="paddingX"
             visibleFrom="sm"
           >
-            <Title order={2} fz="h3" fw={600} lts="-0.02em">
+            <Title order={2} fz="h3" fw={600}>
               Feed
             </Title>
 
@@ -195,7 +190,6 @@ export default function Projects() {
                 order={3}
                 fz="h4"
                 fw={600}
-                lts="-0.02em"
                 opacity={feedType === 'explore' ? 1 : 0.4}
                 component={Anchor}
                 underline="never"
@@ -208,7 +202,6 @@ export default function Projects() {
                 order={3}
                 fz="h4"
                 fw={600}
-                lts="-0.02em"
                 opacity={feedType === 'following' ? 1 : 0.4}
                 component={Anchor}
                 underline="never"
@@ -219,17 +212,9 @@ export default function Projects() {
               </Title>
             </Flex>
           </Group>
-          <ScrollArea
-            h={{ base: 'auto', md: 'calc(100vh - 120px)' }}
-            scrollHideDelay={0}
-          >
+          <ScrollArea h={{ base: 'auto', md: 'calc(100vh - 120px)' }} scrollHideDelay={0}>
             {/* Caixa de novo post */}
-            <Paper
-              className="paperWrapper"
-              mb="sm"
-              py="xs"
-              px={{ base: 'md', md: 0 }}
-            >
+            <Paper className="paperWrapper" mb="sm" py="xs" px={{ base: 'md', md: 0 }}>
               <Flex gap={10} align="center">
                 <Link to={`/${profile?.username}`}>
                   <Avatar
@@ -271,9 +256,7 @@ export default function Projects() {
                     variant="light"
                     color="red"
                     size="xs"
-                    onClick={() =>
-                      queryClient.invalidateQueries({ queryKey: ['feed'] })
-                    }
+                    onClick={() => queryClient.invalidateQueries({ queryKey: ['feed'] })}
                   >
                     Tentar novamente
                   </Button>
@@ -458,14 +441,10 @@ export default function Projects() {
                             fw={400}
                             px={10}
                             leftSection={
-                              post.comments_count > 0 && (
-                                <IconMessageCircle size={21} />
-                              )
+                              post.comments_count > 0 && <IconMessageCircle size={21} />
                             }
                           >
-                            {post.comments_count === 0 && (
-                              <IconMessageCircle size={21} />
-                            )}{' '}
+                            {post.comments_count === 0 && <IconMessageCircle size={21} />}{' '}
                             {post.comments_count > 0 ? post.comments_count : ''}
                           </Button>
                         )}
@@ -502,8 +481,7 @@ export default function Projects() {
         centered
       >
         <Text size="sm">
-          Tem certeza que deseja apagar esta postagem? Esta ação não pode ser
-          desfeita.
+          Tem certeza que deseja apagar esta postagem? Esta ação não pode ser desfeita.
         </Text>
         <Group justify="flex-end" gap={8} mt="md">
           <Button variant="default" size="sm" onClick={closeConfirmDeletePost}>

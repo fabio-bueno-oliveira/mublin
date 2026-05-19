@@ -1,8 +1,6 @@
 import { useState } from 'react'
 import { supabase } from '../../lib/supabaseClient'
-import {
-  Title, Stack, PasswordInput, Button, Group, Alert,
-} from '@mantine/core'
+import { Title, Stack, PasswordInput, Button, Group, Alert } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { notifications } from '@mantine/notifications'
 import { IconCheck, IconAlertCircle, IconLock } from '@tabler/icons-react'
@@ -12,13 +10,17 @@ export default function Password() {
 
   const form = useForm({
     initialValues: {
-      password:        '',
+      password: '',
       confirmPassword: '',
     },
     validate: {
       password: (v) => {
-        if (!v) return 'Nova senha é obrigatória'
-        if (v.length < 8) return 'A senha deve ter pelo menos 8 caracteres'
+        if (!v) {
+          return 'Nova senha é obrigatória'
+        }
+        if (v.length < 8) {
+          return 'A senha deve ter pelo menos 8 caracteres'
+        }
         return null
       },
       confirmPassword: (v, values) =>
@@ -50,14 +52,12 @@ export default function Password() {
 
   return (
     <>
-      <Title order={2} fz="h4" ta="left" fw={600} lts="-0.02em" mb="lg">
+      <Title order={2} fz="h4" ta="left" fw={600} mb="lg">
         Alterar minha senha
       </Title>
 
       <Stack gap="lg" maw={400}>
-
         <Stack gap="md">
-
           <PasswordInput
             label="Nova senha"
             placeholder="Mínimo 8 caracteres"
@@ -76,7 +76,8 @@ export default function Password() {
         </Stack>
 
         <Alert icon={<IconAlertCircle size={16} />} color="yellow" variant="light">
-          Após alterar a senha, você continuará logado neste dispositivo. Em outros dispositivos, será necessário fazer login novamente.
+          Após alterar a senha, você continuará logado neste dispositivo. Em outros
+          dispositivos, será necessário fazer login novamente.
         </Alert>
 
         <Group justify="flex-end">
@@ -85,13 +86,14 @@ export default function Password() {
             leftSection={<IconCheck size={15} />}
             onClick={() => {
               const result = form.validate()
-              if (!result.hasErrors) handleSubmit(form.values)
+              if (!result.hasErrors) {
+                handleSubmit(form.values)
+              }
             }}
           >
             Salvar nova senha
           </Button>
         </Group>
-
       </Stack>
     </>
   )

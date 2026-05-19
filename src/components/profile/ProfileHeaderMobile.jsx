@@ -52,7 +52,7 @@ export default function ProfileHeaderMobile({ profile, city, regionUf, user }) {
         </Indicator>
         <Box style={{ overflow: 'hidden' }}>
           <Flex align="center" gap={3} mb={2}>
-            <Title order={1} size="22px" lts="-0.02em" lh="1">
+            <Title order={1} size="22px" lh="1">
               {profile.full_name}
             </Title>
             {!!profile.is_verified && (

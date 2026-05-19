@@ -2,8 +2,15 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import {
-  Container, Paper, Stack, Title, Text,
-  PasswordInput, Button, Anchor, ThemeIcon
+  Container,
+  Paper,
+  Stack,
+  Title,
+  Text,
+  PasswordInput,
+  Button,
+  Anchor,
+  ThemeIcon,
 } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { notifications } from '@mantine/notifications'
@@ -12,14 +19,13 @@ import { IconShieldCheck } from '@tabler/icons-react'
 export default function ResetPassword() {
   const { updatePassword } = useAuth()
   const navigate = useNavigate()
-  const [loading, setLoading]   = useState(false)
+  const [loading, setLoading] = useState(false)
   const [submitted, setSubmitted] = useState(false)
 
   const form = useForm({
     initialValues: { password: '', confirmPassword: '' },
     validate: {
-      password: (v) =>
-        v.length < 6 ? 'Mínimo de 6 caracteres' : null,
+      password: (v) => (v.length < 6 ? 'Mínimo de 6 caracteres' : null),
       confirmPassword: (v, values) =>
         v !== values.password ? 'As senhas não coincidem' : null,
     },
@@ -47,7 +53,7 @@ export default function ResetPassword() {
     <Container size={420} py={30}>
       <Stack gap="xl">
         <Stack gap={4} align="center">
-          <Title order={2} ta="center" fw={700} lts="-0.02em">
+          <Title order={2} ta="center" fw={700}>
             Nova senha
           </Title>
           <Text c="dimmed" size="sm" ta="center">
@@ -118,7 +124,13 @@ export default function ResetPassword() {
         {!submitted && (
           <Text ta="center" size="sm" c="dimmed">
             Link expirado ou inválido?{' '}
-            <Anchor component={Link} to="/forgot-password" c="indigo" fw={600} underline="hover">
+            <Anchor
+              component={Link}
+              to="/forgot-password"
+              c="indigo"
+              fw={600}
+              underline="hover"
+            >
               Solicitar novo link
             </Anchor>
           </Text>

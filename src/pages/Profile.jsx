@@ -4,7 +4,9 @@ import { useParams, Link } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   fetchBasicProfile,
-  fetchFollowingInfo,
+  fetchCheckFollowing,
+  fetchProfileFollowers,
+  fetchProfileFollowingList,
   fetchSimilarProfiles,
   fetchProfileProjects,
   fetchProfileFeed,
@@ -36,7 +38,6 @@ import {
   Flex,
   Stack,
   ActionIcon,
-  NativeSelect,
   Skeleton,
   ScrollArea,
   Alert,
@@ -48,6 +49,7 @@ import {
   Affix,
   Transition,
   Menu,
+  Select,
   em,
 } from '@mantine/core'
 import { useMediaQuery, useDisclosure, useWindowScroll } from '@mantine/hooks'
@@ -67,8 +69,8 @@ import {
   IconCheck,
   IconBrandWhatsapp,
   IconPencil,
-  IconChevronDownFilled,
   IconTrophy,
+  IconDotsVerticalFilled,
 } from '@tabler/icons-react'
 import ProfileHeaderMobile from '../components/profile/ProfileHeaderMobile'
 import AppNavbarMobile from '../components/AppNavbarMobile'
@@ -108,6 +110,10 @@ export default function Profile() {
   const [scroll, scrollTo] = useWindowScroll()
   const [activeSection, setActiveSection] = useState('')
 
+  const [followersOpened, { open: openFollowers, close: closeFollowers }] =
+    useDisclosure(false)
+  const [followingOpened, { open: openFollowing, close: closeFollowing }] =
+    useDisclosure(false)
   const [contactInfoOpened, { open: openContactInfo, close: closeContactInfo }] =
     useDisclosure(false)
 
@@ -182,9 +188,25 @@ export default function Profile() {
 
   const { data: followingInfo = [], isLoading: loadingFollowingInfo } = useQuery({
     queryKey: ['profile-following-info', profile?.id],
-    queryFn: () => fetchFollowingInfo(profile.id, user.id),
+    queryFn: () => fetchCheckFollowing(profile.id, user.id),
     enabled: !!profile?.id,
     staleTime: 1000 * 60 * 10,
+  })
+
+  const { data: followersList = [] } = useQuery({
+    queryKey: ['profileFollowers', profile?.id],
+    queryKeyHashFn: () => `profileFollowers-${profile?.id}`,
+    queryFn: () => fetchProfileFollowers(profile?.id),
+    enabled: !!profile?.id,
+    staleTime: 1000 * 60 * 20,
+  })
+
+  const { data: followingList = [] } = useQuery({
+    queryKey: ['profileFollowingList', profile?.id],
+    queryKeyHashFn: () => `profileFollowingList-${profile?.id}`,
+    queryFn: () => fetchProfileFollowingList(profile?.id),
+    enabled: !!profile?.id,
+    staleTime: 1000 * 60 * 20,
   })
 
   const { data: similarProfiles = [], isLoading: loadingSimilar } = useQuery({
@@ -274,6 +296,7 @@ export default function Profile() {
     })) || []
 
   const roles = profile?.profile_roles.sort((a, b) => b.main_activity - a.main_activity)
+  const genres = profile?.profile_genres.sort((a, b) => b.main_genre - a.main_genre)
   const city = profile?.cities?.name
   const regionUf = profile?.regions?.uf
 
@@ -351,6 +374,54 @@ export default function Profile() {
     }
 
     return { success: true, action: 'unfollowed' }
+  }
+
+  const renderUserList = (list, emptyMessage) => {
+    if (list.length === 0) {
+      return (
+        <Text size="sm" c="dimmed" ta="center" py="xl">
+          {emptyMessage}
+        </Text>
+      )
+    }
+    return (
+      <ScrollArea.Autosize mah={400}>
+        <Stack gap="sm" py="xs">
+          {list.map((user) => (
+            <Group key={user.id} justify="space-between" wrap="nowrap">
+              <Group gap="sm" style={{ flex: 1 }}>
+                <Link to={`/${user.username}`}>
+                  <Avatar
+                    src={AVATAR_PATH + user.avatar}
+                    radius="xl"
+                    size={50}
+                    alt={user.full_name}
+                  />
+                </Link>
+                <div style={{ style: 'none', flex: 1 }}>
+                  <Anchor
+                    component={Link}
+                    to={`/${user.username}`}
+                    size="sm"
+                    fw={600}
+                    c="var(--mantine-color-text)"
+                    onClick={() => {
+                      closeFollowers()
+                      closeFollowing()
+                    }}
+                  >
+                    {user.full_name}
+                  </Anchor>
+                  <Text size="xs" c="dimmed">
+                    @{user.username}
+                  </Text>
+                </div>
+              </Group>
+            </Group>
+          ))}
+        </Stack>
+      </ScrollArea.Autosize>
+    )
   }
 
   return (
@@ -476,7 +547,7 @@ export default function Profile() {
                 position="bottom-center"
                 inline
                 label={<Text size="0.7rem">Disponível</Text>}
-                color="green"
+                color="green.9"
                 size={18}
                 withBorder
                 disabled={!profile.is_open_to_work}
@@ -488,7 +559,7 @@ export default function Profile() {
               </Indicator>
               <Stack gap={1} flex={1}>
                 <Flex align="center" gap={2} wrap="wrap">
-                  <Title order={1} size="25px" lts="-0.02em" lh="1">
+                  <Title order={1} size="25px" lh="1">
                     {profile.full_name}
                   </Title>
                   {!!profile.is_verified && (
@@ -520,7 +591,7 @@ export default function Profile() {
                       component={Link}
                       to="/settings/profile"
                       radius="xl"
-                      variant="filled"
+                      variant="subtle"
                       aria-label="Editar meu perfil"
                       title="Editar meu perfil"
                       ml={4}
@@ -529,15 +600,32 @@ export default function Profile() {
                     </ActionIcon>
                   )}
                 </Flex>
-                <Flex align="center" gap={4} opacity={0.7}>
-                  <Text span size="sm">
-                    @{profile.username}
+                <Group gap="md" my={3}>
+                  <Anchor underline="never" onClick={openFollowers}>
+                    <Text size="sm" fw={500}>
+                      {followersList.length} seguidores
+                    </Text>
+                  </Anchor>
+                  <Anchor underline="never" onClick={openFollowing}>
+                    <Text size="sm" fw={500}>
+                      {followingList.length} seguindo
+                    </Text>
+                  </Anchor>
+                </Group>
+                {profile.title && (
+                  <Text size="14px" fw={400} maw={420} lh={1.3} my={3}>
+                    {profile.title}
                   </Text>
+                )}
+                <Flex align="center" gap={4} opacity={0.7}>
+                  {/* <Text span size="sm">
+                    @{profile.username}
+                  </Text> */}
                   {(city || regionUf) && (
-                    <Text size="sm">· {[city, regionUf].filter(Boolean).join('/')}</Text>
+                    <Text size="xs">{[city, regionUf].filter(Boolean).join('/')}</Text>
                   )}
-                  <Text size="sm">·</Text>
-                  <Anchor size="sm" onClick={openContactInfo}>
+                  <Text size="xs">·</Text>
+                  <Anchor size="xs" onClick={openContactInfo}>
                     Dados de contato
                   </Anchor>
                   {isProfileLive(profile) && (
@@ -553,11 +641,6 @@ export default function Profile() {
                     </Group>
                   )}
                 </Flex>
-                {profile.title && (
-                  <Text size="14px" fw={400} maw={420} lh={1.3} my={3}>
-                    {profile.title}
-                  </Text>
-                )}
               </Stack>
             </Group>
             {user?.id !== profile.id && (
@@ -599,12 +682,22 @@ export default function Profile() {
                     <Spoiler
                       maxHeight={40}
                       showLabel={
-                        <Text size="sm" c="var(--mantine-color-text)">
+                        <Text
+                          lh={1.3}
+                          opacity={0.9}
+                          size="sm"
+                          c="var(--mantine-color-text)"
+                        >
                           ...ver mais
                         </Text>
                       }
                       hideLabel={
-                        <Text size="sm" c="var(--mantine-color-text)">
+                        <Text
+                          lh={1.3}
+                          opacity={0.9}
+                          size="sm"
+                          c="var(--mantine-color-text)"
+                        >
                           ...ver menos
                         </Text>
                       }
@@ -621,9 +714,9 @@ export default function Profile() {
                   </>
                 )}
 
-                <Text size="xs" fw={500} mt={profile.bio ? 'md' : 0} c="dimmed">
+                <Title order={3} fz="xs" c="dimmed" fw={400} mt={profile.bio ? 'md' : 0}>
                   Atividades na música
-                </Text>
+                </Title>
                 {roles && roles.length > 0 && (
                   <Text size="sm">
                     {roles.map(({ id, roles: role }, index) => (
@@ -633,6 +726,21 @@ export default function Profile() {
                       </Text>
                     ))}
                   </Text>
+                )}
+                <Title order={3} fz="xs" c="dimmed" fw={400} mt={6}>
+                  Gêneros musicais de atuação
+                </Title>
+                {genres && genres.length > 0 ? (
+                  <Text size="sm">
+                    {genres.map(({ id, genres: genre }, index) => (
+                      <Text key={id} span fw={400}>
+                        {genre?.name}
+                        {index < genre.length - 1 ? ' · ' : ''}
+                      </Text>
+                    ))}
+                  </Text>
+                ) : (
+                  <Text size="sm">Não informado</Text>
                 )}
               </SectionPanel>
               {profileProjects.length > 0 && (
@@ -886,28 +994,35 @@ export default function Profile() {
                       </Group>
                       <Group gap={10} mb={4} mx={{ base: 'sm', md: 0 }}>
                         {gearCategories.length > 1 && (
-                          <NativeSelect
+                          <Select
                             size="sm"
+                            variant="filled"
                             w={145}
-                            onChange={(e) => setGearCategorySelected(e.target.value)}
-                          >
-                            <option value="">Exibir tudo</option>
-                            {gearCategories.map((cat) => (
-                              <option key={cat.category_id} value={cat.category_id}>
-                                {truncateString(`${cat.category} (${cat.total})`, 28)}
-                              </option>
-                            ))}
-                          </NativeSelect>
+                            value={gearCategorySelected || ''}
+                            clearable
+                            onChange={(value) => setGearCategorySelected(value || '')}
+                            data={[
+                              { value: '', label: 'Exibir tudo' },
+                              ...gearCategories.map((cat) => ({
+                                value: String(cat.category_id),
+                                label: truncateString(
+                                  `${cat.category} (${cat.total})`,
+                                  28,
+                                ),
+                              })),
+                            ]}
+                          />
                         )}
                         {user?.id === profile.id && (
                           <Menu shadow="md" width={200}>
                             <Menu.Target>
                               <ActionIcon
-                                variant="default"
+                                variant="subtle"
+                                color="gray"
                                 size="lg"
                                 aria-label="Opções de equipamento"
                               >
-                                <IconChevronDownFilled size={14} />
+                                <IconDotsVerticalFilled size={20} />
                               </ActionIcon>
                             </Menu.Target>
 
@@ -1025,7 +1140,14 @@ export default function Profile() {
               {workAvailability.length > 0 && workFocus.length > 0 && (
                 <SectionPanel id="availability">
                   <SectionTitle text="Disponibilidade" mb="sm" />
-                  <Title order={3} fz="xs" opacity={0.8} fw={300} mt="sm">
+                  {profile.is_open_to_work && (
+                    <Alert variant="light" color="green" p={6}>
+                      <Text size="xs">
+                        {profile.full_name} está disponível para trabalhos!
+                      </Text>
+                    </Alert>
+                  )}
+                  <Title order={3} fz="xs" c="dimmed" fw={400} mt="sm">
                     Disponível a partir de:
                   </Title>
                   <Text size="sm" fw={500}>
@@ -1034,15 +1156,14 @@ export default function Profile() {
                         profile.available_from
                       : 'Não informado'}
                   </Text>
-                  <Title order={3} fz="xs" opacity={0.8} fw={300} mt="sm" mb={2}>
+                  <Title order={3} fz="xs" c="dimmed" fw={400} mt="sm" mb={2}>
                     Tipos de trabalho:
                   </Title>
                   {workAvailability.length > 0 ? (
                     <Group gap={6} wrap="wrap">
                       {workAvailability.map((item) => (
                         <Text span size="sm" fw={500} key={item.id}>
-                          <IconCheck color="green" size={10} stroke={4} />{' '}
-                          {item.work_types?.name_ptbr}
+                          <IconCheck size={10} stroke={4} /> {item.work_types?.name_ptbr}
                         </Text>
                       ))}
                     </Group>
@@ -1051,14 +1172,14 @@ export default function Profile() {
                       Não informado
                     </Text>
                   )}
-                  <Title order={3} fz="xs" opacity={0.8} fw={300} mt="sm" mb={2}>
+                  <Title order={3} fz="xs" c="dimmed" fw={400} mt="sm" mb={2}>
                     Vínculos de preferência:
                   </Title>
                   {workFocus.length > 0 ? (
                     <Group gap={6} wrap="wrap">
                       {workFocus.map((item) => (
                         <Text span size="sm" fw={500} key={item.id}>
-                          <IconCheck color="green" size={10} stroke={4} />{' '}
+                          <IconCheck size={10} stroke={4} />{' '}
                           {item.work_focuses?.title_ptbr}
                         </Text>
                       ))}
@@ -1292,11 +1413,53 @@ export default function Profile() {
           </Grid.Col>
         </Grid>
       </Container>
+
+      <Modal
+        opened={followersOpened}
+        onClose={closeFollowers}
+        title={
+          <Text fw={700} size="md">
+            Seguidores
+          </Text>
+        }
+        centered
+        radius="md"
+        size="sm"
+        overlayProps={{
+          backgroundOpacity: 0.55,
+          blur: 3,
+        }}
+      >
+        {renderUserList(followersList, 'Nenhum seguidor ainda.')}
+      </Modal>
+
+      <Modal
+        opened={followingOpened}
+        onClose={closeFollowing}
+        title={
+          <Text fw={700} size="md">
+            Seguindo
+          </Text>
+        }
+        centered
+        radius="md"
+        size="sm"
+        overlayProps={{
+          backgroundOpacity: 0.55,
+          blur: 3,
+        }}
+      >
+        {renderUserList(followingList, 'Não está seguindo ninguém ainda.')}
+      </Modal>
       <Modal
         opened={contactInfoOpened}
         onClose={closeContactInfo}
         title="Dados de contato"
         centered
+        overlayProps={{
+          backgroundOpacity: 0.55,
+          blur: 3,
+        }}
       >
         <SectionTitle text="Telefone" mb="sm" />
         {/* Telefone — só exibe se phone_number_is_public */}

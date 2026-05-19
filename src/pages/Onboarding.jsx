@@ -2,11 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useQuery } from '@tanstack/react-query'
-import {
-  fetchUserProfile,
-  fetchUserRoles,
-  fetchUserProjects,
-} from '../queries/user'
+import { fetchUserProfile, fetchUserRoles, fetchUserProjects } from '../queries/user'
 import { fetchCityById } from '../queries/locations'
 import { supabase } from '../lib/supabaseClient'
 import {
@@ -35,11 +31,7 @@ import {
 } from '@mantine/core'
 import JoinProjectModal from '../components/modals/JoinProjectModal'
 import { useForm } from '@mantine/form'
-import {
-  useDebouncedCallback,
-  useDisclosure,
-  useMediaQuery,
-} from '@mantine/hooks'
+import { useDebouncedCallback, useDisclosure, useMediaQuery } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
 import { upload } from '@imagekit/react'
 import {
@@ -124,8 +116,7 @@ export default function Onboarding() {
   // ── Step 2: Perfil ────────────────────────────────────
   const [usernameChecking, setUsernameChecking] = useState(false)
   const [usernameAvailable, setUsernameAvailable] = useState(null)
-  const [usernameUnavailableReason, setUsernameUnavailableReason] =
-    useState(null)
+  const [usernameUnavailableReason, setUsernameUnavailableReason] = useState(null)
   const [selectedCity, setSelectedCity] = useState(null)
   const [citySearchQuery, setCitySearchQuery] = useState('')
   const [cityResults, setCityResults] = useState([])
@@ -314,17 +305,13 @@ export default function Onboarding() {
         token: ikToken,
         expire,
         signature,
-        onProgress: (e) =>
-          setUploadProgress(Math.round((e.loaded / e.total) * 100)),
+        onProgress: (e) => setUploadProgress(Math.round((e.loaded / e.total) * 100)),
       })
 
       const n = response.filePath.lastIndexOf('/')
       const fileName = response.filePath.substring(n + 1)
 
-      await supabase
-        .from('profiles')
-        .update({ avatar: fileName })
-        .eq('id', user.id)
+      await supabase.from('profiles').update({ avatar: fileName }).eq('id', user.id)
 
       setAvatarUploaded(true)
       notifications.show({
@@ -568,18 +555,14 @@ export default function Onboarding() {
       <Stack gap="xl">
         <Stack gap={4} align="center">
           <IconCircuitResistor size={38} />
-          <Title order={2} fw={800} lts="-0.02em" ta="center">
+          <Title order={2} fw={800} ta="center">
             Vamos configurar seu perfil
           </Title>
           <Text c="dimmed" size="sm" ta="center">
             Leva menos de 2 minutos
           </Text>
         </Stack>
-        <Stepper
-          active={active}
-          color="indigo"
-          size={largeScreen ? 'sm' : 'xs'}
-        >
+        <Stepper active={active} color="indigo" size={largeScreen ? 'sm' : 'xs'}>
           <Stepper.Step label="Foto" />
           <Stepper.Step label="Sobre você" />
           <Stepper.Step label="Atividades" />
@@ -592,8 +575,7 @@ export default function Onboarding() {
               Defina sua foto de perfil
             </Title>
             <Text c="dimmed" size="sm" ta="center">
-              Uma boa foto aumenta suas chances de ser encontrado por outros
-              músicos.
+              Uma boa foto aumenta suas chances de ser encontrado por outros músicos.
             </Text>
 
             <Avatar
@@ -728,9 +710,7 @@ export default function Onboarding() {
                     disabled={!profileForm.values.region_id}
                     value={selectedCity?.name ?? ''}
                     rightSection={
-                      profileForm.values.region_id ? (
-                        <IconSearch size={15} />
-                      ) : undefined
+                      profileForm.values.region_id ? <IconSearch size={15} /> : undefined
                     }
                     onClick={() => {
                       if (profileForm.values.region_id) {
@@ -761,14 +741,10 @@ export default function Onboarding() {
               onChange={(e) => handleAddRole(e.target.value)}
               value=""
             >
-              <option value="">
-                {addingRole ? 'Salvando...' : 'Selecione'}
-              </option>
+              <option value="">{addingRole ? 'Salvando...' : 'Selecione'}</option>
               <optgroup label="Gestão, produção e outros">
                 {rolesManagement
-                  .filter(
-                    (r) => !userRoles.find((ur) => ur.id === Number(r.value)),
-                  )
+                  .filter((r) => !userRoles.find((ur) => ur.id === Number(r.value)))
                   .map((r) => (
                     <option key={r.value} value={r.value}>
                       {r.label}
@@ -777,9 +753,7 @@ export default function Onboarding() {
               </optgroup>
               <optgroup label="Instrumentos">
                 {rolesMusicians
-                  .filter(
-                    (r) => !userRoles.find((ur) => ur.id === Number(r.value)),
-                  )
+                  .filter((r) => !userRoles.find((ur) => ur.id === Number(r.value)))
                   .map((r) => (
                     <option key={r.value} value={r.value}>
                       {r.label}
@@ -828,11 +802,7 @@ export default function Onboarding() {
             <TextInput
               placeholder="Buscar projeto ou banda..."
               leftSection={
-                projectSearchLoading ? (
-                  <Loader size={15} />
-                ) : (
-                  <IconSearch size={15} />
-                )
+                projectSearchLoading ? <Loader size={15} /> : <IconSearch size={15} />
               }
               value={projectSearch}
               onChange={(e) => {
@@ -845,9 +815,7 @@ export default function Onboarding() {
               <ScrollArea h={140} type="auto">
                 <Stack gap={0}>
                   {projectResults.map((project) => {
-                    const alreadyAdded = userProjects.find(
-                      (p) => p.id === project.id,
-                    )
+                    const alreadyAdded = userProjects.find((p) => p.id === project.id)
                     return (
                       <Box key={project.id}>
                         <Group
@@ -857,9 +825,7 @@ export default function Onboarding() {
                             cursor: alreadyAdded ? 'default' : 'pointer',
                             opacity: alreadyAdded ? 0.5 : 1,
                           }}
-                          onClick={() =>
-                            !alreadyAdded && handleSelectProject(project)
-                          }
+                          onClick={() => !alreadyAdded && handleSelectProject(project)}
                         >
                           <Avatar
                             size={40}
@@ -919,9 +885,7 @@ export default function Onboarding() {
                           .delete()
                           .eq('project_id', project.id)
                           .eq('profile_id', user.id)
-                        setUserProjects((prev) =>
-                          prev.filter((p) => p.id !== project.id),
-                        )
+                        setUserProjects((prev) => prev.filter((p) => p.id !== project.id))
                       }}
                       size="sm"
                     >
@@ -1026,11 +990,7 @@ export default function Onboarding() {
             data-autofocus
             value={citySearchQuery}
             rightSection={
-              citySearchLoading ? (
-                <Loader size={16} />
-              ) : (
-                <IconSearch size={16} />
-              )
+              citySearchLoading ? <Loader size={16} /> : <IconSearch size={16} />
             }
             onChange={(e) => {
               setCitySearchQuery(e.target.value)

@@ -3,20 +3,35 @@ import { useQuery } from '@tanstack/react-query'
 import { fetchBasicProfile } from '../queries/profiles'
 import { useAuth } from '../hooks/useAuth'
 import {
-  Container, Box, Avatar, 
-  Title, Text, Button, Group, Flex, Stack,
-  Skeleton, Alert, Badge, Scroller
+  Container,
+  Box,
+  Avatar,
+  Title,
+  Text,
+  Button,
+  Group,
+  Flex,
+  Stack,
+  Skeleton,
+  Alert,
+  Badge,
+  Scroller,
 } from '@mantine/core'
 import { IconMusic, IconArrowRight, IconMoodSad } from '@tabler/icons-react'
 
-const AVATAR_PATH = 'https://ik.imagekit.io/mublin/tr:h-200,c-maintain_ratio/users/avatars/'
+const AVATAR_PATH =
+  'https://ik.imagekit.io/mublin/tr:h-200,c-maintain_ratio/users/avatars/'
 
 export default function ProfilePublic() {
   const { username } = useParams()
   const navigate = useNavigate()
   const { session, loading: authLoading } = useAuth()
 
-  const { data: profile, isLoading, isError } = useQuery({
+  const {
+    data: profile,
+    isLoading,
+    isError,
+  } = useQuery({
     queryKey: ['profile', username],
     queryFn: () => fetchBasicProfile(username),
     enabled: !!username && !authLoading && !session,
@@ -76,21 +91,35 @@ export default function ProfilePublic() {
             />
             <Stack gap={1}>
               <Flex align="center" gap={6} wrap="wrap">
-                <Title order={1} size={24} letterSpacing='-0.02em'>
+                <Title order={1} size={24}>
                   {profile.full_name}
                 </Title>
-                <Badge size="md" color="gray" c='dimmed' variant="light" tt='lowercase' fw='500'>
+                <Badge
+                  size="md"
+                  color="gray"
+                  c="dimmed"
+                  variant="light"
+                  tt="lowercase"
+                  fw="500"
+                >
                   @{profile.username}
                 </Badge>
               </Flex>
               {roles && roles.length > 0 && (
                 <Scroller>
                   <Group gap={4} wrap="nowrap">
-                    {roles && roles.map(({ id, main_activity, roles: role }) => (
-                      <Badge key={id} variant="light" fw='500' size="sm" color={main_activity ? 'indigo' : 'gray'}>
-                        {role.name_ptbr}
-                      </Badge>
-                    ))}
+                    {roles &&
+                      roles.map(({ id, main_activity, roles: role }) => (
+                        <Badge
+                          key={id}
+                          variant="light"
+                          fw="500"
+                          size="sm"
+                          color={main_activity ? 'indigo' : 'gray'}
+                        >
+                          {role.name_ptbr}
+                        </Badge>
+                      ))}
                   </Group>
                 </Scroller>
               )}
@@ -115,7 +144,9 @@ export default function ProfilePublic() {
               <Stack gap={2}>
                 <Group gap={6}>
                   <IconMusic size={16} color="var(--mantine-color-indigo-6)" />
-                  <Text size="sm" fw={600}>Veja o perfil completo no Mublin</Text>
+                  <Text size="sm" fw={600}>
+                    Veja o perfil completo no Mublin
+                  </Text>
                 </Group>
                 <Text size="xs" c="dimmed">
                   Projetos, gigs, setlists e muito mais.
@@ -143,7 +174,6 @@ export default function ProfilePublic() {
               </Group>
             </Group>
           </Box>
-
         </Stack>
       </Container>
     </>

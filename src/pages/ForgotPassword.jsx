@@ -2,8 +2,15 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import {
-  Container, Paper, Stack, Title, Text,
-  TextInput, Button, Anchor, ThemeIcon
+  Container,
+  Paper,
+  Stack,
+  Title,
+  Text,
+  TextInput,
+  Button,
+  Anchor,
+  ThemeIcon,
 } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { notifications } from '@mantine/notifications'
@@ -11,7 +18,7 @@ import { IconMailCheck } from '@tabler/icons-react'
 
 export default function ForgotPassword() {
   const { resetPassword } = useAuth()
-  const [loading, setLoading]   = useState(false)
+  const [loading, setLoading] = useState(false)
   const [submitted, setSubmitted] = useState(false)
 
   const form = useForm({
@@ -43,7 +50,7 @@ export default function ForgotPassword() {
     <Container size={420} py={30}>
       <Stack gap="xl">
         <Stack gap={4} align="center">
-          <Title order={2} ta="center" fw={700} lts="-0.02em">
+          <Title order={2} ta="center" fw={700}>
             Recuperar senha
           </Title>
           <Text c="dimmed" size="sm" ta="center">
@@ -63,8 +70,8 @@ export default function ForgotPassword() {
                   E-mail enviado!
                 </Text>
                 <Text size="sm" c="dimmed" ta="center" maw={300}>
-                  Verifique sua caixa de entrada e siga as instruções para
-                  redefinir sua senha.
+                  Verifique sua caixa de entrada e siga as instruções para redefinir sua
+                  senha.
                 </Text>
               </Stack>
               <Button

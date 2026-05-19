@@ -3,14 +3,21 @@ import { supabase } from '../lib/supabaseClient'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import {
-  Container, Paper, Stack, Title, Text, TextInput,
-  PasswordInput, Button, Anchor, Divider, Group
+  Container,
+  Paper,
+  Stack,
+  Title,
+  Text,
+  TextInput,
+  PasswordInput,
+  Button,
+  Anchor,
+  Divider,
+  Group,
 } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { notifications } from '@mantine/notifications'
-import {
-  IconBrandGoogle, IconBrandSpotify
-} from '@tabler/icons-react'
+import { IconBrandGoogle, IconBrandSpotify } from '@tabler/icons-react'
 
 export default function Signup() {
   const navigate = useNavigate()
@@ -53,7 +60,9 @@ export default function Signup() {
     }
 
     // Com confirmação desativada, a sessão já existe após o signup
-    const { data: { session } } = await supabase.auth.getSession()
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
     if (!session) {
       // Fallback: confirmação ainda ativa no Supabase
       notifications.show({
@@ -108,9 +117,8 @@ export default function Signup() {
   return (
     <Container size={420} py={30}>
       <Stack gap="xl">
-
         <Stack gap={4} align="center">
-          <Title order={2} ta="center" fw={700} lts="-0.02em">
+          <Title order={2} ta="center" fw={700}>
             Crie sua conta
           </Title>
           <Text c="dimmed" size="sm" ta="center">
@@ -119,14 +127,9 @@ export default function Signup() {
         </Stack>
 
         {/* Form */}
-        <Paper
-          p="lg"
-          withBorder
-          radius="lg"
-        >
+        <Paper p="lg" withBorder radius="lg">
           <form onSubmit={form.onSubmit(handleSubmit)}>
             <Stack gap="md">
-
               <TextInput
                 label="Nome completo"
                 placeholder="Seu nome"
@@ -156,8 +159,8 @@ export default function Signup() {
                 Ao criar sua conta, você concorda com nossos{' '}
                 <Anchor component={Link} to="/terms" size="xs" underline="hover">
                   Termos de uso
-                </Anchor>
-                {' '}e{' '}
+                </Anchor>{' '}
+                e{' '}
                 <Anchor component={Link} to="/privacy" size="xs" underline="hover">
                   Política de privacidade
                 </Anchor>
@@ -201,7 +204,6 @@ export default function Signup() {
                   Spotify
                 </Button>
               </Group>
-
             </Stack>
           </form>
         </Paper>
@@ -213,7 +215,6 @@ export default function Signup() {
             Entrar
           </Anchor>
         </Text>
-
       </Stack>
     </Container>
   )

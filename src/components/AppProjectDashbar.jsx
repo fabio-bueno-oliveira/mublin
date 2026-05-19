@@ -16,7 +16,6 @@ import {
   Avatar,
   Tooltip,
   Modal,
-  Image,
   Text,
   Input,
   Container,
@@ -203,7 +202,7 @@ export default function AppProjectDashbar() {
               </Grid.Col>
             )}
             {!selectedProject && !loadingProjectDashbar && (
-              <Grid.Col span={{ base: 7.5, md: 8.5 }} pt={2} pl={8}>
+              <Grid.Col span={{ base: 7.5, md: 8.5 }} pt={8} pl={8}>
                 <Group gap={4}>
                   <Group gap={4} visibleFrom="sm">
                     <IconArrowLeft size={14} style={{ opacity: '0.4' }} />

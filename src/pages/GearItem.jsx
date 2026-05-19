@@ -68,7 +68,7 @@ export default function GearItem() {
 
   const { data: productColors = [] } = useQuery({
     queryKey: ['productColors', product?.id],
-    queryFn: () => fetchProductColors(product.id),
+    queryFn: () => fetchProductColors(product?.id),
     enabled: !!product?.id,
     staleTime: 1000 * 60 * 10,
     onSuccess: (data) => {
@@ -81,7 +81,7 @@ export default function GearItem() {
 
   const { data: owners = [], isLoading: isLoadingOwners } = useQuery({
     queryKey: ['productOwners', product?.id],
-    queryFn: () => fetchProductOwners(product.id),
+    queryFn: () => fetchProductOwners(product?.id),
     enabled: !!product?.id,
     staleTime: 1000 * 60 * 5,
   })
@@ -124,29 +124,29 @@ export default function GearItem() {
     <>
       <Helmet>
         <meta charSet="utf-8" />
-        <title>{`${product.name} | ${product.brands?.name} | Mublin`}</title>
-        <link rel="canonical" href={`https://mublin.com/gear/${product.slug}`} />
+        <title>{`${product?.name} | ${product?.brands?.name} | Mublin`}</title>
+        <link rel="canonical" href={`https://mublin.com/gear/${product?.slug}`} />
         <meta
           name="description"
           content={
-            product.description ?? `${product.brands?.name} ${product.name} no Mublin`
+            product?.description ?? `${product?.brands?.name} ${product?.name} no Mublin`
           }
         />
       </Helmet>
 
       {isMobile && (
         <Affix position={{ top: 0, left: 0 }} w="100%">
-          <AppNavbarMobile pageName={`${product.brands?.name} ${product.name}`} />
+          <AppNavbarMobile pageName={`${product?.brands?.name} ${product?.name}`} />
         </Affix>
       )}
 
       <Container size="lg" mt={{ base: 60, sm: 16 }} pb={60}>
         {/* Header: logo da marca + nome */}
         <Flex gap={14} align="center" mb={24}>
-          <Anchor component={Link} to={`/brand/${product.brands?.slug}`}>
+          <Anchor component={Link} to={`/brand/${product?.brands?.slug}`}>
             <Image
               src={
-                product.brands?.logo ? PATH_BRAND_LOGO + product.brands.logo : undefined
+                product?.brands?.logo ? PATH_BRAND_LOGO + product?.brands.logo : undefined
               }
               h={70}
               w={70}
@@ -157,23 +157,23 @@ export default function GearItem() {
           <Box>
             <Text size="sm" c="dimmed" lh={1.3}>
               {[
-                product.product_categories?.name_ptbr,
-                product.brands?.name,
-                product.product_series?.name,
+                product?.product_categories?.name_ptbr,
+                product?.brands?.name,
+                product?.product_series?.name,
               ]
                 .filter(Boolean)
                 .join(' · ')}
             </Text>
-            <Title order={1} fz="h3" fw={600} lts="-0.02em" lh={1.2}>
-              {product.name}
+            <Title order={1} fz="h3" fw={600} lh={1.2}>
+              {product?.name}
             </Title>
-            {product.subtitle && (
+            {product?.subtitle && (
               <Text size="sm" c="dimmed">
-                {product.subtitle}
+                {product?.subtitle}
               </Text>
             )}
             <Group gap={6} mt={4}>
-              {product.is_rare && (
+              {product?.is_rare && (
                 <Group gap={4} align="center">
                   <IconDiamond size={14} color="var(--mantine-color-indigo-5)" />
                   <Text size="xs" c="indigo" fw={500}>
@@ -181,7 +181,7 @@ export default function GearItem() {
                   </Text>
                 </Group>
               )}
-              {product.is_discontinued && (
+              {product?.is_discontinued && (
                 <Text size="xs" c="dimmed">
                   · Descontinuado pelo fabricante
                 </Text>
@@ -284,25 +284,25 @@ export default function GearItem() {
               <Title size="md" fw={600} mb={6}>
                 Sobre
               </Title>
-              {product.description ? (
+              {product?.description ? (
                 <Stack gap={4}>
                   <Text size="sm" style={{ whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
-                    {product.description}
+                    {product?.description}
                   </Text>
-                  {product.description_source && (
+                  {product?.description_source && (
                     <Text size="xs" c="dimmed">
-                      Fonte: {product.description_source}
+                      Fonte: {product?.description_source}
                     </Text>
                   )}
-                  {product.description_source_url && (
+                  {product?.description_source_url && (
                     <Anchor
-                      href={product.description_source_url}
+                      href={product?.description_source_url}
                       target="_blank"
                       underline="hover"
                       size="xs"
                       c="dimmed"
                     >
-                      {product.description_source_url}
+                      {product?.description_source_url}
                     </Anchor>
                   )}
                 </Stack>
@@ -442,7 +442,7 @@ export default function GearItem() {
         title={
           <Box>
             <Text size="md" fw={500}>
-              {product.brands?.name} · {product.name}
+              {product?.brands?.name} · {product?.name}
             </Text>
             {selectedColor?.colors && (
               <Text size="sm" c="dimmed">

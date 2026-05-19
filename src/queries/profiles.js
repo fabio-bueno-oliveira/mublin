@@ -47,6 +47,13 @@ export async function fetchBasicProfile(profileUsername) {
           description_ptbr,
           instrumentalist
         )
+      ),
+      profile_genres (
+        id,
+        main_genre,
+        genres (
+          id, name
+        )
       )
     `,
     )
@@ -60,7 +67,7 @@ export async function fetchBasicProfile(profileUsername) {
   return data
 }
 
-export async function fetchFollowingInfo(profileUsername, userUsername) {
+export async function fetchCheckFollowing(profileUsername, userUsername) {
   const { data, error } = await supabase
     .from('profile_followers')
     .select(
@@ -321,4 +328,41 @@ export async function fetchProfileInspirations(profileId) {
     throw new Error(error.message)
   }
   return data
+}
+
+export async function fetchProfileFollowers(profileId) {
+  const { data, error } = await supabase
+    .from('profile_followers')
+    .select(
+      `
+      id,
+      profiles:follower_id ( id, full_name, username, avatar )
+    `,
+    )
+    .eq('following_id', profileId)
+    .order('created_at', { ascending: false })
+
+  if (error) {
+    throw new Error(error.message)
+  }
+  return data.map((item) => item.profiles).filter(Boolean)
+}
+
+export async function fetchProfileFollowingList(profileId) {
+  const { data, error } = await supabase
+    .from('profile_followers')
+    .select(
+      `
+      id,
+      profiles:following_id ( id, full_name, username, avatar )
+    `,
+    )
+    .eq('follower_id', profileId)
+    .order('created_at', { ascending: false })
+
+  if (error) {
+    throw new Error(error.message)
+  }
+  // Mapeia para simplificar a estrutura no front-end
+  return data.map((item) => item.profiles).filter(Boolean)
 }

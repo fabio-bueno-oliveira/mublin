@@ -202,3 +202,101 @@ export async function fetchProductOwners(productId) {
   }
   return data
 }
+
+export async function fetchBrandProducts(brandId) {
+  const { data, error } = await supabase
+    .from('products')
+    .select(
+      `
+      id,
+      name,
+      slug,
+      subtitle,
+      description,
+      description_source,
+      description_source_url,
+      year,
+      is_discontinued,
+      is_rare,
+      is_featured,
+      picture,
+      product_categories (
+        id,
+        name_ptbr,
+        macro_category
+      ),
+      product_series (
+        id,
+        name
+      )
+    `,
+    )
+    .eq('id_brand', brandId)
+    .order('name', { ascending: false })
+  if (error) {
+    throw new Error(error.message)
+  }
+  return data
+}
+
+export async function fetchBrandProductColors(brandId) {
+  const { data, error } = await supabase
+    .from('products')
+    .select(
+      `
+      id,
+      product_colors!inner (
+        is_main,
+        colors (
+          name,
+          rgb,
+          img_sample
+        )
+      ),
+      brands!inner (
+        slug
+      )
+    `,
+    )
+    .eq('brands.id', brandId)
+    .order('name', { foreignTable: 'product_colors.colors', ascending: true })
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  return data
+}
+
+export async function getBrandOwners(brandId) {
+  const { data, error } = await supabase
+    .from('profile_gear')
+    .select(
+      `
+      id,
+      is_for_sale,
+      profiles (
+        id,
+        full_name,
+        username,
+        avatar
+      ),
+      products!inner (
+        id,
+        name,
+        picture,
+        brands!inner (
+          name
+        )
+      )
+    `,
+    )
+    .eq('products.brands.id', brandId)
+    .order('id', { ascending: false })
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  return data
+}

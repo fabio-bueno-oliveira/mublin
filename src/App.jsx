@@ -26,7 +26,7 @@ import './styles.scss'
 const theme = createTheme({
   // autoContrast: true,
   primaryColor: 'mublinColor',
-  // primaryShade: 7,
+  // primaryShade: 8,
   colors: {
     mublinColor: [
       '#ecefff',
@@ -61,6 +61,11 @@ const theme = createTheme({
   },
   defaultRadius: 'md',
   components: {
+    Title: Badge.extend({
+      defaultProps: {
+        lts: '-0.02em',
+      },
+    }),
     Badge: Badge.extend({
       defaultProps: {
         fw: '500',

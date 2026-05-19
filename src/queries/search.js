@@ -107,3 +107,71 @@ export async function fetchRandomSearchPhrase() {
   }
   return data
 }
+
+export async function searchArtists(keyword) {
+  const cleanKeyword = keyword.trim()
+  if (!cleanKeyword) {
+    return []
+  }
+
+  const words = cleanKeyword.split(/\s+/).filter((w) => w.length > 1)
+  if (!words.length) {
+    return []
+  }
+
+  const mainFilters = words
+    .flatMap((word) => [
+      `name.ilike.%${word}%`,
+      // `real_name.ilike.%${word}%`,
+      `slug.ilike.%${word}%`,
+    ])
+    .join(',')
+
+  const { data, error } = await supabase
+    .from('artists')
+    .select(
+      `
+      id, 
+      name, 
+      real_name, 
+      slug, 
+      picture, 
+      is_band, 
+      is_verified,
+      artist_roles:artist_roles (
+        roles ( id, name_ptbr, name_en )
+      )
+    `,
+    )
+    .or(mainFilters)
+    .eq('is_active', true)
+    .order('name', { ascending: true })
+    .limit(40)
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  return data
+}
+
+export async function fetchGearOwners(productId, limit = 6) {
+  const { data, error } = await supabase
+    .from('profile_gear')
+    .select(
+      `
+      profiles (
+        id,
+        username,
+        avatar,
+        full_name
+      )
+    `,
+    )
+    .eq('id_product', productId)
+    .limit(limit)
+  if (error) {
+    throw new Error(error.message)
+  }
+  return data.map((r) => r.profiles).filter(Boolean)
+}

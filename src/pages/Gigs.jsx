@@ -154,17 +154,23 @@ export default function Gigs() {
         {/* ── Cabeçalho ────────────────────────────── */}
         <Group justify="space-between" align="flex-end" mb="lg">
           <Box>
-            <Title order={1} fz="h2" fw={700} lts="-0.02em">
+            <Title order={1} fz="h2" fw={700}>
               Minhas gigs
             </Title>
             {!loadingGigs && (
               <Text size="sm" opacity={0.8}>
-                {upcomingGigs.length} próxima{upcomingGigs.length !== 1 ? 's' : ''} · {pastGigs.length} realizada
+                {upcomingGigs.length} próxima{upcomingGigs.length !== 1 ? 's' : ''} ·{' '}
+                {pastGigs.length} realizada
                 {pastGigs.length !== 1 ? 's' : ''}
               </Text>
             )}
           </Box>
-          <Button size="sm" leftSection={<IconPlus size={15} />} component={Link} to="/new/event">
+          <Button
+            size="sm"
+            leftSection={<IconPlus size={15} />}
+            component={Link}
+            to="/new/event"
+          >
             Nova gig
           </Button>
         </Group>
@@ -210,7 +216,9 @@ export default function Gigs() {
                 <Text size="xs" c="dimmed" tt="uppercase" lts="0.05em">
                   Próxima gig
                 </Text>
-                {nextDays !== null && nextDays <= 2 && <IconExclamationCircleFilled size={15} color="orange" />}
+                {nextDays !== null && nextDays <= 2 && (
+                  <IconExclamationCircleFilled size={15} color="orange" />
+                )}
               </Group>
               <Stack gap={0} mb={8}>
                 <Text
@@ -253,7 +261,12 @@ export default function Gigs() {
               </Stack>
               <Group gap={4}>
                 <UrgencyBadge dateStr={gigDate(nextGig)} />
-                <Badge size="xs" color="green" variant="light" leftSection={<IconCheck stroke={3} size={11} />}>
+                <Badge
+                  size="xs"
+                  color="green"
+                  variant="light"
+                  leftSection={<IconCheck stroke={3} size={11} />}
+                >
                   Aceito
                 </Badge>
                 {nextGig.gigs?.has_remuneration && (
@@ -264,7 +277,9 @@ export default function Gigs() {
               </Group>
               <Group gap={4} mt={4} opacity={0.8}>
                 <IconDiamond size={13} />
-                <Text size="xs">Atividade: {nextGig.gig_roles?.roles?.description_ptbr}</Text>
+                <Text size="xs">
+                  Atividade: {nextGig.gig_roles?.roles?.description_ptbr}
+                </Text>
               </Group>
               {gigDate(nextGig) && (
                 <Group gap={4} opacity={0.8}>
@@ -330,7 +345,12 @@ export default function Gigs() {
                   return (
                     <Card key={gig.id} withBorder padding="sm" radius="md">
                       <Group justify="space-between" align="flex-start" wrap="nowrap">
-                        <Group gap="sm" align="flex-start" wrap="nowrap" style={{ flex: 1 }}>
+                        <Group
+                          gap="sm"
+                          align="flex-start"
+                          wrap="nowrap"
+                          style={{ flex: 1 }}
+                        >
                           {/* Bloco de data */}
                           {date && (
                             <Box

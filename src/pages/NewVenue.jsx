@@ -5,16 +5,41 @@ import { useAuth } from '../hooks/useAuth'
 import { supabase } from '../lib/supabaseClient'
 import { useQuery } from '@tanstack/react-query'
 import {
-  Container, Title, Stack, TextInput, Textarea, Select, Button, Group,
-  Switch, NumberInput, Image, ActionIcon, Loader, Text, Box,
-  Divider, SimpleGrid, NativeSelect, Input, Modal, ScrollArea,
-  Anchor, Badge,
+  Container,
+  Title,
+  Stack,
+  TextInput,
+  Textarea,
+  Select,
+  Button,
+  Group,
+  Switch,
+  NumberInput,
+  Image,
+  ActionIcon,
+  Loader,
+  Text,
+  Box,
+  Divider,
+  SimpleGrid,
+  NativeSelect,
+  Input,
+  Modal,
+  ScrollArea,
+  Anchor,
+  Badge,
 } from '@mantine/core'
 import { useDebouncedCallback, useDisclosure } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
 import {
-  IconPhoto, IconX, IconWorld, IconMapPin, IconPhone,
-  IconBrandInstagram, IconSearch, IconUsers,
+  IconPhoto,
+  IconX,
+  IconWorld,
+  IconMapPin,
+  IconPhone,
+  IconBrandInstagram,
+  IconSearch,
+  IconUsers,
 } from '@tabler/icons-react'
 
 // ── Helpers ───────────────────────────────────────────────
@@ -40,7 +65,9 @@ async function fetchVenueTypes() {
     .from('venue_types')
     .select('id, name')
     .order('name')
-  if (error) throw new Error(error.message)
+  if (error) {
+    throw new Error(error.message)
+  }
   return data
 }
 
@@ -49,7 +76,9 @@ async function fetchCountries() {
     .from('countries')
     .select('id, name_ptbr, name')
     .order('name_ptbr')
-  if (error) throw new Error(error.message)
+  if (error) {
+    throw new Error(error.message)
+  }
   return data
 }
 
@@ -59,7 +88,9 @@ async function fetchRegionsByCountry(countryId) {
     .select('id, name, uf')
     .eq('country_id', countryId)
     .order('name')
-  if (error) throw new Error(error.message)
+  if (error) {
+    throw new Error(error.message)
+  }
   return data
 }
 
@@ -71,7 +102,9 @@ async function searchCitiesByName(query, regionId) {
     .ilike('name', `%${query}%`)
     .order('name')
     .limit(20)
-  if (error) throw new Error(error.message)
+  if (error) {
+    throw new Error(error.message)
+  }
   return data
 }
 
@@ -90,7 +123,8 @@ export default function NewVenue() {
   const [cityResults, setCityResults] = useState([])
   const [citySearchLoading, setCitySearchLoading] = useState(false)
   const [noCityResults, setNoCityResults] = useState(false)
-  const [modalCityOpened, { open: openCityModal, close: closeCityModal }] = useDisclosure(false)
+  const [modalCityOpened, { open: openCityModal, close: closeCityModal }] =
+    useDisclosure(false)
 
   // Formulário
   const [name, setName] = useState('')
@@ -139,7 +173,9 @@ export default function NewVenue() {
   // ── Busca de cidades (debounced) ─────────────────────────
 
   const handleCitySearch = useDebouncedCallback(async (query) => {
-    if (!query || query.length < 2 || !selectedRegionId) return
+    if (!query || query.length < 2 || !selectedRegionId) {
+      return
+    }
     setCitySearchLoading(true)
     setNoCityResults(false)
     const results = await searchCitiesByName(query, selectedRegionId)
@@ -155,11 +191,15 @@ export default function NewVenue() {
   // ── ImageKit helpers ─────────────────────────────────────
 
   async function getIkAuthTokens() {
-    const { data: { session } } = await supabase.auth.getSession()
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
     const authRes = await fetch(import.meta.env.VITE_IMAGEKIT_AUTH_ENDPOINT, {
       headers: { Authorization: `Bearer ${session?.access_token}` },
     })
-    if (!authRes.ok) throw new Error('Falha na autenticação do ImageKit')
+    if (!authRes.ok) {
+      throw new Error('Falha na autenticação do ImageKit')
+    }
     return { session, ...(await authRes.json()) }
   }
 
@@ -180,25 +220,31 @@ export default function NewVenue() {
   }
 
   async function deleteFromImageKit(fileId) {
-    const { data: { session } } = await supabase.auth.getSession()
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
     const response = await fetch(
       `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/imagekit-manage`,
       {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session?.access_token}`,
+          Authorization: `Bearer ${session?.access_token}`,
         },
         body: JSON.stringify({ fileId }),
-      }
+      },
     )
-    if (!response.ok) throw new Error('Erro ao deletar no servidor')
+    if (!response.ok) {
+      throw new Error('Erro ao deletar no servidor')
+    }
   }
 
   // ── Handlers de imagem ───────────────────────────────────
 
   async function handleImageUpload(file) {
-    if (!file) return
+    if (!file) {
+      return
+    }
     setPictureFile(file)
     setIsUploadingImage(true)
     try {
@@ -212,22 +258,34 @@ export default function NewVenue() {
       setPictureFileName(response.filePath.substring(n + 1))
       setPictureFileId(response.fileId)
     } catch {
-      notifications.show({ color: 'red', position: 'top-center', message: 'Erro ao enviar imagem. Tente novamente.' })
+      notifications.show({
+        color: 'red',
+        position: 'top-center',
+        message: 'Erro ao enviar imagem. Tente novamente.',
+      })
     } finally {
       setIsUploadingImage(false)
     }
   }
 
   async function handleRemoveImage() {
-    if (!pictureFileId) return
+    if (!pictureFileId) {
+      return
+    }
     try {
       await deleteFromImageKit(pictureFileId)
       setPictureFileName('')
       setPictureFileId('')
       setPictureFile(null)
-      if (imageInputRef.current) imageInputRef.current.value = ''
+      if (imageInputRef.current) {
+        imageInputRef.current.value = ''
+      }
     } catch {
-      notifications.show({ color: 'red', position: 'top-center', message: 'Erro ao remover imagem. Tente novamente.' })
+      notifications.show({
+        color: 'red',
+        position: 'top-center',
+        message: 'Erro ao remover imagem. Tente novamente.',
+      })
     }
   }
 
@@ -235,7 +293,11 @@ export default function NewVenue() {
 
   async function handleSubmit() {
     if (!name.trim()) {
-      notifications.show({ color: 'red', position: 'top-center', message: 'Informe o nome do estabelecimento.' })
+      notifications.show({
+        color: 'red',
+        position: 'top-center',
+        message: 'Informe o nome do estabelecimento.',
+      })
       return
     }
 
@@ -268,7 +330,12 @@ export default function NewVenue() {
       .single()
 
     if (venueError) {
-      notifications.show({ color: 'red', title: 'Ops...', message: 'Não foi possível cadastrar o estabelecimento. Tente novamente.', position: 'top-center' })
+      notifications.show({
+        color: 'red',
+        title: 'Ops...',
+        message: 'Não foi possível cadastrar o estabelecimento. Tente novamente.',
+        position: 'top-center',
+      })
       setSubmitting(false)
       return
     }
@@ -297,24 +364,29 @@ export default function NewVenue() {
       }
     }
 
-    notifications.show({ color: 'green', message: 'Estabelecimento cadastrado com sucesso!', position: 'top-center' })
+    notifications.show({
+      color: 'green',
+      message: 'Estabelecimento cadastrado com sucesso!',
+      position: 'top-center',
+    })
     navigate(`/venues/${venueId}`)
   }
 
-  // ── Render ───────────────────────────────────────────────
-
   return (
     <Container size="sm" py="md" px={{ base: 'md', sm: 'lg' }}>
-      <Title order={1} fz="h3" ta="left" fw={600} lts="-0.02em" mb={24}>
+      <Title order={1} fz="h3" ta="left" fw={600} mb={24}>
         Cadastrar novo estabelecimento ou local
       </Title>
 
       <Stack gap="md">
-
         {/* Imagem */}
         <Box>
           <Text size="xs" c="dimmed" fw={500} mb={6}>
-            <IconPhoto size={16} stroke={1.4} style={{ marginRight: 4, verticalAlign: 'middle' }} />
+            <IconPhoto
+              size={16}
+              stroke={1.4}
+              style={{ marginRight: 4, verticalAlign: 'middle' }}
+            />
             Foto do estabelecimento
           </Text>
           {pictureFileName ? (
@@ -341,7 +413,9 @@ export default function NewVenue() {
             <Button
               variant="default"
               size="sm"
-              leftSection={isUploadingImage ? <Loader size={13} /> : <IconPhoto size={14} />}
+              leftSection={
+                isUploadingImage ? <Loader size={13} /> : <IconPhoto size={14} />
+              }
               component="label"
               htmlFor="venue-image-input"
               disabled={isUploadingImage}
@@ -355,7 +429,11 @@ export default function NewVenue() {
             type="file"
             accept="image/png,image/jpeg,image/webp"
             style={{ display: 'none' }}
-            onChange={(e) => { if (e.target.files?.[0]) handleImageUpload(e.target.files[0]) }}
+            onChange={(e) => {
+              if (e.target.files?.[0]) {
+                handleImageUpload(e.target.files[0])
+              }
+            }}
           />
         </Box>
 
@@ -377,8 +455,10 @@ export default function NewVenue() {
           disabled={loadingVenueTypes}
         >
           <option value="">Selecione (opcional)</option>
-          {venueTypes.map(t => (
-            <option key={t.id} value={String(t.id)}>{t.name}</option>
+          {venueTypes.map((t) => (
+            <option key={t.id} value={String(t.id)}>
+              {t.name}
+            </option>
           ))}
         </NativeSelect>
 
@@ -407,7 +487,7 @@ export default function NewVenue() {
             }}
           >
             <option value="">Selecione</option>
-            {countries.map(c => (
+            {countries.map((c) => (
               <option key={c.id} value={String(c.id)}>
                 {c.name_ptbr || c.name}
               </option>
@@ -424,7 +504,7 @@ export default function NewVenue() {
             }}
           >
             <option value="">Selecione</option>
-            {regions.map(r => (
+            {regions.map((r) => (
               <option key={r.id} value={String(r.id)}>
                 {r.uf ? `${r.name} (${r.uf})` : r.name}
               </option>
@@ -436,12 +516,18 @@ export default function NewVenue() {
           <Input
             pointer
             readOnly
-            placeholder={selectedRegionId ? 'Selecionar...' : 'Selecione o Estado primeiro'}
+            placeholder={
+              selectedRegionId ? 'Selecionar...' : 'Selecione o Estado primeiro'
+            }
             disabled={!selectedRegionId}
             value={selectedCity?.name ?? ''}
             leftSection={<IconMapPin size={14} />}
             rightSection={selectedRegionId ? <IconSearch size={15} /> : undefined}
-            onClick={() => { if (selectedRegionId) openCityModal() }}
+            onClick={() => {
+              if (selectedRegionId) {
+                openCityModal()
+              }
+            }}
           />
         </Input.Wrapper>
 
@@ -532,21 +618,13 @@ export default function NewVenue() {
         <Divider />
 
         <Group justify="flex-end">
-          <Button
-            variant="default"
-            onClick={() => navigate(-1)}
-            disabled={submitting}
-          >
+          <Button variant="default" onClick={() => navigate(-1)} disabled={submitting}>
             Cancelar
           </Button>
-          <Button
-            loading={submitting}
-            onClick={handleSubmit}
-          >
+          <Button loading={submitting} onClick={handleSubmit}>
             Cadastrar estabelecimento
           </Button>
         </Group>
-
       </Stack>
 
       {/* Modal de seleção de cidade */}
@@ -562,19 +640,23 @@ export default function NewVenue() {
             placeholder="Digite o nome da cidade..."
             data-autofocus
             value={citySearchQuery}
-            rightSection={citySearchLoading ? <Loader size={16} /> : <IconSearch size={16} />}
+            rightSection={
+              citySearchLoading ? <Loader size={16} /> : <IconSearch size={16} />
+            }
             onChange={(e) => {
               setCitySearchQuery(e.target.value)
               handleCitySearch(e.target.value)
             }}
           />
           {noCityResults && (
-            <Text size="xs" c="dimmed">Nenhuma cidade encontrada nesta região.</Text>
+            <Text size="xs" c="dimmed">
+              Nenhuma cidade encontrada nesta região.
+            </Text>
           )}
           {cityResults.length > 0 && (
             <ScrollArea h={200} type="auto">
               <Stack gap={0}>
-                {cityResults.map(city => (
+                {cityResults.map((city) => (
                   <Box key={city.id}>
                     <Anchor
                       size="sm"
@@ -599,7 +681,6 @@ export default function NewVenue() {
           )}
         </Stack>
       </Modal>
-
     </Container>
   )
 }

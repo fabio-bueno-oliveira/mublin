@@ -55,7 +55,7 @@ export default function Projects() {
 
   return (
     <Container size="xl" py="sm">
-      <Title order={1} fz="h3" ta="left" fw={600} lts="-0.02em" mb={20}>
+      <Title order={1} fz="h3" ta="left" fw={600} mb={20}>
         Meus projetos
       </Title>
       {loadingProjects ? (
@@ -75,7 +75,10 @@ export default function Projects() {
           {userProjects.map((project) => (
             <Paper key={project.id} p="sm">
               <Grid>
-                <Grid.Col span={{ base: 12, md: 6, lg: 6 }} opacity={project.request_status === 1 ? 0.4 : 1}>
+                <Grid.Col
+                  span={{ base: 12, md: 6, lg: 6 }}
+                  opacity={project.request_status === 1 ? 0.4 : 1}
+                >
                   <Link
                     to={`/project/${project.slug}`}
                     className="noDecoration"
@@ -110,15 +113,27 @@ export default function Projects() {
                             processing={project.activity_status === 1}
                             size={5}
                           />
-                          <Text size="11px" lh={1} c={!project.activity_status_color ? 'dimmed' : undefined}>
-                            {project.activity_status_name ? project.activity_status_name : 'Não informado'}
+                          <Text
+                            size="11px"
+                            lh={1}
+                            c={!project.activity_status_color ? 'dimmed' : undefined}
+                          >
+                            {project.activity_status_name
+                              ? project.activity_status_name
+                              : 'Não informado'}
                             {project.end_year && ` em ${project.end_year}`}
                           </Text>
                         </Group>
                       )}
                     </Flex>
                   </Link>
-                  <Text size="sm" fw={300} opacity={project.request_status === 1 ? 0.4 : 1} w={150} truncate="end">
+                  <Text
+                    size="sm"
+                    fw={300}
+                    opacity={project.request_status === 1 ? 0.4 : 1}
+                    w={150}
+                    truncate="end"
+                  >
                     {project.main_role}{' '}
                     {project.is_founder && (
                       <Text span c="dimmed" size="xs">
@@ -151,7 +166,12 @@ export default function Projects() {
                   )}
                   <Group>
                     {project.request_status === 1 && (
-                      <Badge color="orange" size="xs" autoContrast leftSection={<IconClock size={12} />}>
+                      <Badge
+                        color="orange"
+                        size="xs"
+                        autoContrast
+                        leftSection={<IconClock size={12} />}
+                      >
                         Pendente
                       </Badge>
                     )}
@@ -162,9 +182,18 @@ export default function Projects() {
                     )}
                   </Group>
                 </Grid.Col>
-                <Grid.Col span={{ base: 12, md: 6, lg: 6 }} opacity={project.request_status === 1 ? 0.4 : 1}>
+                <Grid.Col
+                  span={{ base: 12, md: 6, lg: 6 }}
+                  opacity={project.request_status === 1 ? 0.4 : 1}
+                >
                   <Flex direction="column" gap={2}>
-                    <Text size="sm" fw={300} opacity={project.request_status === 1 ? 0.4 : 1} w={150} truncate="end">
+                    <Text
+                      size="sm"
+                      fw={300}
+                      opacity={project.request_status === 1 ? 0.4 : 1}
+                      w={150}
+                      truncate="end"
+                    >
                       {project.main_role}{' '}
                       {project.is_founder && (
                         <Text span c="dimmed" size="xs">
@@ -176,7 +205,10 @@ export default function Projects() {
                       <>
                         {!project.end_year ? (
                           <Flex gap={8} align="center">
-                            <Indicator color={project.left_at ? 'red' : 'green'} size={5} />
+                            <Indicator
+                              color={project.left_at ? 'red' : 'green'}
+                              size={5}
+                            />
                             <Text size="11px" className="lhNormal">
                               {`${project.joined_at} ➜ ${project.left_at ? project.left_at : currentYear}`}{' '}
                               {project.left_at
@@ -197,7 +229,12 @@ export default function Projects() {
                     )}
                     <Group>
                       {project.request_status === 1 && (
-                        <Badge color="orange" size="xs" autoContrast leftSection={<IconClock size={12} />}>
+                        <Badge
+                          color="orange"
+                          size="xs"
+                          autoContrast
+                          leftSection={<IconClock size={12} />}
+                        >
                           Pendente
                         </Badge>
                       )}

@@ -66,3 +66,24 @@ export async function fetchArtistGear(artistId) {
   }
   return data
 }
+
+export async function fetchArtistRoles(artistId) {
+  const { data, error } = await supabase
+    .from('artist_roles')
+    .select(
+      `
+      id,
+      is_main_role,
+      order_show,
+      roles ( name_ptbr )
+    `,
+    )
+    .eq('artist_id', artistId)
+    .order('is_main_role', { ascending: false })
+    .order('order_show', { ascending: true })
+
+  if (error) {
+    throw new Error(error.message)
+  }
+  return data
+}

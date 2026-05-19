@@ -37,12 +37,7 @@ import { useForm, isNotEmpty, isInRange } from '@mantine/form'
 import { useDebouncedCallback, useDisclosure } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
 import { upload } from '@imagekit/react'
-import {
-  IconTrash,
-  IconCheck,
-  IconSearch,
-  IconPolaroid,
-} from '@tabler/icons-react'
+import { IconTrash, IconCheck, IconSearch, IconPolaroid } from '@tabler/icons-react'
 
 // ── Helpers ──────────────────────────────────────────────
 function generateSlug(name) {
@@ -214,9 +209,7 @@ export default function NewProject() {
         `Entre 1800 e ${currentYear}`,
       ),
       end_year: (v, values) =>
-        !v && values.activity_status === '2'
-          ? 'Informe o ano de encerramento'
-          : null,
+        !v && values.activity_status === '2' ? 'Informe o ano de encerramento' : null,
       main_role_id: isNotEmpty('Informe sua função principal'),
       project_type_id: isNotEmpty('Informe o tipo do projeto'),
       activity_status: isNotEmpty('Informe o status do projeto'),
@@ -315,13 +308,7 @@ export default function NewProject() {
    * @param {string[]} tags         - tags do ImageKit
    * @param {Function} onProgress   - callback de progresso
    */
-  async function uploadToImageKit({
-    file,
-    fileName,
-    folder,
-    tags,
-    onProgress,
-  }) {
+  async function uploadToImageKit({ file, fileName, folder, tags, onProgress }) {
     const { token: ikToken, expire, signature } = await getIkAuthTokens()
     return upload({
       file,
@@ -553,24 +540,21 @@ export default function NewProject() {
 
     // Adiciona membro fundador
     setLoadingStep('Quase lá...')
-    const { error: memberError } = await supabase
-      .from('project_members')
-      .insert({
-        project_id: projectId,
-        profile_id: user.id,
-        role_id: Number(values.main_role_id),
-        is_founder: true,
-        is_admin: true,
-        status: 2,
-        joined_at: `${values.foundation_year}-01-01`,
-      })
+    const { error: memberError } = await supabase.from('project_members').insert({
+      project_id: projectId,
+      profile_id: user.id,
+      role_id: Number(values.main_role_id),
+      is_founder: true,
+      is_admin: true,
+      status: 2,
+      joined_at: `${values.foundation_year}-01-01`,
+    })
 
     if (memberError) {
       notifications.show({
         color: 'red',
         title: 'Erro',
-        message:
-          'Projeto criado, mas não foi possível adicionar você como membro.',
+        message: 'Projeto criado, mas não foi possível adicionar você como membro.',
       })
       setIsSubmitting(false)
       return
@@ -603,7 +587,7 @@ export default function NewProject() {
           ),
         }}
       />
-      <Title order={1} fz="h3" ta="left" fw={600} lts="-0.02em" mb={20}>
+      <Title order={1} fz="h3" ta="left" fw={600} mb={20}>
         Cadastrar um novo projeto
       </Title>
       <form onSubmit={form.onSubmit(handleSubmit)}>
@@ -640,16 +624,12 @@ export default function NewProject() {
                 maxLength={70}
                 rightSection={slugChecking ? <Loader size={16} /> : undefined}
                 leftSection={
-                  slugValue.length >= 2 &&
-                  !slugChecking &&
-                  slugAvailable === true ? (
+                  slugValue.length >= 2 && !slugChecking && slugAvailable === true ? (
                     <IconCheck size={18} color="green" />
                   ) : undefined
                 }
                 error={
-                  slugValue.length >= 2 &&
-                  !slugChecking &&
-                  slugAvailable === false
+                  slugValue.length >= 2 && !slugChecking && slugAvailable === false
                     ? 'Username não disponível'
                     : undefined
                 }
@@ -671,11 +651,7 @@ export default function NewProject() {
               <ScrollArea w="100%" type="hover" scrollbarSize={6}>
                 <Flex gap={12} w="max-content">
                   {similarProjects.map((p) => (
-                    <Anchor
-                      key={p.id}
-                      href={`/project/${p.slug}`}
-                      underline="never"
-                    >
+                    <Anchor key={p.id} href={`/project/${p.slug}`} underline="never">
                       <Flex direction="column" align="center" gap={4}>
                         <Avatar
                           size={48}
@@ -686,13 +662,7 @@ export default function NewProject() {
                               : undefined
                           }
                         />
-                        <Text
-                          size="xs"
-                          fw={500}
-                          ta="center"
-                          maw={60}
-                          lineClamp={2}
-                        >
+                        <Text size="xs" fw={500} ta="center" maw={60} lineClamp={2}>
                           {p.name}
                         </Text>
                       </Flex>
@@ -905,9 +875,7 @@ export default function NewProject() {
                 <Input
                   pointer
                   readOnly
-                  placeholder={
-                    regionId ? 'Selecionar...' : 'Selecione o Estado'
-                  }
+                  placeholder={regionId ? 'Selecionar...' : 'Selecione o Estado'}
                   disabled={!regionId}
                   value={selectedCity?.name ?? ''}
                   rightSection={regionId ? <IconSearch size={15} /> : undefined}
@@ -1004,11 +972,7 @@ export default function NewProject() {
             data-autofocus
             value={citySearchQuery}
             rightSection={
-              citySearchLoading ? (
-                <Loader size={16} />
-              ) : (
-                <IconSearch size={16} />
-              )
+              citySearchLoading ? <Loader size={16} /> : <IconSearch size={16} />
             }
             onChange={(e) => {
               setCitySearchQuery(e.target.value)

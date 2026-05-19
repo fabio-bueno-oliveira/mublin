@@ -8,7 +8,7 @@ export default function SectionPanel({ children, ...props }) {
     <Paper
       shadow={{ base: 'none', sm: 'sm' }}
       pl={{ base: 'sm', sm: 'md' }}
-      pr={{ base: 0, sm: 'md' }}
+      pr={{ base: 'sm', sm: 'md' }}
       py={{ base: 'xs', sm: 'md' }}
       radius={isMobile ? 0 : 'md'}
       {...props}

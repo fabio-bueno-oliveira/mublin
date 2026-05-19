@@ -4,6 +4,7 @@ import { Link, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import {
   fetchArtistDetails,
+  fetchArtistRoles,
   fetchArtistGear,
   fetchArtistsInspirated,
 } from '../queries/artists'
@@ -19,6 +20,7 @@ import {
   Group,
   Stack,
   Skeleton,
+  Badge,
   Avatar,
   ActionIcon,
   Center,
@@ -56,6 +58,13 @@ export default function Artist() {
     queryKey: ['artist-details', slug],
     queryFn: () => fetchArtistDetails(slug),
     enabled: !!slug,
+    staleTime: 1000 * 60 * 4,
+  })
+
+  const { data: roles = [], isLoading: loadingArtistRoles } = useQuery({
+    queryKey: ['artist-roles', artist?.id],
+    queryFn: () => fetchArtistRoles(artist?.id),
+    enabled: !!artist?.id,
     staleTime: 1000 * 60 * 4,
   })
 
@@ -99,6 +108,9 @@ export default function Artist() {
             <>
               {isSuccess && artist ? (
                 <>
+                  <Text ta="center" c="dimmed" size="13px" mb={6} visibleFrom="sm">
+                    Página de figura mainstream
+                  </Text>
                   <Center>
                     <Avatar
                       size={100}
@@ -109,16 +121,34 @@ export default function Artist() {
                     />
                   </Center>
                   <Flex direction="column" align="center">
-                    <Text c="dimmed" size="13px" mb={6} visibleFrom="sm">
-                      Página de artista mainstream
-                    </Text>
                     <Title order={1} fz="h2">
                       {artist?.name}
                     </Title>
-                    <Text>
-                      {artist?.is_band ? 'Banda' : 'Artista'} ·{' '}
+                    <Text size="xs" c="dimmed">
+                      Gênero musical predominante:{' '}
                       {artist?.genres?.name_ptbr || artist?.genres?.name}
                     </Text>
+                    {/* Bloco de Roles/Papéis do Artista */}
+                    {loadingArtistRoles ? (
+                      <Skeleton width={200} height={16} />
+                    ) : (
+                      roles &&
+                      roles.length > 0 && (
+                        <Group gap="xs" mt="xs">
+                          {roles.map((item) => (
+                            <Badge
+                              key={item.id}
+                              variant={item.is_main_role ? 'filled' : 'light'}
+                              color={item.is_main_role ? 'gray' : 'gray'}
+                              size="sm"
+                              radius="sm"
+                            >
+                              {item.roles?.name_ptbr}
+                            </Badge>
+                          ))}
+                        </Group>
+                      )
+                    )}
                   </Flex>
                   {(artist.spotify_id ||
                     artist.instagram ||

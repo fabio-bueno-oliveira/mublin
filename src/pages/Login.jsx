@@ -3,14 +3,21 @@ import { supabase } from '../lib/supabaseClient'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import {
-  Container, Paper, Stack, Title, Text, TextInput,
-  PasswordInput, Button, Anchor, Divider, Group
+  Container,
+  Paper,
+  Stack,
+  Title,
+  Text,
+  TextInput,
+  PasswordInput,
+  Button,
+  Anchor,
+  Divider,
+  Group,
 } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { notifications } from '@mantine/notifications'
-import {
-  IconBrandGoogle, IconBrandSpotify
-} from '@tabler/icons-react'
+import { IconBrandGoogle, IconBrandSpotify } from '@tabler/icons-react'
 
 export default function Login() {
   const navigate = useNavigate()
@@ -41,7 +48,9 @@ export default function Login() {
       return
     }
 
-    const { data: { session } } = await supabase.auth.getSession()
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
     const { data: profile } = await supabase
       .from('profiles')
       .select('onboarding_completed')
@@ -85,9 +94,8 @@ export default function Login() {
   return (
     <Container size={420} py={30}>
       <Stack gap="xl">
-
         <Stack gap={4} align="center">
-          <Title order={2} ta="center" fw={700} lts="-0.02em">
+          <Title order={2} ta="center" fw={700}>
             Login
           </Title>
           <Text c="dimmed" size="sm" ta="center">
@@ -96,11 +104,7 @@ export default function Login() {
         </Stack>
 
         {/* Form */}
-        <Paper
-          p="lg"
-          withBorder
-          radius="lg"
-        >
+        <Paper p="lg" withBorder radius="lg">
           <form onSubmit={form.onSubmit(handleSubmit)}>
             <Stack gap="md">
               <TextInput
@@ -164,7 +168,6 @@ export default function Login() {
                   Spotify
                 </Button>
               </Group>
-
             </Stack>
           </form>
         </Paper>
@@ -175,7 +178,6 @@ export default function Login() {
             Criar conta grátis
           </Anchor>
         </Text>
-
       </Stack>
     </Container>
   )
