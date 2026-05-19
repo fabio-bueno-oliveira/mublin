@@ -120,7 +120,7 @@ export default function ProfileHeaderMobile({ profile, city, regionUf, user }) {
           to="/settings/profile"
           size="sm"
           radius="md"
-          variant={isDark ? 'default' : 'light'}
+          variant={isDark ? 'filled' : 'light'}
           color={isDark ? 'gray' : 'gray.3'}
           fullWidth
         >

@@ -53,10 +53,12 @@ const theme = createTheme({
       '#926d10',
     ],
   },
-  fontFamily: 'Geist, Helvetica, Arial, sans-serif',
+  fontFamily:
+    'system-ui, -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif',
   fontFamilyMonospace: 'monospace',
   headings: {
-    fontFamily: 'Geist, Helvetica, Arial, sans-serif',
+    fontFamily:
+      'system-ui, -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif',
     fontWeight: '700',
   },
   defaultRadius: 'md',

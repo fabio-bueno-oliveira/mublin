@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useQuery } from '@tanstack/react-query'
@@ -6,6 +5,7 @@ import { fetchUserProjects } from '../queries/user'
 import { fetchUserGigs } from '../queries/gigs'
 // prettier-ignore
 import {
+  useMantineColorScheme,
   Grid, Group,Flex,
   Container, Stack, Scroller,
   Badge, Button,
@@ -17,7 +17,6 @@ import {
 } from '@mantine/core'
 import { useMediaQuery } from '@mantine/hooks'
 import AppNavbarMobile from '../components/AppNavbarMobile'
-// import { PROJECT_ACTIVITY_STATUS } from '../constants/projects'
 import Feed from './Feed'
 import {
   IconCalendar,
@@ -30,6 +29,7 @@ import {
   IconCheck,
   IconCircleArrowLeftFilled,
   IconCircleArrowRightFilled,
+  IconChevronRightFilled,
 } from '@tabler/icons-react'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
@@ -47,8 +47,8 @@ const PROJECT_AVATAR_PATH = 'https://ik.imagekit.io/mublin/projects'
 export default function Home() {
   const { profile, user, loading } = useAuth()
   const isDesktop = useMediaQuery('(min-width: 48em)')
-
-  const [gigTypeToShow, setGigTypeToShow] = useState('confirmed')
+  const { colorScheme } = useMantineColorScheme()
+  const isDark = colorScheme === 'dark'
 
   const { data: projects = [], isLoading: loadingProjects } = useQuery({
     queryKey: ['user-projects', user?.id],
@@ -169,23 +169,26 @@ export default function Home() {
                 <Text fz="h2" fw={700} lts="-0.02em">
                   Olá, {profile.username}
                 </Text>
-                <Group justify="space-between">
+                <Group gap={8} justify="flex-start">
                   <Text fz="sm" opacity={0.8} lh={1}>
                     Você está associado a{' '}
                     {userProjects.length === 1
                       ? '1 projeto'
                       : `${userProjects.length} projetos`}
                   </Text>
-                  <Anchor
+                  <ActionIcon
+                    variant="light"
+                    color="#717171"
                     c="dimmed"
                     component={Link}
-                    lh={1}
                     to="/projects"
-                    fz="sm"
+                    fz="xs"
                     fw={500}
+                    aria-description="Ver todos"
+                    title="Ver todos"
                   >
-                    Ver todos
-                  </Anchor>
+                    <IconChevronRightFilled size={18} />
+                  </ActionIcon>
                 </Group>
                 {!!userProjects.length && (
                   <Scroller
@@ -202,7 +205,7 @@ export default function Home() {
                   >
                     <Group align="flex-start" gap="md" wrap="nowrap" pr="md">
                       {userProjects.map((project) => (
-                        <Stack key={project.id} gap={6} size={90}>
+                        <Stack key={project.id} gap={4} size={90}>
                           <Link to={`/project/${project.slug}`}>
                             <Box
                               radius="md"
@@ -265,12 +268,12 @@ export default function Home() {
                             </Box>
                           </Link>
                           <Flex gap={0} direction="column">
-                            <Text fz="10px" truncate="end">
+                            <Text fz="xs" c="dimmed" truncate="end">
                               {project.main_role} {additionalRolesCount(project)} em
                             </Text>
                             <Text
                               w={90}
-                              size="sm"
+                              size="15px"
                               fw={600}
                               truncate="end"
                               component={Link}
@@ -336,39 +339,21 @@ export default function Home() {
               </Anchor>{' '}
             </Flex> */}
 
-            <Group justify="space-between">
-              {/* <Title order={2} fz="xl" fw={700} mb="xs">
+            <Group gap={8} justify="flex-start" align="flex-start">
+              <Title order={2} fz="xl" fw={700} mb="xs">
                 Próximas gigs
-              </Title> */}
-              <Flex gap="xs" mb="xs">
-                <Title
-                  order={2}
-                  fz="xl"
-                  fw={700}
-                  opacity={gigTypeToShow === 'confirmed' ? 1 : 0.4}
-                  component={Anchor}
-                  underline="never"
-                  c="var(--mantine-color-text)"
-                  onClick={() => setGigTypeToShow('confirmed')}
-                >
-                  Próximas gigs
-                </Title>
-                <Title
-                  order={2}
-                  fz="xl"
-                  fw={700}
-                  opacity={gigTypeToShow === 'invites' ? 1 : 0.4}
-                  component={Anchor}
-                  underline="never"
-                  c="var(--mantine-color-text)"
-                  onClick={() => setGigTypeToShow('invites')}
-                >
-                  Convites (0)
-                </Title>
-              </Flex>
-              <Anchor c="dimmed" component={Link} to="/gigs" fz="sm" fw={500}>
-                Ver tudo
-              </Anchor>
+              </Title>
+              <ActionIcon
+                variant="light"
+                color="#717171"
+                c="dimmed"
+                component={Link}
+                to="/gigs"
+                fz="xs"
+                fw={500}
+              >
+                <IconChevronRightFilled size={18} />
+              </ActionIcon>
             </Group>
 
             {loadingGigs ? (

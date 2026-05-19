@@ -644,17 +644,17 @@ export default function Profile() {
               </Stack>
             </Group>
             {user?.id !== profile.id && (
-              <Group mx={{ base: 'sm', md: 0 }} mt={{ base: 'sm', md: 0 }}>
+              <Group gap={10} mx={{ base: 'sm', md: 0 }} mt={{ base: 'sm', md: 0 }}>
                 {followingInfo?.id ? (
                   <Button
                     size="sm"
                     radius="md"
-                    variant={isDark ? 'default' : 'light'}
+                    variant={isDark ? 'filled' : 'light'}
                     color={isDark ? 'gray' : 'gray.3'}
-                    fullWidth
+                    w={142}
                     mt={4}
                     onClick={() => unfollowProfile(user.id, profile.id)}
-                    loading={loadingFollowingInfo}
+                    disabled={loadingFollowingInfo}
                   >
                     Deixar de seguir
                   </Button>
@@ -664,14 +664,32 @@ export default function Profile() {
                     radius="md"
                     variant="gradient"
                     gradient={{ from: 'grape.8', to: 'mublinColor.8', deg: 55 }}
-                    fullWidth
+                    w={142}
                     mt={4}
                     onClick={() => followProfile(user.id, profile.id)}
-                    loading={loadingFollowingInfo}
+                    disabled={loadingFollowingInfo}
                   >
                     Seguir
                   </Button>
                 )}
+                <Button
+                  size="sm"
+                  radius="md"
+                  variant={isDark ? 'filled' : 'light'}
+                  color={isDark ? 'gray' : 'gray.3'}
+                  w={150}
+                  mt={4}
+                >
+                  Convidar para gig
+                </Button>
+                <ActionIcon
+                  mt={5}
+                  size="input-sm"
+                  variant="transparent"
+                  color={isDark ? 'gray' : 'gray.3'}
+                >
+                  <IconDotsVerticalFilled size={20} color="#787878" />
+                </ActionIcon>
               </Group>
             )}
             <Stack gap={12} mt={{ base: 'md', md: 'md' }}>

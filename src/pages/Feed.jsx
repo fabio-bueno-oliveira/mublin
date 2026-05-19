@@ -385,14 +385,12 @@ export default function Projects() {
                       {/* Corpo */}
                       {post.body && (
                         <Text
-                          size="sm"
-                          opacity={0.8}
-                          lh={1.3}
-                          mt={6}
-                          mb={4}
+                          size="0.9em"
+                          c="var(--mantine-color-text)"
+                          lh={1.4}
+                          my={7}
                           component={Link}
                           to={`/post/${post.id}`}
-                          c="var(--mantine-color-text)"
                           style={{
                             textDecoration: 'none',
                             whiteSpace: 'pre-line',
