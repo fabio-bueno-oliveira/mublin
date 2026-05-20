@@ -13,6 +13,7 @@ import {
   Skeleton,
 } from '@mantine/core'
 import { IconRosetteDiscountCheckFilled } from '@tabler/icons-react'
+import ProPlanBadge from './ProPlanBadge'
 
 const AVATAR_PATH =
   'https://ik.imagekit.io/mublin/tr:h-96,c-maintain_ratio/users/avatars/'
@@ -98,11 +99,7 @@ export default function AppSidebar() {
                 <Text size="xs" opacity={0.7} fw={400} lineClamp={1} lh={1}>
                   @{profile?.username}
                 </Text>
-                {profile.plan === 'Pro' && (
-                  <Badge size="xs" variant="transparent" color="gray" radius="sm">
-                    PRO
-                  </Badge>
-                )}
+                {profile.plan === 'Pro' && <ProPlanBadge small />}
               </Group>
               {profile?.title && (
                 <Text size="13px" lh={1.3} mt={4} c="dimmed" lineClamp={2}>

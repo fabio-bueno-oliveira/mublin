@@ -6,19 +6,33 @@ import { supabase } from '../lib/supabaseClient'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { fetchUserProjects } from '../queries/user'
 import {
-  Container, Stack, Textarea, Button, Group,
-  Avatar, Select, Text, Combobox, useCombobox,
-  InputBase, Loader, CloseButton, Image, 
-  Divider, TextInput, Box, Badge, ActionIcon
+  Container,
+  Stack,
+  Textarea,
+  Button,
+  Group,
+  Avatar,
+  Text,
+  Combobox,
+  useCombobox,
+  InputBase,
+  Loader,
+  CloseButton,
+  Image,
+  Divider,
+  TextInput,
+  Box,
+  Badge,
+  ActionIcon,
 } from '@mantine/core'
+import { useDebouncedCallback } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
-import {
-  IconMicrophone2, IconBox,
-  IconLink, IconPhoto, IconX
-} from '@tabler/icons-react'
+import { IconMicrophone2, IconBox, IconLink, IconPhoto, IconX } from '@tabler/icons-react'
 
-const AVATAR_PATH = 'https://ik.imagekit.io/mublin/tr:h-68,c-maintain_ratio/users/avatars/'
-const PROJECT_PATH = 'https://ik.imagekit.io/mublin/projects/tr:h-100,w-100,c-maintain_ratio/'
+const AVATAR_PATH =
+  'https://ik.imagekit.io/mublin/tr:h-68,c-maintain_ratio/users/avatars/'
+const PROJECT_PATH =
+  'https://ik.imagekit.io/mublin/projects/tr:h-100,w-100,c-maintain_ratio/'
 
 // ── Busca de gigs ─────────────────────────────────────────
 async function searchGigs(keyword) {
@@ -28,7 +42,9 @@ async function searchGigs(keyword) {
     .ilike('title', `%${keyword}%`)
     .eq('active', true)
     .limit(8)
-  if (error) throw new Error(error.message)
+  if (error) {
+    throw new Error(error.message)
+  }
   return data
 }
 
@@ -39,43 +55,70 @@ async function searchProducts(keyword) {
     .select('id, name, slug, picture, brands(name)')
     .ilike('name', `%${keyword}%`)
     .limit(8)
-  if (error) throw new Error(error.message)
+  if (error) {
+    throw new Error(error.message)
+  }
   return data
 }
 
 // ── Combobox de busca genérico ────────────────────────────
-function SearchCombobox({ onSelect, searchFn, placeholder, renderOption, renderSelected, selected, onClear }) {
+function SearchCombobox({
+  onSelect,
+  searchFn,
+  placeholder,
+  renderOption,
+  renderSelected,
+  selected,
+  onClear,
+  debounceMs = 400,
+}) {
   const combobox = useCombobox({ onDropdownClose: () => combobox.resetSelectedOption() })
   const [value, setValue] = useState('')
   const [results, setResults] = useState([])
   const [searching, setSearching] = useState(false)
 
-  async function handleChange(val) {
-    setValue(val)
-    if (val.trim().length < 2) { setResults([]); return }
+  const fetchDebounced = useDebouncedCallback(async (val) => {
     setSearching(true)
     try {
       const data = await searchFn(val)
       setResults(data)
       combobox.openDropdown()
+    } catch (err) {
+      console.error('Erro na busca:', err)
     } finally {
       setSearching(false)
     }
+  }, debounceMs)
+
+  function handleChange(val) {
+    setValue(val)
+    if (val.trim().length < 2) {
+      setResults([])
+      combobox.closeDropdown()
+      return
+    }
+    fetchDebounced(val)
   }
 
-  if (selected) return (
-    <Group gap="xs">
-      {renderSelected(selected)}
-      <CloseButton size="sm" onClick={onClear} />
-    </Group>
-  )
+  if (selected) {
+    return (
+      <Group gap="xs">
+        {renderSelected(selected)}
+        <CloseButton size="sm" onClick={onClear} />
+      </Group>
+    )
+  }
 
   return (
     <Combobox
       store={combobox}
       onOptionSubmit={(val) => {
-        const item = results.find(r => String(r.id) === val)
-        if (item) { onSelect(item); setValue(''); setResults([]) }
+        const item = results.find((r) => String(r.id) === val)
+        if (item) {
+          onSelect(item)
+          setValue('')
+          setResults([])
+        }
         combobox.closeDropdown()
       }}
     >
@@ -94,7 +137,7 @@ function SearchCombobox({ onSelect, searchFn, placeholder, renderOption, renderS
           {results.length === 0 && !searching && (
             <Combobox.Empty>Nenhum resultado</Combobox.Empty>
           )}
-          {results.map(item => (
+          {results.map((item) => (
             <Combobox.Option key={item.id} value={String(item.id)}>
               {renderOption(item)}
             </Combobox.Option>
@@ -132,21 +175,25 @@ export default function NewPost() {
   })
 
   const userProjects = savedProjects
-    .filter(r => r.status === 2) // apenas membros ativos
-    .map(r => ({
+    .filter((r) => r.status === 2) // apenas membros ativos
+    .map((r) => ({
       value: String(r.projects.id),
-      label: r.projects.name + " (projeto)",
+      label: `${r.projects.name} (projeto)`,
       slug: r.projects.slug,
       picture: r.projects.picture,
     }))
 
-  const selectedProject = userProjects.find(p => p.value === selectedProjectId)
+  const selectedProject = userProjects.find((p) => p.value === selectedProjectId)
 
   async function handleImageUpload(file) {
-    if (!file) return
+    if (!file) {
+      return
+    }
     setIsUploadingImage(true)
     try {
-      const { data: { session } } = await supabase.auth.getSession()
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
       const authRes = await fetch(import.meta.env.VITE_IMAGEKIT_AUTH_ENDPOINT, {
         headers: { Authorization: `Bearer ${session?.access_token}` },
       })
@@ -157,48 +204,70 @@ export default function NewPost() {
         folder: '/posts/',
         tags: ['post', 'feed'],
         useUniqueFileName: true,
-        publicKey:   import.meta.env.VITE_IMAGEKIT_PUBLIC_KEY,
+        publicKey: import.meta.env.VITE_IMAGEKIT_PUBLIC_KEY,
         urlEndpoint: import.meta.env.VITE_IMAGEKIT_URL_ENDPOINT,
-        token: ikToken, expire, signature,
+        token: ikToken,
+        expire,
+        signature,
       })
       const n = response.filePath.lastIndexOf('/')
       const fileName = response.filePath.substring(n + 1)
       setPostImageFileId(response.fileId)
       setPostImage(fileName)
     } catch {
-      notifications.show({ color: 'red', position: 'top-center', message: 'Erro ao enviar imagem. Tente novamente.' })
+      notifications.show({
+        color: 'red',
+        position: 'top-center',
+        message: 'Erro ao enviar imagem. Tente novamente.',
+      })
     } finally {
       setIsUploadingImage(false)
     }
   }
 
   async function handleRemoveImage() {
-    if (!postImageFileId) return
+    if (!postImageFileId) {
+      return
+    }
     try {
-      const { data: { session } } = await supabase.auth.getSession()
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/imagekit-manage`,
         {
           method: 'DELETE',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session?.access_token}`,
+            Authorization: `Bearer ${session?.access_token}`,
           },
           body: JSON.stringify({ fileId: postImageFileId }),
-        }
+        },
       )
-      if (!response.ok) throw new Error('Erro ao deletar no servidor')
+      if (!response.ok) {
+        throw new Error('Erro ao deletar no servidor')
+      }
       setPostImage('')
       setPostImageFileId('')
-      if (imageInputRef.current) imageInputRef.current.value = ''
+      if (imageInputRef.current) {
+        imageInputRef.current.value = ''
+      }
     } catch {
-      notifications.show({ color: 'red', position: 'top-center', message: 'Erro ao remover imagem. Tente novamente.' })
+      notifications.show({
+        color: 'red',
+        position: 'top-center',
+        message: 'Erro ao remover imagem. Tente novamente.',
+      })
     }
   }
 
   async function handleSubmit() {
     if (!body.trim()) {
-      notifications.show({ color: 'red', message: 'Escreva algo antes de publicar.', position: 'top-center' })
+      notifications.show({
+        color: 'red',
+        message: 'Escreva algo antes de publicar.',
+        position: 'top-center',
+      })
       return
     }
 
@@ -209,7 +278,8 @@ export default function NewPost() {
       video_url: videoUrl.trim() || null,
       image: postImage || null,
       author_profile_id: authorType === 'profile' ? user.id : null,
-      author_project_id: authorType === 'project' && selectedProjectId ? Number(selectedProjectId) : null,
+      author_project_id:
+        authorType === 'project' && selectedProjectId ? Number(selectedProjectId) : null,
       linked_gig_id: linkedGig?.id ?? null,
       linked_product_id: linkedProduct?.id ?? null,
     }
@@ -217,12 +287,21 @@ export default function NewPost() {
     const { error } = await supabase.from('feed').insert(payload)
 
     if (error) {
-      notifications.show({ color: 'red', title: 'Ops...', message: 'Não foi possível publicar. Tente novamente.', position: 'top-center' })
+      notifications.show({
+        color: 'red',
+        title: 'Ops...',
+        message: 'Não foi possível publicar. Tente novamente.',
+        position: 'top-center',
+      })
       setSubmitting(false)
       return
     }
 
-    notifications.show({ color: 'green', message: 'Post publicado!', position: 'top-center' })
+    notifications.show({
+      color: 'green',
+      message: 'Post publicado!',
+      position: 'top-center',
+    })
     await queryClient.invalidateQueries({ queryKey: ['feed'] })
     navigate('/home')
   }
@@ -242,12 +321,19 @@ export default function NewPost() {
             <Avatar
               size={40}
               radius="md"
-              src={selectedProject.picture ? PROJECT_PATH + selectedProject.picture : undefined}
+              src={
+                selectedProject.picture
+                  ? PROJECT_PATH + selectedProject.picture
+                  : undefined
+              }
             />
           )}
           <Stack gap={4}>
-            <Text size="xs" c="dimmed">Postando como</Text>
-            <Select
+            <Text size="xs" c="dimmed" lh={1}>
+              Postando como
+            </Text>
+            <Text lh={1}>{profile?.full_name}</Text>
+            {/* <Select
               size="xs"
               radius="xl"
               variant="filled"
@@ -262,12 +348,17 @@ export default function NewPost() {
                 }
               }}
               data={[
-                { value: 'profile', label: profile?.full_name ? profile?.full_name + ' (perfil)' : 'Meu perfil' },
+                {
+                  value: 'profile',
+                  label: profile?.full_name
+                    ? `${profile?.full_name} (perfil)`
+                    : 'Meu perfil',
+                },
                 ...userProjects,
               ]}
               disabled={loadingProjects}
               w={220}
-            />
+            /> */}
           </Stack>
         </Group>
 
@@ -290,7 +381,11 @@ export default function NewPost() {
         {/* Gig vinculada */}
         <Box>
           <Text size="xs" c="dimmed" fw={500} mb={6}>
-            <IconMicrophone2 size={16} stroke={1.4} style={{ marginRight: 4, verticalAlign: 'middle' }} />
+            <IconMicrophone2
+              size={16}
+              stroke={1.4}
+              style={{ marginRight: 4, verticalAlign: 'middle' }}
+            />
             Vincular gig
           </Text>
           <SearchCombobox
@@ -302,7 +397,11 @@ export default function NewPost() {
             renderOption={(item) => (
               <Group gap="xs">
                 <Text size="sm">{item.title}</Text>
-                {item.has_remuneration && <Badge size="xs" color="green" variant="light">Remunerada</Badge>}
+                {item.has_remuneration && (
+                  <Badge size="xs" color="green" variant="light">
+                    Remunerada
+                  </Badge>
+                )}
               </Group>
             )}
             renderSelected={(item) => (
@@ -310,8 +409,14 @@ export default function NewPost() {
                 <Avatar size={24} radius="md" color="violet" variant="light">
                   <IconMicrophone2 size={12} />
                 </Avatar>
-                <Text size="sm" fw={500}>{item.title}</Text>
-                {item.has_remuneration && <Badge size="xs" color="green" variant="light">Remunerada</Badge>}
+                <Text size="sm" fw={500}>
+                  {item.title}
+                </Text>
+                {item.has_remuneration && (
+                  <Badge size="xs" color="green" variant="light">
+                    Remunerada
+                  </Badge>
+                )}
               </Group>
             )}
           />
@@ -320,7 +425,11 @@ export default function NewPost() {
         {/* Produto vinculado */}
         <Box>
           <Text size="xs" c="dimmed" fw={500} mb={6}>
-            <IconBox size={16} stroke={1.4} style={{ marginRight: 4, verticalAlign: 'middle' }} />
+            <IconBox
+              size={16}
+              stroke={1.4}
+              style={{ marginRight: 4, verticalAlign: 'middle' }}
+            />
             Vincular equipamento
           </Text>
           <SearchCombobox
@@ -330,10 +439,14 @@ export default function NewPost() {
             onClear={() => setLinkedProduct(null)}
             selected={linkedProduct}
             renderOption={(item) => (
-              <Text size="sm">{item.brands?.name} {item.name}</Text>
+              <Text size="sm">
+                {item.brands?.name} {item.name}
+              </Text>
             )}
             renderSelected={(item) => (
-              <Text size="sm" fw={500}>{item.brands?.name} {item.name}</Text>
+              <Text size="sm" fw={500}>
+                {item.brands?.name} {item.name}
+              </Text>
             )}
           />
         </Box>
@@ -364,7 +477,10 @@ export default function NewPost() {
                 variant="subtle"
                 color="gray"
                 size="sm"
-                onClick={() => { setShowVideoField(false); setVideoUrl('') }}
+                onClick={() => {
+                  setShowVideoField(false)
+                  setVideoUrl('')
+                }}
               >
                 <IconX size={14} />
               </ActionIcon>
@@ -397,7 +513,9 @@ export default function NewPost() {
               variant="subtle"
               color="gray"
               size="xs"
-              leftSection={isUploadingImage ? <Loader size={13} /> : <IconPhoto size={13} />}
+              leftSection={
+                isUploadingImage ? <Loader size={13} /> : <IconPhoto size={13} />
+              }
               component="label"
               htmlFor="post-image-input"
               disabled={isUploadingImage}
@@ -411,7 +529,11 @@ export default function NewPost() {
             type="file"
             accept="image/png,image/jpeg,image/webp"
             style={{ display: 'none' }}
-            onChange={(e) => { if (e.target.files?.[0]) handleImageUpload(e.target.files[0]) }}
+            onChange={(e) => {
+              if (e.target.files?.[0]) {
+                handleImageUpload(e.target.files[0])
+              }
+            }}
           />
         </Box>
 
@@ -419,7 +541,9 @@ export default function NewPost() {
 
         {/* Publicar */}
         <Group justify="flex-end">
-          <Text size="xs" c="dimmed">{body.length} caracteres</Text>
+          <Text size="xs" c="dimmed">
+            {body.length} caracteres
+          </Text>
           <Button
             radius="xl"
             size="sm"

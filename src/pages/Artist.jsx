@@ -111,7 +111,7 @@ export default function Artist() {
                   <Text ta="center" c="dimmed" size="13px" mb={6} visibleFrom="sm">
                     Página de figura mainstream
                   </Text>
-                  <Center>
+                  <Center pos="relative">
                     <Avatar
                       size={100}
                       radius="xl"
@@ -119,6 +119,38 @@ export default function Artist() {
                       title={artist?.name}
                       alt={artist?.name}
                     />
+                    {artist.artist_related_slug && (
+                      <Flex
+                        direction="column"
+                        align="center"
+                        w={100}
+                        pos="absolute"
+                        top={0}
+                        left="64%"
+                        gap={1}
+                        component={Link}
+                        to={`/artist/${artist.artist_related_slug}`}
+                        style={{ textDecoration: 'none', color: 'inherit' }}
+                      >
+                        <Avatar
+                          size={75}
+                          radius="xl"
+                          src={
+                            artist?.related_artist?.picture
+                              ? ARTISTS_PATH + artist?.related_artist?.picture
+                              : undefined
+                          }
+                          title={artist?.related_artist?.name}
+                          alt={artist?.related_artist?.name}
+                        />
+                        <Text ta="center" size="10px" c="dimmed">
+                          Relacionado:
+                        </Text>
+                        <Title lh={1} ta="center" order={4} fz="h5">
+                          {artist?.related_artist?.name}
+                        </Title>
+                      </Flex>
+                    )}
                   </Center>
                   <Flex direction="column" align="center">
                     <Title order={1} fz="h2">
@@ -200,9 +232,9 @@ export default function Artist() {
                           c="var(--mantine-color-text)"
                           variant="subtle"
                           component={Anchor}
-                          href={`https://www.youtube.com/channel/${artist.youtube_handle}`}
+                          href={`https://www.youtube.com/${artist.youtube_handle}`}
                           target="_blank"
-                          title="Instagram"
+                          title="Youtube"
                         >
                           <IconBrandYoutube />
                         </ActionIcon>

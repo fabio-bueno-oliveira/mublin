@@ -140,7 +140,7 @@ export default function GearItem() {
         </Affix>
       )}
 
-      <Container size="lg" mt={{ base: 60, sm: 16 }} pb={60}>
+      <Container size="lg" mt={{ base: 60, sm: 16 }} pb={20}>
         {/* Header: logo da marca + nome */}
         <Flex gap={14} align="center" mb={24}>
           <Anchor component={Link} to={`/brand/${product?.brands?.slug}`}>
@@ -156,13 +156,26 @@ export default function GearItem() {
           </Anchor>
           <Box>
             <Text size="sm" c="dimmed" lh={1.3}>
-              {[
-                product?.product_categories?.name_ptbr,
-                product?.brands?.name,
-                product?.product_series?.name,
-              ]
-                .filter(Boolean)
-                .join(' · ')}
+              {product?.product_categories?.name_ptbr}
+
+              {product?.product_categories?.name_ptbr && product?.brands?.name && ' · '}
+
+              {product?.brands?.name && (
+                <Text
+                  component={Link}
+                  to={`/brand/${product?.brands?.slug}`}
+                  c="dimmed"
+                  inherit
+                  style={{ display: 'inline', hover: { textDecoration: 'underline' } }}
+                  className="brand-link"
+                >
+                  {product?.brands?.name}
+                </Text>
+              )}
+
+              {product?.brands?.name && product?.product_series?.name && ' · '}
+
+              {product?.product_series?.name}
             </Text>
             <Title order={1} fz="h3" fw={600} lh={1.2}>
               {product?.name}
@@ -180,11 +193,6 @@ export default function GearItem() {
                     Item raro ou limitado
                   </Text>
                 </Group>
-              )}
-              {product?.is_discontinued && (
-                <Text size="xs" c="dimmed">
-                  · Descontinuado pelo fabricante
-                </Text>
               )}
             </Group>
           </Box>
@@ -284,6 +292,11 @@ export default function GearItem() {
               <Title size="md" fw={600} mb={6}>
                 Sobre
               </Title>
+              {product?.is_discontinued && (
+                <Text size="xs" mb={2}>
+                  Item descontinuado pelo fabricante
+                </Text>
+              )}
               {product?.description ? (
                 <Stack gap={4}>
                   <Text size="sm" style={{ whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
@@ -315,8 +328,8 @@ export default function GearItem() {
 
             {/* Quem utiliza */}
             <Box>
-              <Title size="md" fw={600} mb={10}>
-                Quem utiliza ({owners.length})
+              <Title size="md" fw={600} mb={6}>
+                Quem utiliza {owners.length > 0 ? `(${owners.length})` : null}
               </Title>
               {isLoadingOwners ? (
                 <Stack gap={10}>

@@ -16,6 +16,8 @@ export async function fetchArtistDetails(slug) {
       instagram,
       apple_music_id,
       youtube_handle,
+      artist_related_slug,
+      related_artist:artist_related_slug ( name, slug, picture ),
       genres ( name, name_ptbr ),
       countries ( name )
     `,

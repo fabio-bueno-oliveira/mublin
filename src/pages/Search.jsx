@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useSearchParams, Link, useNavigate } from 'react-router-dom'
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query'
 import {
@@ -22,7 +22,6 @@ import {
   Loader,
   Group,
   Center,
-  Table,
   Scroller,
   Title,
   Text,
@@ -32,8 +31,8 @@ import {
   TextInput,
   ActionIcon,
   Button,
-  Pill,
   Stack,
+  Badge,
 } from '@mantine/core'
 import { useDebouncedCallback } from '@mantine/hooks'
 import {
@@ -42,6 +41,7 @@ import {
   IconClock,
   IconX,
 } from '@tabler/icons-react'
+import ProPlanBadge from '../components/ProPlanBadge'
 
 const PATH_USER_AVATAR =
   'https://ik.imagekit.io/mublin/tr:h-200,c-maintain_ratio/users/avatars/'
@@ -155,8 +155,11 @@ export default function Search() {
     navigate(`/search?q=${encodeURIComponent(trimmed)}`)
   }
 
+  const mobileInputRef = useRef(null)
+
   const debouncedSearch = useDebouncedCallback((value) => {
     doMobileSearch(value)
+    mobileInputRef.current?.blur()
   }, 600)
 
   const locationLabel = (city, region) => {
@@ -175,6 +178,7 @@ export default function Search() {
       {/* Busca Mobile */}
       <Box hiddenFrom="sm" mb="sm">
         <TextInput
+          ref={mobileInputRef}
           placeholder="Buscar músicos, projetos, gigs..."
           leftSection={<IconSearch size={15} />}
           rightSection={
@@ -290,65 +294,92 @@ export default function Search() {
                     Pessoas
                   </Title>
                   {loadingProfiles ? (
-                    <Center mt="xl">
+                    <Center mt="md">
                       <Loader size="sm" />
                     </Center>
                   ) : profileResults.length === 0 ? (
                     <Text c="dimmed">Nenhum resultado encontrado</Text>
                   ) : (
-                    profileResults.map((profile) => (
-                      <Flex gap="xs" key={profile.id}>
-                        <Box w={80}>
-                          <Avatar
-                            src={
-                              profile.avatar
-                                ? PATH_USER_AVATAR + profile.avatar
-                                : undefined
-                            }
-                            size={80}
-                            radius="sm"
-                          />
-                        </Box>
-                        <Box>
-                          <Flex
-                            component={Link}
-                            to={`/${profile.username}`}
-                            justify="flex-start"
-                            gap="md"
-                            style={{ textDecoration: 'none', color: 'inherit' }}
-                          >
-                            <Flex direction="column" justify="center">
-                              <Group gap={2}>
-                                <Group gap={0}>
-                                  <Text size="md" fw={600} lh={1.2}>
-                                    {profile.full_name}
-                                  </Text>
-                                  {!!profile.is_verified && (
-                                    <IconRosetteDiscountCheckFilled
-                                      className="iconVerified"
-                                      title="Usuário verificado"
-                                    />
-                                  )}
+                    <Stack mt="xs">
+                      {profileResults.map((profile) => (
+                        <Flex gap="xs" align="center" key={profile.id}>
+                          <Box w={80}>
+                            <Link
+                              component={Link}
+                              to={`/${profile.username}`}
+                              style={{ textDecoration: 'none', color: 'inherit' }}
+                            >
+                              <Avatar
+                                src={
+                                  profile.avatar
+                                    ? PATH_USER_AVATAR + profile.avatar
+                                    : undefined
+                                }
+                                size={80}
+                                radius="xl"
+                              />
+                            </Link>
+                          </Box>
+                          <Box>
+                            <Flex
+                              component={Link}
+                              to={`/${profile.username}`}
+                              justify="flex-start"
+                              gap="md"
+                              style={{ textDecoration: 'none', color: 'inherit' }}
+                            >
+                              <Flex direction="column" justify="center">
+                                <Group gap={2}>
+                                  <Group gap={2} justify="center">
+                                    <Text size="md" fw={600} lh={1.2}>
+                                      {profile.full_name}
+                                    </Text>
+                                    {!!profile.is_verified && (
+                                      <IconRosetteDiscountCheckFilled
+                                        className="iconVerified"
+                                        title="Usuário verificado"
+                                      />
+                                    )}
+                                    {profile.plan === 'Pro' && <ProPlanBadge small />}
+                                    {profile.is_open_to_work && (
+                                      <Badge
+                                        variant="light"
+                                        color="green"
+                                        mt={2}
+                                        style={{ flexShrink: 0 }}
+                                        size="xs"
+                                        ml={1}
+                                      >
+                                        Disp
+                                      </Badge>
+                                    )}
+                                  </Group>
+                                  {/* <Text size="sm" fw={300} span c="dimmed" ml={2}>
+                                    @{profile.username}
+                                  </Text> */}
                                 </Group>
-                                <Text size="md" fw={300} span c="dimmed" ml={3} lh={1.2}>
-                                  @{profile.username}
-                                </Text>
-                              </Group>
-                              {profile.title && <Text size="sm">{profile.title}</Text>}
-                              {locationLabel(profile.city_name, profile.region_name) && (
-                                <Text size="13px" opacity={0.7}>
-                                  {locationLabel(profile.city_name, profile.region_name)}
-                                </Text>
-                              )}
-                              {/* <Text size="13px" opacity={0.4} mt={6}>
+                                {profile.title && <Text size="sm">{profile.title}</Text>}
+                                {locationLabel(
+                                  profile.city_name,
+                                  profile.region_name,
+                                ) && (
+                                  <Text size="13px" opacity={0.7}>
+                                    {locationLabel(
+                                      profile.city_name,
+                                      profile.region_name,
+                                    )}
+                                  </Text>
+                                )}
+                                {/* <Text size="13px" opacity={0.4} mt={6}>
                                 Ativo em {profile.total_active_projects} projeto
                                 {profile.total_active_projects !== 1 ? 's' : ''}
                               </Text> */}
+                              </Flex>
                             </Flex>
-                          </Flex>
-                        </Box>
-                      </Flex>
-                    ))
+                          </Box>
+                        </Flex>
+                      ))}
+                    </Stack>
                   )}
                 </Box>
 

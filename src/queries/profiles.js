@@ -69,31 +69,20 @@ export async function fetchBasicProfile(profileUsername) {
 
 export async function fetchCheckFollowing(profileUsername, userUsername) {
   const { data, error } = await supabase
-    .from('profile_followers')
-    .select(
-      `
-      id,
-      created_at,
-      follower_id,
-      following_id,
-      is_favorite,
-      is_muted,
-      notifications_enabled
-    `,
-    )
-    .eq('following_id', profileUsername)
-    .eq('follower_id', userUsername)
+    .rpc('check_following', {
+      p_following_id: profileUsername,
+      p_follower_id: userUsername,
+    })
     .maybeSingle()
 
   if (error) {
     throw new Error(error.message)
   }
-
   return data
 }
 
 export async function fetchSimilarProfiles(profileId, regionId, limit = 5) {
-  const { data, error } = await supabase.rpc('get_similar_profiles', {
+  const { data, error } = await supabase.rpc('get_similar_profiles_v2', {
     p_profile_id: profileId,
     p_region_id: regionId,
     p_limit: limit,

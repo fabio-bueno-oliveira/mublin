@@ -13,6 +13,7 @@ import {
   Text,
   Drawer,
   Stack,
+  Badge,
 } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
@@ -23,7 +24,11 @@ import {
   IconXFilled,
 } from '@tabler/icons-react'
 
-export default function AppNavbarMobile({ pageName = undefined, profile = undefined }) {
+export default function AppNavbarMobile({
+  pageName = undefined,
+  profile = undefined,
+  featured = false,
+}) {
   const { pathname } = useLocation()
   const navigate = useNavigate()
   const { profile: userProfile } = useAuth()
@@ -46,12 +51,28 @@ export default function AppNavbarMobile({ pageName = undefined, profile = undefi
         h={50}
       >
         {pageName ? (
-          <Group gap="md">
-            <IconArrowLeft size={22} onClick={() => navigate(-1) || navigate('/home')} />
-            <Text size="18px" lh={1} fw={600} maw={240} truncate="end" opacity={0.9}>
+          <Flex gap="sm" align="center" flex={1} style={{ minWidth: 0 }}>
+            <IconArrowLeft
+              size={22}
+              style={{ flexShrink: 0, cursor: 'pointer' }}
+              onClick={() => navigate(-1) || navigate('/home')}
+            />
+
+            <Text size="18px" lh={1} fw={600} truncate="end" flex={1}>
               {pageName}
             </Text>
-          </Group>
+
+            {featured && profile && (
+              <Badge
+                variant={isDark ? 'outline' : 'light'}
+                color="green"
+                mt={3}
+                style={{ flexShrink: 0 }}
+              >
+                Disponível para gigs!
+              </Badge>
+            )}
+          </Flex>
         ) : (
           <Box
             component={Link}
@@ -70,7 +91,9 @@ export default function AppNavbarMobile({ pageName = undefined, profile = undefi
             />
           </Box>
         )}
-        <Box p={4}>
+
+        {/* Elemento da Direita (Menu/Ações) - mantém o flexShrink para não ser esmagado pelo texto */}
+        <Box p={4} style={{ flexShrink: 0 }}>
           {pathname === '/menu' ? (
             <ActionIcon
               variant="transparent"

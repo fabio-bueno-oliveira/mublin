@@ -8,7 +8,6 @@ import {
   Button,
   Indicator,
   Avatar,
-  Badge,
   Group,
   Anchor,
 } from '@mantine/core'
@@ -19,6 +18,7 @@ import {
 } from '@tabler/icons-react'
 import { isProfileLive } from '../../utils/live'
 import { truncateString } from '../../utils/formatter'
+import ProPlanBadge from '../ProPlanBadge'
 
 const AVATAR_PATH =
   'https://ik.imagekit.io/mublin/tr:h-200,c-maintain_ratio/users/avatars/'
@@ -43,7 +43,7 @@ export default function ProfileHeaderMobile({ profile, city, regionUf, user }) {
           color="green"
           size={18}
           withBorder
-          disabled={!profile.is_open_to_work}
+          disabled
         >
           <Avatar
             size="xl"
@@ -51,8 +51,8 @@ export default function ProfileHeaderMobile({ profile, city, regionUf, user }) {
           />
         </Indicator>
         <Box style={{ overflow: 'hidden' }}>
-          <Flex align="center" gap={3} mb={2}>
-            <Title order={1} size="22px" lh="1">
+          <Flex align="center" gap={3} mb={2} wrap="wrap">
+            <Title order={1} size="22px" lh="1" component={Text} lineClamp={2}>
               {profile.full_name}
             </Title>
             {!!profile.is_verified && (
@@ -64,17 +64,7 @@ export default function ProfileHeaderMobile({ profile, city, regionUf, user }) {
             {!!profile.is_legend && (
               <IconShieldCheckFilled className="iconLegend" title="Lenda da Música" />
             )}
-            {profile.plan === 'Pro' && (
-              <Badge
-                title="Usuário PRO"
-                radius="sm"
-                size="sm"
-                variant="outline"
-                color="gray"
-              >
-                PRO
-              </Badge>
-            )}
+            {profile?.plan === 'Pro' && <ProPlanBadge />}
           </Flex>
           <Flex align="center" gap={4} opacity={0.6}>
             <Text size="sm">@{profile.username}</Text>

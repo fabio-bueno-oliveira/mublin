@@ -408,22 +408,25 @@ export default function Home() {
                       <Card.Section px="xs" py={2}>
                         <Group gap={5} justify="flex-start">
                           <Group gap={3}>
-                            <Badge size="xs" variant="default">
+                            <Badge
+                              size="xs"
+                              variant="light"
+                              color={
+                                dayjs(gig.gigs?.events?.date_start).diff(
+                                  dayjs(),
+                                  'day',
+                                ) <= 2
+                                  ? 'orange'
+                                  : 'gray'
+                              }
+                            >
                               {dayjs(gig.gigs?.events?.date_start).fromNow()}
                             </Badge>
-                            {dayjs(gig.gigs?.events?.date_start).diff(dayjs(), 'day') <=
-                              2 && (
-                              <IconExclamationCircleFilled
-                                color="orange"
-                                size={15}
-                                title="Gig próxima! Verifique os detalhes e prepare-se para se sair bem!"
-                              />
-                            )}
                           </Group>
                           <Badge
                             size="xs"
                             variant="default"
-                            leftSection={<IconCheck color="lime" stroke={3} size={12} />}
+                            leftSection={<IconCheck stroke={3} size={12} />}
                           >
                             Aceito
                           </Badge>
@@ -481,11 +484,11 @@ export default function Home() {
               </Paper>
             )}
 
-            <Title order={2} fz="xl" fw={700} mb="xs">
+            {/* <Title order={2} fz="xl" fw={700} mb="xs">
               Para o dia a dia
-            </Title>
+            </Title> */}
 
-            <Scroller mb="xl">
+            <Scroller mt="xl" mb="xl">
               <Group gap="xs" wrap="nowrap">
                 <Flex direction="column" align="center" w={80}>
                   <ActionIcon

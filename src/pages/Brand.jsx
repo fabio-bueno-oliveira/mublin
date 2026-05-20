@@ -8,10 +8,10 @@ import {
   fetchBrandProducts,
   fetchBrandProductColors,
   getBrandOwners,
-  fetchProductOwners,
 } from '../queries/gear'
 import AppNavbarMobile from '../components/AppNavbarMobile'
 import {
+  em,
   Affix,
   Loader,
   Container,
@@ -31,6 +31,7 @@ import {
   Center,
   ColorSwatch,
 } from '@mantine/core'
+import { useMediaQuery } from '@mantine/hooks'
 import { IconDiamond } from '@tabler/icons-react'
 
 const PATH_PRODUCT_IMG =
@@ -39,6 +40,7 @@ const PATH_COLOR_SAMPLE = 'https://ik.imagekit.io/mublin/products/colors/'
 
 export default function Brand() {
   const { slug } = useParams()
+  const isMobile = useMediaQuery(`(max-width: ${em(750)})`)
 
   const { data: brand, isLoading: isLoadingBrand } = useQuery({
     queryKey: ['brand', slug],
@@ -114,14 +116,14 @@ export default function Brand() {
           <Box
             style={{
               width: '100%',
-              height: 100,
+              height: isMobile ? 80 : 100,
               overflow: 'hidden',
             }}
           >
             <Image
               src={`https://ik.imagekit.io/mublin/products/brands/tr:w-870,h-100,cm-extract,fo-auto/${brand?.cover}`}
               alt={`${brand?.name} cover`}
-              mih={100}
+              mih={isMobile ? 80 : 100}
               w="100%"
               fit="cover"
             />
@@ -142,7 +144,7 @@ export default function Brand() {
           mb="xs"
           style={{
             borderRadius: 'var(--mantine-radius-md)',
-            boxShadow: brand?.cover ? '0 2px 12px rgba(0,0,0,0.18)' : undefined,
+            // boxShadow: brand?.cover ? '0 2px 12px rgba(0,0,0,0.18)' : undefined,
           }}
         >
           <Avatar
@@ -159,7 +161,7 @@ export default function Brand() {
           <Title order={1} fz="h2" visibleFrom="sm">
             {brand?.name}
           </Title>
-          <Text size="xs" c="dimmed">
+          <Text size="xs" c="dimmed" ta="center">
             {brand?.brands_categories?.name_ptbr}
           </Text>
           {brand?.website && (
@@ -215,7 +217,7 @@ export default function Brand() {
               </SimpleGrid>
             ) : (
               <Text size="sm" c="dimmed">
-                Nenhum artista cadastrado para esta marca.
+                Nenhum artista cadastrado até o momento
               </Text>
             )}
           </Box>
