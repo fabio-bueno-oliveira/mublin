@@ -287,8 +287,7 @@ export default function Search() {
             </Grid.Col>
 
             <Grid.Col span={{ base: 12, md: 6, lg: 9 }}>
-              <Stack gap="mb">
-                {/* Pessoas */}
+              <Stack gap="sm">
                 <Box id="people">
                   <Title order={4} fw={600}>
                     Pessoas
@@ -383,7 +382,62 @@ export default function Search() {
                   )}
                 </Box>
 
-                {/* Projetos */}
+                <Box id="artists">
+                  <Title order={4} fw={600} mb={6}>
+                    Personalidades
+                  </Title>
+                  {isLoadingArtists && q ? (
+                    <Group gap="xs" c="dimmed">
+                      <Loader size="xs" color="dimmed" type="dots" />
+                      <Text size="sm">Buscando artistas...</Text>
+                    </Group>
+                  ) : !artistsResults?.length && q ? (
+                    <Text size="sm" c="dimmed">
+                      Nenhum artista, banda ou personalidade encontrado
+                    </Text>
+                  ) : (
+                    artistsResults?.map((artist) => (
+                      <Flex
+                        key={artist.id}
+                        gap="sm"
+                        align="center"
+                        component={Link}
+                        to={`/artist/${artist.slug}`}
+                        style={{ textDecoration: 'none', color: 'inherit' }}
+                      >
+                        <Avatar
+                          src={
+                            artist.picture
+                              ? `https://ik.imagekit.io/mublin/artists/tr:h-100,w-100,c-maintain_ratio/${artist.picture}`
+                              : null
+                          }
+                          size={50}
+                          radius="xl"
+                        />
+                        <Flex direction="column">
+                          <Group gap={5} align="center">
+                            <Text size="sm" fw={600} lh={1.2}>
+                              {artist.name}
+                            </Text>
+                            {/* {artist.is_verified && (
+                              <IconRosetteDiscountCheckFilled
+                                size={14}
+                                color="var(--mantine-color-blue-6)"
+                              />
+                            )} */}
+                          </Group>
+                          <Text size="xs" c="dimmed">
+                            {artist.artist_roles?.length > 0 &&
+                              artist.artist_roles
+                                .map((ar) => ar.roles?.name_ptbr)
+                                .join(', ')}
+                          </Text>
+                        </Flex>
+                      </Flex>
+                    ))
+                  )}
+                </Box>
+
                 <Box id="projects">
                   <Title order={4} fw={600}>
                     Projetos
@@ -441,7 +495,6 @@ export default function Search() {
                   )}
                 </Box>
 
-                {/* Equipamentos */}
                 <Box id="gear">
                   <Title order={4} fw={600}>
                     Equipamentos
@@ -466,7 +519,7 @@ export default function Search() {
                               h={65}
                               w={65}
                               fit="contain"
-                              radius="xl"
+                              radius="lg"
                               fallbackSrc="https://placehold.co/48x48?text=?"
                               title={brand.name}
                             />
@@ -495,7 +548,7 @@ export default function Search() {
                                   : undefined
                               }
                               size={80}
-                              radius="sm"
+                              radius="md"
                             />
                           </Link>
                           <Flex direction="column" justify="flex-start" maw="70%">
@@ -537,62 +590,6 @@ export default function Search() {
                         </Flex>
                       ))}
                     </Stack>
-                  )}
-                </Box>
-                <Box id="artists">
-                  <Title order={4} fw={600}>
-                    Figuras consagradas
-                  </Title>
-                  {isLoadingArtists && q ? (
-                    <Group gap="xs" c="dimmed">
-                      <Loader size="xs" color="dimmed" type="dots" />
-                      <Text size="sm">Buscando artistas...</Text>
-                    </Group>
-                  ) : !artistsResults?.length && q ? (
-                    <Text size="sm" c="dimmed">
-                      Nenhum artista, banda ou personalidade encontrado
-                    </Text>
-                  ) : (
-                    artistsResults?.map((artist) => (
-                      <Flex
-                        key={artist.id}
-                        gap="sm"
-                        align="center"
-                        py="xs"
-                        component={Link}
-                        to={`/artist/${artist.slug}`}
-                        style={{ textDecoration: 'none', color: 'inherit' }}
-                      >
-                        <Avatar
-                          src={
-                            artist.picture
-                              ? `https://ik.imagekit.io/mublin/artists/tr:h-80,w-80,c-maintain_ratio/${artist.picture}`
-                              : null
-                          }
-                          size={40}
-                          radius="xl"
-                        />
-                        <Flex direction="column">
-                          <Group gap={5} align="center">
-                            <Text size="sm" fw={600} lh={1.2}>
-                              {artist.name}
-                            </Text>
-                            {/* {artist.is_verified && (
-                              <IconRosetteDiscountCheckFilled
-                                size={14}
-                                color="var(--mantine-color-blue-6)"
-                              />
-                            )} */}
-                          </Group>
-                          <Text size="xs" c="dimmed">
-                            {artist.artist_roles?.length > 0 &&
-                              artist.artist_roles
-                                .map((ar) => ar.roles?.name_ptbr)
-                                .join(', ')}
-                          </Text>
-                        </Flex>
-                      </Flex>
-                    ))
                   )}
                 </Box>
               </Stack>

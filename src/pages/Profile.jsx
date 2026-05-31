@@ -55,7 +55,7 @@ import {
 import { useMediaQuery, useDisclosure, useWindowScroll } from '@mantine/hooks'
 import LoadingSkeleton from '../components/profile/LoadingSkeleton'
 import LinkedItem from '../components/feed/LinkedItem'
-import VideoPlayer from '../components/feed/VideoPlayer'
+import VideoPlayerYoutube from '../components/feed/VideoPlayerYoutube'
 import SectionPanel from '../components/SectionPanel'
 import {
   IconMoodSad,
@@ -952,7 +952,10 @@ export default function Profile() {
                                   )}
                                   {post.video_url && (
                                     <Link to={`/post/${post.id}`}>
-                                      <VideoPlayer url={post.video_url} thumbnailOnly />
+                                      <VideoPlayerYoutube
+                                        url={post.video_url}
+                                        thumbnailOnly
+                                      />
                                     </Link>
                                   )}
                                   {(post.linked_gig_id || post.linked_product_id) && (

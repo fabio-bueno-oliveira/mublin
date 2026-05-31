@@ -635,7 +635,7 @@ export default function Home() {
 
           {isDesktop && (
             <Grid.Col span={{ base: 12, md: 5 }} px={0}>
-              <Feed />
+              <Feed from="home" />
             </Grid.Col>
           )}
         </Grid>

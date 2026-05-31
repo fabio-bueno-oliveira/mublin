@@ -35,7 +35,7 @@ import {
 import { useDisclosure, useMediaQuery } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
 import LinkedItem from '../components/feed/LinkedItem'
-import VideoPlayer from '../components/feed/VideoPlayer'
+import VideoPlayerYoutube from '../components/feed/VideoPlayerYoutube'
 import LikeButton from '../components/feed/LikeButton'
 import {
   IconDots,
@@ -314,7 +314,7 @@ export default function Post() {
           {/* Player de vídeo */}
           {post.video_url && (
             <Box mt="xs">
-              <VideoPlayer url={post.video_url} title={post.body?.slice(0, 60)} />
+              <VideoPlayerYoutube url={post.video_url} title={post.body?.slice(0, 60)} />
             </Box>
           )}
           {post.image && (

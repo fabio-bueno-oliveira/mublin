@@ -2,16 +2,18 @@ import { useState } from 'react'
 import { Box, Flex } from '@mantine/core'
 
 function getYouTubeId(url) {
-  const match = url.match(
-    /(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/
+  const match = url?.match(
+    /(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/,
   )
   return match ? match[1] : null
 }
 
-export default function VideoPlayer({ url, title, thumbnailOnly = false }) {
+export default function VideoPlayerYoutube({ url, title, thumbnailOnly = false }) {
   const [expanded, setExpanded] = useState(false)
   const ytId = getYouTubeId(url)
-  if (!ytId) return null
+  if (!ytId) {
+    return null
+  }
 
   const thumbnail = (
     <img
@@ -19,8 +21,10 @@ export default function VideoPlayer({ url, title, thumbnailOnly = false }) {
       alt="Thumbnail do vídeo"
       style={{
         position: 'absolute',
-        top: 0, left: 0,
-        width: '100%', height: '100%',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '100%',
         objectFit: 'cover',
       }}
     />
@@ -76,7 +80,7 @@ export default function VideoPlayer({ url, title, thumbnailOnly = false }) {
               }}
             >
               <svg width="30" height="30" viewBox="0 0 24 24" fill="#000000">
-                <path d="M8 5v14l11-7z"/>
+                <path d="M8 5v14l11-7z" />
               </svg>
             </Box>
           </Flex>

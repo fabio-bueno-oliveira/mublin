@@ -1,6 +1,7 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom'
 import PublicLayout from './components/layouts/PublicLayout'
 import AppLayout from './components/layouts/AppLayout'
+import BackstageLayout from './components/layouts/BackstageLayout'
 import AppSettingsLayout from './components/layouts/AppSettingsLayout'
 // Public pages
 import AuthCallback from './pages/AuthCallback'
@@ -100,11 +101,15 @@ export const router = createBrowserRouter([
       { path: 'gear/:slug', element: <GearItem /> },
       { path: 'new/gear', element: <NewGear /> },
       { path: 'artist/:slug', element: <Artist /> },
-      { path: 'backstage', element: <Backstage /> },
       { path: 'new/event', element: <NewEvent /> },
       { path: 'new/venue', element: <NewVenue /> },
       { path: '/:username/gear', element: <ProfileGear /> },
     ],
+  },
+  // ── Backstage ──────────────────────────
+  {
+    element: <BackstageLayout />,
+    children: [{ path: 'backstage/:slug', element: <Backstage /> }],
   },
   // ── Settings ──────────────────────────
   {
