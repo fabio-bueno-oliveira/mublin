@@ -15,7 +15,7 @@ export async function fetchFeed(limit = 20, offset = 0, userId = null) {
   return data
 }
 
-export async function fetchPostById(id) {
+export async function fetchPostDetailsById(id) {
   const { data, error } = await supabase.rpc('get_feed_post', { post_id: id })
   if (error) {
     throw new Error(error.message)

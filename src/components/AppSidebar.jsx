@@ -4,7 +4,6 @@ import {
   useComputedColorScheme,
   Stack,
   Box,
-  Badge,
   Group,
   Text,
   Avatar,
@@ -24,7 +23,7 @@ export default function AppSidebar() {
   const isDark = computedColorScheme === 'dark'
 
   return (
-    <Box p="md" h="100%">
+    <Box px="sm" py="md" h="100%">
       {loading && (
         <Card withBorder={false} shadow="xs" radius="md" p="md" mt={4} mb="md">
           <Skeleton height={48} circle mb="sm" />

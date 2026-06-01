@@ -9,6 +9,8 @@ import {
   Center,
   Stack,
   Group,
+  Flex,
+  Badge,
   Text,
   Avatar,
   ActionIcon,
@@ -19,6 +21,7 @@ import {
   useMantineColorScheme,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
+import ProPlanBadge from '../components/ProPlanBadge'
 import {
   IconUser,
   IconSettings,
@@ -28,7 +31,8 @@ import {
   IconBrightnessUp,
   IconMoon,
   IconUpload,
-  IconHome,
+  IconMusic,
+  IconCalendar,
 } from '@tabler/icons-react'
 
 const AVATAR_BASE =
@@ -117,8 +121,10 @@ export default function Menu() {
 
   // ── Menu items ──────────────────────────────────────────
   const menuItems = [
-    { icon: IconHome, label: 'Home', to: '/home' },
+    // { icon: IconHome, label: 'Home', to: '/home' },
     { icon: IconUser, label: 'Ir para meu perfil', to: `/${profile?.username}` },
+    { icon: IconMusic, label: 'Meus projetos de música', to: `/projects` },
+    { icon: IconCalendar, label: 'Minhas gigs', to: `/gigs` },
     { icon: IconSettings, label: 'Configurações', to: `/settings` },
     // { icon: IconCalendarEvent,          label: 'Gigs',                          to: '/gigs' },
     // { icon: IconCalendarMonth,          label: 'Disponibilidade para gigs',     to: '/settings/availability' },
@@ -136,7 +142,7 @@ export default function Menu() {
     <>
       <AppNavbarMobile />
 
-      <Container size="xs" mb={26} mt={100}>
+      <Container size="xs" mb={20} mt={80}>
         {/* ── Avatar + câmera ── */}
         <Center>
           <Avatar radius="lg" size={82} src={avatarSrc} alt="Foto de perfil" />
@@ -154,43 +160,38 @@ export default function Menu() {
         </Center>
 
         {/* ── Saudação ── */}
-        <Text ta="center" size="lg" mt={9}>
-          Olá,{' '}
-          <Text component="span" fw={500}>
-            {profile?.full_name?.split(' ')[0]}
-          </Text>
-          !
+        <Text ta="center" size="xl" fw={600} mt="lg">
+          {profile?.full_name}
         </Text>
-
-        {/* ── Badge de plano ── */}
-        {/* <Center>
-          {profile?.plan === 'Pro' ? (
+        <Flex gap={4} align="center" justify="center">
+          <Text ta="center" size="sm">
+            @{profile?.username}
+          </Text>
+          {profile?.plan === 'Pro' && (
             <Badge
-              color="violet"
-              size="sm"
+              size="xs"
+              fw={600}
               variant="gradient"
-              gradient={{ from: 'violet', to: 'blue' }}
+              gradient={{
+                from: 'rgb(188, 157, 73)',
+                to: 'rgb(88, 60, 12)',
+                deg: 177,
+              }}
+              top={3}
             >
-              conta pro
+              PRO
             </Badge>
-          ) : (
-            <Flex direction="column" align="center" mt={8} gap={8}>
-              <Badge color="gray" size="sm">conta grátis</Badge>
-              <Anchor component={Link} to="/settings/plan" underline="never">
-                <Text size="sm" c="violet">Quero me tornar Mublin PRO</Text>
-              </Anchor>
-            </Flex>
           )}
-        </Center> */}
+        </Flex>
 
         {/* ── Tema ── */}
-        <Center mt={22} mb={16}>
+        <Center my="md">
           <Button
             size="sm"
             fw={500}
-            variant="outline"
+            variant="light"
             radius="xl"
-            color={colorScheme === 'dark' ? 'white' : 'dark'}
+            color="gray"
             leftSection={
               colorScheme === 'dark' ? (
                 <IconBrightnessUp size="1.5rem" stroke={1.5} />
@@ -207,7 +208,7 @@ export default function Menu() {
         </Center>
 
         {/* ── Menu items ── */}
-        <Stack gap="0.2rem">
+        <Stack gap={3}>
           {menuItems.map(({ icon: Icon, label, to }) => (
             <Button
               key={to}

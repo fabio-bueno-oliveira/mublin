@@ -1,3 +1,4 @@
+import { useRef, useState, useEffect } from 'react'
 import { Box } from '@mantine/core'
 import {
   IconMaximize,
@@ -7,14 +8,38 @@ import {
   IconVolume,
   IconVolumeOff,
 } from '@tabler/icons-react'
-import { useRef, useState } from 'react'
 
 export default function VideoPlayerNative({ src, title, isVertical = false }) {
   const videoRef = useRef(null)
+  const wrapRef = useRef(null)
   const [playing, setPlaying] = useState(false)
   const [progress, setProgress] = useState(0)
   const [muted, setMuted] = useState(true)
   const [ready, setReady] = useState(false)
+
+  // Pausa automaticamente ao sair da viewport
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting && videoRef.current && !videoRef.current.paused) {
+          videoRef.current.pause()
+          setPlaying(false)
+        }
+      },
+      { threshold: 0.3 }, // pausa quando menos de 30% do player estiver visível
+    )
+
+    const wrap = wrapRef.current
+    if (wrap) {
+      observer.observe(wrap)
+    }
+
+    return () => {
+      if (wrap) {
+        observer.unobserve(wrap)
+      }
+    }
+  }, [])
 
   const togglePlay = () => {
     const v = videoRef.current
@@ -57,7 +82,7 @@ export default function VideoPlayerNative({ src, title, isVertical = false }) {
   }
 
   return (
-    <Box style={isVertical ? s.wrapVertical : s.wrapHorizontal}>
+    <Box ref={wrapRef} style={isVertical ? s.wrapVertical : s.wrapHorizontal}>
       {!ready && <div style={s.loading}>Carregando...</div>}
 
       <video

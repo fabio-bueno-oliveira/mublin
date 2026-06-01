@@ -95,7 +95,7 @@ export default function Artist() {
       </Helmet>
 
       <Affix position={{ top: 0, left: 0 }} hiddenFrom="sm">
-        <AppNavbarMobile pageName="Perfil de figura mainstream" />
+        <AppNavbarMobile pageName="Página de figura mainstream" />
       </Affix>
 
       <Container size="xl" pt="xs" px={{ base: 'md', sm: 0 }} mt={{ base: 62, sm: 0 }}>
@@ -170,12 +170,13 @@ export default function Artist() {
                           {roles.map((item) => (
                             <Badge
                               key={item.id}
-                              variant={item.is_main_role ? 'filled' : 'light'}
-                              color={item.is_main_role ? 'gray' : 'gray'}
+                              variant="outline"
+                              color="gray"
+                              fw={item.is_main_role ? 600 : 400}
                               size="sm"
                               radius="sm"
                             >
-                              {item.roles?.name_ptbr}
+                              {item.roles?.description_ptbr}
                             </Badge>
                           ))}
                         </Group>

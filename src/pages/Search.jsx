@@ -176,10 +176,10 @@ export default function Search() {
   return (
     <Container size="xl" py="sm">
       {/* Busca Mobile */}
-      <Box hiddenFrom="sm" mb="sm">
+      <Box hiddenFrom="sm" mb="sm" mt="xs">
         <TextInput
           ref={mobileInputRef}
-          placeholder="Buscar músicos, projetos, gigs..."
+          placeholder="Pessoas, projetos, gigs, equipamentos..."
           leftSection={<IconSearch size={15} />}
           rightSection={
             mobileInput ? (
@@ -198,7 +198,7 @@ export default function Search() {
             ) : null
           }
           radius="xl"
-          size="md"
+          size="sm"
           value={mobileInput}
           onChange={(e) => {
             setMobileInput(e.target.value)
@@ -290,7 +290,7 @@ export default function Search() {
               <Stack gap="sm">
                 <Box id="people">
                   <Title order={4} fw={600}>
-                    Pessoas
+                    Perfis
                   </Title>
                   {loadingProfiles ? (
                     <Center mt="md">

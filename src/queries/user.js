@@ -33,6 +33,7 @@ export async function fetchUserProjects(userId) {
       project_id,
       status,
       is_founder,
+      is_admin,
       is_ex_member,
       joined_at,
       left_at,
@@ -41,12 +42,14 @@ export async function fetchUserProjects(userId) {
       roles!project_members_role_id_fkey ( name_ptbr ),
       projects ( 
         id, name, slug, picture, description,
+        spotify_id, instagram,
         foundation_year, end_year,
         activity_status,
         genres ( name ),
         project_types ( name_ptbr ),
         project_members ( status, profiles ( full_name, username, avatar ) ),
-        project_statuses ( description_ptbr, color )
+        project_statuses ( description_ptbr, color ),
+        cities ( name, regions ( name, uf ) )
       )
     `,
     )

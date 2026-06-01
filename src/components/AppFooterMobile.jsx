@@ -1,7 +1,15 @@
 import { useState } from 'react'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
-import { Drawer, Button, Avatar, Stack, UnstyledButton, Indicator } from '@mantine/core'
+import {
+  Drawer,
+  Button,
+  Avatar,
+  Stack,
+  UnstyledButton,
+  Indicator,
+  Text,
+} from '@mantine/core'
 import {
   IconBulb,
   IconCubePlus,
@@ -19,7 +27,7 @@ export default function AppFooterMobile() {
   const { pathname } = useLocation()
   const [drawerOpen, setDrawerOpen] = useState(false)
 
-  const isActive = (path) => pathname === path
+  const isActive = (path) => pathname === path || pathname.startsWith(`${path}/`)
   // const isActivePrefix = (prefix) => pathname.startsWith(prefix)
 
   const navItemClass = (active) =>
@@ -35,16 +43,21 @@ export default function AppFooterMobile() {
             opacity={isActive('/home') && !drawerOpen ? 1 : 0.65}
           >
             <IconHome />
+            <Text size="10px" lh={1.2}>
+              Home
+            </Text>
           </UnstyledButton>
 
           <UnstyledButton
-            className={navItemClass(isActive('/feed'))}
+            className={navItemClass(isActive('/feed') || isActive('/post'))}
             onClick={() => navigate('/feed')}
-            opacity={isActive('/feed') && !drawerOpen ? 1 : 0.65}
+            opacity={(isActive('/feed') || isActive('/post')) && !drawerOpen ? 1 : 0.65}
           >
-            <Indicator color="red" top="4px">
-              <IconRss />
-            </Indicator>
+            <Indicator color="red" size={8} top="3px" left={14} />
+            <IconRss />
+            <Text size="10px" lh={1.2}>
+              Feed
+            </Text>
           </UnstyledButton>
 
           <UnstyledButton
@@ -55,6 +68,9 @@ export default function AppFooterMobile() {
             opacity={drawerOpen ? 1 : 0.65}
           >
             <IconPlus />
+            <Text size="10px" lh={1.2}>
+              Criar
+            </Text>
           </UnstyledButton>
 
           <UnstyledButton
@@ -63,6 +79,9 @@ export default function AppFooterMobile() {
             opacity={isActive('/search') && !drawerOpen ? 1 : 0.65}
           >
             <IconSearch />
+            <Text size="10px" lh={1.2}>
+              Buscar
+            </Text>
           </UnstyledButton>
 
           {/* <UnstyledButton

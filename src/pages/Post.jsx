@@ -5,18 +5,20 @@ import { Link, useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../hooks/useAuth'
 import {
-  fetchPostById,
+  fetchPostDetailsById,
   fetchUserLikedPosts,
   fetchPostLikes,
   fetchPostComments,
   postComment,
 } from '../queries/feed'
 import {
+  useMantineColorScheme,
   Container,
   Group,
   Flex,
   Stack,
   Box,
+  Badge,
   Text,
   Avatar,
   Card,
@@ -35,6 +37,7 @@ import {
 import { useDisclosure, useMediaQuery } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
 import LinkedItem from '../components/feed/LinkedItem'
+import VideoPlayerNative from '../components/VideoPlayerNative'
 import VideoPlayerYoutube from '../components/feed/VideoPlayerYoutube'
 import LikeButton from '../components/feed/LikeButton'
 import {
@@ -45,11 +48,17 @@ import {
   IconArrowLeft,
   IconMessageCircle,
   IconTrash,
+  IconArrowRightDashed,
+  IconBrandInstagram,
+  IconUser,
 } from '@tabler/icons-react'
 import { truncateString } from '../utils/formatter'
+import parse from 'html-react-parser'
+import linkifyStr from 'linkify-string'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import 'dayjs/locale/pt-br'
+import ProPlanBadge from '../components/ProPlanBadge'
 dayjs.extend(relativeTime)
 dayjs.locale('pt-br')
 
@@ -61,6 +70,8 @@ export default function Post() {
   const { user } = useAuth()
   const navigate = useNavigate()
   const isMobile = useMediaQuery(`(max-width: ${em(750)})`)
+  const { colorScheme } = useMantineColorScheme()
+  const isDark = colorScheme === 'dark'
 
   const { profile } = useAuth()
   const queryClient = useQueryClient()
@@ -83,7 +94,7 @@ export default function Post() {
 
   const { data: post, isLoading } = useQuery({
     queryKey: ['post', id],
-    queryFn: () => fetchPostById(id),
+    queryFn: () => fetchPostDetailsById(id),
     staleTime: 1000 * 60 * 5,
   })
 
@@ -184,6 +195,17 @@ export default function Post() {
     setIsDeletingComment(false)
   }
 
+  const formatLinkText = (value, type) => {
+    const maxLength = 30
+
+    if (type === 'url' && value.length > maxLength) {
+      // const cleanUrl = value.replace(/^https?:\/\/(www\.)?/, '')
+
+      return value.length > maxLength ? `${value.substring(0, maxLength)}...` : value
+    }
+    return value
+  }
+
   return (
     <>
       <Helmet>
@@ -201,18 +223,65 @@ export default function Post() {
         pt={{ base: 'xs', sm: 'sm' }}
         mb="xl"
       >
-        <ActionIcon
-          component={Link}
-          to="/home"
-          variant="subtle"
-          color="gray"
-          radius="xl"
-          mb={0}
-          mt={isMobile ? 6 : 0}
-          mx={isMobile ? 14 : 0}
-        >
-          <IconArrowLeft size={22} />
-        </ActionIcon>
+        <Group justify="space-between">
+          <ActionIcon
+            variant="subtle"
+            color="gray"
+            radius="xl"
+            mb={0}
+            mt={isMobile ? 6 : 0}
+            mx={isMobile ? 14 : 0}
+            onClick={() => (window.history.length > 1 ? navigate(-1) : navigate('/home'))}
+          >
+            <IconArrowLeft size={22} />
+          </ActionIcon>
+          <Menu
+            shadow="md"
+            radius="md"
+            position="bottom-end"
+            mt={isMobile ? 6 : 0}
+            mr={16}
+          >
+            <Menu.Target>
+              <ActionIcon variant="subtle" color="gray" size="sm" radius="xl">
+                <IconDots size={22} />
+              </ActionIcon>
+            </Menu.Target>
+            <Menu.Dropdown>
+              <Menu.Item
+                leftSection={<IconLink size={14} />}
+                onClick={() =>
+                  navigator.clipboard.writeText(
+                    `${window.location.origin}/post/${post.id}`,
+                  )
+                }
+              >
+                Copiar link
+              </Menu.Item>
+              <Menu.Item
+                leftSection={<IconUser size={14} />}
+                onClick={() => navigate(`/${post.author_username}`)}
+              >
+                Ver perfil de {post.author_username}
+              </Menu.Item>
+              {post.author_profile_id === user?.id && (
+                <>
+                  <Menu.Divider />
+                  <Menu.Item
+                    color="red"
+                    leftSection={<IconTrash size={14} />}
+                    onClick={() => {
+                      setPostToDelete(post.id)
+                      openConfirmDeletePost()
+                    }}
+                  >
+                    Apagar postagem
+                  </Menu.Item>
+                </>
+              )}
+            </Menu.Dropdown>
+          </Menu>
+        </Group>
         <Card
           shadow={{ base: 'none', sm: 'sm' }}
           px={{ base: 0, sm: 'md' }}
@@ -222,7 +291,7 @@ export default function Post() {
           className="transparent-in-mobile-dark"
         >
           <Box px={isMobile ? 14 : 0}>
-            <Group gap="sm" align="flex-start">
+            <Group gap="sm" align="center">
               <Avatar
                 size={40}
                 radius="xl"
@@ -230,8 +299,8 @@ export default function Post() {
                 component={Link}
                 to={`/${post.author_username}`}
               />
-              <Stack gap={3} style={{ flex: 1 }}>
-                <Group gap="xs" justify="space-between">
+              <Stack gap={3}>
+                <Group gap="xs">
                   <Flex gap={post.author_is_verified ? 2 : 6} align="center">
                     <Anchor
                       component={Link}
@@ -243,6 +312,7 @@ export default function Post() {
                     >
                       {post.author_full_name}
                     </Anchor>
+                    {post?.author_plan === 'Pro' && <ProPlanBadge small marginLeft={2} />}
                     {!!post.author_is_verified && (
                       <IconRosetteDiscountCheckFilled
                         className="iconVerified"
@@ -265,62 +335,71 @@ export default function Post() {
                       {dayjs(post.created_at).fromNow()}
                     </Text>
                   </Flex>
-                  <Menu shadow="md" radius="md" position="bottom-end">
-                    <Menu.Target>
-                      <ActionIcon variant="subtle" color="gray" size="sm" radius="xl">
-                        <IconDots size={18} />
-                      </ActionIcon>
-                    </Menu.Target>
-                    <Menu.Dropdown>
-                      <Menu.Item
-                        leftSection={<IconLink size={14} />}
-                        onClick={() =>
-                          navigator.clipboard.writeText(
-                            `${window.location.origin}/post/${post.id}`,
-                          )
-                        }
-                      >
-                        Copiar link
-                      </Menu.Item>
-                      {post.author_profile_id === user?.id && (
-                        <>
-                          <Menu.Divider />
-                          <Menu.Item
-                            color="red"
-                            leftSection={<IconTrash size={14} />}
-                            onClick={() => {
-                              setPostToDelete(post.id)
-                              openConfirmDeletePost()
-                            }}
-                          >
-                            Apagar postagem
-                          </Menu.Item>
-                        </>
-                      )}
-                    </Menu.Dropdown>
-                  </Menu>
                 </Group>
                 {post.author_title && (
                   <Text size="sm" lh="1" opacity={0.7}>
                     {post.author_title}
                   </Text>
                 )}
+                {post.author_is_open_to_work && (
+                  <Badge
+                    variant={isDark ? 'outline' : 'light'}
+                    color="green"
+                    mt={3}
+                    style={{ flexShrink: 0 }}
+                    size="xs"
+                  >
+                    Disponível para gigs!
+                  </Badge>
+                )}
               </Stack>
             </Group>
-            <Text size="0.9em" c="var(--mantine-color-text)" lh={1.4} mt="sm">
-              {post.body}
+            <Text
+              size="0.9em"
+              c="var(--mantine-color-text)"
+              lh={1.4}
+              mt="sm"
+              style={{
+                textDecoration: 'none',
+                whiteSpace: 'pre-line',
+              }}
+            >
+              {parse(
+                linkifyStr(post.body, {
+                  target: '_blank',
+                  format: (value, type) => formatLinkText(value, type),
+                }),
+              )}
             </Text>
+            {/* <Badge
+              mt="xs"
+              size="xs"
+              leftSection={<IconBrandInstagram size={14} />}
+              variant="gradient"
+              gradient={{ from: 'pink', to: 'grape', deg: 90 }}
+            >
+              Vídeo replicado do Instagram
+            </Badge> */}
           </Box>
           {/* Player de vídeo */}
+          {post.video_source === 'mublin' && (
+            <Box className="paddingX" mt={{ base: 'md', sm: 'xs' }}>
+              <VideoPlayerNative
+                src={post.video_storage_path}
+                title={post.video_title}
+                isVertical={post.video_is_vertical ?? true}
+              />
+            </Box>
+          )}
           {post.video_url && (
-            <Box mt="xs">
+            <Box mt={{ base: 'md', sm: 'xs' }}>
               <VideoPlayerYoutube url={post.video_url} title={post.body?.slice(0, 60)} />
             </Box>
           )}
           {post.image && (
             <Image
               src={`https://ik.imagekit.io/mublin/posts/tr:w-700/${post.image}`}
-              mt="xs"
+              mt={{ base: 'md', sm: 'xs' }}
             />
           )}
           <Box px={isMobile ? 14 : 0}>

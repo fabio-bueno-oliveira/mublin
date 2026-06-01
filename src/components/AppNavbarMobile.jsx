@@ -5,7 +5,6 @@ import MublinLogoWhite from '../assets/svg/mublin-logo-white.svg'
 import {
   useComputedColorScheme,
   Flex,
-  Group,
   Box,
   Button,
   Image,
@@ -34,7 +33,6 @@ export default function AppNavbarMobile({
   const { profile: userProfile } = useAuth()
   const computedColorScheme = useComputedColorScheme('light')
   const isDark = computedColorScheme === 'dark'
-
   const [opened, { open, close }] = useDisclosure(false)
 
   return (
@@ -44,9 +42,10 @@ export default function AppNavbarMobile({
         align="center"
         justify="space-between"
         hiddenFrom="sm"
+        pt={4}
         px={{ base: '0.8rem', sm: 0 }}
         pos="fixed"
-        bg={isDark ? 'black' : 'white'}
+        bg="var(--mantine-color-body)"
         w="100%"
         h={50}
       >

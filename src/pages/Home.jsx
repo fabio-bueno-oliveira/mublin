@@ -5,11 +5,9 @@ import { fetchUserProjects } from '../queries/user'
 import { fetchUserGigs } from '../queries/gigs'
 // prettier-ignore
 import {
-  useMantineColorScheme,
-  Grid, Group,Flex,
+  Grid, Group, Flex, Skeleton,
   Container, Stack, Scroller,
   Badge, Button,
-  Skeleton,
   Text, Title,
   Paper, Card, Box,
   Anchor, ActionIcon,
@@ -24,12 +22,10 @@ import {
   IconRadar,
   IconStar,
   IconGuitarPick,
-  IconExclamationCircleFilled,
   IconClock,
   IconCheck,
   IconCircleArrowLeftFilled,
   IconCircleArrowRightFilled,
-  IconChevronRightFilled,
 } from '@tabler/icons-react'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
@@ -47,8 +43,6 @@ const PROJECT_AVATAR_PATH = 'https://ik.imagekit.io/mublin/projects'
 export default function Home() {
   const { profile, user, loading } = useAuth()
   const isDesktop = useMediaQuery('(min-width: 48em)')
-  const { colorScheme } = useMantineColorScheme()
-  const isDark = colorScheme === 'dark'
 
   const { data: projects = [], isLoading: loadingProjects } = useQuery({
     queryKey: ['user-projects', user?.id],
@@ -98,7 +92,6 @@ export default function Home() {
     staleTime: 1000 * 60 * 4,
   })
 
-  // Deriva gêneros dos projetos com percentual
   const genreStats = (() => {
     const projectsWithGenre = userProjects.filter((p) => p.genre)
     if (!projectsWithGenre.length) {
@@ -142,23 +135,24 @@ export default function Home() {
 
       <Container size="xl" pt="xs" px={{ base: 0, sm: 0 }} mt={{ base: 51, sm: 0 }}>
         <Grid>
-          <Grid.Col span={{ base: 12, md: 7 }} className="paddingX">
+          <Grid.Col span={{ base: 12, md: 7 }} className="paddingX prX">
             {loading || loadingProjects ? (
               <Box mb="xl">
-                <Text fz="h2" fw={700} lts="-0.02em">
+                <Title order={1} fz="h2" fw={700} lts="-0.02em">
                   Carregando...
-                </Text>
-                <Text fz="md" opacity={0.8} lh={1}>
+                </Title>
+                <Text fz="sm" opacity={0.8}>
                   Buscando seus projetos...
                 </Text>
-                <Group mt="lg" align="flex-start" gap="md" wrap="nowrap" pr="md">
+                <Group mt="md" align="flex-start" gap="md" wrap="nowrap" pr="md">
                   {[1, 2, 3, 4].map((i) => (
-                    <Stack key={i} gap={6} size={80}>
-                      <Skeleton radius="md" w={80} h={80} />
+                    <Stack key={i} gap={6}>
+                      <Skeleton radius="md" w={90} h={90} />
                       <Flex direction="column" gap={4}>
-                        <Skeleton radius="xl" w={72} h={12} my={1} />
                         <Skeleton radius="xl" w={56} h={8} />
-                        <Skeleton radius="xl" w={64} h={8} />
+                        <Skeleton radius="xl" w={76} h={12} my={1} />
+                        <Skeleton radius="xl" w={64} h={7} />
+                        <Skeleton radius="xl" w={64} h={7} />
                       </Flex>
                     </Stack>
                   ))}
@@ -166,36 +160,38 @@ export default function Home() {
               </Box>
             ) : (
               <Box mb="xl">
-                <Text fz="h2" fw={700} lts="-0.02em">
+                <Title order={1} fz="h2" fw={700} lts="-0.02em">
                   Olá, {profile.username}
-                </Text>
-                <Group gap={8} justify="flex-start">
-                  <Text fz="sm" opacity={0.8} lh={1}>
+                </Title>
+                <Group gap={8} justify="space-between" wrap="nowrap">
+                  <Text fz="sm" opacity={0.8}>
                     Você está associado a{' '}
                     {userProjects.length === 1
-                      ? '1 projeto'
-                      : `${userProjects.length} projetos`}
+                      ? '1 projeto '
+                      : `${userProjects.length} projetos `}
                   </Text>
-                  <ActionIcon
-                    variant="light"
-                    color="#717171"
-                    c="dimmed"
+                  <Anchor
+                    c="var(--mantine-color-text)"
+                    opacity={0.8}
+                    fz="sm"
+                    fw={300}
                     component={Link}
                     to="/projects"
-                    fz="xs"
-                    fw={500}
-                    aria-description="Ver todos"
-                    title="Ver todos"
+                    style={{ whiteSpace: 'nowrap' }}
                   >
-                    <IconChevronRightFilled size={18} />
-                  </ActionIcon>
+                    Ver todos
+                  </Anchor>
                 </Group>
                 {!!userProjects.length && (
                   <Scroller
-                    mt="lg"
+                    mt="md"
                     key={userProjects.length}
                     draggable={!isDesktop}
                     controlSize="xl"
+                    classNames={{
+                      root: 'scrollerRoot',
+                      control: 'scrollerControl',
+                    }}
                     startControlIcon={
                       isDesktop ? <IconCircleArrowLeftFilled size={36} /> : undefined
                     }
@@ -227,16 +223,17 @@ export default function Home() {
                                 title={project.name}
                               />
                               {project.activity_status &&
-                                project.request_status !== 1 && (
+                                project.request_status !== 1 &&
+                                project.activity_status !== 1 && (
                                   <Badge
                                     pos="absolute"
-                                    top={2}
-                                    right={2}
+                                    top={6}
+                                    right={6}
                                     color={project.activity_status_color ?? undefined}
                                     size="xs"
-                                    fz="8px"
-                                    radius="md"
-                                    variant="light"
+                                    fz="7px"
+                                    radius="sm"
+                                    variant="filled"
                                     opacity={0.9}
                                     title={project.activity_status_name}
                                   >
@@ -339,22 +336,36 @@ export default function Home() {
               </Anchor>{' '}
             </Flex> */}
 
-            <Group gap={8} justify="flex-start" align="flex-start">
-              <Title order={2} fz="xl" fw={700} mb="xs">
+            <Group gap={8} mb="xs" justify="space-between" align="center">
+              <Title order={2} fz="xl" fw={700} lts="-0.02em">
                 Próximas gigs
               </Title>
-              <ActionIcon
-                variant="light"
-                color="#717171"
-                c="dimmed"
-                component={Link}
-                to="/gigs"
-                fz="xs"
-                fw={500}
-              >
-                <IconChevronRightFilled size={18} />
-              </ActionIcon>
+              <Group>
+                <Anchor
+                  c="var(--mantine-color-text)"
+                  opacity={0.8}
+                  fz="sm"
+                  fw={300}
+                  lh={1}
+                  component={Link}
+                  to="/gigs"
+                >
+                  Ver todas
+                </Anchor>
+                {/* <ActionIcon
+                  variant="light"
+                  color="#717171"
+                  c="dimmed"
+                  component={Link}
+                  to="/gigs"
+                >
+                  <IconChevronRightFilled size={18} />
+                </ActionIcon> */}
+              </Group>
             </Group>
+            {/* <Text fz="sm" opacity={0.8} lh={1} fw={300}>
+              Suas próximas gigs confirmadas
+            </Text> */}
 
             {loadingGigs ? (
               <Group mb="md" gap="xs" wrap="nowrap">
@@ -386,7 +397,7 @@ export default function Home() {
                     >
                       <Card.Section px="xs" py={8}>
                         <Group gap={5} justify="space-between" wrap="nowrap">
-                          <Text size="xs" truncate="end">
+                          <Text fw={300} size="xs" truncate="end">
                             <Text span fw={600}>
                               {gig.gig_roles?.roles?.description_ptbr}
                             </Text>{' '}

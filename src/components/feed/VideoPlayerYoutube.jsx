@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Box, Flex } from '@mantine/core'
 
 function getYouTubeId(url) {
-  const match = url?.match(
+  const match = url.match(
     /(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/,
   )
   return match ? match[1] : null

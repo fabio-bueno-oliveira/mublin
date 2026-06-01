@@ -77,7 +77,7 @@ export async function fetchArtistRoles(artistId) {
       id,
       is_main_role,
       order_show,
-      roles ( name_ptbr )
+      roles ( name_ptbr, description_ptbr )
     `,
     )
     .eq('artist_id', artistId)
