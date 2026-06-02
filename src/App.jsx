@@ -8,6 +8,7 @@ import {
   Pill,
   Button,
   Paper,
+  Card,
   Divider,
   Switch,
 } from '@mantine/core'
@@ -52,6 +53,18 @@ const theme = createTheme({
       '#a87f1e',
       '#926d10',
     ],
+    mublinGray: [
+      '#f5f5f5',
+      '#e7e7e7',
+      '#cdcdcd',
+      '#b2b2b2',
+      '#9a9a9a',
+      '#8b8b8b',
+      '#848484',
+      '#717171',
+      '#656565',
+      '#1c1c1c',
+    ],
   },
   fontFamily: 'Google Sans Flex, Helvetica, Arial, sans-serif',
   fontFamilyMonospace: 'monospace',
@@ -79,7 +92,7 @@ const theme = createTheme({
         radius: 'xl',
       },
     }),
-    Card: Paper.extend({
+    Card: Card.extend({
       styles: {
         root: {
           backgroundColor: 'light-dark(#ffffff, #1c1c1c)',

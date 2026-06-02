@@ -7,7 +7,7 @@ import { fetchUserGigs } from '../queries/gigs'
 import {
   Grid, Group, Flex, Skeleton,
   Container, Stack, Scroller,
-  Badge, Button,
+  Center, Badge, Button,
   Text, Title,
   Paper, Card, Box,
   Anchor, ActionIcon,
@@ -41,7 +41,7 @@ const PROJECT_AVATAR_PATH = 'https://ik.imagekit.io/mublin/projects'
 //   'https://ik.imagekit.io/mublin/products/tr:w-200,bg-FFFFFF,fo-x/'
 
 export default function Home() {
-  const { profile, user, loading } = useAuth()
+  const { user, loading } = useAuth()
   const isDesktop = useMediaQuery('(min-width: 48em)')
 
   const { data: projects = [], isLoading: loadingProjects } = useQuery({
@@ -160,9 +160,6 @@ export default function Home() {
               </Box>
             ) : (
               <Box mb="xl">
-                <Title order={1} fz="h2" fw={700} lts="-0.02em">
-                  Olá, {profile.username}
-                </Title>
                 <Group gap={8} justify="space-between" wrap="nowrap">
                   <Text fz="sm" opacity={0.8}>
                     Você está associado a{' '}
@@ -182,7 +179,7 @@ export default function Home() {
                     Ver todos
                   </Anchor>
                 </Group>
-                {!!userProjects.length && (
+                {userProjects.length > 0 ? (
                   <Scroller
                     mt="md"
                     key={userProjects.length}
@@ -302,6 +299,18 @@ export default function Home() {
                       ))}
                     </Group>
                   </Scroller>
+                ) : (
+                  <Center mt="md">
+                    <Button
+                      size="sm"
+                      variant="light"
+                      color="grape"
+                      radius="xl"
+                      onClick={() => navigate('/search')}
+                    >
+                      Encontrar ou criar um projeto
+                    </Button>
+                  </Center>
                 )}
               </Box>
             )}
@@ -483,10 +492,10 @@ export default function Home() {
                     Nenhuma gig agendada no momento :(
                   </Text>
                   <Button
-                    size="xs"
-                    variant="default"
+                    size="sm"
+                    variant="light"
+                    color="grape"
                     radius="xl"
-                    color="gray"
                     onClick={() => navigate('/search')}
                   >
                     Encontrar gigs

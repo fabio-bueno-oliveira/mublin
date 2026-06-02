@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
 import { useMediaQuery } from '@mantine/hooks'
 import { Box, Avatar, Tooltip, Text, Flex } from '@mantine/core'
-import './AppProjectDashbar.css'
+import './Dashbar.css'
 
 const AVATAR_PATH =
   'https://ik.imagekit.io/mublin/tr:h-68,c-maintain_ratio/users/avatars/'

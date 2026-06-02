@@ -278,7 +278,7 @@ export default function Feed({ from = '' }) {
               </Flex>
             </Group>
             <ScrollArea
-              h={{ base: 'auto', md: from ? 'calc(100vh - 120px)' : 'auto' }}
+              h={{ base: 'auto', md: from ? 'calc(90vh - 120px)' : 'auto' }}
               scrollHideDelay={0}
             >
               {/* Caixa de novo post */}

@@ -95,7 +95,7 @@ export default function Artist() {
       </Helmet>
 
       <Affix position={{ top: 0, left: 0 }} hiddenFrom="sm">
-        <AppNavbarMobile pageName="Página de figura mainstream" />
+        <AppNavbarMobile pageName="Figura mainstream" />
       </Affix>
 
       <Container size="xl" pt="xs" px={{ base: 'md', sm: 0 }} mt={{ base: 62, sm: 0 }}>
@@ -109,7 +109,7 @@ export default function Artist() {
               {isSuccess && artist ? (
                 <>
                   <Text ta="center" c="dimmed" size="13px" mb={6} visibleFrom="sm">
-                    Página de figura mainstream
+                    Figura mainstream
                   </Text>
                   <Center pos="relative">
                     <Avatar
@@ -156,7 +156,7 @@ export default function Artist() {
                     <Title order={1} fz="h2">
                       {artist?.name}
                     </Title>
-                    <Text size="xs" c="dimmed">
+                    <Text size="sm" c="dimmed">
                       Gênero musical predominante:{' '}
                       {artist?.genres?.name_ptbr || artist?.genres?.name}
                     </Text>
@@ -328,7 +328,7 @@ export default function Artist() {
         {gear.length > 0 && (
           <>
             <Title order={2} fz="h5" fw={500} mt="lg" mb="xs">
-              Equipamentos relacionados a {artist?.name || '...'}
+              Itens relacionados a {artist?.name || '...'}
             </Title>
 
             <Group mb="xl" align="flex-start" wrap="wrap">
@@ -342,7 +342,7 @@ export default function Artist() {
                       direction="column"
                       align="center"
                       gap={4}
-                      w={80}
+                      w={100}
                       component={Link}
                       to={`/gear/${item.products?.slug}`}
                       style={{ textDecoration: 'none', color: 'inherit' }}
@@ -357,22 +357,37 @@ export default function Artist() {
                         }
                         title={item.products?.full_name}
                       />
-                      <Text mt={4} size="xs" c="dimmed" ta="center" lh={1} lineClamp={1}>
+                      <Text
+                        mt={4}
+                        size="xs"
+                        c="dimmed"
+                        ta="center"
+                        lh={1}
+                        lineClamp={1}
+                        title={item.products?.brands?.name}
+                      >
                         {item.products?.brands?.name}
                       </Text>
-                      <Text size="sm" fw={500} ta="center" lh={1} lineClamp={1} w={80}>
+                      <Text
+                        size="sm"
+                        fw={500}
+                        ta="center"
+                        lh={1}
+                        lineClamp={1}
+                        w={80}
+                        title={item.products?.name}
+                      >
                         {item.products?.name}
                       </Text>
                       {item.gear_frequencies_of_use?.name_ptbr && (
-                        <>
-                          <Text mt={4} c="dimmed" size="9px" ta="center" lineClamp={1}>
+                        <Stack gap={1}>
+                          <Text mt={4} c="dimmed" size="9px" ta="center">
                             Frequência de uso:
                           </Text>
-
                           <Text size="10px" ta="center" lh={1} lineClamp={1}>
                             {item.gear_frequencies_of_use?.name_ptbr}
                           </Text>
-                        </>
+                        </Stack>
                       )}
                     </Flex>
                   ))}

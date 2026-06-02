@@ -82,3 +82,15 @@ export async function fetchUserGigsCount(userId) {
   }
   return count
 }
+
+export async function fetchUserProfileOnboarding(userId) {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('avatar, bio, city_id, ')
+    .eq('id', userId)
+    .single()
+  if (error) {
+    throw new Error(error.message)
+  }
+  return data
+}

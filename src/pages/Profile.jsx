@@ -29,7 +29,6 @@ import {
   Paper,
   Box,
   Indicator,
-  Spoiler,
   Card,
   Button,
   Title,
@@ -74,6 +73,7 @@ import {
 } from '@tabler/icons-react'
 import ProfileHeaderMobile from '../components/profile/ProfileHeaderMobile'
 import AppNavbarMobile from '../components/AppNavbarMobile'
+import ProPlanBadge from '../components/ProPlanBadge'
 import { truncateString } from '../utils/formatter'
 import { isProfileLive } from '../utils/live'
 import { AVAILABLE_FROM_LABELS } from '../constants/availability'
@@ -81,7 +81,6 @@ import { SOCIAL_CONFIG } from '../constants/socialConfig'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import 'dayjs/locale/pt-br'
-import ProPlanBadge from '../components/ProPlanBadge'
 
 dayjs.extend(relativeTime)
 dayjs.locale('pt-br')
@@ -110,6 +109,7 @@ export default function Profile() {
   const isMobile = useMediaQuery(`(max-width: ${em(750)})`)
   const [scroll, scrollTo] = useWindowScroll()
   const [activeSection, setActiveSection] = useState('')
+  const [expandedBio, setExpandedBio] = useState(false)
 
   const [followersOpened, { open: openFollowers, close: closeFollowers }] =
     useDisclosure(false)
@@ -144,6 +144,7 @@ export default function Profile() {
 
   useEffect(() => {
     scrollTo({ y: 0 })
+    setExpandedBio(false)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [username])
 
@@ -455,22 +456,21 @@ export default function Profile() {
           padding={0}
           radius={isMobile ? 0 : 'md'}
           mb={4}
-          // mt={{ base: 0, md: 10 }}
         >
           <Card.Section>
             <Box
               style={{
                 position: 'relative',
                 width: '100%',
-                height: 80,
+                height: 90,
                 overflow: 'hidden',
               }}
             >
               <Image
                 src={
                   profile.cover_image
-                    ? `https://ik.imagekit.io/mublin/tr:w-870,h-160,c-maintain_ratio/users/avatars/${profile.cover_image}`
-                    : 'https://ik.imagekit.io/mublin/bg/tr:w-870,h-160,bg-F3F3F3,fo-bottom/open-air-concert.jpg'
+                    ? `https://ik.imagekit.io/mublin/tr:w-870,h-90,fo-center,c-maintain_ratio/users/avatars/${profile.cover_image}`
+                    : 'https://ik.imagekit.io/mublin/bg/tr:w-870,h-90,bg-F3F3F3,fo-bottom/open-air-concert.jpg'
                 }
                 mih={100}
                 w="100%"
@@ -564,7 +564,14 @@ export default function Profile() {
               </Indicator>
               <Stack gap={1} flex={1}>
                 <Flex align="center" gap={2} wrap="wrap">
-                  <Title order={1} size="25px" lh="1" component={Text} lineClamp={2}>
+                  <Title
+                    order={1}
+                    fw={600}
+                    size="22px"
+                    lh="1"
+                    component={Text}
+                    lineClamp={2}
+                  >
                     {profile.full_name}
                   </Title>
                   {!!profile.is_verified && (
@@ -579,7 +586,7 @@ export default function Profile() {
                       title="Lenda da música"
                     />
                   )}
-                  {profile?.plan === 'Pro' && <ProPlanBadge />}
+                  {/* {profile?.plan === 'Pro' && <ProPlanBadge />} */}
                   {user?.id === profile.id && (
                     <ActionIcon
                       component={Link}
@@ -643,9 +650,9 @@ export default function Profile() {
                   <Button
                     size="sm"
                     radius="md"
-                    variant={isDark ? 'filled' : 'light'}
-                    color={isDark ? 'gray' : 'gray.3'}
-                    w="50%"
+                    variant="filled"
+                    className="defaultMublinButton"
+                    flex={1}
                     mt={4}
                     onClick={() => unfollowProfile(user.id, profile.id)}
                     disabled={loadingFollowingInfo}
@@ -658,7 +665,7 @@ export default function Profile() {
                     radius="md"
                     variant="gradient"
                     gradient={{ from: 'grape.8', to: 'mublinColor.8', deg: 55 }}
-                    w="50%"
+                    flex={1}
                     mt={4}
                     onClick={() => followProfile(user.id, profile.id)}
                     disabled={loadingFollowingInfo}
@@ -669,9 +676,9 @@ export default function Profile() {
                 <Button
                   size="sm"
                   radius="md"
-                  variant={isDark ? 'filled' : 'light'}
-                  color={isDark ? 'gray' : 'gray.3'}
-                  w={166}
+                  variant="filled"
+                  className="defaultMublinButton"
+                  w={{ base: '47%', sm: 166 }}
                   mt={4}
                 >
                   Convidar para gig
@@ -682,40 +689,22 @@ export default function Profile() {
               <SectionPanel id="about">
                 {profile.bio && (
                   <>
-                    <SectionTitle text="Sobre" mb={16} />
-                    <Spoiler
-                      maxHeight={40}
-                      showLabel={
-                        <Text
-                          lh={1.3}
-                          opacity={0.9}
-                          size="sm"
-                          c="var(--mantine-color-text)"
-                        >
-                          ...ver mais
-                        </Text>
-                      }
-                      hideLabel={
-                        <Text
-                          lh={1.3}
-                          opacity={0.9}
-                          size="sm"
-                          c="var(--mantine-color-text)"
-                        >
-                          ...ver menos
-                        </Text>
-                      }
+                    <SectionTitle text="Sobre" mb={12} />
+                    <Text
+                      fz="sm"
+                      lh={1.4}
+                      style={{ whiteSpace: 'pre-line' }}
+                      lineClamp={expandedBio ? undefined : 2}
+                      onClick={() => setExpandedBio(!expandedBio)}
                     >
-                      <Text size="sm" lh={1.3} style={{ whiteSpace: 'pre-line' }}>
-                        {profile.bio}
-                      </Text>
-                    </Spoiler>
+                      {profile.bio}
+                    </Text>
                   </>
                 )}
 
-                <Title order={3} fz="xs" c="dimmed" fw={400} mt={profile.bio ? 'md' : 0}>
-                  Atividades na música
-                </Title>
+                {/* <Title order={3} fz="sm" fw={600} mt={profile.bio ? 'sm' : 0} mb={4}>
+                  Principais atividades
+                </Title> */}
                 {roles &&
                   roles.length > 0 &&
                   (() => {
@@ -727,49 +716,76 @@ export default function Profile() {
                     )
 
                     const renderGroup = (group) =>
-                      group.map(({ id, roles: role }, index) => (
-                        <Text key={id} span fw={400}>
-                          {role?.name_ptbr}
-                          {index < group.length - 1 ? ' · ' : ''}
-                        </Text>
+                      group.map(({ id, roles: role }) => (
+                        <Badge
+                          radius="xl"
+                          size="md"
+                          variant="light"
+                          color="var(--mantine-color-text)"
+                          key={id}
+                        >
+                          {role?.description_ptbr}
+                        </Badge>
                       ))
 
                     return (
-                      <Stack gap={0}>
-                        {instrumentalists.length > 0 && (
-                          <Text size="sm">{renderGroup(instrumentalists)}</Text>
-                        )}
-                        {others.length > 0 && (
-                          <Text size="sm">{renderGroup(others)}</Text>
-                        )}
-                      </Stack>
+                      <Group gap={6} mt={profile.bio ? 'lg' : 0}>
+                        {instrumentalists.length > 0 && renderGroup(instrumentalists)}
+                        {others.length > 0 && renderGroup(others)}
+                      </Group>
                     )
                   })()}
-                <Title order={3} fz="xs" c="dimmed" fw={400} mt={6}>
-                  Gêneros musicais de atuação
-                </Title>
-                {genres && genres.length > 0 ? (
-                  <Text size="sm">
-                    {genres.map(({ id, genres: genre }, index) => (
-                      <Text key={id} span fw={400}>
-                        {genre?.name}
-                        {index < genres.length - 1 ? ' · ' : ''}
-                      </Text>
-                    ))}
-                  </Text>
-                ) : (
-                  <Text size="sm">Não informado</Text>
-                )}
 
-                {profile?.plan === 'Pro' && (
-                  <Flex mt={8} gap={6} align="center">
-                    <ProPlanBadge small />
-                    <Text size="xs" c="dimmed" lh={1} mt={3}>
-                      {profile?.full_name} possui uma conta Mublin Premium
-                    </Text>
-                  </Flex>
+                {genres && genres.length > 0 && (
+                  <>
+                    <Divider my="xs" />
+                    <Title order={3} fz="sm" fw={400} mb={4} opacity={0.8}>
+                      Gêneros musicais de atuação
+                    </Title>
+                    {genres && genres.length > 0 ? (
+                      <Group gap={6} mt="xs">
+                        {genres.map(({ id, genres: genre }) => (
+                          <Badge
+                            radius="xl"
+                            size="md"
+                            variant="light"
+                            color="var(--mantine-color-text)"
+                            key={id}
+                          >
+                            {genre?.name}
+                          </Badge>
+                        ))}
+                      </Group>
+                    ) : (
+                      <Text size="xs" c="dimmed">
+                        Não informado
+                      </Text>
+                    )}
+                  </>
                 )}
               </SectionPanel>
+              {/* <SectionPanel>
+                <SectionTitle text="Gêneros musicais de atuação" mb={12} />
+                {genres && genres.length > 0 ? (
+                  <Group gap={6} mt={6}>
+                    {genres.map(({ id, genres: genre }) => (
+                      <Badge
+                        radius="xl"
+                        size="md"
+                        variant="light"
+                        color="var(--mantine-color-text)"
+                        key={id}
+                      >
+                        {genre?.name}
+                      </Badge>
+                    ))}
+                  </Group>
+                ) : (
+                  <Text size="xs" c="dimmed">
+                    Não informado
+                  </Text>
+                )}
+              </SectionPanel> */}
               {profileProjects.length > 0 && (
                 <>
                   <ScrollArea
@@ -1166,14 +1182,14 @@ export default function Profile() {
           </Grid.Col>
           <Grid.Col span={{ base: 12, md: 4 }}>
             <Stack gap={10}>
+              {profile.is_open_to_work && !isMobile && (
+                <Alert variant="light" color="green" px="sm" py={6}>
+                  <Text size="sm">Disponível para trabalhos e gigs</Text>
+                </Alert>
+              )}
               {workAvailability.length > 0 && workFocus.length > 0 && (
                 <SectionPanel id="availability">
                   <SectionTitle text="Disponibilidade" mb="sm" />
-                  {profile.is_open_to_work && !isMobile && (
-                    <Alert variant="light" color="green" px={6} py={4}>
-                      <Text size="xs">Disponível para trabalhos e gigs</Text>
-                    </Alert>
-                  )}
                   <Title order={3} fz="xs" c="dimmed" fw={400} mt="sm">
                     Disponível a partir de:
                   </Title>
@@ -1231,7 +1247,7 @@ export default function Profile() {
                         Lenda da música
                       </Text>
                       <Text size="11px" fw={300} opacity={0.7} ta="center">
-                        Reconhecido pela contribuição para o mercado musical
+                        Reconhecido pela contribuição ao mercado musical
                       </Text>
                       {/* <Text mt={6} size="10px" c="dimmed" ta="center">
                       Atribuído internamente pela equipe do Mublin conforme critérios
@@ -1239,7 +1255,7 @@ export default function Profile() {
                     </Text> */}
                     </Flex>
                     <Flex direction="column" w={100} align="center">
-                      <IconTrophy className="iconLegend big" title="Grammy Winner" />
+                      <IconTrophy className="iconBadge big" title="Grammy Winner" />
                       <Text size="sm" fw={600} ta="center" my={4} lh={1}>
                         Grammy Nominee
                       </Text>
@@ -1254,7 +1270,7 @@ export default function Profile() {
                 <SectionPanel id="inspirations">
                   <SectionTitle text="Inspirações" mb={4} />
                   <Text size="xs" c="dimmed" mb="sm">
-                    Artistas e bandas consagradas que inspiram {profile?.full_name}
+                    Figuras consagradas que inspiram {profile?.full_name}
                   </Text>
                   {loadingInspirations ? (
                     <Text size="sm">Carregando...</Text>
@@ -1321,79 +1337,6 @@ export default function Profile() {
                   </Text>
                 </SectionPanel>
               )}
-              <SectionPanel id="suggested-profiles">
-                <SectionTitle text="Mais perfis parecidos" mb="md" />
-                {similarProfiles.length === 0 ? (
-                  <Text size="sm" c="dimmed">
-                    Nenhum perfil similar encontrado.
-                  </Text>
-                ) : (
-                  <Stack gap="md">
-                    {similarProfiles.map((p) => (
-                      <Flex
-                        key={p.id}
-                        gap="xs"
-                        component={Link}
-                        to={`/${p.username}`}
-                        style={{ textDecoration: 'none', color: 'inherit' }}
-                        w="100%"
-                        wrap="nowrap"
-                        align="center"
-                      >
-                        <Box>
-                          <Avatar
-                            size={40}
-                            radius="xl"
-                            src={p.avatar ? AVATAR_PATH + p.avatar : undefined}
-                          />
-                        </Box>
-                        <Stack gap={1} style={{ flexGrow: 1 }} maw="80%">
-                          <Group gap={4} align="center" wrap="nowrap">
-                            <Text size="sm" fw={600} lineClamp={1} truncate="end">
-                              {p.full_name}
-                            </Text>
-                            {!!p.is_verified && (
-                              <IconRosetteDiscountCheckFilled
-                                className="iconVerified"
-                                size={14}
-                                title="Perfil verificado"
-                              />
-                            )}
-                            {p.plan === 'Pro' && <ProPlanBadge small />}
-                            {p.is_open_to_work && profile && (
-                              <Badge
-                                variant={isDark ? 'outline' : 'light'}
-                                color="green"
-                                mt={2}
-                                style={{ flexShrink: 0 }}
-                                size="xs"
-                                title="Disponível para gigs"
-                              >
-                                Disp
-                              </Badge>
-                            )}
-                          </Group>
-                          {p.title && (
-                            <Text size="sm" lineClamp={1} truncate="end">
-                              {p.title}
-                            </Text>
-                          )}
-                          {p.roles.length > 0 && (
-                            <Text size="xs" c="dimmed" lineClamp={1} truncate="end">
-                              {p.roles?.map((role, index) => (
-                                <Text span key={role.id}>
-                                  {role.name_ptbr}
-                                  {index < p.roles.length - 1 ? ', ' : ''}
-                                </Text>
-                              ))}
-                            </Text>
-                          )}
-                        </Stack>
-                      </Flex>
-                    ))}
-                  </Stack>
-                )}
-              </SectionPanel>
               <SectionPanel id="social">
                 <SectionTitle text="Redes sociais" mb="sm" />
                 {profile.profile_social_links.length > 0 || profile.website ? (
@@ -1431,13 +1374,13 @@ export default function Profile() {
                             href={href}
                             target="_blank"
                             rel="noopener noreferrer"
-                            variant="filled"
-                            color={config.color}
-                            size="lg"
+                            variant="light"
+                            color="var(--mantine-color-text)"
+                            size="xl"
                             radius="xl"
                             title={`${link.platform}: ${link.handle}`}
                           >
-                            <Icon size={20} />
+                            <Icon color="var(--mantine-color-text)" size={25} />
                           </ActionIcon>
                         </Tooltip>
                       )
@@ -1449,6 +1392,89 @@ export default function Profile() {
                   </Text>
                 )}
               </SectionPanel>
+              <SectionPanel id="suggested-profiles">
+                <SectionTitle text="Mais perfis parecidos" mb="md" />
+                {similarProfiles.length === 0 ? (
+                  <Text size="sm" c="dimmed">
+                    Nenhum perfil similar encontrado.
+                  </Text>
+                ) : (
+                  <Stack gap="md">
+                    {similarProfiles.map((p) => (
+                      <Flex
+                        key={p.id}
+                        gap="xs"
+                        component={Link}
+                        to={`/${p.username}`}
+                        style={{ textDecoration: 'none', color: 'inherit' }}
+                        w="100%"
+                        wrap="nowrap"
+                        align="center"
+                      >
+                        <Box>
+                          <Avatar
+                            size={40}
+                            radius="xl"
+                            src={p.avatar ? AVATAR_PATH + p.avatar : undefined}
+                          />
+                        </Box>
+                        <Stack gap={0} style={{ flexGrow: 1 }} maw="80%">
+                          <Group gap={3} align="center" wrap="nowrap">
+                            <Text size="md" fw={500} lineClamp={1} truncate="end">
+                              {p.full_name}
+                            </Text>
+                            {!!p.is_verified && (
+                              <IconRosetteDiscountCheckFilled
+                                className="iconVerified"
+                                size={14}
+                                title="Perfil verificado"
+                              />
+                            )}
+                            {p.plan === 'Pro' && <ProPlanBadge small />}
+                          </Group>
+                          {p.title && (
+                            <Text size="xs" lineClamp={1}>
+                              {p.title}
+                            </Text>
+                          )}
+                          {p.roles.length > 0 && (
+                            <Text size="xs" c="dimmed" lineClamp={1}>
+                              {p.roles?.map((role, index) => (
+                                <Text span key={role.id}>
+                                  {role.name_ptbr}
+                                  {index < p.roles.length - 1 ? ', ' : ''}
+                                </Text>
+                              ))}
+                            </Text>
+                          )}
+                          {p.is_open_to_work && profile && (
+                            <Badge
+                              variant="light"
+                              color="green"
+                              mt={2}
+                              style={{ flexShrink: 0 }}
+                              size="xs"
+                              title="Disponível para gigs"
+                            >
+                              Disponível para gigs
+                            </Badge>
+                          )}
+                        </Stack>
+                      </Flex>
+                    ))}
+                  </Stack>
+                )}
+              </SectionPanel>
+              {profile?.plan === 'Pro' && (
+                <SectionPanel>
+                  <Flex gap={6} align="center">
+                    <ProPlanBadge small />
+                    <Text size="xs" c="dimmed" lh={1} mt={3}>
+                      {profile?.full_name} possui uma conta Premium
+                    </Text>
+                  </Flex>
+                </SectionPanel>
+              )}
             </Stack>
           </Grid.Col>
         </Grid>

@@ -289,7 +289,7 @@ export default function GearItem() {
           <Grid.Col span={{ base: 12, md: 8 }}>
             {/* Descrição */}
             <Box mb={28}>
-              <Title size="md" fw={600} mb={6}>
+              <Title size="md" fw={600} mb={3}>
                 Sobre
               </Title>
               {product?.is_discontinued && (
@@ -328,7 +328,7 @@ export default function GearItem() {
 
             {/* Quem utiliza */}
             <Box>
-              <Title size="md" fw={600} mb={6}>
+              <Title size="md" fw={600} mb={3}>
                 Quem utiliza {owners.length > 0 ? `(${owners.length})` : null}
               </Title>
               {isLoadingOwners ? (
@@ -339,7 +339,7 @@ export default function GearItem() {
                 </Stack>
               ) : owners.length === 0 ? (
                 <Text size="sm" c="dimmed">
-                  Ninguém por aqui ainda.
+                  Ninguém por aqui ainda
                 </Text>
               ) : (
                 <Stack gap={10}>

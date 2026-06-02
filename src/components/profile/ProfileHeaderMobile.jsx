@@ -18,7 +18,7 @@ import {
 } from '@tabler/icons-react'
 import { isProfileLive } from '../../utils/live'
 import { truncateString } from '../../utils/formatter'
-import ProPlanBadge from '../ProPlanBadge'
+// import ProPlanBadge from '../ProPlanBadge'
 
 const AVATAR_PATH =
   'https://ik.imagekit.io/mublin/tr:h-200,c-maintain_ratio/users/avatars/'
@@ -52,22 +52,27 @@ export default function ProfileHeaderMobile({ profile, city, regionUf, user }) {
         </Indicator>
         <Box style={{ overflow: 'hidden' }}>
           <Flex align="center" gap={3} mb={2} wrap="wrap">
-            <Title order={1} size="22px" lh="1" component={Text} lineClamp={2}>
+            <Title order={1} fw={600} size="21px" lh="1" component={Text} lineClamp={2}>
               {profile.full_name}
             </Title>
             {!!profile.is_verified && (
               <IconRosetteDiscountCheckFilled
                 className="iconVerified"
                 title="Perfil verificado"
+                color="var(--mantine-color-mublinColor-3)"
               />
             )}
             {!!profile.is_legend && (
-              <IconShieldCheckFilled className="iconLegend" title="Lenda da Música" />
+              <IconShieldCheckFilled
+                className="iconLegend"
+                title="Lenda da Música"
+                // color="var(--mantine-color-violet-4)"
+              />
             )}
-            {profile?.plan === 'Pro' && <ProPlanBadge />}
+            {/* {profile?.plan === 'Pro' && <ProPlanBadge />} */}
           </Flex>
           <Flex align="center" gap={4} opacity={0.6}>
-            <Text size="sm">@{profile.username}</Text>
+            <Text size="md">@{profile.username}</Text>
             {(city || regionUf) && (
               <Text size="sm">· {[city, regionUf].filter(Boolean).join('/')}</Text>
             )}
@@ -110,8 +115,8 @@ export default function ProfileHeaderMobile({ profile, city, regionUf, user }) {
           to="/settings/profile"
           size="sm"
           radius="md"
-          variant={isDark ? 'filled' : 'light'}
-          color={isDark ? 'gray' : 'gray.3'}
+          variant="filled"
+          className="defaultMublinButton"
           fullWidth
         >
           Editar meu perfil

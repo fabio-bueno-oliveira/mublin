@@ -30,13 +30,13 @@ import {
   IconSelector,
   IconSwitchHorizontal,
 } from '@tabler/icons-react'
-import './AppProjectDashbar.css'
+import './Dashbar.css'
 
 const PROJECT_AVATAR_PATH = 'https://ik.imagekit.io/mublin/projects/'
 const AVATAR_PATH =
   'https://ik.imagekit.io/mublin/tr:h-68,c-maintain_ratio/users/avatars/'
 
-export default function AppProjectDashbar() {
+export default function Dashbar() {
   const { user } = useAuth()
   const isMobile = useMediaQuery('(max-width: 48em)')
 
@@ -265,7 +265,8 @@ export default function AppProjectDashbar() {
                   <Flex align="center" justify="flex-end" h="100%" opacity={0.8}>
                     <Tooltip label="Acessar projeto" withArrow position="top">
                       <ActionIcon
-                        variant="filled"
+                        variant="subtle"
+                        color="mantineColor"
                         radius="xl"
                         aria-label="Ir para a página do projeto"
                         component={Link}

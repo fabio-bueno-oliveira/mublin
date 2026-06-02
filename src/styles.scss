@@ -150,8 +150,32 @@
   }
 }
 
+.iconBadge {
+  width: calc(1.1rem);
+  height: calc(1.1rem);
+  margin-left: 1px;
+
+  &.small {
+    width: calc(1rem);
+    height: calc(1rem);
+    margin-left: 2px;
+    cursor: default;
+  }
+
+  &.big {
+    width: calc(1.4rem);
+    height: calc(1.4rem);
+    margin-left: 2px;
+    cursor: default;
+  }
+
+  &.white {
+    color: #ffffff;
+  }
+}
+
 .iconVerified {
-  // color: #0977ff;
+  color: var(--mantine-color-mublinColor-3);
   width: calc(1.1rem);
   height: calc(1.1rem);
   margin-left: 1px;
@@ -165,7 +189,9 @@
 }
 
 .iconLegend {
-  // color: #daa520;
+  // color: var(--mantine-color-yellow-7);
+  color: var(--mantine-color-violet-4);
+  // color: var(--mantine-color-mublinColor-3);
   width: calc(1.1rem);
   height: calc(1.1rem);
   margin-left: 0px;
@@ -244,4 +270,35 @@
   height: 100%;
   border-radius: 50%;
   background: inherit;
+}
+
+[data-mantine-color-scheme='light'] {
+  .defaultMublinButton {
+    background-color: var(--mantine-color-mublinGray-9);
+    transition: background-color 150ms ease;
+
+    &:hover {
+      background-color: var(--mantine-color-gray-7);
+    }
+  }
+}
+
+[data-mantine-color-scheme='dark'] {
+  .defaultMublinButton {
+    background-color: var(--mantine-color-mublinGray-9);
+    transition: background-color 150ms ease;
+
+    &:hover {
+      background-color: var(--mantine-color-gray-9);
+    }
+  }
+}
+
+.roudedWrapper {
+  border-radius: var(--mantine-radius-sm);
+  border-width: 1px;
+  border-color: rgba(255, 255, 255, 0.3);
+  border-style: solid;
+  overflow: hidden;
+  padding: 0px 1px 1px 1px;
 }

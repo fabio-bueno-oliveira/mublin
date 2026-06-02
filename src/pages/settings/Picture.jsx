@@ -4,25 +4,37 @@ import { useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabaseClient'
 import { upload } from '@imagekit/react'
 import {
-  Stack, Button, Group, Text, Divider,
-  Box, Loader, Avatar, Image, ActionIcon,
+  Stack,
+  Button,
+  Group,
+  Text,
+  Divider,
+  Box,
+  Loader,
+  Avatar,
+  Image,
+  ActionIcon,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import {
-  IconCheck, IconPhoto, IconTrash,
-} from '@tabler/icons-react'
+import { IconCheck, IconPhoto, IconTrash } from '@tabler/icons-react'
 
-const AVATAR_PATH = 'https://ik.imagekit.io/mublin/tr:h-200,c-maintain_ratio/users/avatars/'
-const COVER_PATH  = 'https://ik.imagekit.io/mublin/tr:h-200,c-maintain_ratio/users/avatars/'
+const AVATAR_PATH =
+  'https://ik.imagekit.io/mublin/tr:h-200,c-maintain_ratio/users/avatars/'
+const COVER_PATH =
+  'https://ik.imagekit.io/mublin/tr:h-200,c-maintain_ratio/users/avatars/'
 
 // ── ImageKit helpers ──────────────────────────────────────
 
 async function getIkAuthTokens() {
-  const { data: { session } } = await supabase.auth.getSession()
+  const {
+    data: { session },
+  } = await supabase.auth.getSession()
   const authRes = await fetch(import.meta.env.VITE_IMAGEKIT_AUTH_ENDPOINT, {
     headers: { Authorization: `Bearer ${session?.access_token}` },
   })
-  if (!authRes.ok) throw new Error('Falha na autenticação do ImageKit')
+  if (!authRes.ok) {
+    throw new Error('Falha na autenticação do ImageKit')
+  }
   return { session, ...(await authRes.json()) }
 }
 
@@ -34,7 +46,7 @@ async function uploadToImageKit({ file, fileName, folder, tags, onProgress }) {
     folder,
     tags,
     useUniqueFileName: true,
-    publicKey:   import.meta.env.VITE_IMAGEKIT_PUBLIC_KEY,
+    publicKey: import.meta.env.VITE_IMAGEKIT_PUBLIC_KEY,
     urlEndpoint: import.meta.env.VITE_IMAGEKIT_URL_ENDPOINT,
     token: ikToken,
     expire,
@@ -44,7 +56,9 @@ async function uploadToImageKit({ file, fileName, folder, tags, onProgress }) {
 }
 
 async function deleteFromImageKit(fileId) {
-  const { data: { session } } = await supabase.auth.getSession()
+  const {
+    data: { session },
+  } = await supabase.auth.getSession()
   const response = await fetch(
     `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/imagekit-manage`,
     {
@@ -54,9 +68,11 @@ async function deleteFromImageKit(fileId) {
         Authorization: `Bearer ${session?.access_token}`,
       },
       body: JSON.stringify({ fileId }),
-    }
+    },
   )
-  if (!response.ok) throw new Error('Erro ao deletar no servidor')
+  if (!response.ok) {
+    throw new Error('Erro ao deletar no servidor')
+  }
 }
 
 // ── Componente principal ──────────────────────────────────
@@ -66,27 +82,29 @@ export default function Picture() {
   const queryClient = useQueryClient()
 
   // ── Avatar ────────────────────────────────────────────
-  const [avatarPreview, setAvatarPreview]   = useState(null) // URL local para preview
-  const [avatarFile, setAvatarFile]         = useState(null)
-  const [avatarFileId, setAvatarFileId]     = useState('')   // fileId do IK (upload pendente)
+  const [avatarPreview, setAvatarPreview] = useState(null) // URL local para preview
+  const [avatarFile, setAvatarFile] = useState(null)
+  const [avatarFileId, setAvatarFileId] = useState('') // fileId do IK (upload pendente)
   const [avatarProgress, setAvatarProgress] = useState(0)
   const [uploadingAvatar, setUploadingAvatar] = useState(false)
-  const [savingAvatar, setSavingAvatar]     = useState(false)
+  const [savingAvatar, setSavingAvatar] = useState(false)
   const avatarInputRef = useRef(null)
 
   // ── Cover ─────────────────────────────────────────────
-  const [coverPreview, setCoverPreview]   = useState(null)
-  const [coverFile, setCoverFile]         = useState(null)
-  const [coverFileId, setCoverFileId]     = useState('')
+  const [coverPreview, setCoverPreview] = useState(null)
+  const [coverFile, setCoverFile] = useState(null)
+  const [coverFileId, setCoverFileId] = useState('')
   const [coverProgress, setCoverProgress] = useState(0)
   const [uploadingCover, setUploadingCover] = useState(false)
-  const [savingCover, setSavingCover]     = useState(false)
+  const [savingCover, setSavingCover] = useState(false)
   const coverInputRef = useRef(null)
 
   // ── Handlers: Avatar ──────────────────────────────────
 
   async function handleAvatarSelect(file) {
-    if (!file) return
+    if (!file) {
+      return
+    }
     // Preview imediato
     setAvatarPreview(URL.createObjectURL(file))
     setAvatarFile(file)
@@ -105,7 +123,11 @@ export default function Picture() {
       setAvatarFile({ ...file, _ikFileName: fileName })
       setAvatarProgress(0)
     } catch {
-      notifications.show({ color: 'red', position: 'top-center', message: 'Erro ao enviar a foto. Tente novamente.' })
+      notifications.show({
+        color: 'red',
+        position: 'top-center',
+        message: 'Erro ao enviar a foto. Tente novamente.',
+      })
       handleCancelAvatar()
     } finally {
       setUploadingAvatar(false)
@@ -115,32 +137,48 @@ export default function Picture() {
   async function handleCancelAvatar() {
     // Remove do IK se já foi enviado
     if (avatarFileId) {
-      try { await deleteFromImageKit(avatarFileId) } catch {}
+      try {
+        await deleteFromImageKit(avatarFileId)
+      } catch {}
     }
     setAvatarPreview(null)
     setAvatarFile(null)
     setAvatarFileId('')
     setAvatarProgress(0)
-    if (avatarInputRef.current) avatarInputRef.current.value = ''
+    if (avatarInputRef.current) {
+      avatarInputRef.current.value = ''
+    }
   }
 
   async function handleSaveAvatar() {
-    if (!avatarFile?._ikFileName) return
+    if (!avatarFile?._ikFileName) {
+      return
+    }
     setSavingAvatar(true)
     try {
       const { error } = await supabase
         .from('profiles')
         .update({ avatar: avatarFile._ikFileName })
         .eq('id', user.id)
-      if (error) throw error
+      if (error) {
+        throw error
+      }
       await refreshProfile()
       queryClient.invalidateQueries({ queryKey: ['profile', user.id] })
-      notifications.show({ color: 'green', position: 'top-center', message: 'Foto de perfil atualizada!' })
+      notifications.show({
+        color: 'green',
+        position: 'top-center',
+        message: 'Foto de perfil atualizada!',
+      })
       setAvatarPreview(null)
       setAvatarFile(null)
       setAvatarFileId('')
     } catch {
-      notifications.show({ color: 'red', position: 'top-center', message: 'Erro ao salvar. Tente novamente.' })
+      notifications.show({
+        color: 'red',
+        position: 'top-center',
+        message: 'Erro ao salvar. Tente novamente.',
+      })
     } finally {
       setSavingAvatar(false)
     }
@@ -149,7 +187,9 @@ export default function Picture() {
   // ── Handlers: Cover ───────────────────────────────────
 
   async function handleCoverSelect(file) {
-    if (!file) return
+    if (!file) {
+      return
+    }
     setCoverPreview(URL.createObjectURL(file))
     setCoverFile(file)
     setUploadingCover(true)
@@ -167,7 +207,11 @@ export default function Picture() {
       setCoverProgress(0)
       await refreshProfile()
     } catch {
-      notifications.show({ color: 'red', position: 'top-center', message: 'Erro ao enviar a capa. Tente novamente.' })
+      notifications.show({
+        color: 'red',
+        position: 'top-center',
+        message: 'Erro ao enviar a capa. Tente novamente.',
+      })
       handleCancelCover()
     } finally {
       setUploadingCover(false)
@@ -176,31 +220,47 @@ export default function Picture() {
 
   async function handleCancelCover() {
     if (coverFileId) {
-      try { await deleteFromImageKit(coverFileId) } catch {}
+      try {
+        await deleteFromImageKit(coverFileId)
+      } catch {}
     }
     setCoverPreview(null)
     setCoverFile(null)
     setCoverFileId('')
     setCoverProgress(0)
-    if (coverInputRef.current) coverInputRef.current.value = ''
+    if (coverInputRef.current) {
+      coverInputRef.current.value = ''
+    }
   }
 
   async function handleSaveCover() {
-    if (!coverFile?._ikFileName) return
+    if (!coverFile?._ikFileName) {
+      return
+    }
     setSavingCover(true)
     try {
       const { error } = await supabase
         .from('profiles')
         .update({ cover_image: coverFile._ikFileName })
         .eq('id', user.id)
-      if (error) throw error
+      if (error) {
+        throw error
+      }
       queryClient.invalidateQueries({ queryKey: ['profile', user.id] })
-      notifications.show({ color: 'green', position: 'top-center', message: 'Foto de capa atualizada!' })
+      notifications.show({
+        color: 'green',
+        position: 'top-center',
+        message: 'Foto de capa atualizada!',
+      })
       setCoverPreview(null)
       setCoverFile(null)
       setCoverFileId('')
     } catch {
-      notifications.show({ color: 'red', position: 'top-center', message: 'Erro ao salvar. Tente novamente.' })
+      notifications.show({
+        color: 'red',
+        position: 'top-center',
+        message: 'Erro ao salvar. Tente novamente.',
+      })
     } finally {
       setSavingCover(false)
     }
@@ -210,7 +270,6 @@ export default function Picture() {
 
   return (
     <Stack gap="lg">
-
       {/* ── Foto de Perfil ─────────────────────────── */}
       <Stack gap="md">
         <Text fw={600} size="sm" c="dimmed" tt="uppercase" lts="0.05em">
@@ -224,15 +283,18 @@ export default function Picture() {
               size="lg"
               radius="xl"
               src={
-                avatarPreview
-                  ?? (profile?.avatar ? AVATAR_PATH + profile.avatar : undefined)
+                avatarPreview ??
+                (profile?.avatar ? AVATAR_PATH + profile.avatar : undefined)
               }
             />
             {uploadingAvatar && (
               <Box
                 style={{
-                  position: 'absolute', inset: 0,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  position: 'absolute',
+                  inset: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
                   background: 'rgba(0,0,0,0.45)',
                   borderRadius: 'var(--mantine-radius-xl)',
                 }}
@@ -244,7 +306,9 @@ export default function Picture() {
 
           {/* Ações */}
           <Stack gap="xs">
-            <Text size="xs" c="dimmed">JPG ou PNG. Recomendado: 400×400px.</Text>
+            <Text size="xs" c="dimmed">
+              JPG ou PNG. Recomendado: 400×400px.
+            </Text>
             {!avatarPreview ? (
               <Button
                 size="xs"
@@ -261,7 +325,9 @@ export default function Picture() {
                 <Button
                   size="xs"
                   color="indigo"
-                  leftSection={savingAvatar ? <Loader size={13} /> : <IconCheck size={14} />}
+                  leftSection={
+                    savingAvatar ? <Loader size={13} /> : <IconCheck size={14} />
+                  }
                   disabled={uploadingAvatar || savingAvatar}
                   onClick={handleSaveAvatar}
                 >
@@ -279,7 +345,9 @@ export default function Picture() {
               </Group>
             )}
             {avatarProgress > 0 && avatarProgress < 100 && (
-              <Text size="xs" c="dimmed">Enviando... {avatarProgress}%</Text>
+              <Text size="xs" c="dimmed">
+                Enviando... {avatarProgress}%
+              </Text>
             )}
           </Stack>
         </Group>
@@ -290,7 +358,11 @@ export default function Picture() {
           type="file"
           accept="image/png,image/jpeg,image/webp"
           style={{ display: 'none' }}
-          onChange={(e) => { if (e.target.files?.[0]) handleAvatarSelect(e.target.files[0]) }}
+          onChange={(e) => {
+            if (e.target.files?.[0]) {
+              handleAvatarSelect(e.target.files[0])
+            }
+          }}
         />
       </Stack>
 
@@ -325,8 +397,11 @@ export default function Picture() {
             {uploadingCover && (
               <Box
                 style={{
-                  position: 'absolute', inset: 0,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  position: 'absolute',
+                  inset: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
                   background: 'rgba(0,0,0,0.45)',
                 }}
               >
@@ -335,7 +410,9 @@ export default function Picture() {
             )}
           </Box>
 
-          <Text size="xs" c="dimmed">JPG ou PNG. Recomendado: 1200×300px.</Text>
+          <Text size="xs" c="dimmed">
+            JPG ou PNG. Recomendado: 870×90px
+          </Text>
 
           {!coverPreview ? (
             <Group gap="xs">
@@ -374,7 +451,9 @@ export default function Picture() {
           )}
 
           {coverProgress > 0 && coverProgress < 100 && (
-            <Text size="xs" c="dimmed">Enviando... {coverProgress}%</Text>
+            <Text size="xs" c="dimmed">
+              Enviando... {coverProgress}%
+            </Text>
           )}
         </Stack>
 
@@ -384,10 +463,13 @@ export default function Picture() {
           type="file"
           accept="image/png,image/jpeg,image/webp"
           style={{ display: 'none' }}
-          onChange={(e) => { if (e.target.files?.[0]) handleCoverSelect(e.target.files[0]) }}
+          onChange={(e) => {
+            if (e.target.files?.[0]) {
+              handleCoverSelect(e.target.files[0])
+            }
+          }}
         />
       </Stack>
-
     </Stack>
   )
 }
