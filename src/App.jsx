@@ -25,9 +25,9 @@ import '@mantine/schedule/styles.css'
 import './styles.scss'
 
 const theme = createTheme({
-  // autoContrast: true,
+  autoContrast: true,
   primaryColor: 'mublinColor',
-  // primaryShade: 8,
+  primaryShade: 6,
   colors: {
     mublinColor: [
       '#ecefff',

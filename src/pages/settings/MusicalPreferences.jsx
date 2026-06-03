@@ -2,7 +2,8 @@ import { useState, useCallback } from 'react'
 import { useAuth } from '../../hooks/useAuth'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabaseClient'
-import { fetchGenreCategories } from '../../queries/genres'
+import { fetchAllGenres, fetchGenreCategories } from '../../queries/genres'
+import { fetchAllTravelPreferences } from '../../queries/misc'
 import {
   Pill,
   Stack,
@@ -20,6 +21,7 @@ import {
   Box,
   NumberInput,
   Loader,
+  Radio,
 } from '@mantine/core'
 import { useDisclosure, useDebouncedCallback } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
@@ -37,18 +39,6 @@ const ARTISTS_PATH =
   'https://ik.imagekit.io/mublin/artists/tr:h-96,w-96,c-maintain_ratio/'
 
 // ── Queries locais ────────────────────────────────────────
-
-async function fetchAllGenres() {
-  const { data, error } = await supabase
-    .from('genres')
-    .select('id, name_ptbr, id_category')
-    .eq('active', true)
-    .order('name_ptbr')
-  if (error) {
-    throw new Error(error.message)
-  }
-  return data
-}
 
 async function fetchUserGenres(profileId) {
   const { data, error } = await supabase
@@ -122,6 +112,25 @@ async function searchArtists(keyword) {
   return data
 }
 
+async function fetchProfileTravelPreference(profileId) {
+  const { data, error } = await supabase
+    .from('profile_travel_preference')
+    .select(
+      `
+      id,
+      travel_preferences (
+        id, label
+      )
+    `,
+    )
+    .eq('id_profile', profileId)
+    .maybeSingle()
+  if (error) {
+    throw new Error(error.message)
+  }
+  return data
+}
+
 // ── Componente principal ──────────────────────────────────
 
 export default function MusicalPreferences() {
@@ -135,6 +144,9 @@ export default function MusicalPreferences() {
   // ── Estados: atividades ───────────────────────────────
   const [isAddingRole, setIsAddingRole] = useState(false)
   const [isDeletingRole, setIsDeletingRole] = useState(false)
+
+  // ── Estados: preferência de viagem ───────────────────
+  const [isSavingTravelPreference, setIsSavingTravelPreference] = useState(false)
 
   // ── Estados: inspirações ──────────────────────────────
   const [artistSearch, setArtistSearch] = useState('')
@@ -191,6 +203,19 @@ export default function MusicalPreferences() {
   const { data: userInspirations = [], isLoading: loadingInspirations } = useQuery({
     queryKey: ['user-inspirations', user?.id],
     queryFn: () => fetchUserInspirations(user.id),
+    enabled: !!user?.id,
+    staleTime: 1000 * 60 * 5,
+  })
+
+  const { data: allTravelPreferences = [] } = useQuery({
+    queryKey: ['all-travel-preferences'],
+    queryFn: fetchAllTravelPreferences,
+    staleTime: Infinity,
+  })
+
+  const { data: userTravelPreference, isLoading: loadingTravelPreference } = useQuery({
+    queryKey: ['user-travel-preference', user?.id],
+    queryFn: () => fetchProfileTravelPreference(user.id),
     enabled: !!user?.id,
     staleTime: 1000 * 60 * 5,
   })
@@ -481,6 +506,60 @@ export default function MusicalPreferences() {
     }
   }
 
+  // ── Handler: preferência de viagem ───────────────────
+
+  async function handleTravelPreferenceChange(value) {
+    setIsSavingTravelPreference(true)
+    const preferenceId = Number(value)
+
+    if (userTravelPreference?.id) {
+      // Já existe registro: atualiza
+      const { error } = await supabase
+        .from('profile_travel_preference')
+        .update({ id_travel_preference: preferenceId })
+        .eq('id', userTravelPreference.id)
+      if (error) {
+        notifications.show({
+          color: 'red',
+          position: 'top-center',
+          message: 'Erro ao salvar preferência de viagem. Tente novamente.',
+        })
+      } else {
+        await queryClient.refetchQueries({
+          queryKey: ['user-travel-preference', user.id],
+        })
+        notifications.show({
+          color: 'green',
+          position: 'top-center',
+          message: 'Preferência de viagem atualizada!',
+        })
+      }
+    } else {
+      // Não existe registro: insere
+      const { error } = await supabase.from('profile_travel_preference').insert({
+        id_profile: user.id,
+        id_travel_preference: preferenceId,
+      })
+      if (error) {
+        notifications.show({
+          color: 'red',
+          position: 'top-center',
+          message: 'Erro ao salvar preferência de viagem. Tente novamente.',
+        })
+      } else {
+        await queryClient.refetchQueries({
+          queryKey: ['user-travel-preference', user.id],
+        })
+        notifications.show({
+          color: 'green',
+          position: 'top-center',
+          message: 'Preferência de viagem salva!',
+        })
+      }
+    }
+    setIsSavingTravelPreference(false)
+  }
+
   // ── Listas filtradas ──────────────────────────────────
 
   const rolesMusicians = allRoles.filter((r) => r.instrumentalist)
@@ -769,6 +848,49 @@ export default function MusicalPreferences() {
               Adicionar inspiração
             </Button>
           </div>
+        </Stack>
+
+        <Divider />
+
+        {/* ── Preferência de viagens ───────────────────── */}
+        <Stack gap="md">
+          <div>
+            <Text fw={600} size="sm" tt="uppercase" lts="0.05em">
+              Disponibilidade para viagens
+            </Text>
+            <Text size="xs" c="dimmed" mt={2}>
+              Informe sua preferência em relação a deslocamentos para trabalhos
+            </Text>
+          </div>
+
+          {loadingTravelPreference ? (
+            <Stack gap="xs">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <Skeleton key={i} width={220} height={18} radius="sm" />
+              ))}
+            </Stack>
+          ) : (
+            <Radio.Group
+              value={
+                userTravelPreference?.travel_preferences?.id
+                  ? String(userTravelPreference.travel_preferences.id)
+                  : ''
+              }
+              onChange={handleTravelPreferenceChange}
+            >
+              <Stack gap="xs">
+                {allTravelPreferences.map((pref) => (
+                  <Radio
+                    key={pref.id}
+                    value={String(pref.id)}
+                    label={pref.label}
+                    disabled={isSavingTravelPreference}
+                    size="sm"
+                  />
+                ))}
+              </Stack>
+            </Radio.Group>
+          )}
         </Stack>
       </Stack>
 

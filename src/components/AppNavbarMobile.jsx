@@ -57,17 +57,12 @@ export default function AppNavbarMobile({
               onClick={() => navigate(-1) || navigate('/home')}
             />
 
-            <Text size="18px" lh={1} fw={600} truncate="end" flex={1}>
+            <Text size="18px" lh={1} fw={600} truncate="end">
               {pageName}
             </Text>
 
             {featured && profile && (
-              <Badge
-                variant={isDark ? 'outline' : 'light'}
-                color="green"
-                mt={3}
-                style={{ flexShrink: 0 }}
-              >
+              <Badge variant="light" color="teal" px={6} mt={2} style={{ flexShrink: 0 }}>
                 Disponível para gigs!
               </Badge>
             )}

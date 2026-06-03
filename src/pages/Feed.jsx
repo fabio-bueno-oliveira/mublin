@@ -486,7 +486,7 @@ export default function Feed({ from = '' }) {
                         {/* Corpo da postagem */}
                         {post.body && (
                           <Text
-                            size="0.92em"
+                            size="0.90em"
                             c="var(--mantine-color-text)"
                             lh={1.4}
                             fw={420}

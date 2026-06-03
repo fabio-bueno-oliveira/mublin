@@ -302,3 +302,22 @@
   overflow: hidden;
   padding: 0px 1px 1px 1px;
 }
+
+.avatar-open-to-work {
+  padding: 5px;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 200deg,
+    #bef264,
+    #4ade80 40%,
+    #16a34a 70%,
+    #4ade80 85%,
+    #bef264
+  );
+}
+
+.avatar-open-to-work > * {
+  display: block;
+  border-radius: 50%;
+  outline: 3px solid var(--mantine-color-body);
+}

@@ -15,6 +15,7 @@ import {
   fetchProfileGearSetups,
   fetchProfileWorkAvailability,
   fetchProfileWorkFocuses,
+  fetchProfileTravelPreference,
   fetchProfileInspirations,
 } from '../queries/profiles'
 import { useAuth } from '../hooks/useAuth'
@@ -56,6 +57,7 @@ import LoadingSkeleton from '../components/profile/LoadingSkeleton'
 import LinkedItem from '../components/feed/LinkedItem'
 import VideoPlayerYoutube from '../components/feed/VideoPlayerYoutube'
 import SectionPanel from '../components/SectionPanel'
+import AvatarOpenToWork from '../components/AvatarOpenToWork'
 import {
   IconMoodSad,
   IconRosetteDiscountCheckFilled,
@@ -70,6 +72,7 @@ import {
   IconPencil,
   IconTrophy,
   IconDotsVerticalFilled,
+  IconArrowsMaximize,
 } from '@tabler/icons-react'
 import ProfileHeaderMobile from '../components/profile/ProfileHeaderMobile'
 import AppNavbarMobile from '../components/AppNavbarMobile'
@@ -271,7 +274,14 @@ export default function Profile() {
   const { data: workFocus = [], isLoading: loadingWorkFocus } = useQuery({
     queryKey: ['user-work-focus', profile?.id],
     queryFn: () => fetchProfileWorkFocuses(profile.id),
-    enabled: !!profile?.id && gear.length > 0,
+    enabled: !!profile?.id,
+    staleTime: 1000 * 60 * 5,
+  })
+
+  const { data: travelPreference = [], isLoading: loadingTravelPreference } = useQuery({
+    queryKey: ['user-travel-preference', profile?.id],
+    queryFn: () => fetchProfileTravelPreference(profile.id),
+    enabled: !!profile?.id,
     staleTime: 1000 * 60 * 5,
   })
 
@@ -297,10 +307,18 @@ export default function Profile() {
       ].filter(Boolean),
     })) || []
 
-  const roles = profile?.profile_roles.sort((a, b) => b.main_activity - a.main_activity)
+  const rolesOrdered = profile?.profile_roles
+    ?.slice()
+    ?.sort(
+      (a, b) =>
+        b.main_activity - a.main_activity ||
+        Number(b.instrumentalist) - Number(a.instrumentalist),
+    )
   const genres = profile?.profile_genres.sort((a, b) => b.main_genre - a.main_genre)
   const city = profile?.cities?.name
-  const regionUf = profile?.regions?.uf
+  const region = profile?.regions?.name
+  const country =
+    profile?.cities?.countries?.name_ptbr ?? profile?.cities?.countries?.name
 
   if (authLoading) {
     return (
@@ -444,7 +462,7 @@ export default function Profile() {
           <AppNavbarMobile
             pageName={profile.username}
             profile={profile}
-            featured={profile.is_open_to_work}
+            // featured={profile.is_open_to_work}
           />
         </Affix>
       )}
@@ -504,7 +522,8 @@ export default function Profile() {
           <ProfileHeaderMobile
             profile={profile}
             city={city}
-            regionUf={regionUf}
+            region={region}
+            country={country}
             user={user}
           />
         )}
@@ -601,7 +620,7 @@ export default function Profile() {
                     </ActionIcon>
                   )}
                 </Flex>
-                <Group gap="md" my={3}>
+                <Group gap="md" my={1}>
                   <Anchor underline="never" onClick={openFollowers}>
                     <Text size="sm" fw={500}>
                       {followersList.length} seguidores
@@ -618,12 +637,14 @@ export default function Profile() {
                     {profile.title}
                   </Text>
                 )}
-                <Flex align="center" gap={4} opacity={0.7}>
+                <Flex align="center" gap={4} opacity={0.8}>
                   {/* <Text span size="sm">
                     @{profile.username}
                   </Text> */}
-                  {(city || regionUf) && (
-                    <Text size="xs">{[city, regionUf].filter(Boolean).join('/')}</Text>
+                  {(city || region) && (
+                    <Text size="xs" fw={300}>
+                      {[city, region, country].filter(Boolean).join(', ')}
+                    </Text>
                   )}
                   <Text size="xs">·</Text>
                   <Anchor size="xs" onClick={openContactInfo}>
@@ -689,11 +710,22 @@ export default function Profile() {
               <SectionPanel id="about">
                 {profile.bio && (
                   <>
-                    <SectionTitle text="Sobre" mb={12} />
+                    <Group mb={12} justify="space-between">
+                      <SectionTitle text="Sobre" />
+                      {profile.is_open_to_work && profile && (
+                        <Badge variant="light" color="teal" fz="10px" fw={400} px={5}>
+                          Disponível para trabalhos e gigs
+                        </Badge>
+                      )}
+                    </Group>
                     <Text
                       fz="sm"
                       lh={1.4}
-                      style={{ whiteSpace: 'pre-line' }}
+                      style={
+                        expandedBio
+                          ? { whiteSpace: 'pre-line' }
+                          : { whiteSpace: 'pre-line', cursor: 'default' }
+                      }
                       lineClamp={expandedBio ? undefined : 2}
                       onClick={() => setExpandedBio(!expandedBio)}
                     >
@@ -702,48 +734,39 @@ export default function Profile() {
                   </>
                 )}
 
-                {/* <Title order={3} fz="sm" fw={600} mt={profile.bio ? 'sm' : 0} mb={4}>
+                <Title
+                  order={3}
+                  fz="xs"
+                  fw={300}
+                  mt={profile.bio ? 'lg' : 0}
+                  mb="xs"
+                  opacity={0.8}
+                >
                   Principais atividades
-                </Title> */}
-                {roles &&
-                  roles.length > 0 &&
-                  (() => {
-                    const instrumentalists = roles.filter(
-                      ({ roles: role }) => role?.instrumentalist,
-                    )
-                    const others = roles.filter(
-                      ({ roles: role }) => !role?.instrumentalist,
-                    )
-
-                    const renderGroup = (group) =>
-                      group.map(({ id, roles: role }) => (
-                        <Badge
-                          radius="xl"
-                          size="md"
-                          variant="light"
-                          color="var(--mantine-color-text)"
-                          key={id}
-                        >
-                          {role?.description_ptbr}
-                        </Badge>
-                      ))
-
-                    return (
-                      <Group gap={6} mt={profile.bio ? 'lg' : 0}>
-                        {instrumentalists.length > 0 && renderGroup(instrumentalists)}
-                        {others.length > 0 && renderGroup(others)}
-                      </Group>
-                    )
-                  })()}
+                </Title>
+                {rolesOrdered && rolesOrdered.length > 0 && (
+                  <Group gap={4}>
+                    {rolesOrdered.map((role) => (
+                      <Badge
+                        radius="xl"
+                        size="md"
+                        variant="light"
+                        color="var(--mantine-color-text)"
+                        key={role.id}
+                      >
+                        {role?.roles?.description_ptbr}
+                      </Badge>
+                    ))}
+                  </Group>
+                )}
 
                 {genres && genres.length > 0 && (
                   <>
-                    <Divider my="xs" />
-                    <Title order={3} fz="sm" fw={400} mb={4} opacity={0.8}>
+                    <Title order={3} fz="xs" fw={300} mt="xs" mb={4} opacity={0.8}>
                       Gêneros musicais de atuação
                     </Title>
                     {genres && genres.length > 0 ? (
-                      <Group gap={6} mt="xs">
+                      <Group gap={4} mt="xs">
                         {genres.map(({ id, genres: genre }) => (
                           <Badge
                             radius="xl"
@@ -1018,46 +1041,13 @@ export default function Profile() {
                 <>
                   {gear.length > 0 ? (
                     <>
-                      <Group justify="space-between">
+                      <Group justify="flex-start" align="center" gap="xs" mt={10}>
                         <SectionTitle
                           id="gear"
                           text={`Equipamento (${gear.length})`}
-                          mt={10}
-                          mb={4}
-                          mx={{ base: 'sm', md: 0 }}
+                          ml={{ base: 'sm', md: 0 }}
                         />
-                        <Anchor
-                          c="dimmed"
-                          component={Link}
-                          lh={1}
-                          to={`/${username}/gear`}
-                          fz="sm"
-                          fw={500}
-                        >
-                          Ver tudo
-                        </Anchor>
-                      </Group>
-                      <Group gap={10} mb={4} mx={{ base: 'sm', md: 0 }}>
-                        {gearCategories.length > 1 && (
-                          <Select
-                            size="sm"
-                            variant="filled"
-                            w={145}
-                            value={gearCategorySelected || ''}
-                            clearable
-                            onChange={(value) => setGearCategorySelected(value || '')}
-                            data={[
-                              { value: '', label: 'Exibir tudo' },
-                              ...gearCategories.map((cat) => ({
-                                value: String(cat.category_id),
-                                label: truncateString(
-                                  `${cat.category} (${cat.total})`,
-                                  28,
-                                ),
-                              })),
-                            ]}
-                          />
-                        )}
+
                         {user?.id === profile.id && (
                           <Menu shadow="md" width={200}>
                             <Menu.Target>
@@ -1089,6 +1079,38 @@ export default function Profile() {
                               </Menu.Item>
                             </Menu.Dropdown>
                           </Menu>
+                        )}
+                        <ActionIcon
+                          component={Link}
+                          to={`/${username}/gear`}
+                          size="lg"
+                          radius="xl"
+                          title="Maximizar equipamentos"
+                          variant="subtle"
+                          color="gray"
+                        >
+                          <IconArrowsMaximize size={18} />
+                        </ActionIcon>
+                      </Group>
+                      <Group gap={10} mb={4} mx={{ base: 'sm', md: 0 }}>
+                        {gearCategories.length > 1 && (
+                          <Select
+                            size="md"
+                            variant="unstyled"
+                            w={190}
+                            value={gearCategorySelected || ''}
+                            onChange={(value) => setGearCategorySelected(value || '')}
+                            data={[
+                              { value: '', label: 'Todos' },
+                              ...gearCategories.map((cat) => ({
+                                value: String(cat.category_id),
+                                label: truncateString(
+                                  `${cat.category} (${cat.total})`,
+                                  28,
+                                ),
+                              })),
+                            ]}
+                          />
                         )}
                       </Group>
                       <Box h="100%">
@@ -1126,6 +1148,7 @@ export default function Profile() {
                               <Text
                                 size="xs"
                                 fw={500}
+                                ta="center"
                                 lineClamp={2}
                                 style={{ whiteSpace: 'pre-wrap' }}
                               >
@@ -1134,38 +1157,39 @@ export default function Profile() {
                             </Flex>
                           ))}
                         </Scroller>
-                        <Divider my="md" />
-                        <Text fw={600} size="15px">
-                          Setups de {profile.full_name}{' '}
-                          {!!gearSetups.length && `(${gearSetups.length})`}
-                        </Text>
-                        {gearSetups.length > 0 && (
-                          <Flex gap={16} mt={18}>
-                            {gearSetups.map((setup) => (
-                              <Box key={setup.id}>
-                                <Flex w={60} direction="column" justify="center">
-                                  <Link to={`/${username}/setup/${setup.id}`}>
-                                    <Image
-                                      src={`https://ik.imagekit.io/mublin/users/gear-setups/tr:w-120,h-120/${setup.image}`}
-                                      h={60}
-                                      mah={60}
-                                      w="auto"
-                                      fit="contain"
-                                      radius="md"
-                                      mb={4}
-                                    />
-                                  </Link>
-                                  <Text ta="center" fw={550} size="xs" truncate="end">
-                                    {setup.name}
-                                  </Text>
-                                  <Text ta="center" size="xs">
-                                    {setup.totalItems ?? 0} itens
-                                  </Text>
-                                </Flex>
-                              </Box>
-                            ))}
-                          </Flex>
-                        )}
+                        <Box ml={{ base: 'sm', md: 0 }}>
+                          <Text fw={600} size="15px" mt="md">
+                            Setups de {profile.full_name}{' '}
+                            {!!gearSetups.length && `(${gearSetups.length})`}
+                          </Text>
+                          {gearSetups.length > 0 && (
+                            <Flex gap={16} mt={18}>
+                              {gearSetups.map((setup) => (
+                                <Box key={setup.id}>
+                                  <Flex w={60} direction="column" justify="center">
+                                    <Link to={`/${username}/setup/${setup.id}`}>
+                                      <Image
+                                        src={`https://ik.imagekit.io/mublin/users/gear-setups/tr:w-120,h-120/${setup.image}`}
+                                        h={60}
+                                        mah={60}
+                                        w="auto"
+                                        fit="contain"
+                                        radius="md"
+                                        mb={4}
+                                      />
+                                    </Link>
+                                    <Text ta="center" fw={550} size="xs" truncate="end">
+                                      {setup.name}
+                                    </Text>
+                                    <Text ta="center" size="xs">
+                                      {setup.totalItems ?? 0} itens
+                                    </Text>
+                                  </Flex>
+                                </Box>
+                              ))}
+                            </Flex>
+                          )}
+                        </Box>
                       </Box>
                     </>
                   ) : (
@@ -1182,11 +1206,6 @@ export default function Profile() {
           </Grid.Col>
           <Grid.Col span={{ base: 12, md: 4 }}>
             <Stack gap={10}>
-              {profile.is_open_to_work && !isMobile && (
-                <Alert variant="light" color="green" px="sm" py={6}>
-                  <Text size="sm">Disponível para trabalhos e gigs</Text>
-                </Alert>
-              )}
               {workAvailability.length > 0 && workFocus.length > 0 && (
                 <SectionPanel id="availability">
                   <SectionTitle text="Disponibilidade" mb="sm" />
@@ -1231,6 +1250,24 @@ export default function Profile() {
                     <Text size="sm" c="dimmed">
                       Não informado
                     </Text>
+                  )}
+                  <Title order={3} fz="xs" c="dimmed" fw={400} mt="sm">
+                    Preferência para viagens:
+                  </Title>
+                  {loadingTravelPreference ? (
+                    <Text size="sm" c="dimmed">
+                      Carregando...
+                    </Text>
+                  ) : (
+                    <>
+                      {travelPreference?.id ? (
+                        <Text span size="sm" lh={1.2} fw={500}>
+                          {travelPreference?.travel_preferences?.label}
+                        </Text>
+                      ) : (
+                        <Text size="sm">Não definido</Text>
+                      )}
+                    </>
                   )}
                 </SectionPanel>
               )}
@@ -1446,18 +1483,6 @@ export default function Profile() {
                                 </Text>
                               ))}
                             </Text>
-                          )}
-                          {p.is_open_to_work && profile && (
-                            <Badge
-                              variant="light"
-                              color="green"
-                              mt={2}
-                              style={{ flexShrink: 0 }}
-                              size="xs"
-                              title="Disponível para gigs"
-                            >
-                              Disponível para gigs
-                            </Badge>
                           )}
                         </Stack>
                       </Flex>

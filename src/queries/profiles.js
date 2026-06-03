@@ -27,7 +27,7 @@ export async function fetchBasicProfile(profileUsername) {
       phone_number_is_whatsapp,
       available_from,
       cities (
-        name
+        name, countries ( name, name_ptbr )
       ),
       regions (
         name, uf
@@ -287,6 +287,25 @@ export async function fetchProfileWorkFocuses(profileId) {
     .eq('id_profile', profileId)
     .order('id', { ascending: true })
   if (error) {
+    throw new Error(error.message)
+  }
+  return data
+}
+
+export async function fetchProfileTravelPreference(profileId) {
+  const { data, error } = await supabase
+    .from('profile_travel_preference')
+    .select(
+      `
+      id,
+      travel_preferences (
+        id, label
+      )
+    `,
+    )
+    .eq('id_profile', profileId)
+    .single()
+  if (error && error.code !== 'PGRST116') {
     throw new Error(error.message)
   }
   return data

@@ -1,6 +1,5 @@
 import { Link } from 'react-router-dom'
 import {
-  useMantineColorScheme,
   Flex,
   Box,
   Title,
@@ -23,10 +22,7 @@ import { truncateString } from '../../utils/formatter'
 const AVATAR_PATH =
   'https://ik.imagekit.io/mublin/tr:h-200,c-maintain_ratio/users/avatars/'
 
-export default function ProfileHeaderMobile({ profile, city, regionUf, user }) {
-  const { colorScheme } = useMantineColorScheme()
-  const isDark = colorScheme === 'dark'
-
+export default function ProfileHeaderMobile({ profile, city, region, country, user }) {
   return (
     <Box px="sm" py={0}>
       <Flex
@@ -71,15 +67,19 @@ export default function ProfileHeaderMobile({ profile, city, regionUf, user }) {
             )}
             {/* {profile?.plan === 'Pro' && <ProPlanBadge />} */}
           </Flex>
-          <Flex align="center" gap={4} opacity={0.6}>
-            <Text size="md">@{profile.username}</Text>
-            {(city || regionUf) && (
-              <Text size="sm">· {[city, regionUf].filter(Boolean).join('/')}</Text>
-            )}
-          </Flex>
           <Text fz="sm" lh={1.3} mt={2} lineClamp={2}>
             {profile.title}
           </Text>
+          {(city || region) && (
+            <Text size="sm" fw={300} opacity={0.8}>
+              {[city, region, country].filter(Boolean).join(', ')}
+            </Text>
+          )}
+          {/* {profile.is_open_to_work && (
+            <Badge variant="light" color="teal" fz="10px" fw={400} mt={2}>
+              Disponível para trabalhos e gigs
+            </Badge>
+          )} */}
           {isProfileLive(profile) && (
             <Group gap={6} mt={3} align="center" wrap="nowrap">
               <Box component="span" className="live-dot" style={{ flexShrink: 0 }} />

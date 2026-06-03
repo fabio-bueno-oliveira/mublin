@@ -303,8 +303,8 @@ export default function Home() {
                   <Center mt="md">
                     <Button
                       size="sm"
-                      variant="light"
-                      color="grape"
+                      variant="outline"
+                      color="mublinColor"
                       radius="xl"
                       onClick={() => navigate('/search')}
                     >
@@ -475,33 +475,27 @@ export default function Home() {
                 </Group>
               </Scroller>
             ) : (
-              <Paper
-                withBorder
-                radius="md"
+              <Flex
                 mb="md"
-                h={100}
-                display="flex"
-                style={{
-                  flexDirection: 'column',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                }}
+                h={80}
+                gap="xs"
+                direction="column"
+                justify="center"
+                align="center"
               >
-                <Stack align="center" gap="xs">
-                  <Text size="sm" c="dimmed" ta="center" fw={500}>
-                    Nenhuma gig agendada no momento :(
-                  </Text>
-                  <Button
-                    size="sm"
-                    variant="light"
-                    color="grape"
-                    radius="xl"
-                    onClick={() => navigate('/search')}
-                  >
-                    Encontrar gigs
-                  </Button>
-                </Stack>
-              </Paper>
+                <Text size="sm" c="dimmed" ta="center" fw={500}>
+                  Nenhuma gig agendada no momento :(
+                </Text>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  color="mublinColor"
+                  radius="xl"
+                  onClick={() => navigate('/search')}
+                >
+                  Encontrar gigs
+                </Button>
+              </Flex>
             )}
 
             {/* <Title order={2} fz="xl" fw={700} mb="xs">
