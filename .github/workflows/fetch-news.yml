@@ -1,0 +1,15 @@
+name: Fetch Music News
+
+on:
+  schedule:
+    - cron: '0 */2 * * *' # a cada 2 horas
+  workflow_dispatch: # permite rodar manualmente pelo GitHub
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call fetch-news endpoint
+        run: |
+          curl -s -X GET https://mublin.vercel.app/api/cron/fetch-news \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"
