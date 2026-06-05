@@ -4,13 +4,14 @@ import { useAuth } from '../hooks/useAuth'
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../lib/supabaseClient'
 import { fetchGenreCategories } from '../queries/genres'
-import { fetchProjectStatuses } from '../queries/projects'
+import { fetchProjectStatuses, fetchProjectTypes } from '../queries/projects'
 import {
   Container,
   Title,
   TextInput,
   Textarea,
   NativeSelect,
+  Select,
   NumberInput,
   Checkbox,
   Radio,
@@ -37,7 +38,7 @@ import { useForm, isNotEmpty, isInRange } from '@mantine/form'
 import { useDebouncedCallback, useDisclosure } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
 import { upload } from '@imagekit/react'
-import { IconTrash, IconCheck, IconSearch, IconPolaroid } from '@tabler/icons-react'
+import { IconTrash, IconCheck, IconSearch, IconCamera } from '@tabler/icons-react'
 
 // ── Helpers ──────────────────────────────────────────────
 function generateSlug(name) {
@@ -56,7 +57,7 @@ function generateSlug(name) {
 async function fetchRoles() {
   const { data, error } = await supabase
     .from('roles')
-    .select('id, name_ptbr, instrumentalist, applies_to_a_project')
+    .select('id, name_ptbr, description_br, instrumentalist, applies_to_a_project')
     .eq('applies_to_a_project', true)
     .order('name_ptbr')
   if (error) {
@@ -78,7 +79,7 @@ async function fetchRegions() {
 async function searchProjectsByName(name) {
   const { data, error } = await supabase
     .from('projects')
-    .select('id, name, slug, picture')
+    .select('id, name, slug, picture, genres ( id, name_ptbr )')
     .ilike('name', `%${name}%`)
     .limit(5)
   if (error) {
@@ -113,7 +114,7 @@ async function fetchAllGenres() {
 }
 
 // ── Componente principal ──────────────────────────────────
-export default function NewProject() {
+export default function NewProject({ onSuccess, isModal = false }) {
   const navigate = useNavigate()
   const { user } = useAuth()
   const currentYear = new Date().getFullYear()
@@ -147,11 +148,24 @@ export default function NewProject() {
   const [loadingStep, setLoadingStep] = useState('')
 
   // Queries
-  const { data: projectStatuses = [] } = useQuery({
+  const { data: projectStatuses = [], isLoading: isLoadingProjectStatuses } = useQuery({
     queryKey: ['project-statuses'],
     queryFn: fetchProjectStatuses,
     staleTime: Infinity,
   })
+  const projectStatusesList = projectStatuses.map((status) => ({
+    value: String(status?.id),
+    label: status?.description_ptbr,
+  }))
+  const { data: projectTypes = [], isLoading: isLoadingProjectTypes } = useQuery({
+    queryKey: ['project-types'],
+    queryFn: fetchProjectTypes,
+    staleTime: Infinity,
+  })
+  const projectTypesList = projectTypes.map((type) => ({
+    value: String(type?.id),
+    label: type?.name_ptbr,
+  }))
   const { data: roles = [] } = useQuery({
     queryKey: ['roles'],
     queryFn: fetchRoles,
@@ -172,21 +186,29 @@ export default function NewProject() {
     queryFn: fetchAllGenres,
     staleTime: Infinity,
   })
-
   const sortedGenreCategories = [
     ...genreCategories.filter((c) => c.id !== 5),
     ...genreCategories.filter((c) => c.id === 5),
   ]
+  const genresList = sortedGenreCategories.map((category) => ({
+    group: category.name_ptbr,
+    items: allGenres
+      .filter((g) => g.id_category === category.id)
+      .map((genre) => ({
+        value: String(genre.id),
+        label: genre.name_ptbr,
+      })),
+  }))
   const rolesMusicians = roles
     .filter((r) => r.instrumentalist)
-    .map((r) => ({ label: r.name_ptbr, value: String(r.id) }))
+    .map((r) => ({ label: r.description_ptbr ?? r.name_ptbr, value: String(r.id) }))
   const rolesManagement = roles
     .filter((r) => !r.instrumentalist)
-    .map((r) => ({ label: r.name_ptbr, value: String(r.id) }))
+    .map((r) => ({ label: r.description_ptbr ?? r.name_ptbr, value: String(r.id) }))
 
   // Form
   const form = useForm({
-    mode: 'uncontrolled',
+    // mode: 'uncontrolled',
     initialValues: {
       name: '',
       slug: '',
@@ -201,6 +223,7 @@ export default function NewProject() {
       featured: false,
       region_id: '',
       genre_id: '',
+      is_founder: true,
     },
     validate: {
       name: (v) => (v.length < 2 ? 'Mínimo de 2 caracteres' : null),
@@ -544,7 +567,7 @@ export default function NewProject() {
       project_id: projectId,
       profile_id: user.id,
       role_id: Number(values.main_role_id),
-      is_founder: true,
+      is_founder: values.is_founder,
       is_admin: true,
       status: 2,
       joined_at: `${values.foundation_year}-01-01`,
@@ -565,14 +588,18 @@ export default function NewProject() {
       title: 'Projeto criado!',
       message: `"${finalName}" foi criado com sucesso.`,
     })
-    navigate(`/project/${finalSlug}`)
+    if (onSuccess) {
+      onSuccess()
+    } else {
+      navigate(`/project/${finalSlug}`)
+    }
   }
 
   const activityStatus = form.getValues().activity_status
   const regionId = form.getValues().region_id
 
   return (
-    <Container size="xl" py="sm" style={{ position: 'relative' }}>
+    <Container size="xl" px={0} py="sm" style={{ position: 'relative' }}>
       <LoadingOverlay
         visible={isSubmitting}
         overlayProps={{ radius: 'sm', blur: 2 }}
@@ -587,9 +614,11 @@ export default function NewProject() {
           ),
         }}
       />
-      <Title order={1} fz="h3" ta="left" fw={600} mb={20}>
-        Cadastrar um novo projeto
-      </Title>
+      {!isModal && (
+        <Title order={1} fz="h3" ta="left" fw={600} mb={20}>
+          Cadastrar um novo projeto
+        </Title>
+      )}
       <form onSubmit={form.onSubmit(handleSubmit)}>
         <Stack gap="md">
           <Grid>
@@ -642,11 +671,14 @@ export default function NewProject() {
           {/* Projetos similares */}
           {similarProjects.length > 0 && (
             <Paper withBorder p="sm" radius="md">
-              <Text size="xs" fw={600} mb={4}>
-                Projetos com nomes parecidos
+              <Text size="sm" fw={600} mb={4}>
+                Ops, encontramos projetos com nomes parecidos
               </Text>
               <Text size="xs" c="dimmed" mb={8}>
-                Será que já está cadastrado?
+                Será que já está cadastrado?{' '}
+                <Anchor onClick={() => setSimilarProjects([])}>
+                  Não é nenhum destes
+                </Anchor>
               </Text>
               <ScrollArea w="100%" type="hover" scrollbarSize={6}>
                 <Flex gap={12} w="max-content">
@@ -658,12 +690,15 @@ export default function NewProject() {
                           radius="md"
                           src={
                             p.picture
-                              ? `https://ik.imagekit.io/mublin/projects/tr:h-100/${p.picture}`
+                              ? `https://ik.imagekit.io/mublin/projects/${p.id}/tr:h-100/${p.picture}`
                               : undefined
                           }
                         />
                         <Text size="xs" fw={500} ta="center" maw={60} lineClamp={2}>
                           {p.name}
+                        </Text>
+                        <Text size="10px" c="dimmed">
+                          {p.genres?.name_ptbr}
                         </Text>
                       </Flex>
                     </Anchor>
@@ -687,7 +722,7 @@ export default function NewProject() {
                     label="Imagem do projeto"
                     description="Uma foto/imagem que representa o projeto"
                     placeholder="Escolher arquivo"
-                    leftSection={<IconPolaroid size={18} />}
+                    leftSection={<IconCamera size={18} />}
                     onChange={(file) => handleImageUpload(file)}
                   />
                   {projectImageProgress > 0 && projectImageProgress < 100 && (
@@ -727,7 +762,7 @@ export default function NewProject() {
                     label="Logo do projeto (opcional)"
                     description="Logotipo/símbolo do projeto"
                     placeholder="Escolher arquivo"
-                    leftSection={<IconPolaroid size={18} />}
+                    leftSection={<IconCamera size={18} />}
                     onChange={(file) => handleLogoUpload(file)}
                   />
                   {projectLogoProgress > 0 && projectLogoProgress < 100 && (
@@ -762,49 +797,43 @@ export default function NewProject() {
 
           {/* Tipo e conteúdo */}
           <Grid>
-            <Grid.Col span={6}>
-              <NativeSelect
-                withAsterisk
+            <Grid.Col span={{ base: 12, md: 6 }}>
+              <Select
                 label="Tipo de projeto"
+                placeholder="Selecione"
+                withAsterisk
+                data={projectTypesList}
+                disabled={isLoadingProjectTypes}
                 key={form.key('project_type_id')}
                 {...form.getInputProps('project_type_id')}
-              >
-                <option value="2">Banda</option>
-                <option value="3">Projeto</option>
-                <option value="1">Artista Solo</option>
-                <option value="8">DJ</option>
-                <option value="4">Dupla</option>
-                <option value="5">Trio</option>
-                <option value="9">Grupo</option>
-              </NativeSelect>
+                maxDropdownHeight={155}
+              />
             </Grid.Col>
-            <Grid.Col span={6}>
-              <NativeSelect
-                withAsterisk
+            <Grid.Col span={{ base: 12, md: 6 }}>
+              <Select
                 label="Conteúdo principal"
+                placeholder="Selecione"
+                withAsterisk
+                data={[
+                  { value: '1', label: 'Autoral' },
+                  { value: '2', label: 'Cover' },
+                  { value: '3', label: 'Autoral + Cover' },
+                ]}
                 key={form.key('kind')}
                 {...form.getInputProps('kind')}
-              >
-                <option value="1">Autoral</option>
-                <option value="2">Cover</option>
-                <option value="3">Autoral + Cover</option>
-              </NativeSelect>
+              />
             </Grid.Col>
           </Grid>
 
-          <NativeSelect
-            withAsterisk
+          <Select
             label="Status do projeto"
+            placeholder="Selecione"
+            withAsterisk
+            data={projectStatusesList}
+            disabled={isLoadingProjectStatuses}
             key={form.key('activity_status')}
             {...form.getInputProps('activity_status')}
-          >
-            <option value="">Selecione</option>
-            {projectStatuses.map((item) => (
-              <option key={item.id} value={item.id}>
-                {item.description_ptbr}
-              </option>
-            ))}
-          </NativeSelect>
+          />
 
           <Grid>
             <Grid.Col span={6}>
@@ -820,7 +849,7 @@ export default function NewProject() {
             <Grid.Col span={6}>
               <NumberInput
                 withAsterisk={activityStatus === '2'}
-                label="Ano de encerramento"
+                label="Encerramento"
                 min={form.getValues().foundation_year}
                 max={currentYear}
                 disabled={activityStatus !== '2'}
@@ -830,25 +859,16 @@ export default function NewProject() {
             </Grid.Col>
           </Grid>
 
-          <NativeSelect
+          <Select
             label="Gênero principal"
-            description="Gênero ou estilo musical que melhor define o projeto"
+            description="Gênero ou estilo musical que melhor define"
+            placeholder="Selecione (opcional)"
+            searchable
+            comboboxProps={{ position: 'bottom', middlewares: { flip: false } }}
+            data={genresList}
             key={form.key('genre_id')}
             {...form.getInputProps('genre_id')}
-          >
-            <option value="">Selecione (opcional)</option>
-            {sortedGenreCategories.map((category) => (
-              <optgroup key={category.id} label={category.name_ptbr}>
-                {allGenres
-                  .filter((g) => g.id_category === category.id)
-                  .map((genre) => (
-                    <option key={genre.id} value={String(genre.id)}>
-                      {genre.name_ptbr}
-                    </option>
-                  ))}
-              </optgroup>
-            ))}
-          </NativeSelect>
+          />
 
           <Grid>
             <Grid.Col span={6}>
@@ -915,17 +935,14 @@ export default function NewProject() {
             {...form.getInputProps('main_role_id')}
           />
 
-          <Checkbox.Group
-            defaultValue={['initial']}
-            disabled
-            label="Minhas atribuições"
-            description="Você poderá alterar isto depois"
-          >
-            <Group mt="xs">
-              <Checkbox value="initial" label="Me definir como administrador" />
-              <Checkbox value="initial" label="Me definir como fundador" />
-            </Group>
-          </Checkbox.Group>
+          <Group mt="xs">
+            <Checkbox label="Administrador" disabled checked />
+            <Checkbox
+              label="Fundador"
+              key={form.key('is_founder')}
+              {...form.getInputProps('is_founder', { type: 'checkbox' })}
+            />
+          </Group>
 
           <Radio.Group
             label="Visibilidade"
@@ -940,9 +957,11 @@ export default function NewProject() {
           </Radio.Group>
 
           <Group justify="flex-end" mt="sm">
-            <Button variant="default" onClick={() => navigate(-1)}>
-              Cancelar
-            </Button>
+            {!onSuccess && (
+              <Button variant="default" onClick={() => navigate(-1)}>
+                Cancelar
+              </Button>
+            )}
             <Button
               type="submit"
               color="indigo"

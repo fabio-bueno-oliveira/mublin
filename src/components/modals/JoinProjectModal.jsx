@@ -1,6 +1,15 @@
+import { useEffect } from 'react'
 import {
-  Drawer, Stack, Center, Avatar, Text, NativeSelect,
-  NumberInput, Alert, Group, Button
+  Drawer,
+  Stack,
+  Center,
+  Avatar,
+  Text,
+  NativeSelect,
+  NumberInput,
+  Alert,
+  Group,
+  Button,
 } from '@mantine/core'
 import { IconAlertCircle } from '@tabler/icons-react'
 
@@ -17,12 +26,26 @@ export default function JoinProjectModal({
   onConfirm,
   loading,
   currentYear,
+  projectEndYear,
+  projectFoundationYear,
 }) {
-  if (!project) return null
+  useEffect(() => {
+    if (opened && projectEndYear && joinYear > projectEndYear) {
+      setJoinYear(projectEndYear)
+    }
+    if (opened && projectFoundationYear && joinYear < projectFoundationYear) {
+      setJoinYear(projectFoundationYear)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [opened, projectEndYear, projectFoundationYear])
+
+  if (!project) {
+    return null
+  }
 
   return (
     <Drawer
-      position='right'
+      position="right"
       title={`Me associar a ${project.name}`}
       opened={opened}
       onClose={onClose}
@@ -32,14 +55,17 @@ export default function JoinProjectModal({
           <Avatar
             size={70}
             radius="md"
-            src={project.picture
-              ? `https://ik.imagekit.io/mublin/projects/${project.id}/tr:h-140,w-140,c-maintain_ratio/${project.picture}`
-              : undefined
+            src={
+              project.picture
+                ? `https://ik.imagekit.io/mublin/projects/${project.id}/tr:h-140,w-140,c-maintain_ratio/${project.picture}`
+                : undefined
             }
           />
         </Center>
         {project.description && (
-          <Text size="xs" c="dimmed" ta="center">{project.description}</Text>
+          <Text size="xs" c="dimmed" ta="center">
+            {project.description}
+          </Text>
         )}
         <NativeSelect
           withAsterisk
@@ -49,20 +75,24 @@ export default function JoinProjectModal({
         >
           <option value="">Selecione</option>
           <optgroup label="Gestão, produção e outros">
-            {rolesProjectManagement.map(r => (
-              <option key={r.value} value={r.value}>{r.label}</option>
+            {rolesProjectManagement.map((r) => (
+              <option key={r.value} value={r.value}>
+                {r.label}
+              </option>
             ))}
           </optgroup>
           <optgroup label="Instrumentos">
-            {rolesProjectMusicians.map(r => (
-              <option key={r.value} value={r.value}>{r.label}</option>
+            {rolesProjectMusicians.map((r) => (
+              <option key={r.value} value={r.value}>
+                {r.label}
+              </option>
             ))}
           </optgroup>
         </NativeSelect>
         <NumberInput
           label="Ano que ingressou"
-          min={1900}
-          max={currentYear}
+          min={projectFoundationYear ?? 1900}
+          max={projectEndYear ?? currentYear}
           value={joinYear}
           onChange={setJoinYear}
         />
@@ -72,9 +102,11 @@ export default function JoinProjectModal({
           </Text>
         </Alert>
         <Group justify="flex-end">
-          <Button variant="default" size="sm" onClick={onClose}>Cancelar</Button>
+          <Button variant="default" size="sm" onClick={onClose}>
+            Cancelar
+          </Button>
           <Button
-            color="indigo"
+            color="mublinColor"
             size="sm"
             loading={loading}
             disabled={!joinRole || !joinYear}

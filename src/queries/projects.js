@@ -70,6 +70,37 @@ export async function fetchProjectProfile(slug) {
   }
 }
 
+export async function searchProjectsByName(name) {
+  const { data, error } = await supabase
+    .from('projects')
+    .select(
+      `
+      id, name,
+      slug, picture, description,
+      foundation_year, end_year, 
+      project_types ( name_ptbr ),
+      genres ( id, name_ptbr ),
+      cities ( name, regions ( name, uf ), countries ( name, name_ptbr ) ),
+      project_members (
+        profile_id,
+        is_ex_member,
+        is_founder,
+        status,
+        profiles ( id, full_name, username, avatar )
+      )
+    `,
+    )
+    .ilike('name', `%${name}%`)
+    .eq('project_members.status', 2)
+    .eq('project_members.is_ex_member', false)
+    .limit(10)
+
+  if (error) {
+    throw new Error(error.message)
+  }
+  return data
+}
+
 export async function cancelParticipationRequest(projectId, profileId) {
   const { error } = await supabase
     .from('project_members')
@@ -196,6 +227,17 @@ export async function fetchProjectStatuses() {
     .from('project_statuses')
     .select('id, description_ptbr, color')
     .order('description_ptbr')
+  if (error) {
+    throw new Error(error.message)
+  }
+  return data
+}
+
+export async function fetchProjectTypes() {
+  const { data, error } = await supabase
+    .from('project_types')
+    .select('id, name_ptbr')
+    .order('id, name_ptbr')
   if (error) {
     throw new Error(error.message)
   }

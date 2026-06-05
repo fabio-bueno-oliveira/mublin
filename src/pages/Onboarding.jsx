@@ -1,15 +1,19 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, lazy } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { fetchUserProfile, fetchUserRoles, fetchUserProjects } from '../queries/user'
-import { fetchCityById } from '../queries/locations'
+import { fetchRoles } from '../queries/roles'
+import { searchProjectsByName } from '../queries/projects'
+import { fetchRegions, searchCitiesByName, fetchCityById } from '../queries/locations'
 import { supabase } from '../lib/supabaseClient'
 import {
+  useMantineColorScheme,
   Container,
   Stepper,
   Stack,
   Group,
+  Image,
   Title,
   Text,
   Button,
@@ -17,6 +21,8 @@ import {
   Textarea,
   TextInput,
   NativeSelect,
+  Combobox,
+  useCombobox,
   Grid,
   Input,
   Modal,
@@ -31,9 +37,11 @@ import {
 } from '@mantine/core'
 import JoinProjectModal from '../components/modals/JoinProjectModal'
 import { useForm } from '@mantine/form'
-import { useDebouncedCallback, useDisclosure, useMediaQuery } from '@mantine/hooks'
+import { useDebouncedCallback, useDisclosure } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
 import { upload } from '@imagekit/react'
+import MublinLogoBlack from '../assets/svg/mublin-logo-black.svg'
+import MublinLogoWhite from '../assets/svg/mublin-logo-white.svg'
 import {
   IconArrowLeft,
   IconArrowRight,
@@ -41,67 +49,23 @@ import {
   IconCheck,
   IconX,
   IconUpload,
-  IconCircuitResistor,
+  IconCamera,
+  IconUserEdit,
+  IconMusic,
+  IconUsersGroup,
 } from '@tabler/icons-react'
-
-// ── Queries ──────────────────────────────────────────────
-
-async function fetchRoles() {
-  const { data, error } = await supabase
-    .from('roles')
-    .select('id, name_ptbr, instrumentalist, applies_to_a_project')
-    .order('name_ptbr')
-  if (error) {
-    throw new Error(error.message)
-  }
-  return data
-}
-
-async function fetchRegions() {
-  const { data, error } = await supabase
-    .from('regions')
-    .select('id, name')
-    .eq('country_id', 27)
-    .order('name')
-  if (error) {
-    throw new Error(error.message)
-  }
-  return data
-}
-
-async function searchCitiesByName(query, regionId) {
-  const { data, error } = await supabase
-    .from('cities')
-    .select('id, name')
-    .eq('region_id', regionId)
-    .ilike('name', `%${query}%`)
-    .order('name')
-    .limit(20)
-  if (error) {
-    throw new Error(error.message)
-  }
-  return data
-}
-
-async function searchProjectsByName(name) {
-  const { data, error } = await supabase
-    .from('projects')
-    .select('id, name, slug, picture, description')
-    .ilike('name', `%${name}%`)
-    .limit(8)
-  if (error) {
-    throw new Error(error.message)
-  }
-  return data
-}
+const NewProject = lazy(() => import('./NewProject'))
 
 // ── Componente principal ──────────────────────────────────
 
 export default function Onboarding() {
   const navigate = useNavigate()
   const { user, profile } = useAuth()
-  const largeScreen = useMediaQuery('(min-width: 60em)')
+  const queryClient = useQueryClient()
   const currentYear = new Date().getFullYear()
+
+  const { colorScheme } = useMantineColorScheme()
+  const isDark = colorScheme === 'dark'
 
   const [active, setActive] = useState(0)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -124,14 +88,25 @@ export default function Onboarding() {
   const [noCityResults, setNoCityResults] = useState(false)
   const [modalCityOpened, { open: openCityModal, close: closeCityModal }] =
     useDisclosure(false)
+  const [
+    modalNewProjectOpened,
+    { open: openNewProjectModal, close: closeNewProjectModal },
+  ] = useDisclosure(false)
 
   const profileForm = useForm({
     initialValues: {
+      full_name: '',
       username: '',
+      title: '',
       bio: '',
       region_id: '',
     },
     validate: {
+      full_name: (v) => {
+        if (v.length < 3) {
+          return 'Mínimo 2 caracteres'
+        }
+      },
       username: (v) => {
         if (!v) {
           return 'Escolha um username'
@@ -144,6 +119,11 @@ export default function Onboarding() {
         }
         return null
       },
+      title: (v) => {
+        if (v.length > 70) {
+          return 'Máximo 70 caracteres'
+        }
+      },
       region_id: (v) => (!v ? 'Selecione seu Estado' : null),
     },
   })
@@ -151,6 +131,13 @@ export default function Onboarding() {
   // ── Step 3: Roles ─────────────────────────────────────
   const [userRoles, setUserRoles] = useState([])
   const [addingRole, setAddingRole] = useState(false)
+  const [roleSearch, setRoleSearch] = useState('')
+  const comboboxRole = useCombobox({
+    onDropdownClose: () => {
+      comboboxRole.resetSelectedOption()
+      setRoleSearch('')
+    },
+  })
 
   // ── Step 4: Projetos ──────────────────────────────────
   const [projectSearch, setProjectSearch] = useState('')
@@ -162,6 +149,8 @@ export default function Onboarding() {
     useDisclosure(false)
   const [joinRole, setJoinRole] = useState('')
   const [joinYear, setJoinYear] = useState(currentYear)
+  const [projectFoundationYear, setProjectFoundationYear] = useState('')
+  const [projectEndYear, setProjectEndYear] = useState('')
   const [joiningProject, setJoiningProject] = useState(false)
 
   // ── Queries ───────────────────────────────────────────
@@ -201,11 +190,21 @@ export default function Onboarding() {
 
   const rolesMusicians = roles
     .filter((r) => r.instrumentalist)
-    .map((r) => ({ label: r.name_ptbr, value: String(r.id) }))
+    .map((r) => ({
+      label: r.description_ptbr ?? r.name_ptbr,
+      value: String(r.id),
+      name: r.name_ptbr,
+      tags: r.tags,
+    }))
 
   const rolesManagement = roles
     .filter((r) => !r.instrumentalist)
-    .map((r) => ({ label: r.name_ptbr, value: String(r.id) }))
+    .map((r) => ({
+      label: r.description_ptbr ?? r.name_ptbr,
+      value: String(r.id),
+      name: r.name_ptbr,
+      tags: r.tags,
+    }))
 
   const rolesForProject = roles.filter((r) => r.applies_to_a_project)
 
@@ -226,7 +225,9 @@ export default function Onboarding() {
 
     // Popula username, bio e region_id no form
     profileForm.setValues({
+      full_name: savedProfile.full_name,
       username: savedProfile.username ?? '',
+      title: savedProfile.title ?? '',
       bio: savedProfile.bio ?? '',
       region_id: savedProfile.region_id ? String(savedProfile.region_id) : '',
     })
@@ -394,7 +395,9 @@ export default function Onboarding() {
     const { error } = await supabase
       .from('profiles')
       .update({
+        full_name: values.full_name,
         username: values.username,
+        title: values.title,
         bio: values.bio || null,
         region_id: values.region_id ? Number(values.region_id) : null,
         city_id: selectedCity?.id ?? null,
@@ -449,10 +452,10 @@ export default function Onboarding() {
 
   // Step 4 — Projetos
   const handleProjectSearch = useDebouncedCallback(async (query) => {
-    if (query.length < 2) {
-      setProjectResults([])
-      return
-    }
+    // if (query.length < 2) {
+    //   setProjectResults([])
+    //   return
+    // }
     setProjectSearchLoading(true)
     const results = await searchProjectsByName(query)
     setProjectResults(results)
@@ -467,6 +470,8 @@ export default function Onboarding() {
     setJoinYear(currentYear)
     setJoinRole('')
     openJoinModal()
+    setProjectFoundationYear(project.foundation_year)
+    setProjectEndYear(project.end_year)
   }
 
   async function handleJoinProject() {
@@ -551,26 +556,35 @@ export default function Onboarding() {
     'https://ik.imagekit.io/mublin/tr:h-200,w-200,c-maintain_ratio/users/avatars/'
 
   return (
-    <Container size="sm" py={32} mb={80}>
+    <Container size="sm" pb={100} py={24} mb={80}>
       <Stack gap="xl">
         <Stack gap={4} align="center">
-          <IconCircuitResistor size={38} />
-          <Title order={2} fw={800} ta="center">
-            Vamos configurar seu perfil
-          </Title>
-          <Text c="dimmed" size="sm" ta="center">
-            Leva menos de 2 minutos
-          </Text>
+          <Image
+            src={isDark ? MublinLogoWhite : MublinLogoBlack}
+            h={22}
+            w="auto"
+            fit="contain"
+          />
+          {active === 0 && (
+            <>
+              <Title order={1} fz="1.4em" fw={800} ta="center" mt="md">
+                Vamos configurar seu perfil
+              </Title>
+              <Text c="dimmed" size="sm" ta="center">
+                Leva menos de 2 minutos
+              </Text>
+            </>
+          )}
         </Stack>
-        <Stepper active={active} color="indigo" size={largeScreen ? 'sm' : 'xs'}>
-          <Stepper.Step label="Foto" />
-          <Stepper.Step label="Sobre você" />
-          <Stepper.Step label="Atividades" />
-          <Stepper.Step label="Projetos" />
+        <Stepper active={active} color="mublinColor" size="sm">
+          <Stepper.Step icon={<IconCamera stroke={2} />} />
+          <Stepper.Step icon={<IconUserEdit stroke={2} />} />
+          <Stepper.Step icon={<IconMusic stroke={2} />} />
+          <Stepper.Step icon={<IconUsersGroup stroke={2} />} />
         </Stepper>
         {/* ── Step 0: Foto de perfil ───────────────────── */}
         {active === 0 && (
-          <Stack gap="lg" align="center">
+          <Stack gap="md" align="center">
             <Title order={3} fw={700} ta="center">
               Defina sua foto de perfil
             </Title>
@@ -633,47 +647,71 @@ export default function Onboarding() {
               Conte um pouco sobre você
             </Title>
 
+            <Grid>
+              <Grid.Col span={{ base: 12, md: 6 }}>
+                <TextInput
+                  withAsterisk
+                  label="Nome e Sobrenome"
+                  placeholder="ex: João Silva"
+                  error={profileForm.errors.full_name}
+                  {...profileForm.getInputProps('full_name')}
+                  onChange={(e) => profileForm.setFieldValue('full_name', e.target.value)}
+                />
+              </Grid.Col>
+              <Grid.Col span={{ base: 12, md: 6 }}>
+                <TextInput
+                  withAsterisk
+                  label="Username"
+                  placeholder="ex: joaosilva"
+                  loading={usernameChecking}
+                  rightSection={
+                    !usernameChecking && usernameAvailable === true ? (
+                      <IconCheck size={16} color="var(--mantine-color-green-6)" />
+                    ) : !usernameChecking && usernameAvailable === false ? (
+                      <IconX size={16} color="var(--mantine-color-red-6)" />
+                    ) : null
+                  }
+                  error={
+                    profileForm.errors.username ||
+                    (usernameAvailable === false
+                      ? usernameUnavailableReason === 'reserved'
+                        ? 'Este username não está disponível'
+                        : 'Este username já está em uso'
+                      : undefined)
+                  }
+                  {...profileForm.getInputProps('username')}
+                  onChange={(e) => {
+                    const value = e.target.value.toLowerCase()
+                    profileForm.setFieldValue('username', value)
+                    setUsernameAvailable(null)
+                    handleUsernameCheck(value)
+                  }}
+                />
+                {usernameAvailable === false && (
+                  <Badge color="red" variant="light" size="sm" fw="500">
+                    Username já em uso
+                  </Badge>
+                )}
+              </Grid.Col>
+            </Grid>
+
             <TextInput
-              withAsterisk
-              label="Username"
-              placeholder="ex: joaosilva"
-              loading={usernameChecking}
-              rightSection={
-                !usernameChecking && usernameAvailable === true ? (
-                  <IconCheck size={16} color="var(--mantine-color-green-6)" />
-                ) : !usernameChecking && usernameAvailable === false ? (
-                  <IconX size={16} color="var(--mantine-color-red-6)" />
-                ) : null
-              }
-              error={
-                profileForm.errors.username ||
-                (usernameAvailable === false
-                  ? usernameUnavailableReason === 'reserved'
-                    ? 'Este username não está disponível'
-                    : 'Este username já está em uso'
-                  : undefined)
-              }
-              {...profileForm.getInputProps('username')}
-              onChange={(e) => {
-                const value = e.target.value.toLowerCase()
-                profileForm.setFieldValue('username', value)
-                setUsernameAvailable(null)
-                handleUsernameCheck(value)
-              }}
+              label="Título (opcional)"
+              placeholder="Ex: Guitarrista e produtor com 10 anos de experiência"
+              maxLength={70}
+              description={`${profileForm.values.title.length}/70`}
+              error={profileForm.errors.title}
+              {...profileForm.getInputProps('title')}
+              onChange={(e) => profileForm.setFieldValue('title', e.target.value)}
             />
-            {usernameAvailable === false && (
-              <Badge color="red" variant="light" size="xs" fw="500">
-                Username já em uso
-              </Badge>
-            )}
 
             <Textarea
               label="Bio (opcional)"
-              placeholder="Ex: Guitarrista e produtor com 10 anos de experiência..."
-              maxLength={220}
-              description={`${profileForm.values.bio.length}/220`}
+              placeholder="Ex: Desde cedo me interessei por música e tive a sorte de ter uma família que me apoiou..."
+              maxLength={500}
+              description={`${profileForm.values.bio.length}/500`}
               autosize
-              minRows={3}
+              minRows={2}
               {...profileForm.getInputProps('bio')}
             />
 
@@ -698,7 +736,7 @@ export default function Onboarding() {
                 </NativeSelect>
               </Grid.Col>
               <Grid.Col span={6}>
-                <Input.Wrapper label="Cidade">
+                <Input.Wrapper label="Cidade" withAsterisk>
                   <Input
                     pointer
                     readOnly
@@ -723,7 +761,7 @@ export default function Onboarding() {
             </Grid>
           </Stack>
         )}
-        De quais projetos ou bandas você participa ou já participou?
+
         {/* ── Step 2: Atividades musicais ──────────────── */}
         {active === 2 && (
           <Stack gap="md">
@@ -734,33 +772,109 @@ export default function Onboarding() {
               Quais suas principais atividades? Selecione todas que se aplicam.
             </Text>
 
-            <NativeSelect
-              label="Adicionar atividade"
-              description="Selecione uma atividade para adicioná-la ao seu perfil"
-              disabled={addingRole}
-              onChange={(e) => handleAddRole(e.target.value)}
-              value=""
-            >
-              <option value="">{addingRole ? 'Salvando...' : 'Selecione'}</option>
-              <optgroup label="Gestão, produção e outros">
-                {rolesManagement
-                  .filter((r) => !userRoles.find((ur) => ur.id === Number(r.value)))
-                  .map((r) => (
-                    <option key={r.value} value={r.value}>
-                      {r.label}
-                    </option>
-                  ))}
-              </optgroup>
-              <optgroup label="Instrumentos">
-                {rolesMusicians
-                  .filter((r) => !userRoles.find((ur) => ur.id === Number(r.value)))
-                  .map((r) => (
-                    <option key={r.value} value={r.value}>
-                      {r.label}
-                    </option>
-                  ))}
-              </optgroup>
-            </NativeSelect>
+            {(() => {
+              const filteredManagement = rolesManagement
+                // .filter((r) => !userRoles.find((ur) => ur.id === Number(r.value)))
+                .filter(
+                  (r) =>
+                    r.label.toLowerCase().includes(roleSearch.toLowerCase().trim()) ||
+                    r.name?.toLowerCase().includes(roleSearch.toLowerCase().trim()) ||
+                    r.tags?.toLowerCase().includes(roleSearch.toLowerCase().trim()),
+                )
+
+              const filteredMusicians = rolesMusicians
+                // .filter((r) => !userRoles.find((ur) => ur.id === Number(r.value)))
+                .filter(
+                  (r) =>
+                    r.label.toLowerCase().includes(roleSearch.toLowerCase().trim()) ||
+                    r.name?.toLowerCase().includes(roleSearch.toLowerCase().trim()) ||
+                    r.tags?.toLowerCase().includes(roleSearch.toLowerCase().trim()),
+                )
+
+              const hasOptions =
+                filteredManagement.length > 0 || filteredMusicians.length > 0
+
+              return (
+                <Combobox
+                  store={comboboxRole}
+                  onOptionSubmit={(val) => {
+                    handleAddRole(val)
+                    comboboxRole.closeDropdown()
+                    setRoleSearch('')
+                  }}
+                >
+                  <Combobox.Target>
+                    <TextInput
+                      // label="Adicionar atividade"
+                      placeholder={addingRole ? 'Salvando...' : 'Buscar atividade...'}
+                      disabled={addingRole}
+                      size="md"
+                      value={roleSearch}
+                      onChange={(e) => {
+                        setRoleSearch(e.target.value)
+                        comboboxRole.openDropdown()
+                        comboboxRole.updateSelectedOptionIndex()
+                      }}
+                      onClick={() => comboboxRole.openDropdown()}
+                      onFocus={() => comboboxRole.openDropdown()}
+                      onBlur={() => comboboxRole.closeDropdown()}
+                      rightSection={
+                        addingRole ? <Loader size={16} /> : <Combobox.Chevron />
+                      }
+                      rightSectionPointerEvents="none"
+                    />
+                  </Combobox.Target>
+
+                  <Combobox.Dropdown>
+                    <Combobox.Search
+                      value={roleSearch}
+                      onChange={(e) => {
+                        setRoleSearch(e.target.value)
+                        comboboxRole.updateSelectedOptionIndex()
+                      }}
+                      placeholder="Buscar..."
+                    />
+                    <Combobox.Options>
+                      <ScrollArea.Autosize type="scroll" mah={184}>
+                        {!hasOptions && (
+                          <Combobox.Empty>Nenhuma atividade encontrada</Combobox.Empty>
+                        )}
+                        {filteredManagement.length > 0 && (
+                          <Combobox.Group label="Gestão, produção e outros">
+                            {filteredManagement.map((r) => (
+                              <Combobox.Option
+                                key={r.value}
+                                value={r.value}
+                                disabled={userRoles.find(
+                                  (ur) => ur.id === Number(r.value),
+                                )}
+                              >
+                                {r.label}
+                              </Combobox.Option>
+                            ))}
+                          </Combobox.Group>
+                        )}
+                        {filteredMusicians.length > 0 && (
+                          <Combobox.Group label="Instrumentos">
+                            {filteredMusicians.map((r) => (
+                              <Combobox.Option
+                                key={r.value}
+                                value={r.value}
+                                disabled={userRoles.find(
+                                  (ur) => ur.id === Number(r.value),
+                                )}
+                              >
+                                {r.label}
+                              </Combobox.Option>
+                            ))}
+                          </Combobox.Group>
+                        )}
+                      </ScrollArea.Autosize>
+                    </Combobox.Options>
+                  </Combobox.Dropdown>
+                </Combobox>
+              )
+            })()}
 
             {userRoles.length > 0 && (
               <Group gap={6}>
@@ -768,6 +882,8 @@ export default function Onboarding() {
                   <Badge
                     key={role.id}
                     size="md"
+                    variant="gradient"
+                    gradient={{ from: 'grape.9', to: 'mublinColor.9', deg: 190 }}
                     rightSection={
                       <IconX
                         style={{ width: 10, height: 10, cursor: 'pointer' }}
@@ -776,14 +892,14 @@ export default function Onboarding() {
                       />
                     }
                   >
-                    {role.name} {role.main_activity ? '(principal)' : ''}
+                    {role.name} {role.main_activity ? '( atividade principal)' : ''}
                   </Badge>
                 ))}
               </Group>
             )}
 
             {userRoles.length === 0 && (
-              <Text size="xs" c="dimmed" ta="center">
+              <Text size="md" c="dimmed" ta="center">
                 Nenhuma atividade adicionada ainda
               </Text>
             )}
@@ -801,9 +917,9 @@ export default function Onboarding() {
 
             <TextInput
               placeholder="Buscar projeto ou banda..."
-              leftSection={
-                projectSearchLoading ? <Loader size={15} /> : <IconSearch size={15} />
-              }
+              size="md"
+              leftSection={<IconSearch size={15} />}
+              rightSection={projectSearchLoading && <Loader size={15} />}
               value={projectSearch}
               onChange={(e) => {
                 setProjectSearch(e.target.value)
@@ -812,7 +928,7 @@ export default function Onboarding() {
             />
 
             {projectResults.length > 0 && (
-              <ScrollArea h={140} type="auto">
+              <ScrollArea h={130} type="always">
                 <Stack gap={0}>
                   {projectResults.map((project) => {
                     const alreadyAdded = userProjects.find((p) => p.id === project.id)
@@ -828,11 +944,11 @@ export default function Onboarding() {
                           onClick={() => !alreadyAdded && handleSelectProject(project)}
                         >
                           <Avatar
-                            size={40}
+                            size={64}
                             radius="md"
                             src={
                               project.picture
-                                ? `https://ik.imagekit.io/mublin/projects/${project.id}/tr:h-80/${project.picture}`
+                                ? `https://ik.imagekit.io/mublin/projects/${project.id}/tr:h-128/${project.picture}`
                                 : undefined
                             }
                           />
@@ -842,7 +958,7 @@ export default function Onboarding() {
                                 {project.name}
                               </Text>
                               {alreadyAdded && (
-                                <ThemeIcon size={18} radius="xl" color="indigo">
+                                <ThemeIcon size={18} radius="xl" color="mublinColor">
                                   <IconCheck
                                     style={{ width: 12, height: 12 }}
                                     stroke={3}
@@ -855,6 +971,54 @@ export default function Onboarding() {
                                 {project.description}
                               </Text>
                             )}
+                            <Text size="xs">
+                              {project.project_types?.name_ptbr &&
+                                `${project.project_types?.name_ptbr}  · `}
+                              {project.genres?.name_ptbr &&
+                                `${project.genres?.name_ptbr}  · `}
+                              {[
+                                project.cities?.name,
+                                project.cities?.regions?.name,
+                                project.cities?.countries?.name_ptbr ??
+                                  project.cities?.countries?.name,
+                              ]
+                                .filter(Boolean)
+                                .join(', ')}
+                            </Text>
+
+                            {/* ── Membros ───────────────────────────────── */}
+                            {(() => {
+                              const members = [...(project.project_members ?? [])].sort(
+                                (a, b) => (b.is_founder ? 1 : 0) - (a.is_founder ? 1 : 0),
+                              )
+
+                              const visible = members.slice(0, 3)
+                              const extra = members.length - 3
+
+                              if (!visible.length) {
+                                return null
+                              }
+
+                              const names = visible
+                                .map((m) => m.profiles?.full_name)
+                                .filter(Boolean)
+
+                              const suffix =
+                                members.length === 1
+                                  ? ' faz parte deste projeto'
+                                  : ' fazem parte deste projeto'
+
+                              const label =
+                                extra > 0
+                                  ? `${names.join(', ')} e +${extra}${suffix}`
+                                  : `${names.join(', ')}${suffix}`
+
+                              return (
+                                <Text size="xs" c="dimmed" fw={300}>
+                                  {label}
+                                </Text>
+                              )
+                            })()}
                           </Stack>
                         </Group>
                         <Divider />
@@ -880,22 +1044,45 @@ export default function Onboarding() {
                       key={project.id}
                       withRemoveButton
                       onRemove={async () => {
-                        await supabase
+                        // 1. Verifica se há outros membros aceitos neste projeto
+                        const { data: activeMembers } = await supabase
                           .from('project_members')
-                          .delete()
+                          .select('id, profile_id')
                           .eq('project_id', project.id)
-                          .eq('profile_id', user.id)
+                          .eq('status', 2)
+
+                        const otherActiveMembers = activeMembers?.filter(
+                          (m) => m.profile_id !== user.id,
+                        )
+
+                        if (!otherActiveMembers?.length) {
+                          // 2a. Sem outros membros: deleta o projeto
+                          // (CASCADE remove os project_members automaticamente)
+                          await supabase.from('projects').delete().eq('id', project.id)
+                        } else {
+                          // 2b. Há outros membros: remove só a participação do usuário
+                          await supabase
+                            .from('project_members')
+                            .delete()
+                            .eq('project_id', project.id)
+                            .eq('profile_id', user.id)
+                        }
+
+                        // 3. Atualiza o estado local
                         setUserProjects((prev) => prev.filter((p) => p.id !== project.id))
+
+                        // 4. Exibe notificação
+                        notifications.show({
+                          color: 'green',
+                          position: 'top-center',
+                          message: !otherActiveMembers?.length
+                            ? 'Projeto permanentemente removido com sucesso do Mublin'
+                            : 'Sua participação foi removida com sucesso do projeto',
+                        })
                       }}
                       size="sm"
                     >
-                      <div
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 6,
-                        }}
-                      >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                         <Avatar
                           src={`https://ik.imagekit.io/mublin/projects/${project.id}/tr:h-150/${project.picture}`}
                           size={16}
@@ -909,12 +1096,13 @@ export default function Onboarding() {
             )}
 
             <Button
-              variant="subtle"
-              color="green"
+              variant="outline"
+              color="teal"
               size="sm"
-              onClick={() => navigate('/new/project')}
+              mt={userProjects.length === 0 ? 26 : 0}
+              onClick={() => openNewProjectModal()}
             >
-              Não encontrou? Cadastre um novo projeto →
+              Não encontrou? Cadastre um novo projeto
             </Button>
             <Text size="sm" c="dimmed" ta="center">
               Não se preocupe, você poderá adicionar mais projetos depois!
@@ -922,12 +1110,25 @@ export default function Onboarding() {
           </Stack>
         )}
         {/* ── Navegação ────────────────────────────────── */}
-        <Group justify="space-between" mt="md">
+        <Group
+          justify="center"
+          style={{
+            position: 'fixed',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            padding: '16px',
+            backgroundColor: 'var(--mantine-color-body)',
+            borderTop: '1px solid var(--mantine-color-default-border)',
+            zIndex: 100,
+          }}
+          mt="md"
+        >
           {active > 0 ? (
             <Button
               variant="default"
               radius="xl"
-              size="md"
+              size="lg"
               leftSection={<IconArrowLeft size={14} />}
               onClick={handleBack}
             >
@@ -941,19 +1142,19 @@ export default function Onboarding() {
             <Group gap="sm">
               {active === 0 && (
                 <Button
-                  variant="subtle"
-                  color="gray"
+                  variant="outline"
+                  color="var(--mantine-color-text)"
                   radius="xl"
-                  size="md"
+                  size="lg"
                   onClick={() => setActive(1)}
                 >
                   Pular
                 </Button>
               )}
               <Button
-                color="indigo"
+                color="mublinColor"
                 radius="xl"
-                size="md"
+                size="lg"
                 rightSection={<IconArrowRight size={14} />}
                 loading={isSubmitting}
                 onClick={handleNext}
@@ -963,9 +1164,9 @@ export default function Onboarding() {
             </Group>
           ) : (
             <Button
-              color="indigo"
+              color="mublinColor"
               radius="xl"
-              size="md"
+              size="lg"
               loading={isSubmitting}
               onClick={handleFinish}
             >
@@ -1045,7 +1246,26 @@ export default function Onboarding() {
         onConfirm={handleJoinProject}
         loading={joiningProject}
         currentYear={currentYear}
+        projectEndYear={projectEndYear}
+        projectFoundationYear={projectFoundationYear}
       />
+
+      <Modal
+        opened={modalNewProjectOpened}
+        onClose={closeNewProjectModal}
+        size="xl"
+        radius="md"
+        title="Cadastrar um novo projeto"
+        centered
+      >
+        <NewProject
+          onSuccess={() => {
+            queryClient.invalidateQueries({ queryKey: ['profile-projects', user?.id] })
+            closeNewProjectModal()
+          }}
+          isModal
+        />
+      </Modal>
     </Container>
   )
 }
