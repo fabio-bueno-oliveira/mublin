@@ -137,7 +137,7 @@ export default function AppNavbar({ children }) {
                 />
               </Link>
               {/* Nav items — apenas desktop */}
-              <Group gap={6} ml="lg" align="center" visibleFrom="sm">
+              <Group gap={5} ml="lg" align="center" visibleFrom="sm">
                 {NAV_ITEMS.map((item) => {
                   const Icon = item.icon
                   return (
@@ -149,8 +149,8 @@ export default function AppNavbar({ children }) {
                       color="gray"
                       size="compact-sm"
                       radius="0"
-                      opacity={isActive('/home') ? 1 : 0.8}
-                      leftSection={<Icon size={24} stroke={1.7} />}
+                      opacity={isActive(item.path) ? 1 : 0.8}
+                      leftSection={<Icon size={20} stroke={1.7} />}
                     >
                       {item.label}
                     </Button>

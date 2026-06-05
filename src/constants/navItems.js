@@ -1,5 +1,6 @@
 import {
-  IconHome2Filled,
+  IconHome,
+  IconRss,
   IconCubePlus,
   IconBulb,
   IconPencilPlus,
@@ -9,7 +10,8 @@ import {
 } from '@tabler/icons-react'
 
 export const NAV_ITEMS = [
-  { label: 'Home', icon: IconHome2Filled, path: '/home' },
+  { label: 'Home', icon: IconHome, path: '/home' },
+  { label: 'Feed', icon: IconRss, path: '/feed' },
 ]
 
 export const QUICK_ACTIONS = [
