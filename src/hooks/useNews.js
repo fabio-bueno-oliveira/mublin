@@ -11,7 +11,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '../lib/supabaseClient'
 
-const PAGE_SIZE = 20
+const PAGE_SIZE = 15
 
 /**
  * @param {Object} options

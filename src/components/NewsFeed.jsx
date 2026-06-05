@@ -20,7 +20,6 @@ import {
   IconCalendarEvent,
   IconBriefcase,
   IconExternalLink,
-  IconAlertCircle,
 } from '@tabler/icons-react'
 import { useState } from 'react'
 import { useNews } from '../hooks/useNews'
@@ -70,83 +69,65 @@ function NewsCard({ item }) {
         },
       }}
     >
-      <Group wrap="nowrap" gap="sm" align="flex-start">
+      {/* Conteúdo */}
+      <Stack gap={4} style={{ flex: 1, minWidth: 0 }}>
         {/* Thumbnail */}
-        {/* {item.image_url ? (
+        {item.image_url && (
           <Image
             src={item.image_url}
             alt={item.title}
-            w={80}
-            h={80}
+            w="100%"
+            h="auto"
+            mb="xs"
             radius="sm"
             fit="cover"
             style={{ flexShrink: 0 }}
             fallbackSrc="https://placehold.co/80x80?text=🎵"
           />
-        ) : (
-          <Box
-            w={80}
-            h={80}
-            style={{
-              flexShrink: 0,
-              borderRadius: 8,
-              background: 'var(--mantine-color-dark-5)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: 28,
-            }}
+        )}
+        <Group justify="space-between" wrap="nowrap" gap="xs">
+          <Badge
+            size="xs"
+            variant="light"
+            color={CATEGORY_COLORS[item.category] ?? 'gray'}
           >
-            🎵
-          </Box>
-        )} */}
-
-        {/* Conteúdo */}
-        <Stack gap={4} style={{ flex: 1, minWidth: 0 }}>
-          <Group justify="space-between" wrap="nowrap" gap="xs">
-            <Badge
+            {item.category}
+          </Badge>
+          <Tooltip label="Abrir fonte" withArrow position="top">
+            <ActionIcon
               size="xs"
-              variant="light"
-              color={CATEGORY_COLORS[item.category] ?? 'gray'}
+              variant="subtle"
+              color="gray"
+              component="span"
+              onClick={(e) => e.stopPropagation()}
             >
-              {item.category}
-            </Badge>
-            <Tooltip label="Abrir fonte" withArrow position="top">
-              <ActionIcon
-                size="xs"
-                variant="subtle"
-                color="gray"
-                component="span"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <IconExternalLink size={12} />
-              </ActionIcon>
-            </Tooltip>
-          </Group>
+              <IconExternalLink size={12} />
+            </ActionIcon>
+          </Tooltip>
+        </Group>
 
-          <Text fw={600} size="sm" lineClamp={2} style={{ lineHeight: 1.3 }}>
-            {item.title}
+        <Text fw={600} size="sm" lineClamp={2} style={{ lineHeight: 1.3 }}>
+          {item.title}
+        </Text>
+
+        {item.description && (
+          <Text size="xs" c="dimmed" lineClamp={2}>
+            {item.description}
           </Text>
+        )}
 
-          {item.description && (
-            <Text size="xs" c="dimmed" lineClamp={2}>
-              {item.description}
-            </Text>
-          )}
-
-          <Group gap={4} mt={2}>
-            <Text size="xs" c="dimmed">
-              {item.source_name}
-            </Text>
-            <Text size="xs" c="dimmed">
-              ·
-            </Text>
-            <Text size="xs" c="dimmed">
-              {timeAgo}
-            </Text>
-          </Group>
-        </Stack>
-      </Group>
+        <Group gap={4} mt={2}>
+          <Text size="xs" c="dimmed">
+            {item.source_name}
+          </Text>
+          <Text size="xs" c="dimmed">
+            ·
+          </Text>
+          <Text size="xs" c="dimmed">
+            {timeAgo}
+          </Text>
+        </Group>
+      </Stack>
     </Card>
   )
 }
@@ -178,12 +159,18 @@ export function NewsFeed() {
 
   return (
     <Box>
-      <Title order={4} mb="sm">
+      <Title order={4} mb="sm" visibleFrom="sm">
         Notícias da Música
       </Title>
 
       {/* Abas de categoria */}
-      <Tabs value={activeCategory} onChange={setActiveCategory} mb="md" variant="pills">
+      <Tabs
+        px={{ base: 'sm', sm: 0 }}
+        value={activeCategory}
+        onChange={setActiveCategory}
+        mb="md"
+        variant="pills"
+      >
         <Tabs.List>
           {CATEGORIES.map((cat) => (
             <Tabs.Tab key={cat.value} value={cat.value} leftSection={cat.icon}>
@@ -195,7 +182,7 @@ export function NewsFeed() {
 
       {/* Estado de erro */}
       {error && (
-        <Alert icon={<IconAlertCircle size={16} />} color="red" mb="md">
+        <Alert color="red" mb="md">
           Não foi possível carregar as notícias. Tente novamente mais tarde.
         </Alert>
       )}

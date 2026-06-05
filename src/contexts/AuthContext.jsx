@@ -16,7 +16,14 @@ export function AuthProvider({ children }) {
     const { data, error } = await supabase
       .from('profiles')
       .select(
-        'id, full_name, username, avatar, cover_image, bio, title, available_from, plan, is_verified, is_open_to_work, is_admin',
+        `
+        id, full_name, username, 
+        avatar, cover_image, 
+        bio, title, 
+        available_from, plan, 
+        is_verified, is_open_to_work, is_admin,
+        feed_as_home
+        `,
       )
       .eq('id', userId)
       .single()
@@ -96,6 +103,7 @@ export function AuthProvider({ children }) {
   async function signOut() {
     await supabase.auth.signOut()
     setProfile(null)
+    sessionStorage.removeItem('feed_redirected')
   }
 
   const value = {

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Helmet } from 'react-helmet-async'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useQuery, useInfiniteQuery, useQueryClient } from '@tanstack/react-query'
@@ -32,6 +33,8 @@ import {
   Title,
   Anchor,
   Skeleton,
+  Switch,
+  Tooltip,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { useDisclosure } from '@mantine/hooks'
@@ -45,6 +48,7 @@ import {
   IconRefresh,
   IconUser,
 } from '@tabler/icons-react'
+import { supabase } from '../lib/supabaseClient'
 import LinkedItem from '../components/feed/LinkedItem'
 import VideoPlayerNative from '../components/VideoPlayerNative'
 import VideoPlayerYoutube from '../components/feed/VideoPlayerYoutube'
@@ -62,13 +66,32 @@ dayjs.locale('pt-br')
 const AVATAR_PATH =
   'https://ik.imagekit.io/mublin/tr:h-68,c-maintain_ratio/users/avatars/'
 
-export default function Feed({ from = '' }) {
+export default function Feed({ from = '', showNewsFeed = true }) {
   const navigate = useNavigate()
   const { colorScheme } = useMantineColorScheme()
   const queryClient = useQueryClient()
-  const { profile, user, loading } = useAuth()
+  const { profile, user, loading, refreshProfile } = useAuth()
   const [isStale, setIsStale] = useState(false)
   const [feedType, setFeedType] = useState('explore')
+  const [updatingFeedAsHome, setUpdatingFeedAsHome] = useState(false)
+
+  async function handleFeedAsHomeToggle(checked) {
+    setUpdatingFeedAsHome(true)
+    const { error } = await supabase
+      .from('profiles')
+      .update({ feed_as_home: checked })
+      .eq('id', user.id)
+    if (!error) {
+      await refreshProfile()
+    } else {
+      notifications.show({
+        color: 'red',
+        position: 'top-center',
+        message: 'Erro ao salvar preferência.',
+      })
+    }
+    setUpdatingFeedAsHome(false)
+  }
 
   const {
     data: feedData,
@@ -179,8 +202,14 @@ export default function Feed({ from = '' }) {
 
   return (
     <>
+      <Helmet>
+        <meta charSet="utf-8" />
+        <title>Feed · Mublin</title>
+        <link rel="canonical" href="https://mublin.com/feed" />
+        <meta name="description" content="Feed de postagens e notícias no Mublin" />
+      </Helmet>
       <Grid px={0}>
-        <Grid.Col span={{ base: 12, md: 9 }}>
+        <Grid.Col span={{ base: 12, md: showNewsFeed ? 8 : 12 }}>
           <Flex
             gap="xs"
             align="center"
@@ -189,36 +218,61 @@ export default function Feed({ from = '' }) {
             hiddenFrom="sm"
             px={{ base: '0.8rem', sm: 0 }}
           >
-            <Image
-              src={colorScheme === 'light' ? MublinLogoBlack : MublinLogoWhite}
-              h={26}
-              w="auto"
-              fit="contain"
-            />
-            <Flex gap="sm">
+            <Box
+              component={Link}
+              to="/home"
+              style={{
+                cursor: 'pointer',
+                textDecoration: 'none',
+                WebkitTapHighlightColor: 'transparent',
+              }}
+            >
+              <Image
+                src={colorScheme === 'light' ? MublinLogoBlack : MublinLogoWhite}
+                h={24}
+                w="auto"
+                fit="contain"
+              />
+            </Box>
+            <Flex gap="sm" pt={3}>
               <Title
                 order={3}
-                fz="h4"
+                fz="sm"
                 fw={600}
                 opacity={feedType === 'explore' ? 1 : 0.4}
                 component={Anchor}
                 underline="never"
                 c="var(--mantine-color-text)"
                 onClick={() => setFeedType('explore')}
+                lh={1}
               >
                 Explorar
               </Title>
               <Title
                 order={3}
-                fz="h4"
+                fz="sm"
                 fw={600}
                 opacity={feedType === 'following' ? 1 : 0.4}
                 component={Anchor}
                 underline="never"
                 c="var(--mantine-color-text)"
                 onClick={() => setFeedType('following')}
+                lh={1}
               >
                 Seguindo
+              </Title>
+              <Title
+                order={3}
+                fz="sm"
+                fw={600}
+                opacity={feedType === 'news' ? 1 : 0.4}
+                component={Anchor}
+                underline="never"
+                c="var(--mantine-color-text)"
+                onClick={() => setFeedType('news')}
+                lh={1}
+              >
+                Notícias
               </Title>
             </Flex>
           </Flex>
@@ -250,6 +304,21 @@ export default function Feed({ from = '' }) {
                       <IconRefresh size={18} stroke={2} />
                     </ActionIcon>
                   )}
+                  <Tooltip
+                    label="Quando ativado, você sempre será direcionado ao Feed ao entrar no Mublin"
+                    withArrow
+                    multiline
+                    w={220}
+                    position="bottom-start"
+                  >
+                    <Switch
+                      size="xs"
+                      label="Definir como página inicial"
+                      checked={profile?.feed_as_home ?? false}
+                      onChange={(e) => handleFeedAsHomeToggle(e.currentTarget.checked)}
+                      disabled={updatingFeedAsHome}
+                    />
+                  </Tooltip>
                 </Group>
 
                 <Flex gap="sm">
@@ -279,327 +348,331 @@ export default function Feed({ from = '' }) {
                   </Title>
                 </Flex>
               </Group>
-              <ScrollArea
-                h={{ base: 'auto', md: from ? 'calc(90vh - 120px)' : 'auto' }}
-                scrollHideDelay={0}
-              >
-                {/* Caixa de novo post */}
-                <Paper
-                  className="paperWrapper"
-                  mb="sm"
-                  py="xs"
-                  px={{ base: 'md', md: 0 }}
+              {(feedType === 'explore' || feedType === 'following') && (
+                <ScrollArea
+                  h={{ base: 'auto', md: from ? 'calc(90vh - 120px)' : 'auto' }}
+                  scrollHideDelay={0}
                 >
-                  <Flex gap={10} align="center">
-                    <Link to={`/${profile?.username}`}>
-                      <Avatar
-                        size={36}
-                        radius="xl"
-                        src={
-                          profile?.avatar
-                            ? `https://ik.imagekit.io/mublin/tr:h-76,w-76,r-max,c-maintain_ratio/users/avatars/${profile.avatar}`
-                            : undefined
-                        }
-                        alt={profile?.username}
-                      />
-                    </Link>
-                    <Text
-                      w="100%"
-                      c="dimmed"
-                      size="md"
-                      lh={0}
-                      component={Link}
-                      to="/new/post"
-                    >
-                      Quais as novidades?
-                    </Text>
-                  </Flex>
-                </Paper>
-
-                {/* Feed */}
-                {loadingFeed || isRefetching ? (
-                  [1, 2].map((i) => (
-                    <Card key={i} mt="sm" className="feedPostWrapper">
-                      <Group
-                        gap={6}
-                        align="center"
-                        justify="flex-start"
-                        className="paddingX"
-                        mb="xs"
+                  {/* Caixa de novo post */}
+                  <Paper
+                    className="paperWrapper"
+                    mb="sm"
+                    py="xs"
+                    px={{ base: 'md', md: 0 }}
+                  >
+                    <Flex gap={10} align="center">
+                      <Link to={`/${profile?.username}`}>
+                        <Avatar
+                          size={36}
+                          radius="xl"
+                          src={
+                            profile?.avatar
+                              ? `https://ik.imagekit.io/mublin/tr:h-76,w-76,r-max,c-maintain_ratio/users/avatars/${profile.avatar}`
+                              : undefined
+                          }
+                          alt={profile?.username}
+                        />
+                      </Link>
+                      <Text
+                        w="100%"
+                        c="dimmed"
+                        size="md"
+                        lh={0}
+                        component={Link}
+                        to="/new/post"
                       >
-                        <Skeleton circle height={36} width={36} />
-                        <Stack gap={5}>
-                          <Skeleton width={110} height={14} />
-                          <Skeleton width={150} height={8} />
-                        </Stack>
-                      </Group>
-                      <Stack gap={5} mb="sm">
-                        <Skeleton width="88%" height={12} />
-                        <Skeleton width="84%" height={12} />
-                        <Skeleton width="92%" height={12} />
-                      </Stack>
-                    </Card>
-                  ))
-                ) : error ? (
-                  <Paper p="md" withBorder radius="md" mx="sm" mt="xl">
-                    <Center style={{ flexDirection: 'column' }}>
-                      <Text size="sm" c="dimmed" mb="md">
-                        Ocorreu um erro ao carregar o feed.
+                        Quais as novidades?
                       </Text>
-                      <Button
-                        variant="light"
-                        color="red"
-                        size="xs"
-                        onClick={() =>
-                          queryClient.invalidateQueries({ queryKey: ['feed'] })
-                        }
-                      >
-                        Tentar novamente
-                      </Button>
-                    </Center>
+                    </Flex>
                   </Paper>
-                ) : (
-                  <>
-                    <Stack gap={14}>
-                      {feedPosts.map((post) => (
-                        <Card className="feedPostWrapper" key={post.id}>
-                          <Group
-                            gap={6}
-                            align="flex-start"
-                            justify="space-between"
-                            className="paddingX"
-                          >
-                            <Avatar
-                              size={36}
-                              radius="xl"
-                              src={
-                                post.author_avatar
-                                  ? AVATAR_PATH + post.author_avatar
-                                  : undefined
-                              }
-                              component={Link}
-                              to={`/${post.author_username}`}
-                              title={post.author_full_name}
-                            />
-                            <Flex mih={37} direction="column" justify="center" flex={1}>
-                              <Stack gap={0}>
-                                <Flex
-                                  gap={post.author_is_verified ? 2 : 6}
-                                  align="center"
-                                  wrap="wrap"
-                                >
-                                  <Text
-                                    component={Link}
-                                    to={`/${post.author_username}`}
-                                    size="md"
-                                    fw={600}
-                                    lh={1}
-                                    c="var(--mantine-color-text)"
-                                    className="noDecoration"
+
+                  {/* Feed */}
+                  {loadingFeed || isRefetching ? (
+                    [1, 2].map((i) => (
+                      <Card key={i} mt="sm" className="feedPostWrapper">
+                        <Group
+                          gap={6}
+                          align="center"
+                          justify="flex-start"
+                          className="paddingX"
+                          mb="xs"
+                        >
+                          <Skeleton circle height={36} width={36} />
+                          <Stack gap={5}>
+                            <Skeleton width={110} height={14} />
+                            <Skeleton width={150} height={8} />
+                          </Stack>
+                        </Group>
+                        <Stack gap={5} mb="sm">
+                          <Skeleton width="88%" height={12} />
+                          <Skeleton width="84%" height={12} />
+                          <Skeleton width="92%" height={12} />
+                        </Stack>
+                      </Card>
+                    ))
+                  ) : error ? (
+                    <Paper p="md" withBorder radius="md" mx="sm" mt="xl">
+                      <Center style={{ flexDirection: 'column' }}>
+                        <Text size="sm" c="dimmed" mb="md">
+                          Ocorreu um erro ao carregar o feed.
+                        </Text>
+                        <Button
+                          variant="light"
+                          color="red"
+                          size="xs"
+                          onClick={() =>
+                            queryClient.invalidateQueries({ queryKey: ['feed'] })
+                          }
+                        >
+                          Tentar novamente
+                        </Button>
+                      </Center>
+                    </Paper>
+                  ) : (
+                    <>
+                      <Stack gap={14}>
+                        {feedPosts.map((post) => (
+                          <Card className="feedPostWrapper" key={post.id}>
+                            <Group
+                              gap={6}
+                              align="flex-start"
+                              justify="space-between"
+                              className="paddingX"
+                            >
+                              <Avatar
+                                size={36}
+                                radius="xl"
+                                src={
+                                  post.author_avatar
+                                    ? AVATAR_PATH + post.author_avatar
+                                    : undefined
+                                }
+                                component={Link}
+                                to={`/${post.author_username}`}
+                                title={post.author_full_name}
+                              />
+                              <Flex mih={37} direction="column" justify="center" flex={1}>
+                                <Stack gap={0}>
+                                  <Flex
+                                    gap={post.author_is_verified ? 2 : 6}
+                                    align="center"
+                                    wrap="wrap"
                                   >
-                                    {post.author_username}
-                                  </Text>
-                                  {!!post.author_is_verified && (
-                                    <IconRosetteDiscountCheckFilled
-                                      className="iconVerified small"
-                                      title="Usuário verificado"
-                                    />
-                                  )}
-                                  {post.author_project_id && (
-                                    <Text size="xs" c="dimmed">
-                                      Projeto
+                                    <Text
+                                      component={Link}
+                                      to={`/${post.author_username}`}
+                                      size="md"
+                                      fw={600}
+                                      lh={1}
+                                      c="var(--mantine-color-text)"
+                                      className="noDecoration"
+                                    >
+                                      {post.author_username}
                                     </Text>
-                                  )}
+                                    {!!post.author_is_verified && (
+                                      <IconRosetteDiscountCheckFilled
+                                        className="iconVerified small"
+                                        title="Usuário verificado"
+                                      />
+                                    )}
+                                    {post.author_project_id && (
+                                      <Text size="xs" c="dimmed">
+                                        Projeto
+                                      </Text>
+                                    )}
+                                    <Text
+                                      size="xs"
+                                      fw={400}
+                                      c="dimmed"
+                                      title={dayjs(post.created_at).format(
+                                        'dddd, D [de] MMMM [de] YYYY [às] HH:mm',
+                                      )}
+                                      component={Link}
+                                      to={`/post/${post.id}`}
+                                      style={{ textDecoration: 'none' }}
+                                      lh={1}
+                                      ml={3}
+                                    >
+                                      {dayjs(post.created_at).fromNow()}
+                                    </Text>
+                                  </Flex>
                                   <Text
                                     size="xs"
-                                    fw={400}
                                     c="dimmed"
-                                    title={dayjs(post.created_at).format(
-                                      'dddd, D [de] MMMM [de] YYYY [às] HH:mm',
-                                    )}
-                                    component={Link}
-                                    to={`/post/${post.id}`}
-                                    style={{ textDecoration: 'none' }}
-                                    lh={1}
-                                    ml={3}
+                                    maw={240}
+                                    truncate="end"
+                                    title={post.author_title}
                                   >
-                                    {dayjs(post.created_at).fromNow()}
+                                    {post.author_title}
                                   </Text>
-                                </Flex>
-                                <Text
-                                  size="xs"
-                                  c="dimmed"
-                                  maw={240}
-                                  truncate="end"
-                                  title={post.author_title}
-                                >
-                                  {post.author_title}
-                                </Text>
-                              </Stack>
-                            </Flex>
-                            <Menu shadow="md" radius="md" position="bottom-end">
-                              <Menu.Target>
-                                <ActionIcon
+                                </Stack>
+                              </Flex>
+                              <Menu shadow="md" radius="md" position="bottom-end">
+                                <Menu.Target>
+                                  <ActionIcon
+                                    variant="subtle"
+                                    color="gray"
+                                    size="sm"
+                                    radius="xl"
+                                    mr={{ base: 0, sm: 'xs' }}
+                                  >
+                                    <IconDots size={18} color="gray" />
+                                  </ActionIcon>
+                                </Menu.Target>
+                                <Menu.Dropdown>
+                                  <Menu.Item
+                                    leftSection={<IconArrowNarrowRightDashed size={14} />}
+                                    onClick={() => navigate(`/post/${post.id}`)}
+                                  >
+                                    Ver postagem
+                                  </Menu.Item>
+                                  <Menu.Item
+                                    leftSection={<IconUser size={14} />}
+                                    onClick={() => navigate(`/${post.author_username}`)}
+                                  >
+                                    Ver perfil de {post.author_username}
+                                  </Menu.Item>
+                                  <Menu.Item
+                                    leftSection={<IconLink size={14} />}
+                                    onClick={() =>
+                                      navigator.clipboard.writeText(
+                                        `${window.location.origin}/post/${post.id}`,
+                                      )
+                                    }
+                                  >
+                                    Copiar link
+                                  </Menu.Item>
+                                  {post.author_profile_id === user?.id && (
+                                    <>
+                                      <Menu.Divider />
+                                      <Menu.Item
+                                        color="red"
+                                        leftSection={<IconTrash size={14} />}
+                                        onClick={() => {
+                                          setPostToDelete(post.id)
+                                          openConfirmDeletePost()
+                                        }}
+                                      >
+                                        Apagar postagem
+                                      </Menu.Item>
+                                    </>
+                                  )}
+                                </Menu.Dropdown>
+                              </Menu>
+                            </Group>
+                            {/* Corpo da postagem */}
+                            {post.body && (
+                              <Text
+                                size="0.90em"
+                                c="var(--mantine-color-text)"
+                                lh={1.4}
+                                fw={420}
+                                my={7}
+                                onClick={(event) => handleTextClick(event, post.id)}
+                                style={{
+                                  textDecoration: 'none',
+                                  whiteSpace: 'pre-line',
+                                  cursor: 'pointer',
+                                }}
+                                className="paddingX"
+                              >
+                                {parse(
+                                  linkifyStr(post.body, {
+                                    target: '_blank',
+                                    format: (value, type) => formatLinkText(value, type),
+                                  }),
+                                )}
+                              </Text>
+                            )}
+                            {post.image && (
+                              <Link to={`/post/${post.id}`}>
+                                <Image
+                                  src={`https://ik.imagekit.io/mublin/posts/tr:w-700/${post.image}`}
+                                  className="post-image"
+                                  mt={2}
+                                />
+                              </Link>
+                            )}
+                            {post.video_source === 'mublin' && (
+                              <Box className="paddingX" mt={5}>
+                                <VideoPlayerNative
+                                  src={post.video_storage_path}
+                                  title={post.video_title}
+                                  isVertical={post.video_is_vertical ?? true}
+                                />
+                              </Box>
+                            )}
+                            {post.video_url && (
+                              <VideoPlayerYoutube
+                                url={post.video_url}
+                                title={post.body?.slice(0, 60)}
+                              />
+                            )}
+                            {(post.linked_gig_id || post.linked_product_id) && (
+                              <Box className="paddingX">
+                                <LinkedItem post={post} />
+                              </Box>
+                            )}
+                            {/* Ações */}
+                            <Group gap={4} mt={6} px={{ base: '0.4rem', sm: 0 }}>
+                              <LikeButton
+                                postId={post.id}
+                                userId={user?.id}
+                                likedPostIds={likedPostIds}
+                                likesCount={likesCountMap[post.id] ?? 0}
+                              />
+                              {!post.comments_disabled && (
+                                <Button
+                                  component={Link}
+                                  to={`/post/${post.id}`}
                                   variant="subtle"
                                   color="gray"
                                   size="sm"
-                                  radius="xl"
-                                  mr={{ base: 0, sm: 'xs' }}
-                                >
-                                  <IconDots size={18} color="gray" />
-                                </ActionIcon>
-                              </Menu.Target>
-                              <Menu.Dropdown>
-                                <Menu.Item
-                                  leftSection={<IconArrowNarrowRightDashed size={14} />}
-                                  onClick={() => navigate(`/post/${post.id}`)}
-                                >
-                                  Ver postagem
-                                </Menu.Item>
-                                <Menu.Item
-                                  leftSection={<IconUser size={14} />}
-                                  onClick={() => navigate(`/${post.author_username}`)}
-                                >
-                                  Ver perfil de {post.author_username}
-                                </Menu.Item>
-                                <Menu.Item
-                                  leftSection={<IconLink size={14} />}
-                                  onClick={() =>
-                                    navigator.clipboard.writeText(
-                                      `${window.location.origin}/post/${post.id}`,
+                                  radius="md"
+                                  fw={400}
+                                  px={10}
+                                  leftSection={
+                                    post.comments_count > 0 && (
+                                      <IconMessageCircle size={21} />
                                     )
                                   }
                                 >
-                                  Copiar link
-                                </Menu.Item>
-                                {post.author_profile_id === user?.id && (
-                                  <>
-                                    <Menu.Divider />
-                                    <Menu.Item
-                                      color="red"
-                                      leftSection={<IconTrash size={14} />}
-                                      onClick={() => {
-                                        setPostToDelete(post.id)
-                                        openConfirmDeletePost()
-                                      }}
-                                    >
-                                      Apagar postagem
-                                    </Menu.Item>
-                                  </>
-                                )}
-                              </Menu.Dropdown>
-                            </Menu>
-                          </Group>
-                          {/* Corpo da postagem */}
-                          {post.body && (
-                            <Text
-                              size="0.90em"
-                              c="var(--mantine-color-text)"
-                              lh={1.4}
-                              fw={420}
-                              my={7}
-                              onClick={(event) => handleTextClick(event, post.id)}
-                              style={{
-                                textDecoration: 'none',
-                                whiteSpace: 'pre-line',
-                                cursor: 'pointer',
-                              }}
-                              className="paddingX"
-                            >
-                              {parse(
-                                linkifyStr(post.body, {
-                                  target: '_blank',
-                                  format: (value, type) => formatLinkText(value, type),
-                                }),
-                              )}
-                            </Text>
-                          )}
-                          {post.image && (
-                            <Link to={`/post/${post.id}`}>
-                              <Image
-                                src={`https://ik.imagekit.io/mublin/posts/tr:w-700/${post.image}`}
-                                className="post-image"
-                                mt={2}
-                              />
-                            </Link>
-                          )}
-                          {post.video_source === 'mublin' && (
-                            <Box className="paddingX" mt={5}>
-                              <VideoPlayerNative
-                                src={post.video_storage_path}
-                                title={post.video_title}
-                                isVertical={post.video_is_vertical ?? true}
-                              />
-                            </Box>
-                          )}
-                          {post.video_url && (
-                            <VideoPlayerYoutube
-                              url={post.video_url}
-                              title={post.body?.slice(0, 60)}
-                            />
-                          )}
-                          {(post.linked_gig_id || post.linked_product_id) && (
-                            <Box className="paddingX">
-                              <LinkedItem post={post} />
-                            </Box>
-                          )}
-                          {/* Ações */}
-                          <Group gap={4} mt={6} px={{ base: '0.4rem', sm: 0 }}>
-                            <LikeButton
-                              postId={post.id}
-                              userId={user?.id}
-                              likedPostIds={likedPostIds}
-                              likesCount={likesCountMap[post.id] ?? 0}
-                            />
-                            {!post.comments_disabled && (
-                              <Button
-                                component={Link}
-                                to={`/post/${post.id}`}
-                                variant="subtle"
-                                color="gray"
-                                size="sm"
-                                radius="md"
-                                fw={400}
-                                px={10}
-                                leftSection={
-                                  post.comments_count > 0 && (
+                                  {post.comments_count === 0 && (
                                     <IconMessageCircle size={21} />
-                                  )
-                                }
-                              >
-                                {post.comments_count === 0 && (
-                                  <IconMessageCircle size={21} />
-                                )}{' '}
-                                {post.comments_count > 0 ? post.comments_count : ''}
-                              </Button>
-                            )}
-                          </Group>
-                        </Card>
-                      ))}
-                    </Stack>
+                                  )}{' '}
+                                  {post.comments_count > 0 ? post.comments_count : ''}
+                                </Button>
+                              )}
+                            </Group>
+                          </Card>
+                        ))}
+                      </Stack>
 
-                    {hasNextPage && (
-                      <Button
-                        variant="subtle"
-                        color="gray"
-                        size="xs"
-                        fullWidth
-                        mt="sm"
-                        loading={isFetchingNextPage}
-                        onClick={() => fetchNextPage()}
-                      >
-                        Carregar mais
-                      </Button>
-                    )}
-                  </>
-                )}
-              </ScrollArea>
+                      {hasNextPage && (
+                        <Button
+                          variant="subtle"
+                          color="gray"
+                          size="xs"
+                          fullWidth
+                          mt="sm"
+                          loading={isFetchingNextPage}
+                          onClick={() => fetchNextPage()}
+                        >
+                          Carregar mais
+                        </Button>
+                      )}
+                    </>
+                  )}
+                </ScrollArea>
+              )}
             </>
           )}
         </Grid.Col>
-        <Grid.Col span={{ base: 12, md: 3 }}>
-          <NewsFeed />
-        </Grid.Col>
+        {(showNewsFeed || feedType === 'news') && (
+          <Grid.Col span={{ base: 12, md: 4 }}>
+            <NewsFeed />
+          </Grid.Col>
+        )}
       </Grid>
 
       <Modal

@@ -1,4 +1,5 @@
-import { Link } from 'react-router-dom'
+import { useEffect } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useQuery } from '@tanstack/react-query'
 import { fetchUserProjects } from '../queries/user'
@@ -41,8 +42,24 @@ const PROJECT_AVATAR_PATH = 'https://ik.imagekit.io/mublin/projects'
 //   'https://ik.imagekit.io/mublin/products/tr:w-200,bg-FFFFFF,fo-x/'
 
 export default function Home() {
-  const { user, loading } = useAuth()
+  const { user, profile, loading } = useAuth()
+  const navigate = useNavigate()
   const isDesktop = useMediaQuery('(min-width: 48em)')
+
+  useEffect(() => {
+    if (profile?.feed_as_home) {
+      const redirected = sessionStorage.getItem('feed_redirected')
+      if (!redirected) {
+        sessionStorage.setItem('feed_redirected', 'true')
+        navigate('/feed', { replace: true })
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile])
+
+  if (loading) {
+    return null
+  }
 
   const { data: projects = [], isLoading: loadingProjects } = useQuery({
     queryKey: ['user-projects', user?.id],
@@ -649,7 +666,7 @@ export default function Home() {
 
           {isDesktop && (
             <Grid.Col span={{ base: 12, md: 5 }} px={0}>
-              <Feed from="home" />
+              {/* <Feed from="home" showNewsFeed={false} /> */}
             </Grid.Col>
           )}
         </Grid>
