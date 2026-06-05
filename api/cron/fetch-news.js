@@ -51,6 +51,23 @@ const RSS_SOURCES = [
   },
 ]
 
+function cleanText(str) {
+  if (!str) {
+    return null
+  }
+  return str
+    .replace(/<[^>]+>/g, '') // remove tags HTML (<p>, <strong>, etc)
+    .replace(/&amp;/g, '&') // &
+    .replace(/&lt;/g, '<') //
+    .replace(/&gt;/g, '>') // >
+    .replace(/&quot;/g, '"') // "
+    .replace(/&apos;/g, "'") // '
+    .replace(/&#(\d+);/g, (_, code) => String.fromCharCode(code)) // &#8220; → "
+    .replace(/&#x([0-9a-f]+);/gi, (_, hex) => String.fromCharCode(parseInt(hex, 16)))
+    .replace(/&nbsp;/g, ' ')
+    .trim()
+}
+
 // ─── Parser XML minimalista (sem dependências externas) ───────────────────────
 function parseRSS(xml) {
   const items = []
@@ -74,7 +91,8 @@ function parseRSS(xml) {
     // Imagem: tenta media:content, depois og:image no description
     const mediaUrl = block.match(/media:content[^>]+url="([^"]+)"/i)?.[1] ?? null
 
-    const title = get('title')
+    const title = cleanText(get('title'))
+    const description = cleanText(get('description'))?.slice(0, 300) ?? null
     const link = get('link')
     if (!title || !link) {
       continue
@@ -83,7 +101,7 @@ function parseRSS(xml) {
     items.push({
       title,
       link: link.replace(/&amp;/g, '&'),
-      description: get('description')?.slice(0, 300) ?? null,
+      description: description?.slice(0, 300) ?? null,
       pub_date: get('pubDate') ?? get('dc:date') ?? null,
       image_url: mediaUrl,
     })
