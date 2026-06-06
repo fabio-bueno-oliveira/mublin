@@ -20,6 +20,7 @@ import {
   Stack,
   Center,
   Box,
+  SegmentedControl,
   ActionIcon,
   Card,
   Paper,
@@ -31,13 +32,13 @@ import {
   Loader,
   Modal,
   Title,
-  Anchor,
   Skeleton,
   Switch,
   Tooltip,
+  Divider,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { useDisclosure } from '@mantine/hooks'
+import { useMediaQuery, useDisclosure } from '@mantine/hooks'
 import {
   IconRosetteDiscountCheckFilled,
   IconMessageCircle,
@@ -53,7 +54,7 @@ import LinkedItem from '../components/feed/LinkedItem'
 import VideoPlayerNative from '../components/VideoPlayerNative'
 import VideoPlayerYoutube from '../components/feed/VideoPlayerYoutube'
 import LikeButton from '../components/feed/LikeButton'
-import NewsFeed from '../components/NewsFeed'
+import NewsFeed from '../components/feed/NewsFeed'
 import parse from 'html-react-parser'
 import linkifyStr from 'linkify-string'
 import dayjs from 'dayjs'
@@ -66,9 +67,11 @@ dayjs.locale('pt-br')
 const AVATAR_PATH =
   'https://ik.imagekit.io/mublin/tr:h-68,c-maintain_ratio/users/avatars/'
 
-export default function Feed({ from = '', showNewsFeed = true }) {
+export default function Feed({ from = '' }) {
   const navigate = useNavigate()
   const { colorScheme } = useMantineColorScheme()
+  const isDesktop = useMediaQuery('(min-width: 48em)')
+
   const queryClient = useQueryClient()
   const { profile, user, loading, refreshProfile } = useAuth()
   const [isStale, setIsStale] = useState(false)
@@ -209,7 +212,7 @@ export default function Feed({ from = '', showNewsFeed = true }) {
         <meta name="description" content="Feed de postagens e notícias no Mublin" />
       </Helmet>
       <Grid px={0}>
-        <Grid.Col span={{ base: 12, md: showNewsFeed ? 8 : 12 }}>
+        <Grid.Col span={{ base: 12, md: 8 }}>
           <Flex
             gap="xs"
             align="center"
@@ -234,47 +237,17 @@ export default function Feed({ from = '', showNewsFeed = true }) {
                 fit="contain"
               />
             </Box>
-            <Flex gap="sm" pt={3}>
-              <Title
-                order={3}
-                fz="sm"
-                fw={600}
-                opacity={feedType === 'explore' ? 1 : 0.4}
-                component={Anchor}
-                underline="never"
-                c="var(--mantine-color-text)"
-                onClick={() => setFeedType('explore')}
-                lh={1}
-              >
-                Explorar
-              </Title>
-              <Title
-                order={3}
-                fz="sm"
-                fw={600}
-                opacity={feedType === 'following' ? 1 : 0.4}
-                component={Anchor}
-                underline="never"
-                c="var(--mantine-color-text)"
-                onClick={() => setFeedType('following')}
-                lh={1}
-              >
-                Seguindo
-              </Title>
-              <Title
-                order={3}
-                fz="sm"
-                fw={600}
-                opacity={feedType === 'news' ? 1 : 0.4}
-                component={Anchor}
-                underline="never"
-                c="var(--mantine-color-text)"
-                onClick={() => setFeedType('news')}
-                lh={1}
-              >
-                Notícias
-              </Title>
-            </Flex>
+            <SegmentedControl
+              size="sm"
+              variant=""
+              value={feedType}
+              onChange={setFeedType}
+              data={[
+                { label: 'Explorar', value: 'explore' },
+                { label: 'Seguindo', value: 'following' },
+                { label: 'Notícias', value: 'news' },
+              ]}
+            />
           </Flex>
           {loading ? (
             <Center my={40}>
@@ -283,70 +256,31 @@ export default function Feed({ from = '', showNewsFeed = true }) {
           ) : (
             <>
               <Group
-                align="center"
-                justify="space-between"
                 mb="xs"
-                className="paddingX"
                 visibleFrom="sm"
+                align="center"
+                justify="flex-start"
+                className="paddingX"
               >
-                <Group>
-                  <Title order={2} fz="h3" fw={600}>
-                    Feed
-                  </Title>
-                  {isStale && (
-                    <ActionIcon
-                      variant="light"
-                      color="#717171"
-                      c="dimmed"
-                      onClick={() => refetch()}
-                      loading={isRefetching}
-                    >
-                      <IconRefresh size={18} stroke={2} />
-                    </ActionIcon>
-                  )}
-                  <Tooltip
-                    label="Quando ativado, você sempre será direcionado ao Feed ao entrar no Mublin"
-                    withArrow
-                    multiline
-                    w={220}
-                    position="bottom-start"
-                  >
-                    <Switch
-                      size="xs"
-                      label="Definir como página inicial"
-                      checked={profile?.feed_as_home ?? false}
-                      onChange={(e) => handleFeedAsHomeToggle(e.currentTarget.checked)}
-                      disabled={updatingFeedAsHome}
-                    />
-                  </Tooltip>
-                </Group>
-
-                <Flex gap="sm">
-                  <Title
-                    order={3}
-                    fz="h4"
-                    fw={600}
-                    opacity={feedType === 'explore' ? 1 : 0.4}
-                    component={Anchor}
-                    underline="never"
-                    c="var(--mantine-color-text)"
-                    onClick={() => setFeedType('explore')}
-                  >
-                    Explorar
-                  </Title>
-                  <Title
-                    order={3}
-                    fz="h4"
-                    fw={600}
-                    opacity={feedType === 'following' ? 1 : 0.4}
-                    component={Anchor}
-                    underline="never"
-                    c="var(--mantine-color-text)"
-                    onClick={() => setFeedType('following')}
-                  >
-                    Seguindo
-                  </Title>
-                </Flex>
+                <Title order={2} fz="h3" fw={600}>
+                  Feed
+                </Title>
+                <Tooltip
+                  label="Quando ativado, você sempre será direcionado ao Feed ao entrar no Mublin"
+                  withArrow
+                  multiline
+                  w={220}
+                  position="bottom-start"
+                >
+                  <Switch
+                    size="xs"
+                    label="Definir Feed como página inicial"
+                    // description="Quando ativado, você sempre será direcionado ao Feed ao entrar no Mublin"
+                    checked={profile?.feed_as_home ?? false}
+                    onChange={(e) => handleFeedAsHomeToggle(e.currentTarget.checked)}
+                    disabled={updatingFeedAsHome}
+                  />
+                </Tooltip>
               </Group>
               {(feedType === 'explore' || feedType === 'following') && (
                 <ScrollArea
@@ -385,6 +319,34 @@ export default function Feed({ from = '', showNewsFeed = true }) {
                       </Text>
                     </Flex>
                   </Paper>
+
+                  <Flex mb="xs" gap="xs" justify="center" align="center" visibleFrom="sm">
+                    <Divider flex={1} />
+                    <SegmentedControl
+                      size="xs"
+                      value={feedType}
+                      onChange={setFeedType}
+                      data={[
+                        { label: 'Explorar', value: 'explore' },
+                        { label: 'Seguindo', value: 'following' },
+                      ]}
+                    />
+                    <Divider flex={1} />
+                  </Flex>
+
+                  {isStale && (
+                    <Flex mb="xs" gap="xs" justify="center" align="center">
+                      <Button
+                        variant="light"
+                        color="mublinColor"
+                        size="compact-sm"
+                        leftSection={<IconRefresh size={14} />}
+                        onClick={() => refetch()}
+                      >
+                        Atualizar publicações
+                      </Button>
+                    </Flex>
+                  )}
 
                   {/* Feed */}
                   {loadingFeed || isRefetching ? (
@@ -483,7 +445,8 @@ export default function Feed({ from = '', showNewsFeed = true }) {
                                     <Text
                                       size="xs"
                                       fw={400}
-                                      c="dimmed"
+                                      c="var(--mantine-color-text)"
+                                      opacity={0.6}
                                       title={dayjs(post.created_at).format(
                                         'dddd, D [de] MMMM [de] YYYY [às] HH:mm',
                                       )}
@@ -498,8 +461,9 @@ export default function Feed({ from = '', showNewsFeed = true }) {
                                   </Flex>
                                   <Text
                                     size="xs"
-                                    c="dimmed"
+                                    opacity={0.6}
                                     maw={240}
+                                    fw={300}
                                     truncate="end"
                                     title={post.author_title}
                                   >
@@ -668,7 +632,7 @@ export default function Feed({ from = '', showNewsFeed = true }) {
             </>
           )}
         </Grid.Col>
-        {(showNewsFeed || feedType === 'news') && (
+        {(isDesktop || feedType === 'news') && (
           <Grid.Col span={{ base: 12, md: 4 }}>
             <NewsFeed />
           </Grid.Col>

@@ -11,8 +11,8 @@ import {
   Anchor,
   Skeleton,
 } from '@mantine/core'
-import { IconRosetteDiscountCheckFilled } from '@tabler/icons-react'
 import ProPlanBadge from './ProPlanBadge'
+import { IconRosetteDiscountCheckFilled } from '@tabler/icons-react'
 
 const AVATAR_PATH =
   'https://ik.imagekit.io/mublin/tr:h-96,c-maintain_ratio/users/avatars/'
@@ -63,7 +63,7 @@ export default function AppSidebar() {
                 <Avatar
                   size={48}
                   radius="xl"
-                  src={profile?.avatar ? AVATAR_PATH + profile.avatar : undefined}
+                  src={profile?.avatar ? AVATAR_PATH + profile?.avatar : undefined}
                   component={Link}
                   to={`/${profile?.username}`}
                   style={{
@@ -97,7 +97,7 @@ export default function AppSidebar() {
                   <Text size="xs" opacity={0.7} fw={400} lineClamp={1} lh={1}>
                     @{profile?.username}
                   </Text>
-                  {profile.plan === 'Pro' && <ProPlanBadge small />}
+                  {profile?.plan === 'Pro' && <ProPlanBadge small />}
                 </Group>
                 {profile?.title && (
                   <Text size="13px" lh={1.3} mt={4} c="dimmed" lineClamp={2}>
@@ -107,6 +107,7 @@ export default function AppSidebar() {
               </Stack>
             </Box>
           </Card>
+          {/* <Notifications /> */}
         </>
       )}
     </Box>

@@ -12,7 +12,8 @@ import Signup from './pages/Signup'
 import ForgotPassword from './pages/ForgotPassword'
 import ResetPassword from './pages/ResetPassword'
 // Authenticated pages
-import Menu from './pages/Menu' // used only for mobile devices
+import Menu from './pages/Menu' // for mobile devices
+import NotificationsPage from './pages/NotificationsPage' // for mobile devices
 import Onboarding from './pages/Onboarding'
 import Home from './pages/Home'
 import Feed from './pages/Feed'
@@ -87,6 +88,7 @@ export const router = createBrowserRouter([
     element: <AppLayout />,
     children: [
       { path: 'menu', element: <Menu /> },
+      { path: 'notifications', element: <NotificationsPage /> },
       { path: 'home', element: <Home /> },
       { path: 'feed', element: <Feed /> },
       { path: 'search', element: <Search /> },

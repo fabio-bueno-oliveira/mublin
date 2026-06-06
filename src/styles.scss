@@ -18,6 +18,10 @@
   }
 }
 
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
 // Mantine styles
 
 [data-mantine-color-scheme='light'] {

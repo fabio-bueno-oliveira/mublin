@@ -1,15 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
-import {
-  Drawer,
-  Button,
-  Avatar,
-  Stack,
-  UnstyledButton,
-  Indicator,
-  Text,
-} from '@mantine/core'
+import { Drawer, Button, Avatar, Stack, UnstyledButton, Text } from '@mantine/core'
 import {
   IconBulb,
   IconCubePlus,
@@ -18,6 +10,7 @@ import {
   IconPlus,
   IconRss,
   IconPencilPlus,
+  IconCalendar,
 } from '@tabler/icons-react'
 import './AppFooterMobile.css'
 
@@ -53,7 +46,7 @@ export default function AppFooterMobile() {
             onClick={() => navigate('/feed')}
             opacity={(isActive('/feed') || isActive('/post')) && !drawerOpen ? 1 : 0.65}
           >
-            <Indicator color="red" size={8} top="3px" left={14} />
+            {/* <Indicator color="red" size={8} top="3px" left={14} /> */}
             <IconRss />
             <Text size="10px" lh={1.2}>
               Feed
@@ -123,7 +116,7 @@ export default function AppFooterMobile() {
           <Button
             component={Link}
             to="/new/post"
-            variant="light"
+            variant="transparent"
             size="md"
             radius="md"
             leftSection={<IconPencilPlus size={19} />}
@@ -136,7 +129,7 @@ export default function AppFooterMobile() {
           <Button
             component={Link}
             to="/new/project"
-            variant="light"
+            variant="transparent"
             size="md"
             radius="md"
             leftSection={<IconBulb size={19} />}
@@ -148,11 +141,11 @@ export default function AppFooterMobile() {
 
           <Button
             component={Link}
-            to="/new/project"
-            variant="light"
+            to="/new/event"
+            variant="transparent"
             size="md"
             radius="md"
-            leftSection={<IconBulb size={19} />}
+            leftSection={<IconCalendar size={19} />}
             fullWidth
             onClick={() => setDrawerOpen(false)}
           >
@@ -162,7 +155,7 @@ export default function AppFooterMobile() {
           <Button
             component={Link}
             to="/new/gear"
-            variant="light"
+            variant="transparent"
             size="md"
             radius="md"
             leftSection={<IconCubePlus size={22} />}

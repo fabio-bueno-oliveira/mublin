@@ -16,7 +16,6 @@ import {
 } from '@mantine/core'
 import { useMediaQuery } from '@mantine/hooks'
 import AppNavbarMobile from '../components/AppNavbarMobile'
-import Feed from './Feed'
 import {
   IconCalendar,
   IconBulb,
@@ -666,7 +665,7 @@ export default function Home() {
 
           {isDesktop && (
             <Grid.Col span={{ base: 12, md: 5 }} px={0}>
-              {/* <Feed from="home" showNewsFeed={false} /> */}
+              {/* <Feed from="home" /> */}
             </Grid.Col>
           )}
         </Grid>

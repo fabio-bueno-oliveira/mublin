@@ -1,5 +1,7 @@
 import { useAuth } from '../hooks/useAuth'
+import { supabase } from '../lib/supabaseClient'
 import { useNavigate, Link, useLocation } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
 import MublinLogoBlack from '../assets/svg/mublin-logo-black.svg'
 import MublinLogoWhite from '../assets/svg/mublin-logo-white.svg'
 import {
@@ -13,11 +15,13 @@ import {
   Drawer,
   Stack,
   Badge,
+  Indicator,
 } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
 import {
   IconArrowLeft,
+  IconBell,
   IconDotsVerticalFilled,
   IconMenu2Filled,
   IconXFilled,
@@ -30,10 +34,26 @@ export default function AppNavbarMobile({
 }) {
   const { pathname } = useLocation()
   const navigate = useNavigate()
-  const { profile: userProfile } = useAuth()
+  const { user, profile: userProfile } = useAuth()
   const computedColorScheme = useComputedColorScheme('light')
   const isDark = computedColorScheme === 'dark'
   const [opened, { open, close }] = useDisclosure(false)
+
+  const { data: unreadCount = 0 } = useQuery({
+    queryKey: ['notifications-unread-count'],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from('notifications')
+        .select('*', { count: 'exact', head: true })
+        .eq('recipient_id', user.id)
+        .eq('read', false)
+      return count ?? 0
+    },
+    enabled: !!user?.id,
+    staleTime: 1000 * 30,
+    refetchInterval: 1000 * 60, // polling a cada 1 min
+    refetchOnWindowFocus: true,
+  })
 
   return (
     <>
@@ -103,17 +123,43 @@ export default function AppNavbarMobile({
           ) : (
             <>
               {userProfile?.username === profile?.username || pathname === '/home' ? (
-                <ActionIcon
-                  variant="transparent"
-                  aria-label="Menu"
-                  size="lg"
-                  p={0}
-                  onClick={() => navigate('/menu')}
-                  c="var(--mantine-color-text)"
-                  pt={8}
-                >
-                  <IconMenu2Filled size={26} />
-                </ActionIcon>
+                <Flex gap="xs">
+                  <ActionIcon
+                    variant="transparent"
+                    aria-label="Notificações"
+                    size="xl"
+                    radius={false}
+                    pt={5}
+                    onClick={() => navigate('/notifications')}
+                    c="var(--mantine-color-text)"
+                  >
+                    <Indicator
+                      inline
+                      label={
+                        <Text fw={500} fz="9px">
+                          {unreadCount}
+                        </Text>
+                      }
+                      maxValue={99}
+                      size={16}
+                      disabled={unreadCount === 0}
+                      color="red.8"
+                      offset={4}
+                    >
+                      <IconBell size={24} />
+                    </Indicator>
+                  </ActionIcon>
+                  <ActionIcon
+                    variant="transparent"
+                    aria-label="Menu"
+                    size="lg"
+                    pt={12}
+                    onClick={() => navigate('/menu')}
+                    c="var(--mantine-color-text)"
+                  >
+                    <IconMenu2Filled size={28} />
+                  </ActionIcon>
+                </Flex>
               ) : (
                 profile && (
                   <ActionIcon

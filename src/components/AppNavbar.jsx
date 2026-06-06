@@ -1,4 +1,6 @@
+import { useAuth } from '../hooks/useAuth'
 import { useState } from 'react'
+import { supabase } from '../lib/supabaseClient'
 import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom'
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query'
 import {
@@ -9,6 +11,8 @@ import {
 } from '../queries/search'
 import MublinLogoBlack from '../assets/svg/mublin-logo-black.svg'
 import MublinLogoWhite from '../assets/svg/mublin-logo-white.svg'
+import Notifications from './Notifications'
+import { useDisclosure } from '@mantine/hooks'
 import {
   useMantineColorScheme,
   useComputedColorScheme,
@@ -26,8 +30,9 @@ import {
   useCombobox,
   Stack,
   Image,
+  Indicator,
+  ScrollArea,
 } from '@mantine/core'
-import { useDisclosure } from '@mantine/hooks'
 import {
   IconSearch,
   IconArrowRight,
@@ -36,7 +41,6 @@ import {
   IconChevronDown,
   IconClock,
 } from '@tabler/icons-react'
-import { useAuth } from '../hooks/useAuth'
 import { NAV_ITEMS, QUICK_ACTIONS } from '../constants/navItems'
 
 const AVATAR_PATH =
@@ -64,6 +68,22 @@ export default function AppNavbar({ children }) {
 
   const combobox = useCombobox({
     onDropdownClose: () => combobox.resetSelectedOption(),
+  })
+
+  const { data: unreadCount = 0 } = useQuery({
+    queryKey: ['notifications-unread-count'],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from('notifications')
+        .select('*', { count: 'exact', head: true })
+        .eq('recipient_id', user.id)
+        .eq('read', false)
+      return count ?? 0
+    },
+    enabled: !!user?.id,
+    staleTime: 1000 * 30,
+    refetchInterval: 1000 * 60, // polling a cada 1 min
+    refetchOnWindowFocus: true,
   })
 
   const { data: recentSearches = [] } = useQuery({
@@ -260,9 +280,40 @@ export default function AppNavbar({ children }) {
               >
                 <IconSearch size={18} />
               </ActionIcon>
-              <ActionIcon variant="subtle" color="gray" radius="xl" size="lg">
-                <IconBell size={18} />
-              </ActionIcon>
+              <Menu
+                shadow="md"
+                width={300}
+                radius="md"
+                position="bottom-end"
+                offset={8}
+                closeOnItemClick={false}
+              >
+                <Menu.Target>
+                  <ActionIcon variant="subtle" color="gray" size="lg">
+                    <Indicator
+                      inline
+                      label={
+                        <Text fw={500} fz="10px">
+                          {unreadCount}
+                        </Text>
+                      }
+                      maxValue={99}
+                      color="red.8"
+                      size={16}
+                      offset={2}
+                      disabled={unreadCount === 0}
+                    >
+                      <IconBell size={20} />
+                    </Indicator>
+                  </ActionIcon>
+                </Menu.Target>
+
+                <Menu.Dropdown p={0}>
+                  <ScrollArea.Autosize mah={400} scrollbarSize={6} px="xs">
+                    <Notifications />
+                  </ScrollArea.Autosize>
+                </Menu.Dropdown>
+              </Menu>
               <Menu shadow="md" width={200} radius="md" position="bottom-end">
                 <Menu.Target>
                   <Group gap={6} style={{ cursor: 'pointer' }}>

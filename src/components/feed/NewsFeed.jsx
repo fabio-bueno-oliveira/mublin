@@ -1,4 +1,5 @@
 import {
+  Collapse,
   Box,
   Card,
   Text,
@@ -12,7 +13,9 @@ import {
   Alert,
   ActionIcon,
   Tooltip,
+  Flex,
 } from '@mantine/core'
+import { useDisclosure } from '@mantine/hooks'
 import {
   IconNews,
   IconMicrophone2,
@@ -20,9 +23,10 @@ import {
   IconCalendarEvent,
   IconBriefcase,
   IconExternalLink,
+  IconFilter,
 } from '@tabler/icons-react'
 import { useState } from 'react'
-import { useNews } from '../hooks/useNews'
+import { useNews } from '../../hooks/useNews'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import 'dayjs/locale/pt-br'
@@ -152,6 +156,7 @@ function NewsCardSkeleton() {
 // ─── NewsFeed (componente principal) ─────────────────────────────────────────
 export function NewsFeed() {
   const [activeCategory, setActiveCategory] = useState('all')
+  const [filtersOpened, { toggle: toggleFilters }] = useDisclosure(false)
 
   const { news, loading, error } = useNews({
     category: activeCategory === 'all' ? null : activeCategory,
@@ -159,26 +164,34 @@ export function NewsFeed() {
 
   return (
     <Box>
-      <Title order={4} mb="sm" visibleFrom="sm">
-        Notícias da Música
-      </Title>
+      <Flex justify="space-between" visibleFrom="sm">
+        <Title order={4} mb="sm">
+          Notícias da Música
+        </Title>
+        <Tooltip label={filtersOpened ? 'Ocultar filtros' : 'Mostrar filtros'}>
+          <ActionIcon variant="subtle" color="gray" onClick={toggleFilters}>
+            <IconFilter size={18} />
+          </ActionIcon>
+        </Tooltip>
+      </Flex>
 
-      {/* Abas de categoria */}
-      <Tabs
-        px={{ base: 'sm', sm: 0 }}
-        value={activeCategory}
-        onChange={setActiveCategory}
-        mb="md"
-        variant="pills"
-      >
-        <Tabs.List>
-          {CATEGORIES.map((cat) => (
-            <Tabs.Tab key={cat.value} value={cat.value} leftSection={cat.icon}>
-              {cat.label}
-            </Tabs.Tab>
-          ))}
-        </Tabs.List>
-      </Tabs>
+      <Collapse expanded={filtersOpened}>
+        <Tabs
+          px={{ base: 'sm', sm: 0 }}
+          value={activeCategory}
+          onChange={setActiveCategory}
+          mb="md"
+          variant="pills"
+        >
+          <Tabs.List>
+            {CATEGORIES.map((cat) => (
+              <Tabs.Tab key={cat.value} value={cat.value} leftSection={cat.icon}>
+                {cat.label}
+              </Tabs.Tab>
+            ))}
+          </Tabs.List>
+        </Tabs>
+      </Collapse>
 
       {/* Estado de erro */}
       {error && (
