@@ -21,8 +21,8 @@ import { useDisclosure } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
 import {
   IconArrowLeft,
-  IconBell,
   IconDotsVerticalFilled,
+  IconHeart,
   IconMenu2Filled,
   IconXFilled,
 } from '@tabler/icons-react'
@@ -146,7 +146,7 @@ export default function AppNavbarMobile({
                       color="red.8"
                       offset={4}
                     >
-                      <IconBell size={24} />
+                      <IconHeart size={24} />
                     </Indicator>
                   </ActionIcon>
                   <ActionIcon

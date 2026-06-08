@@ -70,7 +70,7 @@ export default function AppNavbar({ children }) {
     onDropdownClose: () => combobox.resetSelectedOption(),
   })
 
-  const { data: unreadCount = 0 } = useQuery({
+  const { data: unreadNotifications = 0 } = useQuery({
     queryKey: ['notifications-unread-count'],
     queryFn: async () => {
       const { count } = await supabase
@@ -81,9 +81,9 @@ export default function AppNavbar({ children }) {
       return count ?? 0
     },
     enabled: !!user?.id,
-    staleTime: 1000 * 30,
-    refetchInterval: 1000 * 60, // polling a cada 1 min
-    refetchOnWindowFocus: true,
+    staleTime: 1000 * 60 * 3, // 3 min
+    refetchInterval: 1000 * 60 * 3, // polling a cada 3 min
+    refetchOnWindowFocus: true, // mas atualiza sempre que voltar à aba
   })
 
   const { data: recentSearches = [] } = useQuery({
@@ -209,7 +209,7 @@ export default function AppNavbar({ children }) {
                       ? searchPhrase
                         ? `ex: ${searchPhrase}`
                         : 'PRS Silversky'
-                      : 'Músicos, projetos, gigs, instrumentos...'
+                      : 'Pessoas, projetos, gigs, equipamentos...'
                   }
                   leftSection={<IconSearch size={15} />}
                   rightSection={
@@ -294,14 +294,14 @@ export default function AppNavbar({ children }) {
                       inline
                       label={
                         <Text fw={500} fz="10px">
-                          {unreadCount}
+                          {unreadNotifications}
                         </Text>
                       }
                       maxValue={99}
                       color="red.8"
                       size={16}
                       offset={2}
-                      disabled={unreadCount === 0}
+                      disabled={unreadNotifications === 0}
                     >
                       <IconBell size={20} />
                     </Indicator>
@@ -323,7 +323,7 @@ export default function AppNavbar({ children }) {
                       radius="xl"
                     />
                     <Text size="sm" fw={600} visibleFrom="sm">
-                      {profile?.full_name?.split(' ')[0]}
+                      {profile?.username}
                     </Text>
                     <IconChevronDown
                       size={14}

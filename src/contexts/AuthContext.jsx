@@ -22,6 +22,7 @@ export function AuthProvider({ children }) {
         bio, title, 
         available_from, plan, 
         is_verified, is_open_to_work, is_admin,
+        show_availability_info,
         feed_as_home
         `,
       )

@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabaseClient'
 import { useParams, Link } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
-  fetchBasicProfile,
+  fetchProfileDetails,
   fetchCheckFollowing,
   fetchProfileFollowers,
   fetchProfileFollowingList,
@@ -44,7 +44,6 @@ import {
   Anchor,
   Image,
   Tooltip,
-  Divider,
   Affix,
   Transition,
   Menu,
@@ -57,7 +56,7 @@ import LoadingSkeleton from '../components/profile/LoadingSkeleton'
 import LinkedItem from '../components/feed/LinkedItem'
 import VideoPlayerYoutube from '../components/feed/VideoPlayerYoutube'
 import SectionPanel from '../components/SectionPanel'
-import AvatarOpenToWork from '../components/AvatarOpenToWork'
+import InviteToGigModal from '../components/gigs/InviteToGigModal'
 import {
   IconMoodSad,
   IconRosetteDiscountCheckFilled,
@@ -77,6 +76,7 @@ import {
 import ProfileHeaderMobile from '../components/profile/ProfileHeaderMobile'
 import AppNavbarMobile from '../components/AppNavbarMobile'
 import ProPlanBadge from '../components/ProPlanBadge'
+import SimilarProfiles from '../components/SimilarProfiles'
 import { truncateString } from '../utils/formatter'
 import { isProfileLive } from '../utils/live'
 import { AVAILABLE_FROM_LABELS } from '../constants/availability'
@@ -120,6 +120,7 @@ export default function Profile() {
     useDisclosure(false)
   const [contactInfoOpened, { open: openContactInfo, close: closeContactInfo }] =
     useDisclosure(false)
+  const [inviteOpened, { open: openInvite, close: closeInvite }] = useDisclosure(false)
 
   const {
     data: profile,
@@ -127,7 +128,7 @@ export default function Profile() {
     isError,
   } = useQuery({
     queryKey: ['profile', username],
-    queryFn: () => fetchBasicProfile(username),
+    queryFn: () => fetchProfileDetails(username),
     enabled: !!username && !authLoading,
     staleTime: 1000 * 60 * 5,
     retry: 1,
@@ -138,7 +139,11 @@ export default function Profile() {
     { id: 'projects', label: 'Projetos', active: true },
     { id: 'posts', label: 'Postagens', active: true },
     { id: 'gear', label: 'Equipamento', active: true },
-    { id: 'availability', label: 'Disponibilidade', active: true },
+    {
+      id: 'availability',
+      label: 'Disponibilidade',
+      active: profile?.show_availability_info,
+    },
     { id: 'recognitions', label: 'Reconhecimentos', active: true },
     { id: 'inspirations', label: 'Inspirações', active: profile?.is_legend },
     { id: 'suggested-profiles', label: 'Perfis parecidos', active: true },
@@ -198,23 +203,23 @@ export default function Profile() {
     staleTime: 1000 * 60 * 10,
   })
 
-  const { data: followersList = [] } = useQuery({
+  const { data: followersList = [], isLoading: loadingFollowers } = useQuery({
     queryKey: ['profileFollowers', profile?.id],
     queryKeyHashFn: () => `profileFollowers-${profile?.id}`,
     queryFn: () => fetchProfileFollowers(profile?.id),
-    enabled: !!profile?.id,
-    staleTime: 1000 * 60 * 20,
+    enabled: !!profile?.id && followersOpened,
+    staleTime: 0,
   })
 
-  const { data: followingList = [] } = useQuery({
+  const { data: followingList = [], isLoading: loadingFollowing } = useQuery({
     queryKey: ['profileFollowingList', profile?.id],
     queryKeyHashFn: () => `profileFollowingList-${profile?.id}`,
     queryFn: () => fetchProfileFollowingList(profile?.id),
-    enabled: !!profile?.id,
-    staleTime: 1000 * 60 * 20,
+    enabled: !!profile?.id && followingOpened,
+    staleTime: 0,
   })
 
-  const { data: similarProfiles = [], isLoading: loadingSimilar } = useQuery({
+  const { data: similarProfiles = [], isLoading: loadingSimilarProfiles } = useQuery({
     queryKey: ['similar-profiles', profile?.id],
     queryFn: () => fetchSimilarProfiles(profile.id, profile.region_id),
     enabled: !!profile?.id,
@@ -620,18 +625,6 @@ export default function Profile() {
                     </ActionIcon>
                   )}
                 </Flex>
-                <Group gap="md" my={1}>
-                  <Anchor underline="never" onClick={openFollowers}>
-                    <Text size="sm" fw={500}>
-                      {followersList.length} seguidores
-                    </Text>
-                  </Anchor>
-                  <Anchor underline="never" onClick={openFollowing}>
-                    <Text size="sm" fw={500}>
-                      {followingList.length} seguindo
-                    </Text>
-                  </Anchor>
-                </Group>
                 {profile.title && (
                   <Text size="14px" fw={400} maw={420} lh={1.3} my={3}>
                     {profile.title}
@@ -647,7 +640,11 @@ export default function Profile() {
                     </Text>
                   )}
                   <Text size="xs">·</Text>
-                  <Anchor size="xs" onClick={openContactInfo}>
+                  <Anchor
+                    size="xs"
+                    onClick={openContactInfo}
+                    c="var(--mantine-color-text)"
+                  >
                     Dados de contato
                   </Anchor>
                   {isProfileLive(profile) && (
@@ -663,6 +660,18 @@ export default function Profile() {
                     </Group>
                   )}
                 </Flex>
+                <Group gap="md" my={1}>
+                  <Anchor underline="never" onClick={openFollowers}>
+                    <Text size="xs" fw={500}>
+                      {followersList.length} seguidores
+                    </Text>
+                  </Anchor>
+                  <Anchor underline="never" onClick={openFollowing}>
+                    <Text size="xs" fw={500}>
+                      {followingList.length} seguindo
+                    </Text>
+                  </Anchor>
+                </Group>
               </Stack>
             </Group>
             {user?.id !== profile.id && (
@@ -701,6 +710,7 @@ export default function Profile() {
                   className="defaultMublinButton"
                   w={{ base: '47%', sm: 166 }}
                   mt={4}
+                  onClick={openInvite}
                 >
                   Convidar para gig
                 </Button>
@@ -721,11 +731,7 @@ export default function Profile() {
                     <Text
                       fz="sm"
                       lh={1.4}
-                      style={
-                        expandedBio
-                          ? { whiteSpace: 'pre-line' }
-                          : { whiteSpace: 'pre-line', cursor: 'default' }
-                      }
+                      style={{ whiteSpace: 'pre-line', cursor: 'default' }}
                       lineClamp={expandedBio ? undefined : 2}
                       onClick={() => setExpandedBio(!expandedBio)}
                     >
@@ -1206,13 +1212,13 @@ export default function Profile() {
           </Grid.Col>
           <Grid.Col span={{ base: 12, md: 4 }}>
             <Stack gap={10}>
-              {workAvailability.length > 0 && workFocus.length > 0 && (
+              {profile?.show_availability_info && (
                 <SectionPanel id="availability">
                   <SectionTitle text="Disponibilidade" mb="sm" />
                   <Title order={3} fz="xs" c="dimmed" fw={400} mt="sm">
                     Disponível a partir de:
                   </Title>
-                  <Text size="sm" fw={500}>
+                  <Text size="sm" opacity={0.8}>
                     {profile.available_from
                       ? AVAILABLE_FROM_LABELS[profile.available_from] ||
                         profile.available_from
@@ -1230,7 +1236,7 @@ export default function Profile() {
                       ))}
                     </Group>
                   ) : (
-                    <Text size="sm" c="dimmed">
+                    <Text size="sm" opacity={0.8}>
                       Não informado
                     </Text>
                   )}
@@ -1247,7 +1253,7 @@ export default function Profile() {
                       ))}
                     </Group>
                   ) : (
-                    <Text size="sm" c="dimmed">
+                    <Text size="sm" opacity={0.8}>
                       Não informado
                     </Text>
                   )}
@@ -1265,7 +1271,9 @@ export default function Profile() {
                           {travelPreference?.travel_preferences?.label}
                         </Text>
                       ) : (
-                        <Text size="sm">Não definido</Text>
+                        <Text size="sm" opacity={0.8}>
+                          Não informado
+                        </Text>
                       )}
                     </>
                   )}
@@ -1303,77 +1311,74 @@ export default function Profile() {
                   </Flex>
                 </SectionPanel>
               )}
-              {inspirations.length > 0 ? (
-                <SectionPanel id="inspirations">
-                  <SectionTitle text="Inspirações" mb={4} />
-                  <Text size="xs" c="dimmed" mb="sm">
-                    Figuras consagradas que inspiram {profile?.full_name}
-                  </Text>
-                  {loadingInspirations ? (
-                    <Text size="sm">Carregando...</Text>
-                  ) : (
-                    <Scroller
-                      key={inspirations.length}
-                      draggable={isMobile}
-                      controlSize="xl"
-                      startControlIcon={<IconCircleArrowLeftFilled size={24} />}
-                      endControlIcon={<IconCircleArrowRightFilled size={24} />}
-                      edgeGradientColor="transparent"
-                    >
-                      <Group gap="xs" wrap="nowrap">
-                        {inspirations.map(({ id, artists: artist }) => (
-                          <Flex
-                            key={id}
-                            direction="column"
-                            align="center"
-                            gap={4}
-                            w={64}
-                            component={Link}
-                            to={`/artist/${artist?.slug}`}
-                            style={{ textDecoration: 'none', color: 'inherit' }}
-                          >
-                            <Avatar
-                              size={56}
-                              radius="xl"
-                              src={
-                                artist?.picture
-                                  ? ARTISTS_PATH + artist.picture
-                                  : undefined
-                              }
-                              title={artist?.name}
-                            />
-                            <Text
-                              size="xs"
-                              fw={500}
-                              ta="center"
-                              lineClamp={2}
-                              lh={1.2}
-                              w={64}
-                            >
-                              {artist?.name}
-                            </Text>
-                            {artist?.genres?.name_ptbr && (
-                              <Text size="10px" c="dimmed" ta="center" lineClamp={1}>
-                                {artist.genres.name_ptbr}
-                              </Text>
-                            )}
-                          </Flex>
-                        ))}
-                      </Group>
-                    </Scroller>
-                  )}
-                </SectionPanel>
-              ) : (
-                <SectionPanel>
-                  <SectionTitle text="Inspirações" mb={4} />
+
+              <SectionPanel id="inspirations">
+                <SectionTitle
+                  text="Inspirações"
+                  mb={inspirations.length > 0 ? 4 : 'sm'}
+                />
+                {inspirations.length > 0 && (
                   <Text size="xs" c="dimmed" mb="sm">
                     Artistas e bandas consagradas que inspiram {profile?.full_name}
                   </Text>
+                )}
+                {loadingInspirations ? (
+                  <Text size="sm">Carregando...</Text>
+                ) : inspirations.length > 0 ? (
+                  <Scroller
+                    key={inspirations.length}
+                    draggable={isMobile}
+                    controlSize="xl"
+                    startControlIcon={<IconCircleArrowLeftFilled size={24} />}
+                    endControlIcon={<IconCircleArrowRightFilled size={24} />}
+                    edgeGradientColor="transparent"
+                  >
+                    <Group gap="xs" wrap="nowrap">
+                      {inspirations.map(({ id, artists: artist }) => (
+                        <Flex
+                          key={id}
+                          direction="column"
+                          align="center"
+                          gap={4}
+                          w={64}
+                          component={Link}
+                          to={`/artist/${artist?.slug}`}
+                          style={{ textDecoration: 'none', color: 'inherit' }}
+                        >
+                          <Avatar
+                            size={56}
+                            radius="xl"
+                            src={
+                              artist?.picture ? ARTISTS_PATH + artist.picture : undefined
+                            }
+                            title={artist?.name}
+                          />
+                          <Text
+                            size="xs"
+                            fw={500}
+                            ta="center"
+                            lineClamp={2}
+                            lh={1.2}
+                            w={64}
+                          >
+                            {artist?.name}
+                          </Text>
+                          {artist?.genres?.name_ptbr && (
+                            <Text size="10px" c="dimmed" ta="center" lineClamp={1}>
+                              {artist.genres.name_ptbr}
+                            </Text>
+                          )}
+                        </Flex>
+                      ))}
+                    </Group>
+                  </Scroller>
+                ) : (
                   <Text size="sm" c="dimmed">
                     Não informado
                   </Text>
-                </SectionPanel>
-              )}
+                )}
+              </SectionPanel>
+
               <SectionPanel id="social">
                 <SectionTitle text="Redes sociais" mb="sm" />
                 {profile.profile_social_links.length > 0 || profile.website ? (
@@ -1431,64 +1436,10 @@ export default function Profile() {
               </SectionPanel>
               <SectionPanel id="suggested-profiles">
                 <SectionTitle text="Mais perfis parecidos" mb="md" />
-                {similarProfiles.length === 0 ? (
-                  <Text size="sm" c="dimmed">
-                    Nenhum perfil similar encontrado.
-                  </Text>
-                ) : (
-                  <Stack gap="md">
-                    {similarProfiles.map((p) => (
-                      <Flex
-                        key={p.id}
-                        gap="xs"
-                        component={Link}
-                        to={`/${p.username}`}
-                        style={{ textDecoration: 'none', color: 'inherit' }}
-                        w="100%"
-                        wrap="nowrap"
-                        align="center"
-                      >
-                        <Box>
-                          <Avatar
-                            size={40}
-                            radius="xl"
-                            src={p.avatar ? AVATAR_PATH + p.avatar : undefined}
-                          />
-                        </Box>
-                        <Stack gap={0} style={{ flexGrow: 1 }} maw="80%">
-                          <Group gap={3} align="center" wrap="nowrap">
-                            <Text size="md" fw={500} lineClamp={1} truncate="end">
-                              {p.full_name}
-                            </Text>
-                            {!!p.is_verified && (
-                              <IconRosetteDiscountCheckFilled
-                                className="iconVerified"
-                                size={14}
-                                title="Perfil verificado"
-                              />
-                            )}
-                            {p.plan === 'Pro' && <ProPlanBadge small />}
-                          </Group>
-                          {p.title && (
-                            <Text size="xs" lineClamp={1}>
-                              {p.title}
-                            </Text>
-                          )}
-                          {p.roles.length > 0 && (
-                            <Text size="xs" c="dimmed" lineClamp={1}>
-                              {p.roles?.map((role, index) => (
-                                <Text span key={role.id}>
-                                  {role.name_ptbr}
-                                  {index < p.roles.length - 1 ? ', ' : ''}
-                                </Text>
-                              ))}
-                            </Text>
-                          )}
-                        </Stack>
-                      </Flex>
-                    ))}
-                  </Stack>
-                )}
+                <SimilarProfiles
+                  profiles={similarProfiles}
+                  loading={loadingSimilarProfiles}
+                />
               </SectionPanel>
               {profile?.plan === 'Pro' && (
                 <SectionPanel>
@@ -1521,7 +1472,13 @@ export default function Profile() {
           blur: 3,
         }}
       >
-        {renderUserList(followersList, 'Nenhum seguidor ainda.')}
+        {loadingFollowers ? (
+          <Text size="sm" c="dimmed" ta="center" py="xl">
+            Carregando...
+          </Text>
+        ) : (
+          renderUserList(followersList, 'Nenhum seguidor ainda.')
+        )}
       </Modal>
 
       <Modal
@@ -1540,7 +1497,13 @@ export default function Profile() {
           blur: 3,
         }}
       >
-        {renderUserList(followingList, 'Não está seguindo ninguém ainda.')}
+        {loadingFollowing ? (
+          <Text size="sm" c="dimmed" ta="center" py="xl">
+            Carregando...
+          </Text>
+        ) : (
+          renderUserList(followingList, 'Não está seguindo ninguém ainda.')
+        )}
       </Modal>
       <Modal
         opened={contactInfoOpened}
@@ -1552,35 +1515,51 @@ export default function Profile() {
           blur: 3,
         }}
       >
-        <SectionTitle text="Telefone" mb="sm" />
-        {/* Telefone — só exibe se phone_number_is_public */}
-        {profile.phone_number && profile.phone_number_is_public ? (
-          <Group gap="xs">
-            {profile.phone_number_is_whatsapp ? (
-              <Anchor
-                href={`https://wa.me/${profile.phone_number.replace(/\D/g, '')}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                underline="never"
-              >
-                <Group gap="xs">
-                  <IconBrandWhatsapp size={16} color="var(--mantine-color-green-6)" />
-                  <Text size="sm">{profile.phone_number}</Text>
-                </Group>
-              </Anchor>
+        <Stack mt="md" gap="xs">
+          <Box>
+            <SectionTitle text="Telefone" mb="sm" />
+            {/* Telefone — só exibe se phone_number_is_public */}
+            {profile.phone_number && profile.phone_number_is_public ? (
+              <Group gap="xs">
+                {profile.phone_number_is_whatsapp ? (
+                  <Anchor
+                    href={`https://wa.me/${profile.phone_number.replace(/\D/g, '')}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    underline="never"
+                  >
+                    <Group gap="xs">
+                      <IconBrandWhatsapp size={16} color="var(--mantine-color-green-6)" />
+                      <Text size="sm">{profile.phone_number}</Text>
+                    </Group>
+                  </Anchor>
+                ) : (
+                  <>
+                    <IconPhone size={16} opacity={0.6} />
+                    <Text size="sm">{profile.phone_number}</Text>
+                  </>
+                )}
+              </Group>
             ) : (
-              <>
-                <IconPhone size={16} opacity={0.6} />
-                <Text size="sm">{profile.phone_number}</Text>
-              </>
+              <Text size="sm" c="dimmed">
+                Não disponível
+              </Text>
             )}
-          </Group>
-        ) : (
-          <Text size="sm" c="dimmed">
-            Não disponível
-          </Text>
-        )}
+          </Box>
+        </Stack>
       </Modal>
+
+      <InviteToGigModal
+        opened={inviteOpened}
+        onClose={closeInvite}
+        targetProfile={{
+          id: profile.id,
+          full_name: profile.full_name,
+          username: profile.username,
+          avatar: profile.avatar,
+          title: profile.title,
+        }}
+      />
     </>
   )
 }

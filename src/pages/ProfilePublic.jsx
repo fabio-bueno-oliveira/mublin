@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { fetchBasicProfile } from '../queries/profiles'
+import { fetchProfileDetails } from '../queries/profiles'
 import { useAuth } from '../hooks/useAuth'
 import {
   Container,
@@ -33,7 +33,7 @@ export default function ProfilePublic() {
     isError,
   } = useQuery({
     queryKey: ['profile', username],
-    queryFn: () => fetchBasicProfile(username),
+    queryFn: () => fetchProfileDetails(username),
     enabled: !!username && !authLoading && !session,
     staleTime: 1000 * 60 * 5,
     retry: 1,

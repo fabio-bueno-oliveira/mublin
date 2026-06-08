@@ -40,6 +40,7 @@ import {
   IconRosetteDiscountCheckFilled,
   IconClock,
   IconX,
+  IconArrowLeft,
 } from '@tabler/icons-react'
 import ProPlanBadge from '../components/ProPlanBadge'
 
@@ -177,36 +178,44 @@ export default function Search() {
     <Container size="xl" py="sm">
       {/* Busca Mobile */}
       <Box hiddenFrom="sm" mb="sm" mt="xs">
-        <TextInput
-          ref={mobileInputRef}
-          placeholder="Pessoas, projetos, gigs, equipamentos..."
-          leftSection={<IconSearch size={15} />}
-          rightSection={
-            mobileInput ? (
-              <ActionIcon
-                variant="subtle"
-                color="gray"
-                radius="xl"
-                size="md"
-                onClick={() => {
-                  setMobileInput('')
-                  navigate('/search')
-                }}
-              >
-                <IconX size={16} />
-              </ActionIcon>
-            ) : null
-          }
-          radius="xl"
-          size="sm"
-          value={mobileInput}
-          onChange={(e) => {
-            setMobileInput(e.target.value)
-            debouncedSearch(e.target.value)
-          }}
-          onFocus={() => setIsMobileFocused(true)}
-          onBlur={() => setIsMobileFocused(false)}
-        />
+        <Group gap="xs">
+          <IconArrowLeft
+            size={22}
+            // style={{ flexShrink: 0, cursor: 'pointer' }}
+            onClick={() => navigate(-1) || navigate('/home')}
+          />
+          <TextInput
+            flex={1}
+            ref={mobileInputRef}
+            placeholder="Pessoas, projetos, gigs, itens..."
+            leftSection={<IconSearch size={15} />}
+            rightSection={
+              mobileInput ? (
+                <ActionIcon
+                  variant="subtle"
+                  color="gray"
+                  radius="xl"
+                  size="md"
+                  onClick={() => {
+                    setMobileInput('')
+                    navigate('/search')
+                  }}
+                >
+                  <IconX size={16} />
+                </ActionIcon>
+              ) : null
+            }
+            radius="xl"
+            size="md"
+            value={mobileInput}
+            onChange={(e) => {
+              setMobileInput(e.target.value)
+              debouncedSearch(e.target.value)
+            }}
+            onFocus={() => setIsMobileFocused(true)}
+            onBlur={() => setIsMobileFocused(false)}
+          />
+        </Group>
         {/* Buscas recentes — só exibe quando campo vazio e sem query ativa */}
         {!q && recentSearches.length > 0 && isMobileFocused && (
           <Box mt="sm">

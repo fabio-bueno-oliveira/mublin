@@ -46,7 +46,7 @@ export default function Home() {
   const isDesktop = useMediaQuery('(min-width: 48em)')
 
   useEffect(() => {
-    if (profile?.feed_as_home) {
+    if (isDesktop && profile?.feed_as_home) {
       const redirected = sessionStorage.getItem('feed_redirected')
       if (!redirected) {
         sessionStorage.setItem('feed_redirected', 'true')

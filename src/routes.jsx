@@ -31,6 +31,7 @@ import Backstage from './pages/Backstage'
 // -- Gigs pages
 import Gigs from './pages/Gigs'
 import Gig from './pages/Gig'
+import GigInvitations from './pages/GigInvitations'
 // -- Gear pages
 import Gear from './pages/Gear'
 import GearItem from './pages/GearItem'
@@ -94,6 +95,7 @@ export const router = createBrowserRouter([
       { path: 'search', element: <Search /> },
       { path: 'gigs', element: <Gigs /> },
       { path: 'gig/:id', element: <Gig /> },
+      { path: 'gig-invitations', element: <GigInvitations /> },
       { path: 'projects', element: <Projects /> },
       { path: 'new/project', element: <NewProject /> },
       { path: 'brand/:slug', element: <Brand /> },

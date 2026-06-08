@@ -30,6 +30,28 @@ export async function fetchGigDetails(gigId) {
   return data
 }
 
+export async function fetchGigRoles(gigId) {
+  const { data, error } = await supabase
+    .from('gigs')
+    .select(
+      `
+      gig_roles (
+        id, description, fee, is_filled, is_sub, sub_for,
+        roles ( description_ptbr ),
+        experience_levels ( id, name_pt ),
+        profiles ( avatar, username )
+      )
+    `,
+    )
+    .eq('id', gigId)
+    .single()
+
+  if (error) {
+    throw error
+  }
+  return data ?? []
+}
+
 export async function fetchUserGigs(userId) {
   const { data, error } = await supabase
     .from('gig_applications')
@@ -99,4 +121,17 @@ export async function fetchGigApplicationDetails(userId, gigId) {
     throw new Error(error.message)
   }
   return data
+}
+
+export async function fetchGigsCreatedByMe(userId) {
+  const { data, error } = await supabase
+    .from('gigs')
+    .select('id, title, date')
+    .eq('created_by', userId)
+    .order('created_at', { ascending: false })
+
+  if (error) {
+    throw error
+  }
+  return data ?? []
 }

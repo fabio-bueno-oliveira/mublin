@@ -15,7 +15,7 @@ import {
   Indicator,
   Divider,
 } from '@mantine/core'
-import { IconBellOff, IconUserPlus } from '@tabler/icons-react'
+import { IconBellOff, IconCalendar, IconUserPlus } from '@tabler/icons-react'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import 'dayjs/locale/pt-br'
@@ -70,11 +70,13 @@ async function markOneAsRead(notificationId) {
 function NotificationIcon({ type }) {
   const icons = {
     new_follower: <IconUserPlus size={14} />,
-    // Adicione outros tipos aqui conforme necessário
+    gig_invite: <IconCalendar size={14} />,
   }
   const colors = {
     new_follower: 'blue',
+    gig_invite: 'violet',
   }
+
   return (
     <Indicator
       color={colors[type] ?? 'gray'}
@@ -121,9 +123,34 @@ function notificationContent(notification) {
         ),
       }
 
-    // Expanda aqui para outros tipos:
-    // case 'gig_invite': ...
-    // case 'new_like': ...
+    case 'gig_invite':
+      return {
+        href: `/gig/${metadata.gig_id}`,
+        avatarSrc: metadata.actor_avatar
+          ? AVATAR_PATH + metadata.actor_avatar
+          : undefined,
+        avatarAlt: metadata.actor_name,
+        text: (
+          <>
+            <Text span fw={600} size="xs">
+              {metadata.actor_name}
+            </Text>
+            <Text span size="xs" c="dimmed">
+              {' '}
+              te convidou para a gig{' '}
+            </Text>
+            <Text span fw={600} size="xs">
+              {metadata.gig_title}
+            </Text>
+            {metadata.role && (
+              <Text span size="xs" c="dimmed">
+                {' '}
+                como {metadata.role}
+              </Text>
+            )}
+          </>
+        ),
+      }
 
     default:
       return {

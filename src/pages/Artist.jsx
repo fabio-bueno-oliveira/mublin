@@ -172,7 +172,6 @@ export default function Artist() {
                               key={item.id}
                               variant="outline"
                               color="gray"
-                              fw={item.is_main_role ? 600 : 400}
                               size="sm"
                               radius="sm"
                             >

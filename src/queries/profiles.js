@@ -1,6 +1,6 @@
 import { supabase } from '../lib/supabaseClient'
 
-export async function fetchBasicProfile(profileUsername) {
+export async function fetchProfileDetails(profileUsername) {
   const { data, error } = await supabase
     .from('profiles')
     .select(
@@ -25,6 +25,7 @@ export async function fetchBasicProfile(profileUsername) {
       phone_number,
       phone_number_is_public,
       phone_number_is_whatsapp,
+      show_availability_info,
       available_from,
       cities (
         name, countries ( name, name_ptbr )
@@ -55,6 +56,39 @@ export async function fetchBasicProfile(profileUsername) {
           id, name
         )
       )
+    `,
+    )
+    .eq('username', profileUsername)
+    .single()
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  return data
+}
+
+export async function fetchProfileBasicDetails(profileUsername) {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select(
+      `
+      id,
+      full_name,
+      username,
+      avatar,
+      title,
+      is_verified,
+      is_legend,
+      is_open_to_work,
+      plan,
+      is_live,
+      cities (
+        name, countries ( name, name_ptbr )
+      ),
+      regions (
+        name, uf
+      ),
     `,
     )
     .eq('username', profileUsername)
@@ -304,10 +338,12 @@ export async function fetchProfileTravelPreference(profileId) {
     `,
     )
     .eq('id_profile', profileId)
-    .single()
-  if (error && error.code !== 'PGRST116') {
+    .maybeSingle()
+
+  if (error) {
     throw new Error(error.message)
   }
+
   return data
 }
 

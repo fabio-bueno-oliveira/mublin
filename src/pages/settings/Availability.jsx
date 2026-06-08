@@ -3,23 +3,33 @@ import { useAuth } from '../../hooks/useAuth'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabaseClient'
 import {
-  Stack, Box, Text, Divider,
-  Switch, Skeleton, Indicator, Avatar, Checkbox,
-  Radio, Group, Loader,
+  Stack,
+  Box,
+  Text,
+  Divider,
+  Switch,
+  Skeleton,
+  Indicator,
+  Avatar,
+  Checkbox,
+  Radio,
+  Group,
+  Loader,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 
-const AVATAR_PATH = 'https://ik.imagekit.io/mublin/tr:h-60,w-60,c-maintain_ratio/users/avatars/'
+const AVATAR_PATH =
+  'https://ik.imagekit.io/mublin/tr:h-60,w-60,c-maintain_ratio/users/avatars/'
 
 // Mapeamento de valores do banco para labels exibidos ao usuário
 const AVAILABLE_FROM_OPTIONS = [
-  { value: 'immediate',    label: 'Disponibilidade imediata'        },
-  { value: 'negotiable',   label: 'A combinar'      },
-  { value: 'few_days',     label: 'Em alguns dias'  },
-  { value: 'one_month',    label: 'Daqui a 1 mês'   },
+  { value: 'immediate', label: 'Disponibilidade imediata' },
+  { value: 'negotiable', label: 'A combinar' },
+  { value: 'few_days', label: 'Em alguns dias' },
+  { value: 'one_month', label: 'Daqui a 1 mês' },
   { value: 'three_months', label: 'Daqui a 3 meses' },
-  { value: 'six_months',   label: 'Daqui a 6 meses' },
-  { value: 'one_year',     label: 'Daqui a 1 ano'   },
+  { value: 'six_months', label: 'Daqui a 6 meses' },
+  { value: 'one_year', label: 'Daqui a 1 ano' },
 ]
 
 // ── Queries locais ────────────────────────────────────────
@@ -29,7 +39,9 @@ async function fetchWorkTypes() {
     .from('work_types')
     .select('id, name_ptbr')
     .order('id')
-  if (error) throw new Error(error.message)
+  if (error) {
+    throw new Error(error.message)
+  }
   return data
 }
 
@@ -38,7 +50,9 @@ async function fetchWorkFocuses() {
     .from('work_focuses')
     .select('id, title_ptbr')
     .order('id')
-  if (error) throw new Error(error.message)
+  if (error) {
+    throw new Error(error.message)
+  }
   return data
 }
 
@@ -47,7 +61,9 @@ async function fetchUserWorkAvailability(profileId) {
     .from('profile_work_availability')
     .select('id, id_work_type, work_types(id, name_ptbr)')
     .eq('id_profile', profileId)
-  if (error) throw new Error(error.message)
+  if (error) {
+    throw new Error(error.message)
+  }
   return data
 }
 
@@ -56,7 +72,9 @@ async function fetchUserWorkFocus(profileId) {
     .from('profile_work_focus')
     .select('id, id_work_focus, work_focuses(id, title_ptbr)')
     .eq('id_profile', profileId)
-  if (error) throw new Error(error.message)
+  if (error) {
+    throw new Error(error.message)
+  }
   return data
 }
 
@@ -66,17 +84,13 @@ export default function Availability() {
   const { user, profile: authProfile } = useAuth()
   const queryClient = useQueryClient()
 
-  // ── Open to Work ──────────────────────────────────────
   const [isSavingOpenToWork, setIsSavingOpenToWork] = useState(false)
-
-  // ── Available From ────────────────────────────────────
+  const [isSavingShowAvailabilityInfo, setIsSavingShowAvailabilityInfo] = useState(false)
   const [isSavingAvailableFrom, setIsSavingAvailableFrom] = useState(false)
-
-  // ── Estados de loading por item ───────────────────────
-  const [isDeletingWorkType,  setIsDeletingWorkType]  = useState(null)
-  const [isAddingWorkType,    setIsAddingWorkType]    = useState(null)
+  const [isDeletingWorkType, setIsDeletingWorkType] = useState(null)
+  const [isAddingWorkType, setIsAddingWorkType] = useState(null)
   const [isDeletingWorkFocus, setIsDeletingWorkFocus] = useState(null)
-  const [isAddingWorkFocus,   setIsAddingWorkFocus]   = useState(null)
+  const [isAddingWorkFocus, setIsAddingWorkFocus] = useState(null)
 
   // ── Queries ───────────────────────────────────────────
   const { data: workTypes = [] } = useQuery({
@@ -105,8 +119,38 @@ export default function Availability() {
     staleTime: 1000 * 60 * 5,
   })
 
+  const showErrorAlert = () => {
+    notifications.show({
+      color: 'red',
+      position: 'top-center',
+      message: 'Erro ao atualizar. Tente novamente.',
+    })
+  }
+
+  // ── Handler: Show availability info on profile ────────
+  const [showAvailabilityInfo, setShowAvailabilityInfo] = useState(
+    () => authProfile?.show_availability_info ?? false,
+  )
+  async function handleShowAvailabilityInfo(checked) {
+    setShowAvailabilityInfo(checked)
+    setIsSavingShowAvailabilityInfo(true)
+    const { error } = await supabase
+      .from('profiles')
+      .update({ show_availability_info: checked })
+      .eq('id', user.id)
+    if (error) {
+      setShowAvailabilityInfo(!checked)
+      showErrorAlert()
+    } else {
+      queryClient.invalidateQueries({ queryKey: ['profile', user.id] })
+    }
+    setIsSavingShowAvailabilityInfo(false)
+  }
+
   // ── Popula is_open_to_work do authProfile ─────────────
-  const [isOpenToWork, setIsOpenToWork] = useState(() => authProfile?.is_open_to_work ?? false)
+  const [isOpenToWork, setIsOpenToWork] = useState(
+    () => authProfile?.is_open_to_work ?? false,
+  )
 
   // ── Handler: Open to Work ─────────────────────────────
   async function handleToggleOpenToWork(checked) {
@@ -118,7 +162,7 @@ export default function Availability() {
       .eq('id', user.id)
     if (error) {
       setIsOpenToWork(!checked)
-      notifications.show({ color: 'red', position: 'top-center', message: 'Erro ao atualizar. Tente novamente.' })
+      showErrorAlert()
     } else {
       queryClient.invalidateQueries({ queryKey: ['profile', user.id] })
     }
@@ -133,7 +177,7 @@ export default function Availability() {
       .update({ available_from: value })
       .eq('id', user.id)
     if (error) {
-      notifications.show({ color: 'red', position: 'top-center', message: 'Erro ao atualizar. Tente novamente.' })
+      showErrorAlert()
     } else {
       queryClient.invalidateQueries({ queryKey: ['profile', user.id] })
     }
@@ -148,7 +192,11 @@ export default function Availability() {
       .delete()
       .eq('id', id)
     if (error) {
-      notifications.show({ color: 'red', position: 'top-center', message: 'Erro ao remover. Tente novamente.' })
+      notifications.show({
+        color: 'red',
+        position: 'top-center',
+        message: 'Erro ao remover. Tente novamente.',
+      })
     } else {
       await queryClient.refetchQueries({ queryKey: ['user-work-availability', user.id] })
     }
@@ -158,12 +206,13 @@ export default function Availability() {
   // ── Handlers: vínculo de preferência ─────────────────
   async function handleDeleteWorkFocus(id) {
     setIsDeletingWorkFocus(id)
-    const { error } = await supabase
-      .from('profile_work_focus')
-      .delete()
-      .eq('id', id)
+    const { error } = await supabase.from('profile_work_focus').delete().eq('id', id)
     if (error) {
-      notifications.show({ color: 'red', position: 'top-center', message: 'Erro ao remover. Tente novamente.' })
+      notifications.show({
+        color: 'red',
+        position: 'top-center',
+        message: 'Erro ao remover. Tente novamente.',
+      })
     } else {
       await queryClient.refetchQueries({ queryKey: ['user-work-focus', user.id] })
     }
@@ -173,6 +222,28 @@ export default function Availability() {
   return (
     <>
       <Stack gap="md">
+        {/* ── Informações de disponibilidade no perfil ─────── */}
+        <Stack gap="md">
+          <div>
+            <Text fw={600} size="sm" tt="uppercase" lts="0.05em">
+              Informações de disponibilidade
+            </Text>
+            <Text size="xs" c="dimmed" mt={2}>
+              Exibe disponibilidade, tipos de trabalho, vínculos de preferência, etc
+            </Text>
+          </div>
+
+          <Switch
+            label="Exibir informações de disponibilidade no meu perfil"
+            checked={showAvailabilityInfo}
+            disabled={isSavingShowAvailabilityInfo}
+            color="mublinColor"
+            onChange={(e) => handleShowAvailabilityInfo(e.currentTarget.checked)}
+            mb="sm"
+          />
+        </Stack>
+
+        <Divider />
 
         {/* ── Open to Work ────────────────────────────── */}
         <Stack gap="md">
@@ -181,12 +252,12 @@ export default function Availability() {
               Selo Open to Work
             </Text>
             <Text size="xs" c="dimmed" mt={2}>
-              Exibe um indicador de disponibilidade abaixo da sua foto de perfil
+              Exibe um indicador de disponibilidade em locais estratégicos do Mublin
             </Text>
           </div>
 
           <Switch
-            label="Estou disponível para trabalhos"
+            label="Estou disponível para trabalhos e gigs"
             checked={isOpenToWork}
             disabled={isSavingOpenToWork}
             color="green"
@@ -231,12 +302,12 @@ export default function Availability() {
           </div>
 
           <Radio.Group
-            key={authProfile?.available_from || 'loading'} 
+            key={authProfile?.available_from || 'loading'}
             defaultValue={authProfile?.available_from ?? ''}
             onChange={handleAvailableFromChange}
           >
             <Stack gap="xs">
-              {AVAILABLE_FROM_OPTIONS.map(opt => (
+              {AVAILABLE_FROM_OPTIONS.map((opt) => (
                 <Radio
                   key={opt.value}
                   value={opt.value}
@@ -263,14 +334,19 @@ export default function Availability() {
           </div>
           {loadingAvailability ? (
             <Stack gap="xs">
-              {[1, 2, 3].map(i => <Skeleton key={i} width={160} height={20} radius="sm" />)}
+              {[1, 2, 3].map((i) => (
+                <Skeleton key={i} width={160} height={20} radius="sm" />
+              ))}
             </Stack>
           ) : (
             <Stack gap="xs">
-              {workTypes.map(type => {
-                const existing  = userWorkAvailability.find(i => i.id_work_type === type.id)
+              {workTypes.map((type) => {
+                const existing = userWorkAvailability.find(
+                  (i) => i.id_work_type === type.id,
+                )
                 const isChecked = !!existing
-                const isLoading = isDeletingWorkType === existing?.id || isAddingWorkType === type.id
+                const isLoading =
+                  isDeletingWorkType === existing?.id || isAddingWorkType === type.id
                 return (
                   <Checkbox
                     key={type.id}
@@ -287,9 +363,15 @@ export default function Availability() {
                           .from('profile_work_availability')
                           .insert({ id_profile: user.id, id_work_type: type.id })
                         if (error) {
-                          notifications.show({ color: 'red', position: 'top-center', message: 'Erro ao adicionar. Tente novamente.' })
+                          notifications.show({
+                            color: 'red',
+                            position: 'top-center',
+                            message: 'Erro ao adicionar. Tente novamente.',
+                          })
                         } else {
-                          await queryClient.refetchQueries({ queryKey: ['user-work-availability', user.id] })
+                          await queryClient.refetchQueries({
+                            queryKey: ['user-work-availability', user.id],
+                          })
                         }
                         setIsAddingWorkType(null)
                       }
@@ -315,14 +397,17 @@ export default function Availability() {
           </div>
           {loadingFocus ? (
             <Stack gap="xs">
-              {[1, 2].map(i => <Skeleton key={i} width={140} height={20} radius="sm" />)}
+              {[1, 2].map((i) => (
+                <Skeleton key={i} width={140} height={20} radius="sm" />
+              ))}
             </Stack>
           ) : (
             <Stack gap="xs">
-              {workFocuses.map(focus => {
-                const existing  = userWorkFocus.find(i => i.id_work_focus === focus.id)
+              {workFocuses.map((focus) => {
+                const existing = userWorkFocus.find((i) => i.id_work_focus === focus.id)
                 const isChecked = !!existing
-                const isLoading = isDeletingWorkFocus === existing?.id || isAddingWorkFocus === focus.id
+                const isLoading =
+                  isDeletingWorkFocus === existing?.id || isAddingWorkFocus === focus.id
                 return (
                   <Checkbox
                     key={focus.id}
@@ -339,9 +424,15 @@ export default function Availability() {
                           .from('profile_work_focus')
                           .insert({ id_profile: user.id, id_work_focus: focus.id })
                         if (error) {
-                          notifications.show({ color: 'red', position: 'top-center', message: 'Erro ao adicionar. Tente novamente.' })
+                          notifications.show({
+                            color: 'red',
+                            position: 'top-center',
+                            message: 'Erro ao adicionar. Tente novamente.',
+                          })
                         } else {
-                          await queryClient.refetchQueries({ queryKey: ['user-work-focus', user.id] })
+                          await queryClient.refetchQueries({
+                            queryKey: ['user-work-focus', user.id],
+                          })
                         }
                         setIsAddingWorkFocus(null)
                       }
@@ -352,7 +443,6 @@ export default function Availability() {
             </Stack>
           )}
         </Stack>
-
       </Stack>
     </>
   )
