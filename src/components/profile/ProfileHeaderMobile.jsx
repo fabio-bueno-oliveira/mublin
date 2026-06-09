@@ -11,16 +11,14 @@ import {
   Anchor,
 } from '@mantine/core'
 import {
-  IconRosetteDiscountCheckFilled,
+  IconRosetteDiscountCheck,
   IconLink,
   IconShieldCheckFilled,
 } from '@tabler/icons-react'
 import { isProfileLive } from '../../utils/live'
 import { truncateString } from '../../utils/formatter'
+import { getAvatarUrl } from '../../utils/profile'
 // import ProPlanBadge from '../ProPlanBadge'
-
-const AVATAR_PATH =
-  'https://ik.imagekit.io/mublin/tr:h-200,c-maintain_ratio/users/avatars/'
 
 export default function ProfileHeaderMobile({ profile, city, region, country, user }) {
   return (
@@ -43,7 +41,7 @@ export default function ProfileHeaderMobile({ profile, city, region, country, us
         >
           <Avatar
             size="xl"
-            src={profile.avatar ? AVATAR_PATH + profile.avatar : undefined}
+            src={getAvatarUrl(profile.avatar, profile.is_open_to_work, 96)}
           />
         </Indicator>
         <Box style={{ overflow: 'hidden' }}>
@@ -52,19 +50,19 @@ export default function ProfileHeaderMobile({ profile, city, region, country, us
               {profile.full_name}
             </Title>
             {!!profile.is_verified && (
-              <IconRosetteDiscountCheckFilled
+              <IconRosetteDiscountCheck
                 className="iconVerified"
                 title="Perfil verificado"
                 color="var(--mantine-color-mublinColor-3)"
               />
             )}
-            {!!profile.is_legend && (
+            {/* {!!profile.is_legend && (
               <IconShieldCheckFilled
                 className="iconLegend"
                 title="Lenda da Música"
                 // color="var(--mantine-color-violet-4)"
               />
-            )}
+            )} */}
             {/* {profile?.plan === 'Pro' && <ProPlanBadge />} */}
           </Flex>
           <Text fz="sm" lh={1.3} mt={2} lineClamp={2}>

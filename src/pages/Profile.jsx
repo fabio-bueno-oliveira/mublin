@@ -29,7 +29,6 @@ import {
   Avatar,
   Paper,
   Box,
-  Indicator,
   Card,
   Button,
   Title,
@@ -57,9 +56,9 @@ import LinkedItem from '../components/feed/LinkedItem'
 import VideoPlayerYoutube from '../components/feed/VideoPlayerYoutube'
 import SectionPanel from '../components/SectionPanel'
 import InviteToGigModal from '../components/gigs/InviteToGigModal'
+import RecognitionBadge from '../components/profile/RecognitionBadge'
 import {
   IconMoodSad,
-  IconRosetteDiscountCheckFilled,
   IconWorld,
   IconShieldCheckFilled,
   IconPlus,
@@ -72,11 +71,15 @@ import {
   IconTrophy,
   IconDotsVerticalFilled,
   IconArrowsMaximize,
+  IconPlane,
+  IconGuitarPick,
+  IconRosetteDiscountCheck,
 } from '@tabler/icons-react'
 import ProfileHeaderMobile from '../components/profile/ProfileHeaderMobile'
 import AppNavbarMobile from '../components/AppNavbarMobile'
 import ProPlanBadge from '../components/ProPlanBadge'
 import SimilarProfiles from '../components/SimilarProfiles'
+import { getAvatarUrl } from '../utils/profile'
 import { truncateString } from '../utils/formatter'
 import { isProfileLive } from '../utils/live'
 import { AVAILABLE_FROM_LABELS } from '../constants/availability'
@@ -368,7 +371,7 @@ export default function Profile() {
           follower_id: currentUserId,
           following_id: targetUserId,
           // Os campos is_favorite, is_muted e notifications_enabled
-          // assumirão os valores default definidos no seu schema.
+          // assumirão os valores default definidos no schema.
         },
       ])
       .select()
@@ -572,22 +575,12 @@ export default function Profile() {
               </Affix>
             )}
             <Group align="center" gap="md" mb="md" visibleFrom="sm">
-              <Indicator
-                position="bottom-center"
-                inline
-                label={<Text size="0.7rem">Disponível</Text>}
-                color="green.9"
-                size={18}
-                withBorder
-                disabled
-              >
-                <Avatar
-                  size={96}
-                  src={profile.avatar ? AVATAR_PATH + profile.avatar : undefined}
-                />
-              </Indicator>
+              <Avatar
+                size={96}
+                src={getAvatarUrl(profile.avatar, profile.is_open_to_work, 96)}
+              />
               <Stack gap={1} flex={1}>
-                <Flex align="center" gap={2} wrap="wrap">
+                <Flex align="center" gap={4} wrap="wrap">
                   <Title
                     order={1}
                     fw={600}
@@ -599,29 +592,29 @@ export default function Profile() {
                     {profile.full_name}
                   </Title>
                   {!!profile.is_verified && (
-                    <IconRosetteDiscountCheckFilled
+                    <IconRosetteDiscountCheck
                       className="iconVerified"
                       title="Perfil verificado"
                     />
                   )}
-                  {!!profile?.is_legend && (
+                  {/* {!!profile?.is_legend && (
                     <IconShieldCheckFilled
                       className="iconLegend"
                       title="Lenda da música"
                     />
-                  )}
+                  )} */}
                   {/* {profile?.plan === 'Pro' && <ProPlanBadge />} */}
                   {user?.id === profile.id && (
                     <ActionIcon
                       component={Link}
                       to="/settings/profile"
                       radius="xl"
+                      size="sm"
                       variant="subtle"
                       aria-label="Editar meu perfil"
                       title="Editar meu perfil"
-                      ml={4}
                     >
-                      <IconPencil size={14} stroke={2} />
+                      <IconPencil size={18} stroke={2} />
                     </ActionIcon>
                   )}
                 </Flex>
@@ -720,14 +713,7 @@ export default function Profile() {
               <SectionPanel id="about">
                 {profile.bio && (
                   <>
-                    <Group mb={12} justify="space-between">
-                      <SectionTitle text="Sobre" />
-                      {profile.is_open_to_work && profile && (
-                        <Badge variant="light" color="teal" fz="10px" fw={400} px={5}>
-                          Disponível para trabalhos e gigs
-                        </Badge>
-                      )}
-                    </Group>
+                    <SectionTitle text="Sobre" mb={12} />
                     <Text
                       fz="sm"
                       lh={1.4}
@@ -1218,12 +1204,16 @@ export default function Profile() {
                   <Title order={3} fz="xs" c="dimmed" fw={400} mt="sm">
                     Disponível a partir de:
                   </Title>
-                  <Text size="sm" opacity={0.8}>
-                    {profile.available_from
-                      ? AVAILABLE_FROM_LABELS[profile.available_from] ||
-                        profile.available_from
-                      : 'Não informado'}
-                  </Text>
+                  {profile.available_from ? (
+                    <Text size="sm">
+                      {AVAILABLE_FROM_LABELS[profile.available_from] ||
+                        profile.available_from}
+                    </Text>
+                  ) : (
+                    <Text size="sm" opacity={0.8}>
+                      Não informado
+                    </Text>
+                  )}
                   <Title order={3} fz="xs" c="dimmed" fw={400} mt="sm" mb={2}>
                     Tipos de trabalho:
                   </Title>
@@ -1279,38 +1269,56 @@ export default function Profile() {
                   )}
                 </SectionPanel>
               )}
-              {!!profile.is_legend && (
-                <SectionPanel id="recognitions">
-                  <SectionTitle text="Reconhecimentos" mb="sm" />
-                  <Flex wrap="wrap" align="flex-start">
-                    <Flex direction="column" w={100} align="center">
-                      <IconShieldCheckFilled
-                        className="iconLegend big"
-                        title="Lenda da música"
-                      />
-                      <Text size="sm" fw={600} ta="center" my={4} lh={1}>
-                        Lenda da música
-                      </Text>
-                      <Text size="11px" fw={300} opacity={0.7} ta="center">
-                        Reconhecido pela contribuição ao mercado musical
-                      </Text>
-                      {/* <Text mt={6} size="10px" c="dimmed" ta="center">
+
+              <SectionPanel id="recognitions">
+                <SectionTitle text="Reconhecimentos" mb="sm" />
+                {/* <Text mt={6} size="10px" c="dimmed" ta="center">
                       Atribuído internamente pela equipe do Mublin conforme critérios
                       internos
                     </Text> */}
-                    </Flex>
-                    <Flex direction="column" w={100} align="center">
-                      <IconTrophy className="iconBadge big" title="Grammy Winner" />
-                      <Text size="sm" fw={600} ta="center" my={4} lh={1}>
-                        Grammy Nominee
-                      </Text>
-                      <Text size="11px" fw={300} opacity={0.7} ta="center">
-                        Vencedor ou indicado ao Grammys
-                      </Text>
-                    </Flex>
-                  </Flex>
-                </SectionPanel>
-              )}
+                <Scroller
+                  key={3}
+                  draggable={isMobile}
+                  controlSize="xl"
+                  startControlIcon={<IconCircleArrowLeftFilled size={24} />}
+                  endControlIcon={<IconCircleArrowRightFilled size={24} />}
+                  edgeGradientColor="transparent"
+                >
+                  <Group gap={12} wrap="nowrap" align="flex-start">
+                    <RecognitionBadge
+                      label="Mublin OG"
+                      description="Perfil entre os primeiros usuários da plataforma"
+                      color="dark"
+                    />
+                    {!!profile.is_legend && (
+                      <RecognitionBadge
+                        icon={IconShieldCheckFilled}
+                        label="Lenda da música"
+                        description="Carreira amplamente reconhecida"
+                        color="purple"
+                      />
+                    )}
+                    <RecognitionBadge
+                      icon={IconTrophy}
+                      label="Grammy Nominee"
+                      description="Indicação ou vitória comprovada no Grammy"
+                      color="amber"
+                    />
+                    <RecognitionBadge
+                      icon={IconPlane}
+                      label="Internacional "
+                      description="Atuação em mais de um país"
+                      color="green"
+                    />
+                    <RecognitionBadge
+                      icon={IconGuitarPick}
+                      label="Bem equipado"
+                      description="10 ou mais itens no gear"
+                      color="coral"
+                    />
+                  </Group>
+                </Scroller>
+              </SectionPanel>
 
               <SectionPanel id="inspirations">
                 <SectionTitle
@@ -1319,7 +1327,7 @@ export default function Profile() {
                 />
                 {inspirations.length > 0 && (
                   <Text size="xs" c="dimmed" mb="sm">
-                    Artistas e bandas consagradas que inspiram {profile?.full_name}
+                    Figuras consagradas que inspiram {profile?.full_name}
                   </Text>
                 )}
                 {loadingInspirations ? (
@@ -1351,7 +1359,7 @@ export default function Profile() {
                             src={
                               artist?.picture ? ARTISTS_PATH + artist.picture : undefined
                             }
-                            title={artist?.name}
+                            alt={`Foto de ${artist?.name}`}
                           />
                           <Text
                             size="xs"
@@ -1360,12 +1368,13 @@ export default function Profile() {
                             lineClamp={2}
                             lh={1.2}
                             w={64}
+                            title={artist?.name}
                           >
                             {artist?.name}
                           </Text>
-                          {artist?.genres?.name_ptbr && (
+                          {artist?.genre?.name_ptbr && (
                             <Text size="10px" c="dimmed" ta="center" lineClamp={1}>
-                              {artist.genres.name_ptbr}
+                              {artist?.genre?.name_ptbr || artist?.genre?.name}
                             </Text>
                           )}
                         </Flex>

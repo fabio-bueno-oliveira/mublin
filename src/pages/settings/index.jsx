@@ -33,7 +33,7 @@ const SETTINGS_TABS = [
   },
   {
     value: 'musical-preferences',
-    label: 'Preferências',
+    label: 'Preferências musicais',
     icon: IconMusic,
     path: '/settings/musical-preferences',
   },

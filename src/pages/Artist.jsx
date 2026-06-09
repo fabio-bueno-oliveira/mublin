@@ -1,8 +1,12 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
+import { useAuth } from '../hooks/useAuth'
 import { Helmet } from 'react-helmet-async'
 import { Link, useParams } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { supabase } from '../lib/supabaseClient'
+import { notifications } from '@mantine/notifications'
 import {
+  checkArtistIsInspiration,
   fetchArtistDetails,
   fetchArtistRoles,
   fetchArtistGear,
@@ -15,6 +19,7 @@ import {
   useMantineColorScheme,
   Container,
   Anchor,
+  Button,
   Title,
   Text,
   Group,
@@ -33,6 +38,7 @@ import {
   IconBrandInstagram,
   IconApple,
   IconBrandYoutube,
+  IconPlus,
 } from '@tabler/icons-react'
 
 const ARTISTS_PATH =
@@ -43,8 +49,11 @@ const PRODUCT_IMAGE_PATH =
   'https://ik.imagekit.io/mublin/products/tr:w-144,h-144,cm-pad_resize,bg-FFFFFF,fo-x/'
 
 export default function Artist() {
+  const { user } = useAuth()
   const { slug } = useParams()
   const { colorScheme } = useMantineColorScheme()
+  const queryClient = useQueryClient()
+  const [isUpdatingInspiration, setIsUpdatingInspiration] = useState(false)
 
   useEffect(() => {
     scrollTo({ y: 0 })
@@ -59,6 +68,13 @@ export default function Artist() {
     queryFn: () => fetchArtistDetails(slug),
     enabled: !!slug,
     staleTime: 1000 * 60 * 4,
+  })
+
+  const { data: isInspiration = false } = useQuery({
+    queryKey: ['check-inspiration', user?.id, artist?.id],
+    queryFn: () => checkArtistIsInspiration(user.id, artist.id),
+    enabled: !!user?.id && !!artist?.id,
+    staleTime: 1000 * 60 * 5,
   })
 
   const { data: roles = [], isLoading: loadingArtistRoles } = useQuery({
@@ -82,6 +98,60 @@ export default function Artist() {
     staleTime: 1000 * 60 * 4,
   })
 
+  async function handleAddInspiration() {
+    setIsUpdatingInspiration(true)
+    const { error } = await supabase.from('profile_inspirations').insert({
+      profile_id: user.id,
+      artist_id: artist?.id,
+      order_show: null,
+    })
+    if (error) {
+      notifications.show({
+        color: 'red',
+        position: 'top-center',
+        message: 'Erro ao adicionar inspiração. Tente novamente em instantes',
+      })
+    } else {
+      await queryClient.refetchQueries({
+        queryKey: ['check-inspiration', user.id, artist.id],
+      })
+      await queryClient.refetchQueries({ queryKey: ['artist-inspirated', artist.id] })
+      notifications.show({
+        color: 'green',
+        position: 'top-center',
+        message: `${artist.name} adicionado como inspiração!`,
+      })
+    }
+    setIsUpdatingInspiration(false)
+  }
+
+  async function handleRemoveInspiration() {
+    setIsUpdatingInspiration(true)
+    const { error } = await supabase
+      .from('profile_inspirations')
+      .delete()
+      .eq('profile_id', user.id)
+      .eq('artist_id', artist?.id)
+    if (error) {
+      notifications.show({
+        color: 'red',
+        position: 'top-center',
+        message: 'Erro ao remover inspiração. Tente novamente em instantes',
+      })
+    } else {
+      await queryClient.refetchQueries({
+        queryKey: ['check-inspiration', user.id, artist.id],
+      })
+      await queryClient.refetchQueries({ queryKey: ['artist-inspirated', artist.id] })
+      notifications.show({
+        color: 'yellow',
+        position: 'top-center',
+        message: `${artist.name} removido das suas inspirações`,
+      })
+    }
+    setIsUpdatingInspiration(false)
+  }
+
   return (
     <>
       <Helmet>
@@ -98,7 +168,7 @@ export default function Artist() {
         <AppNavbarMobile pageName="Figura mainstream" />
       </Affix>
 
-      <Container size="xl" pt="xs" px={{ base: 'md', sm: 0 }} mt={{ base: 62, sm: 0 }}>
+      <Container size="xl" py="xs" px={{ base: 'md', sm: 0 }} mt={{ base: 62, sm: 0 }}>
         <Stack gap="xs" mb="xl">
           {loadingArtistInfo ? (
             <Center>
@@ -157,8 +227,12 @@ export default function Artist() {
                       {artist?.name}
                     </Title>
                     <Text size="sm" c="dimmed">
-                      Gênero musical predominante:{' '}
-                      {artist?.genres?.name_ptbr || artist?.genres?.name}
+                      {[
+                        artist?.genre?.name_ptbr || artist?.genre?.name,
+                        artist?.genre_2?.name_ptbr || artist?.genre_2?.name,
+                      ]
+                        .filter(Boolean)
+                        .join(', ')}
                     </Text>
                     {/* Bloco de Roles/Papéis do Artista */}
                     {loadingArtistRoles ? (
@@ -166,7 +240,7 @@ export default function Artist() {
                     ) : (
                       roles &&
                       roles.length > 0 && (
-                        <Group gap="xs" mt="xs">
+                        <Group justify="center" gap="xs" mt="xs" wrap="wrap" w="75%">
                           {roles.map((item) => (
                             <Badge
                               key={item.id}
@@ -265,6 +339,30 @@ export default function Artist() {
                       )}
                     </Group>
                   )}
+                  <Center my="xs">
+                    {isInspiration ? (
+                      <Button
+                        size="xs"
+                        variant="outline"
+                        color="mublinColor"
+                        loading={isUpdatingInspiration}
+                        onClick={handleRemoveInspiration}
+                      >
+                        Remover como inspiração em meu perfil
+                      </Button>
+                    ) : (
+                      <Button
+                        size="xs"
+                        variant="outline"
+                        color="green"
+                        leftSection={<IconPlus size={16} />}
+                        loading={isUpdatingInspiration}
+                        onClick={handleAddInspiration}
+                      >
+                        Adicionar como inspiração em meu perfil
+                      </Button>
+                    )}
+                  </Center>
                 </>
               ) : (
                 <Flex mt="lg" align="center" direction="column">

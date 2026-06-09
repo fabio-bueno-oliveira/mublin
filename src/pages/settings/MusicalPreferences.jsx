@@ -2,7 +2,10 @@ import { useState, useCallback } from 'react'
 import { useAuth } from '../../hooks/useAuth'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabaseClient'
+import { fetchUserRoles } from '../../queries/user'
 import { fetchAllGenres, fetchGenreCategories } from '../../queries/genres'
+import { fetchAllRoles } from '../../queries/roles'
+import { searchArtist } from '../../queries/artists'
 import { fetchAllTravelPreferences } from '../../queries/misc'
 import {
   Pill,
@@ -32,7 +35,6 @@ import {
   IconGripVertical,
   IconCheck,
 } from '@tabler/icons-react'
-// Importação do Drag and Drop (instale via npm/yarn se necessário)
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd'
 
 const ARTISTS_PATH =
@@ -44,28 +46,6 @@ async function fetchUserGenres(profileId) {
   const { data, error } = await supabase
     .from('profile_genres')
     .select('id, id_genre, main_genre, genres(id, name_ptbr)')
-    .eq('id_profile', profileId)
-  if (error) {
-    throw new Error(error.message)
-  }
-  return data
-}
-
-async function fetchAllRoles() {
-  const { data, error } = await supabase
-    .from('roles')
-    .select('id, name_ptbr, instrumentalist')
-    .order('name_ptbr')
-  if (error) {
-    throw new Error(error.message)
-  }
-  return data
-}
-
-async function fetchUserRoles(profileId) {
-  const { data, error } = await supabase
-    .from('profile_roles')
-    .select('id, id_role, main_activity, roles(id, name_ptbr)')
     .eq('id_profile', profileId)
   if (error) {
     throw new Error(error.message)
@@ -86,26 +66,12 @@ async function fetchUserInspirations(profileId) {
         slug,
         picture,
         is_band,
-        genres ( name_ptbr )
+        genre:genres!artists_genre_id_fkey ( name, name_ptbr )
       )
     `,
     )
     .eq('profile_id', profileId)
     .order('order_show', { ascending: true, nullsFirst: false })
-  if (error) {
-    throw new Error(error.message)
-  }
-  return data
-}
-
-async function searchArtists(keyword) {
-  const { data, error } = await supabase
-    .from('artists')
-    .select('id, name, slug, picture, is_band, genres ( name_ptbr )')
-    .ilike('name', `%${keyword}%`)
-    .eq('is_active', true)
-    .order('name')
-    .limit(20)
   if (error) {
     throw new Error(error.message)
   }
@@ -334,7 +300,7 @@ export default function MusicalPreferences() {
     }
     setSearchingArtists(true)
     try {
-      const results = await searchArtists(keyword)
+      const results = await searchArtist(keyword)
       setArtistResults(results)
     } catch (err) {
       console.error(err)
@@ -682,6 +648,49 @@ export default function MusicalPreferences() {
 
         <Divider />
 
+        {/* ── Preferência de viagens ───────────────────── */}
+        <Stack gap="md">
+          <div>
+            <Text fw={600} size="sm" tt="uppercase" lts="0.05em">
+              Disponibilidade para viagens
+            </Text>
+            <Text size="xs" c="dimmed" mt={2}>
+              Informe sua preferência em relação a deslocamentos para trabalhos
+            </Text>
+          </div>
+
+          {loadingTravelPreference ? (
+            <Stack gap="xs">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <Skeleton key={i} width={220} height={18} radius="sm" />
+              ))}
+            </Stack>
+          ) : (
+            <Radio.Group
+              value={
+                userTravelPreference?.travel_preferences?.id
+                  ? String(userTravelPreference.travel_preferences.id)
+                  : ''
+              }
+              onChange={handleTravelPreferenceChange}
+            >
+              <Stack gap="xs">
+                {allTravelPreferences.map((pref) => (
+                  <Radio
+                    key={pref.id}
+                    value={String(pref.id)}
+                    label={pref.label}
+                    disabled={isSavingTravelPreference}
+                    size="sm"
+                  />
+                ))}
+              </Stack>
+            </Radio.Group>
+          )}
+        </Stack>
+
+        <Divider />
+
         {/* ── Inspirações ──────────────────────────────── */}
         <Stack gap="md">
           <div>
@@ -848,49 +857,6 @@ export default function MusicalPreferences() {
               Adicionar inspiração
             </Button>
           </div>
-        </Stack>
-
-        <Divider />
-
-        {/* ── Preferência de viagens ───────────────────── */}
-        <Stack gap="md">
-          <div>
-            <Text fw={600} size="sm" tt="uppercase" lts="0.05em">
-              Disponibilidade para viagens
-            </Text>
-            <Text size="xs" c="dimmed" mt={2}>
-              Informe sua preferência em relação a deslocamentos para trabalhos
-            </Text>
-          </div>
-
-          {loadingTravelPreference ? (
-            <Stack gap="xs">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <Skeleton key={i} width={220} height={18} radius="sm" />
-              ))}
-            </Stack>
-          ) : (
-            <Radio.Group
-              value={
-                userTravelPreference?.travel_preferences?.id
-                  ? String(userTravelPreference.travel_preferences.id)
-                  : ''
-              }
-              onChange={handleTravelPreferenceChange}
-            >
-              <Stack gap="xs">
-                {allTravelPreferences.map((pref) => (
-                  <Radio
-                    key={pref.id}
-                    value={String(pref.id)}
-                    label={pref.label}
-                    disabled={isSavingTravelPreference}
-                    size="sm"
-                  />
-                ))}
-              </Stack>
-            </Radio.Group>
-          )}
         </Stack>
       </Stack>
 

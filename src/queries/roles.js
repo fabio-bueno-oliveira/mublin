@@ -15,7 +15,7 @@ export async function fetchRandomRoles() {
   return data.sort(() => Math.random() - 0.5).slice(0, 15)
 }
 
-export async function fetchRoles() {
+export async function fetchAllRoles() {
   const { data, error } = await supabase
     .from('roles')
     .select(

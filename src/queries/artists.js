@@ -1,5 +1,18 @@
 import { supabase } from '../lib/supabaseClient'
 
+export async function checkArtistIsInspiration(userId, artistId) {
+  const { data, error } = await supabase
+    .from('profile_inspirations')
+    .select('id')
+    .eq('profile_id', userId)
+    .eq('artist_id', artistId)
+    .maybeSingle()
+  if (error) {
+    throw new Error(error.message)
+  }
+  return data !== null
+}
+
 export async function fetchArtistDetails(slug) {
   const { data, error } = await supabase
     .from('artists')
@@ -18,7 +31,8 @@ export async function fetchArtistDetails(slug) {
       youtube_handle,
       artist_related_slug,
       related_artist:artist_related_slug ( name, slug, picture ),
-      genres ( name, name_ptbr ),
+      genre:genres!artists_genre_id_fkey ( name, name_ptbr ),
+      genre_2:genres!artists_genre_2_id_fkey ( name, name_ptbr ),
       countries ( name )
     `,
     )
@@ -84,6 +98,20 @@ export async function fetchArtistRoles(artistId) {
     .order('is_main_role', { ascending: false })
     .order('order_show', { ascending: true })
 
+  if (error) {
+    throw new Error(error.message)
+  }
+  return data
+}
+
+export async function searchArtist(keyword) {
+  const { data, error } = await supabase
+    .from('artists')
+    .select('id, name, slug, picture, is_band, genres ( name_ptbr )')
+    .ilike('name', `%${keyword}%`)
+    .eq('is_active', true)
+    .order('name')
+    .limit(20)
   if (error) {
     throw new Error(error.message)
   }

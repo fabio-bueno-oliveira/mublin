@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { fetchUserProfile, fetchUserRoles, fetchUserProjects } from '../queries/user'
-import { fetchRoles } from '../queries/roles'
+import { fetchAllRoles } from '../queries/roles'
 import { searchProjectsByName } from '../queries/projects'
 import { fetchRegions, searchCitiesByName, fetchCityById } from '../queries/locations'
 import { supabase } from '../lib/supabaseClient'
@@ -178,7 +178,7 @@ export default function Onboarding() {
 
   const { data: roles = [] } = useQuery({
     queryKey: ['roles'],
-    queryFn: fetchRoles,
+    queryFn: fetchAllRoles,
     staleTime: 1000 * 60 * 30,
   })
 

@@ -1,8 +1,6 @@
 import { useRef } from 'react'
 import { Outlet, useNavigate, useLocation, Link } from 'react-router-dom'
-import { 
-  Container, Tabs, Title, Text, Group, Scroller
-} from '@mantine/core'
+import { Container, Tabs, Title, Text, Group, Scroller } from '@mantine/core'
 import { NAV_ITEMS, QUICK_ACTIONS } from '../constants/navItems'
 import {
   IconUser,
@@ -36,7 +34,7 @@ const SETTINGS_TABS = [
   },
   {
     value: 'musical-preferences',
-    label: 'Preferências',
+    label: 'Preferências musicais',
     icon: IconMusic,
     path: '/settings/musical-preferences',
   },
@@ -74,7 +72,9 @@ export default function SettingsSidebar() {
 
   function handleTabChange(value) {
     const tab = SETTINGS_TABS.find((t) => t.value === value)
-    if (tab) navigate(tab.path)
+    if (tab) {
+      navigate(tab.path)
+    }
   }
 
   return (
@@ -86,18 +86,18 @@ export default function SettingsSidebar() {
         variant="default"
         classNames={classes}
       >
-        <Tabs.List 
+        <Tabs.List
           grow
-          ref={scrollerRef} 
-          style={{ 
-            overflowX: 'auto', 
-            flexWrap: 'nowrap', 
+          ref={scrollerRef}
+          style={{
+            overflowX: 'auto',
+            flexWrap: 'nowrap',
             display: 'flex',
             scrollbarWidth: 'none', // Firefox
             msOverflowStyle: 'none', // IE/Edge
           }}
         >
-          {SETTINGS_TABS.map(({ value, label, icon: Icon }) => ( // eslint-disable-line
+          {SETTINGS_TABS.map(({ value, label, icon: Icon }) => (
             <Tabs.Tab
               key={value}
               value={value}

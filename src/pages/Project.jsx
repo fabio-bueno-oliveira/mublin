@@ -3,11 +3,8 @@ import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { supabase } from '../lib/supabaseClient'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import {
-  fetchProjectProfile,
-  cancelParticipationRequest,
-} from '../queries/projects'
-import { fetchRoles } from '../queries/roles'
+import { fetchProjectProfile, cancelParticipationRequest } from '../queries/projects'
+import { fetchAllRoles } from '../queries/roles'
 import JoinProjectModal from '../components/modals/JoinProjectModal'
 import { useDisclosure } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
@@ -79,7 +76,7 @@ export default function Project() {
 
   const { data: roles = [] } = useQuery({
     queryKey: ['roles'],
-    queryFn: fetchRoles,
+    queryFn: fetchAllRoles,
     staleTime: 1000 * 60 * 30,
   })
 
@@ -207,8 +204,7 @@ export default function Project() {
               right={0}
               h={60}
               style={{
-                background:
-                  'linear-gradient(to bottom, transparent, rgba(0,0,0,0.55))',
+                background: 'linear-gradient(to bottom, transparent, rgba(0,0,0,0.55))',
                 pointerEvents: 'none',
               }}
             />
@@ -255,13 +251,7 @@ export default function Project() {
           </Box>
 
           {/* ── Identidade ── */}
-          <Flex
-            justify="space-between"
-            align="flex-start"
-            wrap="wrap"
-            gap="sm"
-            px="xl"
-          >
+          <Flex justify="space-between" align="flex-start" wrap="wrap" gap="sm" px="xl">
             <Stack gap={2} w="100%">
               {isLoading ? (
                 <>
@@ -276,12 +266,7 @@ export default function Project() {
                         {project?.name}
                       </Title>
                       {!isLoading && userIsConfirmedMember && (
-                        <Menu
-                          shadow="md"
-                          width={200}
-                          position="right-start"
-                          withArrow
-                        >
+                        <Menu shadow="md" width={200} position="right-start" withArrow>
                           <Menu.Target>
                             <ActionIcon variant="subtle" color="gray" size="md">
                               <IconSettings stroke={1.4} size={24} />
@@ -290,9 +275,7 @@ export default function Project() {
                           <Menu.Dropdown>
                             <Menu.Item
                               leftSection={<IconDoor size={14} />}
-                              onClick={() =>
-                                navigate(`/backstage?project=${slug}`)
-                              }
+                              onClick={() => navigate(`/backstage?project=${slug}`)}
                             >
                               Acessar Backstage
                             </Menu.Item>
@@ -304,17 +287,12 @@ export default function Project() {
                               Gerenciar minha participação
                             </Menu.Item>
                             {userIsAdmin && (
-                              <Menu.Item
-                                leftSection={<IconUserCog size={14} />}
-                              >
+                              <Menu.Item leftSection={<IconUserCog size={14} />}>
                                 Gerenciar pessoas
                               </Menu.Item>
                             )}
                             <Menu.Divider />
-                            <Menu.Item
-                              color="red"
-                              leftSection={<IconLogout size={14} />}
-                            >
+                            <Menu.Item color="red" leftSection={<IconLogout size={14} />}>
                               Sair deste projeto
                             </Menu.Item>
                           </Menu.Dropdown>
@@ -374,11 +352,7 @@ export default function Project() {
                     )}
                     {project?.genre && (
                       <>
-                        <Text
-                          size="sm"
-                          opacity={0.4}
-                          style={{ cursor: 'default' }}
-                        >
+                        <Text size="sm" opacity={0.4} style={{ cursor: 'default' }}>
                           ·
                         </Text>
                         <Text size="sm" c="dimmed">
@@ -512,13 +486,7 @@ export default function Project() {
                               radius="xl"
                             />
                             <Stack gap={3} align="center">
-                              <Text
-                                size="xs"
-                                fw={500}
-                                ta="center"
-                                w={70}
-                                lineClamp={1}
-                              >
+                              <Text size="xs" fw={500} ta="center" w={70} lineClamp={1}>
                                 {member.name}
                               </Text>
                               <Text
@@ -530,9 +498,7 @@ export default function Project() {
                                   .filter(Boolean)
                                   .join(', ')}
                               >
-                                {[member.role, member.role_2]
-                                  .filter(Boolean)
-                                  .join(', ')}
+                                {[member.role, member.role_2].filter(Boolean).join(', ')}
                               </Text>
                             </Stack>
                             {member.username === profile?.username && (

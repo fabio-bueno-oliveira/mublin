@@ -24,6 +24,10 @@
 
 // Mantine styles
 
+.mantine-Tabs-tabLabel {
+  text-align: left;
+}
+
 .mantine-Modal-close:focus-visible {
   outline: none;
 }

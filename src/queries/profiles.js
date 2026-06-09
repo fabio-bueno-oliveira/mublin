@@ -361,7 +361,7 @@ export async function fetchProfileInspirations(profileId) {
         picture,
         is_band,
         is_verified,
-        genres ( name, name_ptbr ),
+        genre:genres!artists_genre_id_fkey ( name, name_ptbr ),
         countries ( name )
       )
     `,
