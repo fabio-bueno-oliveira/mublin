@@ -49,6 +49,8 @@ import {
   Select,
   em,
   Badge,
+  Center,
+  Divider,
 } from '@mantine/core'
 import { useMediaQuery, useDisclosure, useWindowScroll } from '@mantine/hooks'
 import LoadingSkeleton from '../components/profile/LoadingSkeleton'
@@ -74,6 +76,10 @@ import {
   IconPlane,
   IconGuitarPick,
   IconRosetteDiscountCheck,
+  IconSend,
+  IconHeart,
+  IconUserX,
+  IconUserPlus,
 } from '@tabler/icons-react'
 import ProfileHeaderMobile from '../components/profile/ProfileHeaderMobile'
 import AppNavbarMobile from '../components/AppNavbarMobile'
@@ -87,6 +93,7 @@ import { SOCIAL_CONFIG } from '../constants/socialConfig'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import 'dayjs/locale/pt-br'
+import { WorkAvailabilityItem } from '../components/profile/WorkAvailabilityItem'
 
 dayjs.extend(relativeTime)
 dayjs.locale('pt-br')
@@ -536,7 +543,68 @@ export default function Profile() {
           />
         )}
         <Grid>
-          <Grid.Col span={{ base: 12, md: 8 }}>
+          <Grid.Col span={{ base: 12, md: 2 }} visibleFrom="sm">
+            <Center mb="sm">
+              <Avatar
+                size={140}
+                src={getAvatarUrl(profile.avatar, profile.is_open_to_work, 140)}
+              />
+            </Center>
+            {user?.id !== profile.id && (
+              <Stack gap={10} className="buttonContentToLeft">
+                {followingInfo?.id ? (
+                  <Button
+                    fullWidth
+                    size="xs"
+                    radius="md"
+                    variant="filled"
+                    className="defaultMublinButton"
+                    onClick={() => unfollowProfile(user.id, profile.id)}
+                    disabled={loadingFollowingInfo}
+                    leftSection={<IconUserX size={16} />}
+                  >
+                    Deixar de seguir
+                  </Button>
+                ) : (
+                  <Button
+                    fullWidth
+                    size="xs"
+                    radius="md"
+                    variant="gradient"
+                    gradient={{ from: 'grape.8', to: 'mublinColor.8', deg: 55 }}
+                    onClick={() => followProfile(user.id, profile.id)}
+                    disabled={loadingFollowingInfo}
+                    leftSection={<IconUserPlus size={16} />}
+                  >
+                    Seguir
+                  </Button>
+                )}
+                <Button
+                  fullWidth
+                  size="xs"
+                  radius="md"
+                  variant="filled"
+                  className="defaultMublinButton"
+                  onClick={openInvite}
+                  leftSection={<IconSend size={16} />}
+                >
+                  Convidar para gig
+                </Button>
+                <Button
+                  fullWidth
+                  size="xs"
+                  radius="md"
+                  variant="filled"
+                  className="defaultMublinButton"
+                  onClick={openInvite}
+                  leftSection={<IconHeart size={16} />}
+                >
+                  Salvar nos favoritos
+                </Button>
+              </Stack>
+            )}
+          </Grid.Col>
+          <Grid.Col span={{ base: 12, md: 7 }}>
             {isMobile && (
               <Affix position={{ top: 50, left: 0 }} w="100%">
                 <Transition transition="slide-down" mounted={scroll.y > 120}>
@@ -574,141 +642,91 @@ export default function Profile() {
                 </Transition>
               </Affix>
             )}
-            <Group align="center" gap="md" mb="md" visibleFrom="sm">
-              <Avatar
-                size={96}
-                src={getAvatarUrl(profile.avatar, profile.is_open_to_work, 96)}
-              />
-              <Stack gap={1} flex={1}>
-                <Flex align="center" gap={4} wrap="wrap">
-                  <Title
-                    order={1}
-                    fw={600}
-                    size="22px"
-                    lh="1"
-                    component={Text}
-                    lineClamp={2}
-                  >
-                    {profile.full_name}
-                  </Title>
-                  {!!profile.is_verified && (
-                    <IconRosetteDiscountCheck
-                      className="iconVerified"
-                      title="Perfil verificado"
-                    />
-                  )}
-                  {/* {!!profile?.is_legend && (
+
+            <Stack gap={1} flex={1} mb="md" visibleFrom="sm">
+              <Flex align="center" gap={4} wrap="wrap">
+                <Title
+                  order={1}
+                  fw={600}
+                  size="26px"
+                  lh="1"
+                  component={Text}
+                  lineClamp={2}
+                >
+                  {profile.full_name}
+                </Title>
+                {!!profile.is_verified && (
+                  <IconRosetteDiscountCheck
+                    className="iconVerified"
+                    title="Perfil verificado"
+                  />
+                )}
+                {/* {!!profile?.is_legend && (
                     <IconShieldCheckFilled
                       className="iconLegend"
                       title="Lenda da música"
                     />
                   )} */}
-                  {/* {profile?.plan === 'Pro' && <ProPlanBadge />} */}
-                  {user?.id === profile.id && (
-                    <ActionIcon
-                      component={Link}
-                      to="/settings/profile"
-                      radius="xl"
-                      size="sm"
-                      variant="subtle"
-                      aria-label="Editar meu perfil"
-                      title="Editar meu perfil"
-                    >
-                      <IconPencil size={18} stroke={2} />
-                    </ActionIcon>
-                  )}
-                </Flex>
-                {profile.title && (
-                  <Text size="14px" fw={400} maw={420} lh={1.3} my={3}>
-                    {profile.title}
-                  </Text>
+                {/* {profile?.plan === 'Pro' && <ProPlanBadge />} */}
+                {user?.id === profile.id && (
+                  <ActionIcon
+                    component={Link}
+                    to="/settings/profile"
+                    radius="xl"
+                    size="sm"
+                    variant="subtle"
+                    aria-label="Editar meu perfil"
+                    title="Editar meu perfil"
+                  >
+                    <IconPencil size={18} stroke={2} />
+                  </ActionIcon>
                 )}
-                <Flex align="center" gap={4} opacity={0.8}>
-                  {/* <Text span size="sm">
+              </Flex>
+              {profile.title && (
+                <Text size="sm" fw={400} maw={420} lh={1.3} my={3}>
+                  {profile.title}
+                </Text>
+              )}
+              <Flex align="center" gap={4} opacity={0.8}>
+                {/* <Text span size="sm">
                     @{profile.username}
                   </Text> */}
-                  {(city || region) && (
-                    <Text size="xs" fw={300}>
-                      {[city, region, country].filter(Boolean).join(', ')}
-                    </Text>
-                  )}
-                  <Text size="xs">·</Text>
-                  <Anchor
-                    size="xs"
-                    onClick={openContactInfo}
-                    c="var(--mantine-color-text)"
-                  >
-                    Dados de contato
-                  </Anchor>
-                  {isProfileLive(profile) && (
-                    <Group gap={6} ml={10} align="center" wrap="nowrap">
-                      <Box
-                        component="span"
-                        className="live-dot"
-                        style={{ flexShrink: 0 }}
-                      />
-                      <Text size="11px" fw={600} c="red.7" tt="uppercase" lts="0.02em">
-                        Ao vivo em {profile.live_platform}
-                      </Text>
-                    </Group>
-                  )}
-                </Flex>
-                <Group gap="md" my={1}>
-                  <Anchor underline="never" onClick={openFollowers}>
-                    <Text size="xs" fw={500}>
-                      {followersList.length} seguidores
-                    </Text>
-                  </Anchor>
-                  <Anchor underline="never" onClick={openFollowing}>
-                    <Text size="xs" fw={500}>
-                      {followingList.length} seguindo
-                    </Text>
-                  </Anchor>
-                </Group>
-              </Stack>
-            </Group>
-            {user?.id !== profile.id && (
-              <Group gap={10} mx={{ base: 'sm', md: 0 }} mt={{ base: 'sm', md: 0 }}>
-                {followingInfo?.id ? (
-                  <Button
-                    size="sm"
-                    radius="md"
-                    variant="filled"
-                    className="defaultMublinButton"
-                    flex={1}
-                    mt={4}
-                    onClick={() => unfollowProfile(user.id, profile.id)}
-                    disabled={loadingFollowingInfo}
-                  >
-                    Deixar de seguir
-                  </Button>
-                ) : (
-                  <Button
-                    size="sm"
-                    radius="md"
-                    variant="gradient"
-                    gradient={{ from: 'grape.8', to: 'mublinColor.8', deg: 55 }}
-                    flex={1}
-                    mt={4}
-                    onClick={() => followProfile(user.id, profile.id)}
-                    disabled={loadingFollowingInfo}
-                  >
-                    Seguir
-                  </Button>
+                {(city || region) && (
+                  <Text size="xs" fw={300}>
+                    {[city, region, country].filter(Boolean).join(', ')}
+                  </Text>
                 )}
-                <Button
-                  size="sm"
-                  radius="md"
-                  variant="filled"
-                  className="defaultMublinButton"
-                  w={{ base: '47%', sm: 166 }}
-                  mt={4}
-                  onClick={openInvite}
-                >
-                  Convidar para gig
-                </Button>
+                <Text size="xs">·</Text>
+                <Anchor size="xs" onClick={openContactInfo} c="var(--mantine-color-text)">
+                  Dados de contato
+                </Anchor>
+                {isProfileLive(profile) && (
+                  <Group gap={6} ml={10} align="center" wrap="nowrap">
+                    <Box
+                      component="span"
+                      className="live-dot"
+                      style={{ flexShrink: 0 }}
+                    />
+                    <Text size="11px" fw={600} c="red.7" tt="uppercase" lts="0.02em">
+                      Ao vivo em {profile.live_platform}
+                    </Text>
+                  </Group>
+                )}
+              </Flex>
+              <Group gap="md" mt={3}>
+                <Anchor underline="never" onClick={openFollowers}>
+                  <Text size="sm" fw={500}>
+                    {followersList.length} seguidores
+                  </Text>
+                </Anchor>
+                <Anchor underline="never" onClick={openFollowing}>
+                  <Text size="sm" fw={500}>
+                    {followingList.length} seguindo
+                  </Text>
+                </Anchor>
               </Group>
-            )}
+            </Stack>
+
             <Stack gap={12} mt={{ base: 'md', md: 'md' }}>
               <SectionPanel id="about">
                 {profile.bio && (
@@ -718,7 +736,7 @@ export default function Profile() {
                       fz="sm"
                       lh={1.4}
                       style={{ whiteSpace: 'pre-line', cursor: 'default' }}
-                      lineClamp={expandedBio ? undefined : 2}
+                      lineClamp={expandedBio ? undefined : 4}
                       onClick={() => setExpandedBio(!expandedBio)}
                     >
                       {profile.bio}
@@ -1196,14 +1214,12 @@ export default function Profile() {
               )}
             </Stack>
           </Grid.Col>
-          <Grid.Col span={{ base: 12, md: 4 }}>
+          <Grid.Col span={{ base: 12, md: 3 }}>
             <Stack gap={10}>
               {profile?.show_availability_info && (
                 <SectionPanel id="availability">
                   <SectionTitle text="Disponibilidade" mb="sm" />
-                  <Title order={3} fz="xs" c="dimmed" fw={400} mt="sm">
-                    Disponível a partir de:
-                  </Title>
+                  <Divider mt="sm" label="Disponível a partir de:" labelPosition="left" />
                   {profile.available_from ? (
                     <Text size="sm">
                       {AVAILABLE_FROM_LABELS[profile.available_from] ||
@@ -1214,25 +1230,33 @@ export default function Profile() {
                       Não informado
                     </Text>
                   )}
-                  <Title order={3} fz="xs" c="dimmed" fw={400} mt="sm" mb={2}>
-                    Tipos de trabalho:
-                  </Title>
+                  <Divider
+                    mt="xs"
+                    mb={2}
+                    label="Tipos de trabalho:"
+                    labelPosition="left"
+                  />
                   {workAvailability.length > 0 ? (
-                    <Group gap={6} wrap="wrap">
+                    <Flex gap="xs" wrap="wrap" direction="column">
                       {workAvailability.map((item) => (
-                        <Text span size="sm" lh={1.2} fw={500} key={item.id}>
-                          <IconCheck size={9} stroke={4} /> {item.work_types?.name_ptbr}
-                        </Text>
+                        <>
+                          <Stack gap={1}>
+                            <WorkAvailabilityItem item={item} />
+                          </Stack>
+                        </>
                       ))}
-                    </Group>
+                    </Flex>
                   ) : (
                     <Text size="sm" opacity={0.8}>
                       Não informado
                     </Text>
                   )}
-                  <Title order={3} fz="xs" c="dimmed" fw={400} mt="sm" mb={2}>
-                    Vínculos de preferência:
-                  </Title>
+                  <Divider
+                    mt="sm"
+                    mb={2}
+                    label="Vínculos de preferência:"
+                    labelPosition="left"
+                  />
                   {workFocus.length > 0 ? (
                     <Group gap={6} wrap="wrap">
                       {workFocus.map((item) => (
@@ -1247,9 +1271,11 @@ export default function Profile() {
                       Não informado
                     </Text>
                   )}
-                  <Title order={3} fz="xs" c="dimmed" fw={400} mt="sm">
-                    Preferência para viagens:
-                  </Title>
+                  <Divider
+                    mt="sm"
+                    label="Preferência para viagens:"
+                    labelPosition="left"
+                  />
                   {loadingTravelPreference ? (
                     <Text size="sm" c="dimmed">
                       Carregando...

@@ -225,6 +225,8 @@ export default function AppNavbar({ children }) {
                   }
                   radius="xl"
                   size="md"
+                  variant="default"
+                  color="var(--mantine-color-text)"
                   value={searchQuery}
                   onChange={(e) => {
                     setInputValue(e.target.value)
@@ -352,7 +354,16 @@ export default function AppNavbar({ children }) {
         </Container>
       </Box>
       {actionsMenuOpened && (
-        <Modal opened={openActionsMenu} onClose={closeActionsMenu} title="Criar">
+        <Modal
+          centered
+          opened={openActionsMenu}
+          onClose={closeActionsMenu}
+          title="Criar"
+          overlayProps={{
+            backgroundOpacity: 0.55,
+            blur: 3,
+          }}
+        >
           <Stack mt="lg">
             {QUICK_ACTIONS.map((item) => {
               const Icon = item.icon

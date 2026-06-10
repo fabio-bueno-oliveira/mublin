@@ -164,8 +164,8 @@ export function NewsFeed() {
 
   return (
     <Box>
-      <Flex justify="space-between" visibleFrom="sm">
-        <Title order={4} mb="sm">
+      <Flex justify="space-between" align="center" mb="xs" visibleFrom="sm">
+        <Title order={3} fz="h4" fw={500}>
           Notícias da Música
         </Title>
         <Tooltip label={filtersOpened ? 'Ocultar filtros' : 'Mostrar filtros'}>

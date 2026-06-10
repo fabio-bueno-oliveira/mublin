@@ -28,6 +28,16 @@
   text-align: left;
 }
 
+.mantine-Divider-root {
+  opacity: 0.7 !important;
+}
+
+.buttonContentToLeft {
+  .mantine-Button-inner {
+    justify-content: flex-start;
+  }
+}
+
 .mantine-Modal-close:focus-visible {
   outline: none;
 }

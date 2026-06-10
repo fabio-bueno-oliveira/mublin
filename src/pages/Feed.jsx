@@ -261,12 +261,13 @@ export default function Feed({ from = '' }) {
                 align="center"
                 justify="flex-start"
                 className="paddingX"
+                gap="lg"
               >
                 <Title order={2} fz="h3" fw={600}>
                   Feed
                 </Title>
                 <Tooltip
-                  label="Quando ativado, você sempre será direcionado ao Feed ao entrar no Mublin"
+                  label="Quando ativado, você sempre será direcionado ao Feed ao entrar no Mublin pelo computador"
                   withArrow
                   multiline
                   w={220}
@@ -274,7 +275,7 @@ export default function Feed({ from = '' }) {
                 >
                   <Switch
                     size="xs"
-                    label="Definir Feed como página inicial"
+                    label="Definir Feed como página inicial ao acessar o Mublin"
                     // description="Quando ativado, você sempre será direcionado ao Feed ao entrar no Mublin"
                     checked={profile?.feed_as_home ?? false}
                     onChange={(e) => handleFeedAsHomeToggle(e.currentTarget.checked)}

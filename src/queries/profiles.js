@@ -293,6 +293,11 @@ export async function fetchProfileWorkAvailability(profileId) {
     .select(
       `
       id,
+      avg_rate,
+      rate_currency,
+      rate_types (
+        name_ptbr
+      ),
       work_types (
         id, name_ptbr
       )

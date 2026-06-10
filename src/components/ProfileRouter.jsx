@@ -1,5 +1,5 @@
 import { useAuth } from '../hooks/useAuth'
-import AppLayout from '../components/layouts/AppLayout'
+import AppProfileLayout from '../components/layouts/AppProfileLayout'
 import PublicLayout from '../components/layouts/PublicLayout'
 import Profile from '../pages/Profile'
 import ProfilePublic from '../pages/ProfilePublic'
@@ -7,15 +7,21 @@ import ProfilePublic from '../pages/ProfilePublic'
 export default function ProfileRouter() {
   const { user, loading } = useAuth()
 
-  if (loading) return null
+  if (loading) {
+    return null
+  }
 
   if (user) {
     return (
-      <AppLayout>
+      <AppProfileLayout>
         <Profile />
-      </AppLayout>
+      </AppProfileLayout>
     )
   }
 
-  return <PublicLayout><ProfilePublic /></PublicLayout>
+  return (
+    <PublicLayout>
+      <ProfilePublic />
+    </PublicLayout>
+  )
 }

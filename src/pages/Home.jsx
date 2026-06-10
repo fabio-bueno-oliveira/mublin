@@ -26,6 +26,7 @@ import {
   IconCheck,
   IconCircleArrowLeftFilled,
   IconCircleArrowRightFilled,
+  IconChevronRightFilled,
 } from '@tabler/icons-react'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
@@ -151,7 +152,7 @@ export default function Home() {
 
       <Container size="xl" pt="xs" px={{ base: 0, sm: 0 }} mt={{ base: 51, sm: 0 }}>
         <Grid>
-          <Grid.Col span={{ base: 12, md: 7 }} className="paddingX prX">
+          <Grid.Col span={{ base: 12, md: 8 }} className="paddingX prX">
             {loading || loadingProjects ? (
               <Box mb="xl">
                 <Title order={1} fz="h2" fw={700} lts="-0.02em">
@@ -177,7 +178,7 @@ export default function Home() {
             ) : (
               <Box mb="xl">
                 <Group gap={8} justify="space-between" wrap="nowrap">
-                  <Text fz="sm" opacity={0.8}>
+                  <Text fz="sm">
                     Você está associado a{' '}
                     {userProjects.length === 1
                       ? '1 projeto '
@@ -361,7 +362,7 @@ export default function Home() {
               </Anchor>{' '}
             </Flex> */}
 
-            <Group gap={8} mb="xs" justify="space-between" align="center">
+            {/* <Group gap={8} mb="xs" justify="space-between" align="center">
               <Title order={2} fz="xl" fw={700} lts="-0.02em">
                 Próximas gigs
               </Title>
@@ -377,20 +378,8 @@ export default function Home() {
                 >
                   Ver todas
                 </Anchor>
-                {/* <ActionIcon
-                  variant="light"
-                  color="#717171"
-                  c="dimmed"
-                  component={Link}
-                  to="/gigs"
-                >
-                  <IconChevronRightFilled size={18} />
-                </ActionIcon> */}
               </Group>
-            </Group>
-            {/* <Text fz="sm" opacity={0.8} lh={1} fw={300}>
-              Suas próximas gigs confirmadas
-            </Text> */}
+            </Group> */}
 
             {loadingGigs ? (
               <Group mb="md" gap="xs" wrap="nowrap">
@@ -664,8 +653,11 @@ export default function Home() {
           </Grid.Col>
 
           {isDesktop && (
-            <Grid.Col span={{ base: 12, md: 5 }} px={0}>
+            <Grid.Col span={{ base: 12, md: 4 }} px={0}>
               {/* <Feed from="home" /> */}
+              <Paper p="md" className="alphaBg" mb="lg" radius="lg">
+                <Title>Projeto</Title>
+              </Paper>
             </Grid.Col>
           )}
         </Grid>
