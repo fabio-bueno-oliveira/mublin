@@ -5,17 +5,38 @@ import { fetchUserProfile } from '../../queries/user'
 import { fetchCityById } from '../../queries/locations'
 import { supabase } from '../../lib/supabaseClient'
 import {
-  Stack, Grid, TextInput, Textarea, NativeSelect,
-  Input, Select, Button, Group, Text, Anchor, Divider,
-  Modal, ScrollArea, Box, Loader, Alert, Switch
+  Stack,
+  Grid,
+  TextInput,
+  Textarea,
+  NativeSelect,
+  Input,
+  Select,
+  Button,
+  Group,
+  Text,
+  Anchor,
+  Divider,
+  Modal,
+  ScrollArea,
+  Box,
+  Loader,
+  Alert,
+  Switch,
 } from '@mantine/core'
 import { useForm } from '@mantine/form'
-import { useDebouncedCallback, useDisclosure } from '@mantine/hooks'
+import { useDebouncedCallback, useDisclosure, useWindowScroll } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
 import {
-  IconSearch, IconCheck, IconAlertCircle,
-  IconBrandInstagram, IconBrandTiktok, IconWorld,
-  IconBrandYoutube, IconBrandTwitch, IconVideo, IconPhone
+  IconSearch,
+  IconCheck,
+  IconAlertCircle,
+  IconBrandInstagram,
+  IconBrandTiktok,
+  IconWorld,
+  IconBrandYoutube,
+  IconBrandTwitch,
+  IconVideo,
 } from '@tabler/icons-react'
 import { PhoneInput } from 'react-international-phone'
 import 'react-international-phone/style.css'
@@ -23,10 +44,10 @@ import 'react-international-phone/style.css'
 // ── Queries locais ────────────────────────────────────────
 
 async function fetchGenders() {
-  const { data, error } = await supabase
-    .from('genders')
-    .select('id, label')
-  if (error) throw new Error(error.message)
+  const { data, error } = await supabase.from('genders').select('id, label')
+  if (error) {
+    throw new Error(error.message)
+  }
   return data
 }
 
@@ -36,7 +57,9 @@ async function fetchRegions() {
     .select('id, name')
     .eq('country_id', 27)
     .order('name')
-  if (error) throw new Error(error.message)
+  if (error) {
+    throw new Error(error.message)
+  }
   return data
 }
 
@@ -48,7 +71,9 @@ async function searchCitiesByName(query, regionId) {
     .ilike('name', `%${query}%`)
     .order('name')
     .limit(20)
-  if (error) throw new Error(error.message)
+  if (error) {
+    throw new Error(error.message)
+  }
   return data
 }
 
@@ -57,7 +82,9 @@ async function fetchSocialLinks(profileId) {
     .from('profile_social_links')
     .select('platform, handle')
     .eq('profile_id', profileId)
-  if (error) throw new Error(error.message)
+  if (error) {
+    throw new Error(error.message)
+  }
   return data
 }
 
@@ -77,6 +104,7 @@ async function resetExpiredLive(userId) {
 export default function EditMyProfile() {
   const { user, profile: authProfile } = useAuth()
   const queryClient = useQueryClient()
+  const [, scrollTo] = useWindowScroll()
 
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -91,7 +119,8 @@ export default function EditMyProfile() {
   const [cityResults, setCityResults] = useState([])
   const [citySearchLoading, setCitySearchLoading] = useState(false)
   const [noCityResults, setNoCityResults] = useState(false)
-  const [modalCityOpened, { open: openCityModal, close: closeCityModal }] = useDisclosure(false)
+  const [modalCityOpened, { open: openCityModal, close: closeCityModal }] =
+    useDisclosure(false)
 
   // ── Live Streaming ────────────────────────────────────
   const [isLive, setIsLive] = useState(false)
@@ -119,15 +148,27 @@ export default function EditMyProfile() {
     validate: {
       full_name: (v) => (!v?.trim() ? 'Nome completo é obrigatório' : null),
       username: (v) => {
-        if (!v) return 'Username é obrigatório'
-        if (v.length < 3) return 'Mínimo 3 caracteres'
-        if (!/^[a-z0-9_]+$/.test(v)) return 'Apenas letras minúsculas, números e _'
+        if (!v) {
+          return 'Username é obrigatório'
+        }
+        if (v.length < 3) {
+          return 'Mínimo 3 caracteres'
+        }
+        if (!/^[a-z0-9_]+$/.test(v)) {
+          return 'Apenas letras minúsculas, números e _'
+        }
         return null
       },
       website: (v) => {
-        if (!v) return null
-        try { new URL(v); return null }
-        catch { return 'URL inválida. Ex: https://meusite.com' }
+        if (!v) {
+          return null
+        }
+        try {
+          new URL(v)
+          return null
+        } catch {
+          return 'URL inválida. Ex: https://meusite.com'
+        }
       },
     },
   })
@@ -168,24 +209,28 @@ export default function EditMyProfile() {
 
   // ── Popula form com dados salvos ──────────────────────
   useEffect(() => {
-    if (!savedProfile || form.values.username) return
+    if (!savedProfile || form.values.username) {
+      return
+    }
     form.setValues({
       full_name: authProfile.full_name ?? '',
-      username:  savedProfile.username  ?? '',
-      title:     savedProfile.title     ?? '',
-      bio:       savedProfile.bio       ?? '',
-      gender:    savedProfile.gender    ?? '',
+      username: savedProfile.username ?? '',
+      title: savedProfile.title ?? '',
+      bio: savedProfile.bio ?? '',
+      gender: savedProfile.gender ?? '',
       region_id: savedProfile.region_id ? String(savedProfile.region_id) : '',
-      website:   savedProfile.website   ?? '',
-      phone_number:             savedProfile.phone_number             ?? '',
-      phone_number_is_public:   savedProfile.phone_number_is_public   ?? false,
+      website: savedProfile.website ?? '',
+      phone_number: savedProfile.phone_number ?? '',
+      phone_number_is_public: savedProfile.phone_number_is_public ?? false,
       phone_number_is_whatsapp: savedProfile.phone_number_is_whatsapp ?? false,
     })
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [savedProfile])
 
   useEffect(() => {
-    if (!savedProfile) return
+    if (!savedProfile) {
+      return
+    }
     const expired = savedProfile.live_expires_at
       ? new Date(savedProfile.live_expires_at) < new Date()
       : false
@@ -196,28 +241,32 @@ export default function EditMyProfile() {
     setLivePlatform(savedProfile.live_platform ?? '')
     if (savedProfile.live_expires_at && !expired) {
       const remaining = Math.round(
-        (new Date(savedProfile.live_expires_at) - new Date()) / 60000
+        (new Date(savedProfile.live_expires_at) - new Date()) / 60000,
       )
       const closest = [15, 30, 60, 120, 180].reduce((a, b) =>
-        Math.abs(b - remaining) < Math.abs(a - remaining) ? b : a
+        Math.abs(b - remaining) < Math.abs(a - remaining) ? b : a,
       )
       setLiveDuration(String(closest))
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [savedProfile])
 
   useEffect(() => {
-    if (!socialLinks.length) return
-    const instagram = socialLinks.find(l => l.platform === 'instagram')?.handle ?? ''
-    const tiktok    = socialLinks.find(l => l.platform === 'tiktok')?.handle    ?? ''
-    const youtube   = socialLinks.find(l => l.platform === 'youtube')?.handle   ?? ''
-    const twitch    = socialLinks.find(l => l.platform === 'twitch')?.handle    ?? ''
-    form.setValues(prev => ({ ...prev, instagram, tiktok, youtube, twitch }))
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (!socialLinks.length) {
+      return
+    }
+    const instagram = socialLinks.find((l) => l.platform === 'instagram')?.handle ?? ''
+    const tiktok = socialLinks.find((l) => l.platform === 'tiktok')?.handle ?? ''
+    const youtube = socialLinks.find((l) => l.platform === 'youtube')?.handle ?? ''
+    const twitch = socialLinks.find((l) => l.platform === 'twitch')?.handle ?? ''
+    form.setValues((prev) => ({ ...prev, instagram, tiktok, youtube, twitch }))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [socialLinks])
 
   useEffect(() => {
-    if (savedCity) setSelectedCity({ id: savedCity.id, name: savedCity.name })
+    if (savedCity) {
+      setSelectedCity({ id: savedCity.id, name: savedCity.name })
+    }
   }, [savedCity])
 
   // ── Username check ────────────────────────────────────
@@ -255,7 +304,9 @@ export default function EditMyProfile() {
   // ── Busca de cidade ───────────────────────────────────
   const handleCitySearch = useDebouncedCallback(async (query) => {
     const regionId = form.values.region_id
-    if (!query || query.length < 2 || !regionId) return
+    if (!query || query.length < 2 || !regionId) {
+      return
+    }
     setCitySearchLoading(true)
     setNoCityResults(false)
     const results = await searchCitiesByName(query, regionId)
@@ -272,9 +323,9 @@ export default function EditMyProfile() {
   async function saveSocialLinks(profileId, values) {
     const platforms = [
       { platform: 'instagram', handle: values.instagram },
-      { platform: 'tiktok',   handle: values.tiktok },
-      { platform: 'youtube',  handle: values.youtube },
-      { platform: 'twitch',   handle: values.twitch },
+      { platform: 'tiktok', handle: values.tiktok },
+      { platform: 'youtube', handle: values.youtube },
+      { platform: 'twitch', handle: values.twitch },
     ]
 
     for (const { platform, handle } of platforms) {
@@ -283,7 +334,7 @@ export default function EditMyProfile() {
           .from('profile_social_links')
           .upsert(
             { profile_id: profileId, platform, handle },
-            { onConflict: 'profile_id,platform' }
+            { onConflict: 'profile_id,platform' },
           )
       } else {
         // Remove o link se o campo foi deixado em branco
@@ -298,43 +349,54 @@ export default function EditMyProfile() {
 
   // ── Submit ────────────────────────────────────────────
   async function handleSubmit(values) {
-    const liveExpiresAt = isLive && liveDuration
-      ? new Date(Date.now() + Number(liveDuration) * 60 * 1000).toISOString()
-      : null
+    const liveExpiresAt =
+      isLive && liveDuration
+        ? new Date(Date.now() + Number(liveDuration) * 60 * 1000).toISOString()
+        : null
     const validation = form.validate()
-    if (validation.hasErrors) return
-    if (usernameAvailable === false) return
-    if (usernameChecking) return
+    if (validation.hasErrors) {
+      return
+    }
+    if (usernameAvailable === false) {
+      return
+    }
+    if (usernameChecking) {
+      return
+    }
 
     setIsSubmitting(true)
     try {
       const { error } = await supabase
         .from('profiles')
         .update({
-          full_name:       values.full_name.trim(),
-          username:        values.username.trim(),
-          title:           values.title?.trim()  || null,
-          bio:             values.bio?.trim()    || null,
-          gender:          values.gender         || null,
-          region_id:       values.region_id ? Number(values.region_id) : null,
-          city_id:         selectedCity?.id      ?? null,
-          website:         values.website?.trim() || null,
-          is_live:         isLive,
-          live_platform:   isLive ? livePlatform || null : null,
+          full_name: values.full_name.trim(),
+          username: values.username.trim(),
+          title: values.title?.trim() || null,
+          bio: values.bio?.trim() || null,
+          gender: values.gender || null,
+          region_id: values.region_id ? Number(values.region_id) : null,
+          city_id: selectedCity?.id ?? null,
+          website: values.website?.trim() || null,
+          is_live: isLive,
+          live_platform: isLive ? livePlatform || null : null,
           live_expires_at: liveExpiresAt,
-          phone_number:             values.phone_number?.trim() || null,
-          phone_number_is_public:   values.phone_number_is_public,
+          phone_number: values.phone_number?.trim() || null,
+          phone_number_is_public: values.phone_number_is_public,
           phone_number_is_whatsapp: values.phone_number_is_whatsapp,
         })
         .eq('id', user.id)
 
-      if (error) throw error
+      if (error) {
+        throw error
+      }
 
       await saveSocialLinks(user.id, values)
 
       // Invalida queries afetadas para refletir os dados novos
       queryClient.invalidateQueries({ queryKey: ['profile', user.id] })
       queryClient.invalidateQueries({ queryKey: ['social-links', user.id] })
+
+      scrollTo({ y: 0 })
 
       notifications.show({
         color: 'green',
@@ -354,26 +416,26 @@ export default function EditMyProfile() {
 
   const genderData = [
     { value: '', label: 'Prefiro não informar' },
-    ...genders.map(g => ({ value: g.id, label: g.label })),
+    ...genders.map((g) => ({ value: g.id, label: g.label })),
   ]
 
   const LIVE_PLATFORMS = [
-    { value: 'instagram', label: 'Instagram',  icon: <IconBrandInstagram size={14} /> },
-    { value: 'tiktok',    label: 'TikTok',     icon: <IconBrandTiktok size={14} /> },
-    { value: 'youtube',   label: 'YouTube',    icon: <IconBrandYoutube size={14} /> },
-    { value: 'twitch',    label: 'Twitch',     icon: <IconBrandTwitch size={14} /> },
+    { value: 'instagram', label: 'Instagram', icon: <IconBrandInstagram size={14} /> },
+    { value: 'tiktok', label: 'TikTok', icon: <IconBrandTiktok size={14} /> },
+    { value: 'youtube', label: 'YouTube', icon: <IconBrandYoutube size={14} /> },
+    { value: 'twitch', label: 'Twitch', icon: <IconBrandTwitch size={14} /> },
   ]
 
-  const savedHandles = new Set(socialLinks.map(l => l.platform))
+  const savedHandles = new Set(socialLinks.map((l) => l.platform))
 
-  const livePlatformOptions = LIVE_PLATFORMS
-    .filter(p => savedHandles.has(p.value))
-    .map(p => ({ value: p.value, label: p.label }))
+  const livePlatformOptions = LIVE_PLATFORMS.filter((p) => savedHandles.has(p.value)).map(
+    (p) => ({ value: p.value, label: p.label }),
+  )
 
   const liveDurationOptions = [
-    { value: '15',  label: '15 minutos' },
-    { value: '30',  label: '30 minutos' },
-    { value: '60',  label: '1 hora' },
+    { value: '15', label: '15 minutos' },
+    { value: '30', label: '30 minutos' },
+    { value: '60', label: '1 hora' },
     { value: '120', label: '2 horas' },
     { value: '180', label: '3 horas' },
   ]
@@ -382,7 +444,6 @@ export default function EditMyProfile() {
   return (
     <>
       <Stack gap="lg">
-
         {/* ── Live ─────────────────────────────────────── */}
         <Stack gap="sm">
           <Text fw={600} size="sm" c="dimmed" tt="uppercase" lts="0.05em">
@@ -392,7 +453,7 @@ export default function EditMyProfile() {
             label="Avisar que estou fazendo live agora"
             description="Seu perfil exibirá um indicador de live ativa"
             color="red"
-            style={{ width: "fit-content" }}
+            style={{ width: 'fit-content' }}
             checked={isLive}
             onChange={(e) => {
               setIsLive(e.currentTarget.checked)
@@ -498,10 +559,13 @@ export default function EditMyProfile() {
             label="Bio"
             placeholder="Conte um pouco sobre você, sua trajetória e estilo musical..."
             maxLength={5000}
-            description={`${form.values.bio.length}/5000`}
             autosize
             minRows={3}
-            maxRows={12}
+            bottomSection={
+              <Text size="xs" c="dimmed">
+                {form.values.bio.length}/5000 caracteres
+              </Text>
+            }
             {...form.getInputProps('bio')}
           />
 
@@ -533,8 +597,10 @@ export default function EditMyProfile() {
                 }}
               >
                 <option value="">Selecione</option>
-                {regions.map(r => (
-                  <option key={r.id} value={String(r.id)}>{r.name}</option>
+                {regions.map((r) => (
+                  <option key={r.id} value={String(r.id)}>
+                    {r.name}
+                  </option>
                 ))}
               </NativeSelect>
             </Grid.Col>
@@ -543,11 +609,21 @@ export default function EditMyProfile() {
                 <Input
                   pointer
                   readOnly
-                  placeholder={form.values.region_id ? 'Selecionar...' : 'Selecione o Estado primeiro'}
+                  placeholder={
+                    form.values.region_id
+                      ? 'Selecionar...'
+                      : 'Selecione o Estado primeiro'
+                  }
                   disabled={!form.values.region_id}
                   value={selectedCity?.name ?? ''}
-                  rightSection={form.values.region_id ? <IconSearch size={15} /> : undefined}
-                  onClick={() => { if (form.values.region_id) openCityModal() }}
+                  rightSection={
+                    form.values.region_id ? <IconSearch size={15} /> : undefined
+                  }
+                  onClick={() => {
+                    if (form.values.region_id) {
+                      openCityModal()
+                    }
+                  }}
                 />
               </Input.Wrapper>
             </Grid.Col>
@@ -562,12 +638,18 @@ export default function EditMyProfile() {
           </Text>
           <Grid>
             <Grid.Col span={{ base: 12, sm: 6 }}>
-              <Input.Wrapper label="Telefone" description="Número com DDD e código do país">
+              <Input.Wrapper
+                label="Telefone"
+                description="Número com DDD e código do país"
+              >
                 <PhoneInput
                   defaultCountry="br"
                   value={form.values.phone_number}
                   onChange={(val) => form.setFieldValue('phone_number', val)}
-                  style={{ '--react-international-phone-border-radius': 'var(--mantine-radius-default)' }}
+                  style={{
+                    '--react-international-phone-border-radius':
+                      'var(--mantine-radius-default)',
+                  }}
                 />
               </Input.Wrapper>
             </Grid.Col>
@@ -586,7 +668,10 @@ export default function EditMyProfile() {
                   checked={form.values.phone_number_is_whatsapp}
                   disabled={!form.values.phone_number}
                   onChange={(e) =>
-                    form.setFieldValue('phone_number_is_whatsapp', e.currentTarget.checked)
+                    form.setFieldValue(
+                      'phone_number_is_whatsapp',
+                      e.currentTarget.checked,
+                    )
                   }
                 />
               </Stack>
@@ -670,11 +755,7 @@ export default function EditMyProfile() {
 
         {/* ── Ações ────────────────────────────────────── */}
         {usernameAvailable === false && (
-          <Alert
-            icon={<IconAlertCircle size={16} />}
-            color="red"
-            variant="light"
-          >
+          <Alert icon={<IconAlertCircle size={16} />} color="red" variant="light">
             {usernameUnavailableReason === 'reserved'
               ? 'Este username não está disponível.'
               : 'Este username já está em uso por outra conta.'}
@@ -690,7 +771,6 @@ export default function EditMyProfile() {
             Salvar alterações
           </Button>
         </Group>
-
       </Stack>
 
       {/* ── Modal busca de cidade ─────────────────────── */}
@@ -707,19 +787,23 @@ export default function EditMyProfile() {
             placeholder="Digite o nome da cidade..."
             data-autofocus
             value={citySearchQuery}
-            rightSection={citySearchLoading ? <Loader size={16} /> : <IconSearch size={16} />}
+            rightSection={
+              citySearchLoading ? <Loader size={16} /> : <IconSearch size={16} />
+            }
             onChange={(e) => {
               setCitySearchQuery(e.target.value)
               handleCitySearch(e.target.value)
             }}
           />
           {noCityResults && (
-            <Text size="xs" c="dimmed">Nenhuma cidade encontrada.</Text>
+            <Text size="xs" c="dimmed">
+              Nenhuma cidade encontrada.
+            </Text>
           )}
           {cityResults.length > 0 && (
             <ScrollArea h={200} type="auto">
               <Stack gap={0}>
-                {cityResults.map(city => (
+                {cityResults.map((city) => (
                   <Box key={city.id}>
                     <Anchor
                       size="sm"

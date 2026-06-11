@@ -32,6 +32,7 @@ export async function fetchUserProjects(userId) {
       `
       project_id,
       status,
+      engagement_type_id,
       is_founder,
       is_admin,
       is_ex_member,
@@ -45,7 +46,19 @@ export async function fetchUserProjects(userId) {
         spotify_id, instagram,
         foundation_year, end_year,
         activity_status,
-        genres ( name ),
+        genres (
+          name,
+          primary_category:genre_categories!genres_id_category_fkey (
+            id,
+            name_ptbr,
+            color
+          ),
+          secondary_category:genre_categories!genres_id_category_secondary_fkey (
+            id,
+            name_ptbr,
+            color
+          )
+        ),
         project_types ( name_ptbr ),
         project_members ( status, profiles ( full_name, username, avatar ) ),
         project_statuses ( description_ptbr, color ),

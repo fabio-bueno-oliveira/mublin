@@ -221,7 +221,7 @@ export default function Projects() {
               <Grid>
                 <Grid.Col span={{ base: 12, sm: 6, md: 4 }}>
                   <TextInput
-                    placeholder="Buscar por nome..."
+                    placeholder="Buscar por projeto..."
                     leftSection={<IconSearch size={14} />}
                     value={search}
                     onChange={(e) => setSearch(e.currentTarget.value)}

@@ -1,50 +1,194 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useQuery } from '@tanstack/react-query'
 import { fetchUserProjects } from '../queries/user'
-import { fetchUserGigs } from '../queries/gigs'
+import { MEMBER_ENGAGEMENT_TYPE } from '../constants/projects'
 // prettier-ignore
 import {
-  Grid, Group, Flex, Skeleton,
-  Container, Stack, Scroller,
-  Center, Badge, Button,
-  Text, Title,
-  Paper, Card, Box,
-  Anchor, ActionIcon,
-  Avatar, Progress, Affix,
+  useMantineColorScheme,
+  Group, Flex, Button,
+  Container, Stack, Box,
+  Badge, Pill, Loader, Divider,
+  Center, Indicator, Paper, 
+  Text, Title, Anchor,
+  TextInput,
+  Avatar, ActionIcon,
 } from '@mantine/core'
 import { useMediaQuery } from '@mantine/hooks'
 import AppNavbarMobile from '../components/AppNavbarMobile'
-import {
-  IconCalendar,
-  IconBulb,
-  IconRadar,
-  IconStar,
-  IconGuitarPick,
-  IconClock,
-  IconCheck,
-  IconCircleArrowLeftFilled,
-  IconCircleArrowRightFilled,
-  IconChevronRightFilled,
-} from '@tabler/icons-react'
+import Masonry, { ResponsiveMasonry } from 'react-responsive-masonry'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import 'dayjs/locale/pt-br'
+import {
+  IconXboxXFilled,
+  IconSearch,
+  IconMicrophone2,
+  IconArrowRight,
+} from '@tabler/icons-react'
+import { showYears } from '../utils/formatter'
+import EmptyProjects from '../components/project/EmptyProjects'
 
 dayjs.extend(relativeTime)
 dayjs.locale('pt-br')
 
-// const AVATAR_PATH =
-//   'https://ik.imagekit.io/mublin/tr:h-68,c-maintain_ratio/users/avatars/'
-const PROJECT_AVATAR_PATH = 'https://ik.imagekit.io/mublin/projects'
-// const PATH_PRODUCT_IMAGE_MOBILE =
-//   'https://ik.imagekit.io/mublin/products/tr:w-200,bg-FFFFFF,fo-x/'
+const CDN_PREFIX = 'https://ik.imagekit.io/mublin'
+const USER_AVATAR_PATH = `${CDN_PREFIX}/tr:h-68,c-maintain_ratio/users/avatars/`
+const PROJECT_AVATAR_PATH = `${CDN_PREFIX}/projects`
+const currentYear = new Date().getFullYear()
+
+function ProjectCard({ project, profile, isDark }) {
+  return (
+    <Paper
+      key={project.id}
+      px="sm"
+      py={8}
+      pos="relative"
+      w="100%"
+      style={{
+        cursor: 'pointer',
+        textDecoration: 'none',
+        color: 'inherit',
+        borderBottom: project.end_year
+          ? '2px solid var(--mantine-color-red-8)'
+          : isDark
+            ? '2px solid #2a2a2a'
+            : '2px solid #bcbcbc',
+      }}
+      component={Link}
+      to={`/project/${project.slug}`}
+    >
+      {/* <Menu shadow="md" width={200} position="bottom-end">
+        <Menu.Target>
+          <ActionIcon
+            color="gray"
+            variant="subtle"
+            size="sm"
+            pos="absolute"
+            top={10}
+            right={10}
+          >
+            <IconDotsVertical color="gray" size={16} />
+          </ActionIcon>
+        </Menu.Target>
+
+        <Menu.Dropdown>
+          <Menu.Item leftSection={<IconMusic size={14} />}>Ir para o projeto</Menu.Item>
+          <Menu.Item leftSection={<IconMusic size={14} />}>
+            Gerenciar participação
+          </Menu.Item>
+        </Menu.Dropdown>
+      </Menu> */}
+      <Group align="flex-start" gap={10} wrap="nowrap">
+        <Avatar
+          size={50}
+          radius="md"
+          src={
+            project?.picture
+              ? `${PROJECT_AVATAR_PATH}/${project?.id}/tr:h-100,w-100,c-maintain_ratio/${project?.picture}`
+              : undefined
+          }
+          alt={project.name}
+        />
+        <Stack gap={3} style={{ flexGrow: 1 }} maw="52%">
+          <Text size="md" fw={500} lineClamp={1} truncate="end" lh={1}>
+            {project.name}
+          </Text>
+          <Text size="xs" opacity={0.8} lh={1}>
+            {project.type}
+          </Text>
+          {project.genre && (
+            <Text size="11px" c="dimmed" lh={1}>
+              {project.genre}
+            </Text>
+          )}
+        </Stack>
+      </Group>
+      {project.description && (
+        <Text size="xs" c="dimmed" lineClamp={2} mt={6}>
+          {project.description}
+        </Text>
+      )}
+      {project.end_year && (
+        <Badge size="xs" fw={300} mt={6} color="red.9" variant="filled">
+          Encerrado em {project.end_year}
+        </Badge>
+      )}
+      <Divider my="xs" />
+      <Flex gap={8} align="center">
+        <Indicator
+          color={project.end_year || project.left_at ? 'red' : 'lime'}
+          size={5}
+          offset={4}
+          position="bottom-end"
+        >
+          <Avatar
+            size={25}
+            src={profile?.avatar ? USER_AVATAR_PATH + profile.avatar : undefined}
+            radius="xl"
+          />
+        </Indicator>
+        <Stack gap={4}>
+          <Text size="xs" lh={1}>
+            {project.main_role && project.main_role}
+          </Text>
+          {project.request_status !== 1 && (
+            <>
+              {!project.end_year ? (
+                <Text size="10px" opacity={0.7}>
+                  {`${project.joined_at} ➜ ${project.left_at ? project.left_at : currentYear}`}{' '}
+                  {project.left_at
+                    ? showYears(project.left_at - project.joined_at)
+                    : showYears(currentYear - project.joined_at)}
+                </Text>
+              ) : (
+                <Text size="10px" opacity={0.7}>
+                  {`${project.joined_at} ➜ ${project.end_year}`}{' '}
+                  {showYears(project.end_year - project.joined_at)}
+                </Text>
+              )}
+            </>
+          )}
+        </Stack>
+      </Flex>
+      {(project.is_founder || project.is_admin) && (
+        <Group gap={4}>
+          {project.is_founder && (
+            <Badge
+              mt={10}
+              variant="light"
+              color="gray"
+              size="xs"
+              style={{ cursor: 'pointer' }}
+            >
+              Fundador
+            </Badge>
+          )}
+          {project.is_admin && (
+            <Badge
+              mt={10}
+              variant="light"
+              color="gray"
+              size="xs"
+              style={{ cursor: 'pointer' }}
+            >
+              Admin
+            </Badge>
+          )}
+        </Group>
+      )}
+    </Paper>
+  )
+}
 
 export default function Home() {
   const { user, profile, loading } = useAuth()
   const navigate = useNavigate()
   const isDesktop = useMediaQuery('(min-width: 48em)')
+  const [search, setSearch] = useState('')
+  const { colorScheme } = useMantineColorScheme()
+  const isDark = colorScheme === 'dark'
 
   useEffect(() => {
     if (isDesktop && profile?.feed_as_home) {
@@ -57,10 +201,6 @@ export default function Home() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile])
 
-  if (loading) {
-    return null
-  }
-
   const { data: projects = [], isLoading: loadingProjects } = useQuery({
     queryKey: ['user-projects', user?.id],
     queryFn: () => fetchUserProjects(user.id),
@@ -68,13 +208,20 @@ export default function Home() {
     staleTime: 1000 * 60 * 4,
   })
 
+  if (loading) {
+    return null
+  }
+
   const userProjects = projects.map((p) => ({
     id: p.projects.id,
     name: p.projects.name,
     slug: p.projects.slug,
+    description: p.projects.description,
     end_year: p.projects.end_year,
     is_founder: p.is_founder,
+    is_admin: p.is_admin,
     is_ex_member: p.is_ex_member,
+    engagementType: p.engagement_type_id,
     picture: p.projects.picture,
     request_status: p.status,
     activity_status: p.projects.activity_status,
@@ -82,6 +229,7 @@ export default function Home() {
     activity_status_color: p.projects.project_statuses?.color,
     main_role: p.roles.name_ptbr,
     genre: p.projects.genres?.name,
+    genreCategoryColor: p.projects.genres?.primary_category?.color,
     type: p.projects.project_types?.name_ptbr,
     joined_at: p.joined_at ? new Date(p.joined_at).getFullYear() : null,
     left_at: p.left_at ? new Date(p.left_at).getFullYear() : null,
@@ -90,256 +238,72 @@ export default function Home() {
     totalMembers: p.projects.project_members?.length || 0,
   }))
 
-  // const userProjectsActive = userProjects.filter(
-  //   (p) => p.activity_status === PROJECT_ACTIVITY_STATUS.RUNNING,
-  // )
+  // Filtros aplicados
+  const filteredProjects = userProjects.filter((project) =>
+    !search?.trim()
+      ? true
+      : project.name.toLowerCase().includes(search.trim().toLowerCase()),
+  )
 
-  const additionalRolesCount = (project) => {
-    if (project.role_2_id && !project.role_3_id) {
-      return '+ 1'
-    } else if (project.role_2_id && project.role_3_id) {
-      return '+ 2'
-    }
-  }
+  const userProjectsOfficialMember = filteredProjects.filter(
+    (p) => p.engagementType === MEMBER_ENGAGEMENT_TYPE.MEMBER,
+  )
 
-  const { data: gigs = [], isLoading: loadingGigs } = useQuery({
-    queryKey: ['user-gigs', user?.id],
-    queryFn: () => fetchUserGigs(user.id),
-    enabled: !!user?.id,
-    staleTime: 1000 * 60 * 4,
-  })
+  const userProjectsHired = filteredProjects.filter(
+    (p) => p.engagementType === MEMBER_ENGAGEMENT_TYPE.HIRED,
+  )
 
-  const genreStats = (() => {
-    const projectsWithGenre = userProjects.filter((p) => p.genre)
-    if (!projectsWithGenre.length) {
-      return []
-    }
+  const userProjectsGuest = filteredProjects.filter(
+    (p) => p.engagementType === MEMBER_ENGAGEMENT_TYPE.GUEST,
+  )
 
-    const counts = projectsWithGenre.reduce((acc, p) => {
-      acc[p.genre] = (acc[p.genre] ?? 0) + 1
-      return acc
-    }, {})
-
-    const total = projectsWithGenre.length
-
-    const COLORS = [
-      'blue.6',
-      'blue.8',
-      'green.8',
-      'teal.6',
-      'violet.8',
-      'teal.6',
-      'red.7',
-      'cyan.7',
-    ]
-
-    return Object.entries(counts)
-      .sort((a, b) => b[1] - a[1])
-      .map(([label, count], i) => ({
-        label,
-        value: Math.round((count / total) * 100),
-        color: COLORS[i % COLORS.length],
-      }))
-  })()
+  // Saudação dinâmica
+  const hour = new Date().getHours()
+  const greeting = hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite'
 
   return (
     <>
-      {!isDesktop && (
-        <Affix position={{ top: 0, left: 0 }}>
-          <AppNavbarMobile />
-        </Affix>
-      )}
+      {!isDesktop && <AppNavbarMobile fixed={false} />}
 
-      <Container size="xl" pt="xs" px={{ base: 0, sm: 0 }} mt={{ base: 51, sm: 0 }}>
-        <Grid>
-          <Grid.Col span={{ base: 12, md: 8 }} className="paddingX prX">
-            {loading || loadingProjects ? (
-              <Box mb="xl">
-                <Title order={1} fz="h2" fw={700} lts="-0.02em">
-                  Carregando...
-                </Title>
-                <Text fz="sm" opacity={0.8}>
-                  Buscando seus projetos...
-                </Text>
-                <Group mt="md" align="flex-start" gap="md" wrap="nowrap" pr="md">
-                  {[1, 2, 3, 4].map((i) => (
-                    <Stack key={i} gap={6}>
-                      <Skeleton radius="md" w={90} h={90} />
-                      <Flex direction="column" gap={4}>
-                        <Skeleton radius="xl" w={56} h={8} />
-                        <Skeleton radius="xl" w={76} h={12} my={1} />
-                        <Skeleton radius="xl" w={64} h={7} />
-                        <Skeleton radius="xl" w={64} h={7} />
-                      </Flex>
-                    </Stack>
-                  ))}
-                </Group>
-              </Box>
-            ) : (
-              <Box mb="xl">
-                <Group gap={8} justify="space-between" wrap="nowrap">
-                  <Text fz="sm">
-                    Você está associado a{' '}
-                    {userProjects.length === 1
-                      ? '1 projeto '
-                      : `${userProjects.length} projetos `}
-                  </Text>
-                  <Anchor
-                    c="var(--mantine-color-text)"
-                    opacity={0.8}
-                    fz="sm"
-                    fw={300}
-                    component={Link}
-                    to="/projects"
-                    style={{ whiteSpace: 'nowrap' }}
-                  >
-                    Ver todos
-                  </Anchor>
-                </Group>
-                {userProjects.length > 0 ? (
-                  <Scroller
-                    mt="md"
-                    key={userProjects.length}
-                    draggable={!isDesktop}
-                    controlSize="xl"
-                    classNames={{
-                      root: 'scrollerRoot',
-                      control: 'scrollerControl',
-                    }}
-                    startControlIcon={
-                      isDesktop ? <IconCircleArrowLeftFilled size={36} /> : undefined
-                    }
-                    endControlIcon={
-                      isDesktop ? <IconCircleArrowRightFilled size={36} /> : undefined
-                    }
-                  >
-                    <Group align="flex-start" gap="md" wrap="nowrap" pr="md">
-                      {userProjects.map((project) => (
-                        <Stack key={project.id} gap={4} size={90}>
-                          <Link to={`/project/${project.slug}`}>
-                            <Box
-                              radius="md"
-                              style={{
-                                position: 'relative',
-                                width: '100%',
-                                height: '100%',
-                                overflow: 'hidden',
-                              }}
-                            >
-                              <Avatar
-                                size={90}
-                                radius="md"
-                                src={
-                                  project?.picture
-                                    ? `${PROJECT_AVATAR_PATH}/${project?.id}/tr:h-180,w-180,c-maintain_ratio/${project?.picture}`
-                                    : undefined
-                                }
-                                title={project.name}
-                              />
-                              {project.activity_status &&
-                                project.request_status !== 1 &&
-                                project.activity_status !== 1 && (
-                                  <Badge
-                                    pos="absolute"
-                                    top={6}
-                                    right={6}
-                                    color={project.activity_status_color ?? undefined}
-                                    size="xs"
-                                    fz="7px"
-                                    radius="sm"
-                                    variant="filled"
-                                    opacity={0.9}
-                                    title={project.activity_status_name}
-                                  >
-                                    {project.activity_status_name}
-                                  </Badge>
-                                )}
-                              {project.request_status === 1 && (
-                                <Flex
-                                  align="center"
-                                  justify="center"
-                                  pos="absolute"
-                                  direction="column"
-                                  gap="xs"
-                                  inset={0}
-                                  style={{ borderRadius: '8px' }}
-                                  bg="rgba(0,0,0,0.6)"
-                                >
-                                  <IconClock size={24} color="#ffffff" stroke={1.2} />
-                                  <Badge
-                                    size="xs"
-                                    fw="400"
-                                    variant="outline"
-                                    color="#ffffff"
-                                  >
-                                    Pendente
-                                  </Badge>
-                                </Flex>
-                              )}
-                            </Box>
-                          </Link>
-                          <Flex gap={0} direction="column">
-                            <Text fz="xs" c="dimmed" truncate="end">
-                              {project.main_role} {additionalRolesCount(project)} em
-                            </Text>
-                            <Text
-                              w={90}
-                              size="15px"
-                              fw={600}
-                              truncate="end"
-                              component={Link}
-                              to={`/project/${project.slug}`}
-                              className="noDecoration"
-                              c="var(--mantine-color-text)"
-                              title={project.name}
-                              lh={1}
-                            >
-                              {project.name}
-                            </Text>
-                            <Text
-                              mt={2}
-                              lh={1}
-                              w={90}
-                              size="xs"
-                              opacity={0.6}
-                              truncate="end"
-                            >
-                              {project.type}
-                            </Text>
-                            {project.genre && (
-                              <Text w={90} opacity={0.6} size="xs" truncate="end">
-                                {project.genre}
-                              </Text>
-                            )}
-                          </Flex>
-                        </Stack>
-                      ))}
-                    </Group>
-                  </Scroller>
-                ) : (
-                  <Center mt="md">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      color="mublinColor"
-                      radius="xl"
-                      onClick={() => navigate('/search')}
-                    >
-                      Encontrar ou criar um projeto
-                    </Button>
-                  </Center>
-                )}
-              </Box>
-            )}
-
-            {/* <Button
-              fullWidth
-              mt="xl"
-              mb={3}
+      <Container size="xl" pt="xs" px={{ base: 'sm', sm: 0 }} mt={{ base: 16, sm: 0 }}>
+        <Title size="h2" fw={600} lh={1.2} mt={4}>
+          {greeting}, {profile?.username}
+        </Title>
+        <Text fz="md" mb={userProjects.length > 0 ? 'xs' : 'md'} opacity={0.7}>
+          Você está associado a{' '}
+          {userProjects.length === 1 ? '1 projeto ' : `${userProjects.length} projetos `}
+        </Text>
+        {userProjects.length > 0 ? (
+          <TextInput
+            placeholder="Filtrar por nome..."
+            leftSection={<IconSearch size={14} />}
+            value={search}
+            onChange={(e) => setSearch(e.currentTarget.value)}
+            rightSection={
+              search && (
+                <ActionIcon
+                  size="sm"
+                  radius="xl"
+                  variant="transparent"
+                  onClick={() => setSearch('')}
+                >
+                  <IconXboxXFilled color="gray" size={22} />
+                </ActionIcon>
+              )
+            }
+            variant="unstyled"
+            size="md"
+            mb="sm"
+          />
+        ) : (
+          <Flex mt="24px" direction="column" justify="center" align="center">
+            <Button
+              mb={4}
               variant="gradient"
               gradient={{ from: 'grape.8', to: 'mublinColor.8', deg: 55 }}
               radius="xl"
               size="sm"
+              style={{ width: 'fit-content' }}
               leftSection={<IconMicrophone2 size={18} />}
               rightSection={<IconArrowRight size={18} />}
               justify="space-between"
@@ -351,8 +315,8 @@ export default function Home() {
 
             <Flex justify="center" mb="xl">
               <Anchor
-                c="var(--mantine-color-text)"
-                opacity={0.8}
+                c={isDark ? 'mublinColor.2' : 'mublinColor.8'}
+                opacity={0.9}
                 fz="xs"
                 fw={300}
                 component={Link}
@@ -360,307 +324,97 @@ export default function Home() {
               >
                 ou associe-se a um projeto novo ou existente
               </Anchor>{' '}
-            </Flex> */}
-
-            {/* <Group gap={8} mb="xs" justify="space-between" align="center">
-              <Title order={2} fz="xl" fw={700} lts="-0.02em">
-                Próximas gigs
-              </Title>
-              <Group>
-                <Anchor
-                  c="var(--mantine-color-text)"
-                  opacity={0.8}
-                  fz="sm"
-                  fw={300}
-                  lh={1}
-                  component={Link}
-                  to="/gigs"
-                >
-                  Ver todas
-                </Anchor>
-              </Group>
-            </Group> */}
-
-            {loadingGigs ? (
-              <Group mb="md" gap="xs" wrap="nowrap">
-                <Card shadow="xs" padding="xs" w={300} h={150} withBorder>
-                  <Stack gap="xs" pt={4}>
-                    <Skeleton width={130} height={14} radius="md" />
-                    <Group gap={5} justify="flex-start">
-                      <Skeleton width={60} height={14} radius="md" />
-                      <Skeleton width={86} height={14} radius="md" />
-                    </Group>
-                    <Skeleton width={180} height={21} radius="md" />
-                    <Skeleton width={130} height={14} radius="md" />
-                    <Skeleton width={160} height={10} radius="md" />
-                  </Stack>
-                </Card>
-              </Group>
-            ) : gigs.length > 0 ? (
-              <Scroller mb="md">
-                <Group gap="xs" wrap="nowrap">
-                  {gigs.map((gig) => (
-                    <Card
-                      key={gig.id}
-                      shadow="xs"
-                      padding="xs"
-                      w={300}
-                      withBorder
-                      component={Link}
-                      to={`/gig/${gig.gigs?.id}`}
-                    >
-                      <Card.Section px="xs" py={8}>
-                        <Group gap={5} justify="space-between" wrap="nowrap">
-                          <Text fw={300} size="xs" truncate="end">
-                            <Text span fw={600}>
-                              {gig.gig_roles?.roles?.description_ptbr}
-                            </Text>{' '}
-                            em {gig.gigs?.projects?.name}
-                          </Text>
-
-                          <Avatar
-                            size={24}
-                            radius="xl"
-                            src={
-                              gig.gigs?.projects?.picture
-                                ? `${PROJECT_AVATAR_PATH}/${gig.gigs?.projects?.id}/tr:h-48,w-48,c-maintain_ratio/${gig.gigs?.projects?.picture}`
-                                : undefined
-                            }
-                          />
-                        </Group>
-                      </Card.Section>
-
-                      <Card.Section px="xs" py={2}>
-                        <Group gap={5} justify="flex-start">
-                          <Group gap={3}>
-                            <Badge
-                              size="xs"
-                              variant="light"
-                              color={
-                                dayjs(gig.gigs?.events?.date_start).diff(
-                                  dayjs(),
-                                  'day',
-                                ) <= 2
-                                  ? 'orange'
-                                  : 'gray'
-                              }
-                            >
-                              {dayjs(gig.gigs?.events?.date_start).fromNow()}
-                            </Badge>
-                          </Group>
-                          <Badge
-                            size="xs"
-                            variant="default"
-                            leftSection={<IconCheck stroke={3} size={12} />}
-                          >
-                            Aceito
-                          </Badge>
-                        </Group>
-                      </Card.Section>
-
-                      <Stack gap={2} mt={6}>
-                        <Text size="md" fw={600} lineClamp={1} lts="-0.01em">
-                          {gig.gigs?.events?.name}
-                        </Text>
-
-                        <Text size="sm" truncate>
-                          {gig.gigs?.events?.venues?.name} (
-                          {gig.gigs?.events?.venues?.cities?.name},{' '}
-                          {gig.gigs?.events?.venues?.cities?.regions?.uf})
-                        </Text>
-
-                        <Text size="xs" c="dimmed">
-                          {dayjs(gig.gigs?.events?.date_start).format(
-                            'dddd, D [de] MMMM [de] YYYY',
-                          )}
-                        </Text>
-                      </Stack>
-                    </Card>
-                  ))}
-                </Group>
-              </Scroller>
-            ) : (
-              <Flex
-                mb="md"
-                h={80}
-                gap="xs"
-                direction="column"
-                justify="center"
-                align="center"
-              >
-                <Text size="sm" c="dimmed" ta="center" fw={500}>
-                  Nenhuma gig agendada no momento :(
-                </Text>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  color="mublinColor"
-                  radius="xl"
-                  onClick={() => navigate('/search')}
-                >
-                  Encontrar gigs
-                </Button>
-              </Flex>
-            )}
-
-            {/* <Title order={2} fz="xl" fw={700} mb="xs">
-              Para o dia a dia
-            </Title> */}
-
-            <Scroller mt="xl" mb="xl">
-              <Group gap="xs" wrap="nowrap">
-                <Flex direction="column" align="center" w={80}>
-                  <ActionIcon
-                    variant="default"
-                    color="gray"
-                    // variant="gradient"
-                    // gradient={{ from: 'grape.8', to: 'mublinColor.8', deg: 55 }}
-                    size="xl"
-                    aria-label="Teste"
-                    w={80}
-                    h={80}
-                    mb="xs"
-                  >
-                    <IconCalendar size={32} stroke={1.5} />
-                  </ActionIcon>
-                  <Text ta="center" size="xs" style={{ wordBreak: 'break-word' }} w={80}>
-                    Novo
-                    <br />
-                    evento
-                  </Text>
-                </Flex>
-                <Flex direction="column" align="center" w={80}>
-                  <ActionIcon
-                    variant="default"
-                    color="gray"
-                    size="xl"
-                    aria-label="Teste"
-                    w={80}
-                    h={80}
-                    mb="xs"
-                  >
-                    <IconBulb size={32} stroke={1.5} />
-                  </ActionIcon>
-                  <Text ta="center" size="xs" style={{ wordBreak: 'break-word' }} w={80}>
-                    Nova
-                    <br />
-                    composição
-                  </Text>
-                </Flex>
-                <Flex direction="column" align="center" w={80}>
-                  <ActionIcon
-                    variant="default"
-                    color="gray"
-                    size="xl"
-                    aria-label="Teste"
-                    w={80}
-                    h={80}
-                    mb="xs"
-                  >
-                    <IconRadar size={32} stroke={1.5} />
-                  </ActionIcon>
-                  <Text ta="center" size="xs" style={{ wordBreak: 'break-word' }} w={80}>
-                    Gigs
-                    <br />
-                    próximas
-                  </Text>
-                </Flex>
-                <Flex direction="column" align="center" w={80}>
-                  <ActionIcon
-                    variant="default"
-                    color="gray"
-                    size="xl"
-                    aria-label="Teste"
-                    w={80}
-                    h={80}
-                    mb="xs"
-                  >
-                    <IconStar size={32} stroke={1.5} />
-                  </ActionIcon>
-                  <Text ta="center" size="xs" style={{ wordBreak: 'break-word' }} w={80}>
-                    Novos
-                    <br />
-                    artistas
-                  </Text>
-                </Flex>
-                <Flex direction="column" align="center" w={80}>
-                  <ActionIcon
-                    variant="default"
-                    color="gray"
-                    size="xl"
-                    aria-label="Teste"
-                    w={80}
-                    h={80}
-                    mb="xs"
-                  >
-                    <IconGuitarPick size={32} stroke={1.5} />
-                  </ActionIcon>
-                  <Text ta="center" size="xs" style={{ wordBreak: 'break-word' }} w={80}>
-                    Buscar
-                    <br />
-                    marcas
-                  </Text>
-                </Flex>
-              </Group>
-            </Scroller>
-
-            {genreStats.length > 0 && (
-              <>
-                <Title order={2} fz="xl" fw={700} mb="xs">
-                  Gêneros mais tocados por você
+            </Flex>
+          </Flex>
+        )}
+        {loadingProjects ? (
+          <Center mt="lg">
+            <Loader type="bars" />
+          </Center>
+        ) : (
+          <Stack>
+            <Box component="section">
+              <Group gap="xs">
+                <Title order={3} fz="20px" fw={600}>
+                  Integrante
                 </Title>
-                <Paper p="md" className="alphaBg" mb="lg" radius="lg">
-                  <Stack gap="xs">
-                    <Stack gap={4}>
-                      {genreStats.map((stat) => (
-                        <Group key={stat.label} justify="space-between" wrap="nowrap">
-                          <Group gap={8}>
-                            <Box
-                              w={10}
-                              h={10}
-                              style={{
-                                backgroundColor: `var(--mantine-color-${stat.color.split('.')[0]}-${stat.color.split('.')[1] || '6'})`,
-                                borderRadius: '50%',
-                              }}
-                            />
-                            <Text size="sm" fw={500}>
-                              {stat.label}
-                            </Text>
-                          </Group>
-                          <Text size="sm" c="dimmed">
-                            {stat.value}%
-                          </Text>
-                        </Group>
-                      ))}
-                    </Stack>
-                    <Progress.Root size={20} radius="xl">
-                      {genreStats.map((stat) => (
-                        <Progress.Section
-                          value={stat.value}
-                          color={stat.color}
-                          key={stat.label}
-                        >
-                          {stat.value > 10 && (
-                            <Progress.Label>{stat.value}%</Progress.Label>
-                          )}
-                        </Progress.Section>
-                      ))}
-                    </Progress.Root>
-                  </Stack>
-                </Paper>
-              </>
-            )}
-          </Grid.Col>
+                <Pill size="sm">{userProjectsOfficialMember.length}</Pill>
+              </Group>
+              <Text size="sm" mb="xs">
+                Projetos com vínculo de integrante oficial
+              </Text>
+              {userProjectsOfficialMember.length > 0 ? (
+                <ResponsiveMasonry
+                  columnsCountBreakPoints={{ 350: 2, 750: 3, 900: 3 }}
+                  gutterBreakpoints={{ 350: '8px', 750: '8px', 900: '8px' }}
+                  style={{ marginTop: '6px' }}
+                >
+                  <Masonry>
+                    {userProjectsOfficialMember.map((project) => (
+                      <ProjectCard project={project} profile={profile} isDark={isDark} />
+                    ))}
+                  </Masonry>
+                </ResponsiveMasonry>
+              ) : (
+                <EmptyProjects />
+              )}
+            </Box>
 
-          {isDesktop && (
-            <Grid.Col span={{ base: 12, md: 4 }} px={0}>
-              {/* <Feed from="home" /> */}
-              <Paper p="md" className="alphaBg" mb="lg" radius="lg">
-                <Title>Projeto</Title>
-              </Paper>
-            </Grid.Col>
-          )}
-        </Grid>
+            <Box component="section">
+              <Group gap="xs">
+                <Title order={3} fz="20px" fw={600}>
+                  Contratado
+                </Title>
+                <Pill size="sm">{userProjectsHired.length}</Pill>
+              </Group>
+              <Text size="sm" mb="xs">
+                Projetos em que meu vínculo é por contrato
+              </Text>
+              {userProjectsHired.length > 0 ? (
+                <ResponsiveMasonry
+                  columnsCountBreakPoints={{ 350: 2, 750: 3, 900: 3 }}
+                  gutterBreakpoints={{ 350: '8px', 750: '8px', 900: '8px' }}
+                  style={{ marginTop: '6px' }}
+                >
+                  <Masonry>
+                    {userProjectsHired.map((project) => (
+                      <ProjectCard project={project} profile={profile} isDark={isDark} />
+                    ))}
+                  </Masonry>
+                </ResponsiveMasonry>
+              ) : (
+                <EmptyProjects />
+              )}
+            </Box>
+
+            <Box component="section">
+              <Group gap="xs">
+                <Title order={3} fz="20px" fw={600}>
+                  Convidado
+                </Title>
+                <Pill size="sm">{userProjectsGuest.length}</Pill>
+              </Group>
+              <Text size="sm" mb="xs">
+                Projetos em que meu vínculo é como convidado
+              </Text>
+              {userProjectsGuest.length > 0 ? (
+                <ResponsiveMasonry
+                  columnsCountBreakPoints={{ 350: 2, 750: 3, 900: 3 }}
+                  gutterBreakpoints={{ 350: '8px', 750: '8px', 900: '8px' }}
+                  style={{ marginTop: '6px' }}
+                >
+                  <Masonry>
+                    {userProjectsGuest.map((project) => (
+                      <ProjectCard project={project} profile={profile} isDark={isDark} />
+                    ))}
+                  </Masonry>
+                </ResponsiveMasonry>
+              ) : (
+                <EmptyProjects />
+              )}
+            </Box>
+          </Stack>
+        )}
       </Container>
     </>
   )

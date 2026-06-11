@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import {
@@ -5,6 +6,7 @@ import {
   Stack,
   Box,
   Group,
+  Indicator,
   Text,
   Avatar,
   Card,
@@ -13,6 +15,8 @@ import {
 } from '@mantine/core'
 import ProPlanBadge from './ProPlanBadge'
 import { IconRosetteDiscountCheckFilled } from '@tabler/icons-react'
+import { Calendar } from '@mantine/dates'
+import dayjs from 'dayjs'
 
 const AVATAR_PATH =
   'https://ik.imagekit.io/mublin/tr:h-96,c-maintain_ratio/users/avatars/'
@@ -21,6 +25,19 @@ export default function AppSidebar() {
   const { profile, loading } = useAuth()
   const computedColorScheme = useComputedColorScheme('light')
   const isDark = computedColorScheme === 'dark'
+  const today = dayjs().startOf('day')
+  const [selectedDate, setSelectedDate] = useState(dayjs().format('YYYY-MM-DD'))
+
+  const handleDayClick = (date) => {
+    setSelectedDate(date)
+    // fetchEventsByDate(date)
+    // navigate(`/agenda?date=${date}`);
+  }
+
+  const gigDates = [
+    { id: 123, date: '2026-06-29', title: 'Teste' },
+    { id: 125, date: '2026-06-30', title: 'Teste 2' },
+  ]
 
   return (
     <Box px="sm" py="md" h="100%">
@@ -107,7 +124,47 @@ export default function AppSidebar() {
               </Stack>
             </Box>
           </Card>
-          {/* <Notifications /> */}
+          <Calendar
+            fullWidth
+            getDayProps={(date) => {
+              const isToday = dayjs(date).isSame(today, 'date')
+              const isSelected = selectedDate
+                ? dayjs(date).isSame(selectedDate, 'date')
+                : false
+
+              return {
+                selected: isSelected,
+                onClick: () => handleDayClick(date),
+                style:
+                  isToday && !isSelected
+                    ? {
+                        border: '2px solid rgba(126, 126, 126, 0.5)',
+                        borderRadius: 'var(--mantine-radius-sm)',
+                        fontWeight: 700,
+                        color: 'var(--mantine-color-text)',
+                      }
+                    : undefined,
+              }
+            }}
+            renderDay={(date) => {
+              const hasGig = gigDates.some((gig) => dayjs(date).isSame(gig.date, 'date'))
+
+              return (
+                <Indicator size={6} color="red" offset={-2} disabled={!hasGig}>
+                  <span>{dayjs(date).date()}</span>
+                </Indicator>
+              )
+            }}
+          />
+          <Text fw={600} size="md" mt="md" mb={4}>
+            {selectedDate
+              ? `Gigs em ${dayjs(selectedDate).format('DD/MM/YYYY')}`
+              : 'Selecione uma data'}
+            :
+          </Text>
+          <Text size="sm" c="dimmed">
+            Nenhuma gig nesta data
+          </Text>
         </>
       )}
     </Box>

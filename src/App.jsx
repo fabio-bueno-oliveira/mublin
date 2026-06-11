@@ -12,11 +12,13 @@ import {
   Divider,
   Switch,
 } from '@mantine/core'
+import { DatesProvider } from '@mantine/dates'
 import { Notifications } from '@mantine/notifications'
 import { AuthProvider } from './contexts/AuthContext'
 import { UIProvider } from './contexts/UIContext'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { router } from './routes'
+import 'dayjs/locale/pt-br'
 import '@mantine/core/styles.css'
 import '@mantine/charts/styles.css'
 import '@mantine/notifications/styles.css'
@@ -170,7 +172,9 @@ function App() {
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
             <UIProvider>
-              <RouterProvider router={router} />
+              <DatesProvider settings={{ locale: 'pt-br', firstDayOfWeek: 0 }}>
+                <RouterProvider router={router} />
+              </DatesProvider>
             </UIProvider>
           </AuthProvider>
         </QueryClientProvider>
