@@ -8,6 +8,7 @@ import {
   Stack,
   Group,
   Avatar,
+  Title,
   Text,
   Box,
   Skeleton,
@@ -34,7 +35,7 @@ async function fetchNotifications(userId) {
     .select('*')
     .eq('recipient_id', userId)
     .order('created_at', { ascending: false })
-    .limit(50)
+    .limit(40)
 
   if (error) {
     throw new Error(error.message)
@@ -112,11 +113,10 @@ function notificationContent(notification) {
         avatarAlt: metadata.follower_name,
         text: (
           <>
-            <Text span fw={600} size="xs">
+            <Text size="sm" fw={600}>
               {metadata.follower_name}
             </Text>
-            <Text span size="xs" c="dimmed">
-              {' '}
+            <Text size="xs" c="dimmed">
               começou a seguir você
             </Text>
           </>
@@ -189,11 +189,11 @@ function NotificationItem({ notification, onRead }) {
         gap="xs"
         wrap="nowrap"
         align="flex-start"
-        px="xs"
+        pr="xs"
         py="xs"
         style={(theme) => ({
           borderRadius: theme.radius.md,
-          backgroundColor: isUnread ? 'light-dark(#ffffff, #1c1c1c)' : 'transparent',
+          // backgroundColor: isUnread ? 'light-dark(#ffffff, #1c1c1c)' : 'transparent',
           transition: 'background-color 150ms ease',
           cursor: 'pointer',
           '&:hover': {
@@ -251,7 +251,7 @@ function NotificationSkeleton() {
 
 // ─── Componente principal ────────────────────────────────────────────────────
 
-export default function Notifications() {
+export default function Notifications({ limit = 40 }) {
   const { user } = useAuth()
   const queryClient = useQueryClient()
 
@@ -324,35 +324,10 @@ export default function Notifications() {
 
   return (
     <Container size="xs" px={0} py="xs">
-      {/* Cabeçalho */}
-      <Group gap="xs" justify="flex-start" align="center" mb="xs" visibleFrom="sm">
-        <Text fw={700} size="md">
-          Notificações
-          {/* {unreadCount > 0 && (
-            <Text span size="sm" c="blue" fw={500} ml={6}>
-              ({unreadCount} nova{unreadCount > 1 ? 's' : ''})
-            </Text>
-          )} */}
-        </Text>
-        {/* <Badge size="md" circle color="mublinColor">
-          {unreadCount}
-        </Badge> */}
+      <Title order={3} fw={600} fz="16px" mb={6}>
+        Notificações
+      </Title>
 
-        {/* {unreadCount > 0 && (
-          <Tooltip label="Marcar todas como lidas" withArrow position="left">
-            <ActionIcon
-              variant="subtle"
-              color="gray"
-              onClick={() => markAll()}
-              aria-label="Marcar todas como lidas"
-            >
-              <IconChecks size={18} />
-            </ActionIcon>
-          </Tooltip>
-        )} */}
-      </Group>
-
-      {/* Conteúdo */}
       <Stack gap={0}>
         {isLoading &&
           Array.from({ length: 5 }).map((_, i) => <NotificationSkeleton key={i} />)}
@@ -371,7 +346,7 @@ export default function Notifications() {
         )}
         {!isLoading &&
           !isError &&
-          notifications.map((notification, index) => (
+          notifications.slice(0, limit).map((notification, index) => (
             <React.Fragment key={notification.id}>
               {index > 0 && <Divider />}
               <NotificationItem notification={notification} onRead={markOne} />

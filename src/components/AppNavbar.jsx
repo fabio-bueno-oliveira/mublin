@@ -271,7 +271,7 @@ export default function AppNavbar({ children }) {
             </Combobox>
 
             {/* Direita: Notificações + Perfil */}
-            <Group gap="xs">
+            <Group gap="sm">
               {/* Busca mobile */}
               <ActionIcon
                 variant="subtle"
@@ -291,7 +291,7 @@ export default function AppNavbar({ children }) {
                 closeOnItemClick={false}
               >
                 <Menu.Target>
-                  <ActionIcon variant="subtle" color="gray" size="lg">
+                  <ActionIcon variant="default" color="gray" size="lg" radius="xl">
                     <Indicator
                       inline
                       label={

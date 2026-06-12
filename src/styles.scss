@@ -24,16 +24,24 @@
 
 // Mantine styles
 
+[data-mantine-color-scheme='light'] {
+  .mantine-Divider-root {
+    opacity: 1 !important;
+  }
+}
+
+[data-mantine-color-scheme='dark'] {
+  .mantine-Divider-root {
+    opacity: 0.4 !important;
+  }
+}
+
 .mantine-Accordion-content {
   padding: 8px 0 14px 0;
 }
 
 .mantine-Tabs-tabLabel {
   text-align: left;
-}
-
-.mantine-Divider-root {
-  opacity: 0.7 !important;
 }
 
 .buttonContentToLeft {

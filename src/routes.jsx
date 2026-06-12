@@ -14,6 +14,7 @@ import ResetPassword from './pages/ResetPassword'
 // Authenticated pages
 import Menu from './pages/Menu' // for mobile devices
 import NotificationsPage from './pages/NotificationsPage' // for mobile devices
+import CalendarPage from './pages/Calendar' // for mobile devices
 import Onboarding from './pages/Onboarding'
 import Home from './pages/Home'
 import Feed from './pages/Feed'
@@ -90,6 +91,7 @@ export const router = createBrowserRouter([
     children: [
       { path: 'menu', element: <Menu /> },
       { path: 'notifications', element: <NotificationsPage /> },
+      { path: 'calendar', element: <CalendarPage /> },
       { path: 'home', element: <Home /> },
       { path: 'feed', element: <Feed /> },
       { path: 'search', element: <Search /> },

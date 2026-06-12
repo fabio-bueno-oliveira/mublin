@@ -44,7 +44,7 @@ export default function AppLayout({ children }) {
           <Flex gap="xs" align="flex-start">
             {isDesktop && (
               <Box
-                w={260}
+                w={240}
                 style={{ flexShrink: 0, position: 'sticky', top: 'calc(60px)' }}
               >
                 <AppSidebar />

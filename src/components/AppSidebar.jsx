@@ -1,46 +1,63 @@
-import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
+import { useQuery } from '@tanstack/react-query'
+import { fetchUserProjects } from '../queries/user'
 import {
   useComputedColorScheme,
+  Skeleton,
+  Group,
   Stack,
   Box,
-  Group,
-  Indicator,
-  Text,
-  Avatar,
   Card,
+  Title,
+  Text,
+  Badge,
+  Avatar,
   Anchor,
-  Skeleton,
 } from '@mantine/core'
 import ProPlanBadge from './ProPlanBadge'
 import { IconRosetteDiscountCheckFilled } from '@tabler/icons-react'
-import { Calendar } from '@mantine/dates'
-import dayjs from 'dayjs'
 
 const AVATAR_PATH =
-  'https://ik.imagekit.io/mublin/tr:h-96,c-maintain_ratio/users/avatars/'
+  'https://ik.imagekit.io/mublin/tr:h-140,c-maintain_ratio/users/avatars/'
+const PROJECT_AVATAR_PATH = 'https://ik.imagekit.io/mublin/projects'
 
 export default function AppSidebar() {
-  const { profile, loading } = useAuth()
+  const { user, profile, loading } = useAuth()
   const computedColorScheme = useComputedColorScheme('light')
   const isDark = computedColorScheme === 'dark'
-  const today = dayjs().startOf('day')
-  const [selectedDate, setSelectedDate] = useState(dayjs().format('YYYY-MM-DD'))
 
-  const handleDayClick = (date) => {
-    setSelectedDate(date)
-    // fetchEventsByDate(date)
-    // navigate(`/agenda?date=${date}`);
-  }
+  const { data: projects = [], isLoading: loadingProjects } = useQuery({
+    queryKey: ['user-projects', user?.id],
+    queryFn: () => fetchUserProjects(user.id),
+    enabled: !!user?.id,
+    staleTime: 1000 * 60 * 4,
+  })
 
-  const gigDates = [
-    { id: 123, date: '2026-06-29', title: 'Teste' },
-    { id: 125, date: '2026-06-30', title: 'Teste 2' },
-  ]
+  const userProjects = projects.map((p) => ({
+    id: p.projects.id,
+    name: p.projects.name,
+    slug: p.projects.slug,
+    end_year: p.projects.end_year,
+    is_founder: p.is_founder,
+    is_ex_member: p.is_ex_member,
+    picture: p.projects.picture,
+    request_status: p.status,
+    activity_status: p.projects.activity_status,
+    activity_status_name: p.projects.project_statuses?.description_ptbr,
+    activity_status_color: p.projects.project_statuses?.color,
+    main_role: p.roles.description_ptbr,
+    genre: p.projects.genres?.name,
+    type: p.projects.project_types?.name_ptbr,
+    joined_at: p.joined_at ? new Date(p.joined_at).getFullYear() : null,
+    left_at: p.left_at ? new Date(p.left_at).getFullYear() : null,
+    role_2_id: p.role_2_id,
+    role_3_id: p.role_3_id,
+    totalMembers: p.projects.project_members?.length || 0,
+  }))
 
   return (
-    <Box px="sm" py="md" h="100%">
+    <Box px="sm" py="md" h="100%" component="aside">
       {loading ? (
         <Card withBorder={false} shadow="xs" radius="md" p="md" mt={4} mb="md">
           <Skeleton height={48} circle mb="sm" />
@@ -56,7 +73,7 @@ export default function AppSidebar() {
             radius="md"
             p={0}
             mt={4}
-            mb={20}
+            mb="sm"
             style={{ overflow: 'hidden' }}
             pos="relative"
           >
@@ -78,7 +95,7 @@ export default function AppSidebar() {
             <Box px="sm" pb="sm">
               <Box mt={-24} mb={5}>
                 <Avatar
-                  size={48}
+                  size={70}
                   radius="xl"
                   src={profile?.avatar ? AVATAR_PATH + profile?.avatar : undefined}
                   component={Link}
@@ -124,47 +141,56 @@ export default function AppSidebar() {
               </Stack>
             </Box>
           </Card>
-          <Calendar
-            fullWidth
-            getDayProps={(date) => {
-              const isToday = dayjs(date).isSame(today, 'date')
-              const isSelected = selectedDate
-                ? dayjs(date).isSame(selectedDate, 'date')
-                : false
-
-              return {
-                selected: isSelected,
-                onClick: () => handleDayClick(date),
-                style:
-                  isToday && !isSelected
-                    ? {
-                        border: '2px solid rgba(126, 126, 126, 0.5)',
-                        borderRadius: 'var(--mantine-radius-sm)',
-                        fontWeight: 700,
-                        color: 'var(--mantine-color-text)',
+          <Title order={3} fw={600} fz="16px" mb="xs">
+            Projetos
+          </Title>
+          {loadingProjects ? (
+            <Text>Carregando...</Text>
+          ) : userProjects.length > 0 ? (
+            <Stack gap="md">
+              {userProjects.map((project) => (
+                <Box>
+                  <Group gap={10} align="flex-start">
+                    <Avatar
+                      size={40}
+                      radius="md"
+                      src={
+                        project?.picture
+                          ? `${PROJECT_AVATAR_PATH}/${project?.id}/tr:h-80,w-80,c-maintain_ratio/${project?.picture}`
+                          : undefined
                       }
-                    : undefined,
-              }
-            }}
-            renderDay={(date) => {
-              const hasGig = gigDates.some((gig) => dayjs(date).isSame(gig.date, 'date'))
-
-              return (
-                <Indicator size={6} color="red" offset={-2} disabled={!hasGig}>
-                  <span>{dayjs(date).date()}</span>
-                </Indicator>
-              )
-            }}
-          />
-          <Text fw={600} size="md" mt="md" mb={4}>
-            {selectedDate
-              ? `Gigs em ${dayjs(selectedDate).format('DD/MM/YYYY')}`
-              : 'Selecione uma data'}
-            :
-          </Text>
-          <Text size="sm" c="dimmed">
-            Nenhuma gig nesta data
-          </Text>
+                      title={project.name}
+                    />
+                    <Stack gap={0}>
+                      <Text size="11px" truncate="end" opacity={0.8}>
+                        {project.main_role} em
+                      </Text>
+                      <Text size="sm">{project.name}</Text>
+                      <Text size="10px" c="dimmed">
+                        {project.type} {project.genre && ` · ${project.genre}`}
+                      </Text>
+                      {project.end_year && (
+                        <Badge
+                          px={4}
+                          pt={0}
+                          fz="8px"
+                          size="xs"
+                          fw={200}
+                          mt={2}
+                          color="red"
+                          variant="light"
+                        >
+                          Encerrado em {project.end_year}
+                        </Badge>
+                      )}
+                    </Stack>
+                  </Group>
+                </Box>
+              ))}
+            </Stack>
+          ) : (
+            <Text c="dimmed">Você não está associado a nenhum projeto até o momento</Text>
+          )}
         </>
       )}
     </Box>

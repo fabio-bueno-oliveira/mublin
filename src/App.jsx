@@ -131,7 +131,7 @@ const theme = createTheme({
     }),
     Divider: Divider.extend({
       defaultProps: {
-        opacity: 0.5,
+        // opacity: 0.5,
       },
     }),
   },

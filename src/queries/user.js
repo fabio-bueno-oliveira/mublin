@@ -17,7 +17,7 @@ export async function fetchUserProfile(userId) {
 export async function fetchUserRoles(userId) {
   const { data, error } = await supabase
     .from('profile_roles')
-    .select('id, id_role, main_activity, roles(id, name_ptbr)')
+    .select('id, id_role, main_activity, roles(id, name_ptbr, description_ptbr)')
     .eq('id_profile', userId)
   if (error) {
     throw new Error(error.message)
@@ -40,7 +40,7 @@ export async function fetchUserProjects(userId) {
       left_at,
       role_2_id, 
       role_3_id,
-      roles!project_members_role_id_fkey ( name_ptbr ),
+      roles!project_members_role_id_fkey ( name_ptbr, description_ptbr ),
       projects ( 
         id, name, slug, picture, description,
         spotify_id, instagram,
@@ -49,14 +49,10 @@ export async function fetchUserProjects(userId) {
         genres (
           name,
           primary_category:genre_categories!genres_id_category_fkey (
-            id,
-            name_ptbr,
-            color
+            id, name_ptbr, color
           ),
           secondary_category:genre_categories!genres_id_category_secondary_fkey (
-            id,
-            name_ptbr,
-            color
+            id, name_ptbr, color
           )
         ),
         project_types ( name_ptbr ),
@@ -71,7 +67,22 @@ export async function fetchUserProjects(userId) {
   if (error) {
     throw new Error(error.message)
   }
-  return data
+
+  // Projetos sem end_year (ativos) primeiro, com end_year (encerrados) por último
+  return data.sort((a, b) => {
+    const aEnd = a.projects?.end_year ?? null
+    const bEnd = b.projects?.end_year ?? null
+    if (aEnd === null && bEnd === null) {
+      return 0
+    }
+    if (aEnd === null) {
+      return -1
+    } // a vem primeiro
+    if (bEnd === null) {
+      return 1
+    } // b vem primeiro
+    return aEnd - bEnd // ambos têm end_year: ordena crescente
+  })
 }
 
 export async function fetchUserGearCount(userId) {

@@ -5,11 +5,11 @@ export default function EmptyProjects({ text, cta = false, ...props }) {
   return (
     <Paper bg="transparent" radius="md" px="xs" py={6} {...props}>
       <Stack align="center" gap={0}>
-        <ThemeIcon size={50} radius="xl" variant="light" color="gray">
+        <ThemeIcon size={30} radius="xl" variant="light" color="gray" opacity={0.5}>
           <IconMusicOff color="gray" size={24} />
         </ThemeIcon>
 
-        <Text fw={500} c="dimmed" size="xs" ta="center">
+        <Text fw={500} c="dimmed" size="xs" ta="center" opacity={0.5}>
           Nenhum projeto encontrado
         </Text>
 

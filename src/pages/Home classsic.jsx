@@ -26,7 +26,6 @@ import {
   IconCheck,
   IconCircleArrowLeftFilled,
   IconCircleArrowRightFilled,
-  IconChevronRightFilled,
 } from '@tabler/icons-react'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
