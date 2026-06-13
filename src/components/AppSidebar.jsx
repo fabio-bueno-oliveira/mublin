@@ -149,7 +149,7 @@ export default function AppSidebar() {
           ) : userProjects.length > 0 ? (
             <Stack gap="md">
               {userProjects.map((project) => (
-                <Box>
+                <Box key={project.id}>
                   <Group gap={10} align="flex-start">
                     <Avatar
                       size={40}

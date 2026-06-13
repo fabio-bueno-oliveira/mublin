@@ -599,7 +599,7 @@ export default function NewProject({ onSuccess, isModal = false }) {
   const regionId = form.getValues().region_id
 
   return (
-    <Container size="xl" px={0} py="sm" style={{ position: 'relative' }}>
+    <Container size="sm" py="md" px={{ base: 'md', sm: 'lg' }} pos="relative">
       <LoadingOverlay
         visible={isSubmitting}
         overlayProps={{ radius: 'sm', blur: 2 }}

@@ -154,6 +154,7 @@ export default function Home() {
                   mb="md"
                 >
                   <Select
+                    variant="default"
                     w={isMobile ? '100%' : '33%'}
                     label="Sou"
                     placeholder="Selecione"
@@ -164,7 +165,7 @@ export default function Home() {
                   />
                   <Select
                     w={isMobile ? '100%' : '33%'}
-                    label="Vínculo desejadp"
+                    label="Vínculo desejado"
                     placeholder="Selecione"
                     withAsterisk
                     defaultValue="1"
