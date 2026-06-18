@@ -11,6 +11,7 @@ import {
   IconRss,
   IconPencilPlus,
   IconCalendar,
+  IconMicrophone2,
 } from '@tabler/icons-react'
 import './AppFooterMobile.css'
 
@@ -124,6 +125,19 @@ export default function AppFooterMobile() {
             onClick={() => setDrawerOpen(false)}
           >
             Novo post
+          </Button>
+
+          <Button
+            component={Link}
+            to="/new/gig"
+            variant="transparent"
+            size="md"
+            radius="md"
+            leftSection={<IconMicrophone2 size={19} />}
+            fullWidth
+            onClick={() => setDrawerOpen(false)}
+          >
+            Nova gig
           </Button>
 
           <Button

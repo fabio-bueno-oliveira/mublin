@@ -4,7 +4,13 @@ export async function fetchUserProfile(userId) {
   const { data, error } = await supabase
     .from('profiles')
     .select(
-      'full_name, bio, username, title, gender, region_id, city_id, website, is_live, live_platform, phone_number, phone_number_is_public, phone_number_is_whatsapp, live_expires_at',
+      `
+      full_name, bio, username, title, 
+      gender, region_id, city_id, 
+      website, is_live, live_platform, 
+      phone_number, phone_number_is_public, phone_number_is_whatsapp,
+      live_expires_at
+      `,
     )
     .eq('id', userId)
     .single()
@@ -38,10 +44,10 @@ export async function fetchUserProjects(userId) {
       is_ex_member,
       joined_at,
       left_at,
-      role_2_id, 
+      role_2_id,
       role_3_id,
       roles!project_members_role_id_fkey ( name_ptbr, description_ptbr ),
-      projects ( 
+      projects (
         id, name, slug, picture, description,
         spotify_id, instagram,
         foundation_year, end_year,
@@ -58,7 +64,7 @@ export async function fetchUserProjects(userId) {
         project_types ( name_ptbr ),
         project_members ( status, profiles ( full_name, username, avatar ) ),
         project_statuses ( description_ptbr, color ),
-        cities ( name, regions ( name, uf ) )
+        cities ( name, regions ( name, uf ), countries ( name, name_ptbr ) )
       )
     `,
     )

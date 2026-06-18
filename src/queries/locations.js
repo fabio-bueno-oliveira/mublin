@@ -37,3 +37,37 @@ export async function searchCitiesByName(query, regionId) {
   }
   return data
 }
+
+export async function searchVenues(keyword) {
+  const { data, error } = await supabase
+    .from('venues')
+    .select('id, name, neighborhood, address, cities ( name, regions (name) )')
+    .ilike('name', `%${keyword}%`)
+    .limit(8)
+  if (error) {
+    throw new Error(error.message)
+  }
+  return data
+}
+
+export async function fetchVenueDetails(slug) {
+  const { data, error } = await supabase
+    .from('venues')
+    .select(
+      `
+      id, name, description, 
+      picture_url, 
+      address, address_number, neighborhood, 
+      website_url, capacity, 
+      venue_types ( name ),
+      cities ( id, name ),
+      regions:cities ( regions ( id, name, uf ) )
+      `,
+    )
+    .eq('slug', slug)
+    .single()
+  if (error) {
+    throw new Error(error.message)
+  }
+  return data
+}

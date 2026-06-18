@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useQuery } from '@tanstack/react-query'
@@ -5,6 +6,7 @@ import { fetchUserProjects } from '../queries/user'
 import {
   useComputedColorScheme,
   Skeleton,
+  ScrollArea,
   Group,
   Stack,
   Box,
@@ -14,9 +16,12 @@ import {
   Badge,
   Avatar,
   Anchor,
+  ActionIcon,
+  Collapse,
+  TextInput,
 } from '@mantine/core'
 import ProPlanBadge from './ProPlanBadge'
-import { IconRosetteDiscountCheckFilled } from '@tabler/icons-react'
+import { IconRosetteDiscountCheckFilled, IconSearch } from '@tabler/icons-react'
 
 const AVATAR_PATH =
   'https://ik.imagekit.io/mublin/tr:h-140,c-maintain_ratio/users/avatars/'
@@ -26,6 +31,10 @@ export default function AppSidebar() {
   const { user, profile, loading } = useAuth()
   const computedColorScheme = useComputedColorScheme('light')
   const isDark = computedColorScheme === 'dark'
+
+  const [searchOpened, setSearchOpened] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const searchInputRef = useRef(null)
 
   const { data: projects = [], isLoading: loadingProjects } = useQuery({
     queryKey: ['user-projects', user?.id],
@@ -55,6 +64,28 @@ export default function AppSidebar() {
     role_3_id: p.role_3_id,
     totalMembers: p.projects.project_members?.length || 0,
   }))
+
+  const normalizedQuery = searchQuery.trim().toLowerCase()
+  const filteredProjects = normalizedQuery
+    ? userProjects.filter((project) =>
+        project.name?.toLowerCase().includes(normalizedQuery),
+      )
+    : userProjects
+
+  useEffect(() => {
+    if (searchOpened) {
+      searchInputRef.current?.focus()
+    }
+  }, [searchOpened])
+
+  function toggleSearch() {
+    setSearchOpened((opened) => {
+      if (opened) {
+        setSearchQuery('')
+      }
+      return !opened
+    })
+  }
 
   return (
     <Box px="sm" py="md" h="100%" component="aside">
@@ -141,53 +172,104 @@ export default function AppSidebar() {
               </Stack>
             </Box>
           </Card>
-          <Title order={3} fw={600} fz="16px" mb="xs">
-            Projetos
-          </Title>
+          <Group
+            justify="flex-start"
+            align="center"
+            gap="xs"
+            mb={searchOpened ? 4 : 'sm'}
+            wrap="nowrap"
+          >
+            <Title order={3} fw={600} fz="16px">
+              Projetos
+            </Title>
+            {!loadingProjects && userProjects.length > 0 && (
+              <ActionIcon
+                variant="subtle"
+                color="gray"
+                size="sm"
+                onClick={toggleSearch}
+                aria-label="Buscar projeto"
+              >
+                <IconSearch
+                  size={16}
+                  color={searchOpened ? 'var(--mantine-color-text)' : 'gray'}
+                />
+              </ActionIcon>
+            )}
+          </Group>
+
+          {!loadingProjects && userProjects.length > 0 && (
+            <Collapse expanded={searchOpened}>
+              <TextInput
+                ref={searchInputRef}
+                placeholder="Buscar por nome..."
+                size="xs"
+                mb="sm"
+                variant="unstyled"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </Collapse>
+          )}
+
           {loadingProjects ? (
             <Text>Carregando...</Text>
           ) : userProjects.length > 0 ? (
-            <Stack gap="md">
-              {userProjects.map((project) => (
-                <Box key={project.id}>
-                  <Group gap={10} align="flex-start">
-                    <Avatar
-                      size={40}
-                      radius="md"
-                      src={
-                        project?.picture
-                          ? `${PROJECT_AVATAR_PATH}/${project?.id}/tr:h-80,w-80,c-maintain_ratio/${project?.picture}`
-                          : undefined
-                      }
-                      title={project.name}
-                    />
-                    <Stack gap={0}>
-                      <Text size="11px" truncate="end" opacity={0.8}>
-                        {project.main_role} em
-                      </Text>
-                      <Text size="sm">{project.name}</Text>
-                      <Text size="10px" c="dimmed">
-                        {project.type} {project.genre && ` · ${project.genre}`}
-                      </Text>
-                      {project.end_year && (
-                        <Badge
-                          px={4}
-                          pt={0}
-                          fz="8px"
-                          size="xs"
-                          fw={200}
-                          mt={2}
-                          color="red"
-                          variant="light"
-                        >
-                          Encerrado em {project.end_year}
-                        </Badge>
-                      )}
-                    </Stack>
-                  </Group>
-                </Box>
-              ))}
-            </Stack>
+            <ScrollArea h={192} scrollHideDelay={0}>
+              {filteredProjects.length > 0 ? (
+                <Stack gap="md">
+                  {filteredProjects.map((project) => (
+                    <Link
+                      to={`/project/${project?.slug}`}
+                      style={{ textDecoration: 'none', color: 'inherit' }}
+                    >
+                      <Box key={project.id}>
+                        <Group gap={10} align="flex-start">
+                          <Avatar
+                            size={40}
+                            radius="md"
+                            src={
+                              project?.picture
+                                ? `${PROJECT_AVATAR_PATH}/${project?.id}/tr:h-80,w-80,c-maintain_ratio/${project?.picture}`
+                                : undefined
+                            }
+                            title={project.name}
+                          />
+
+                          <Stack gap={0}>
+                            <Text size="11px" truncate="end" opacity={0.8}>
+                              {project.main_role} em
+                            </Text>
+                            <Text size="sm">{project.name}</Text>
+                            <Text size="10px" c="dimmed">
+                              {project.type} {project.genre && ` · ${project.genre}`}
+                            </Text>
+                            {project.end_year && (
+                              <Badge
+                                px={4}
+                                pt={0}
+                                fz="8px"
+                                size="xs"
+                                fw={200}
+                                mt={2}
+                                color="red"
+                                variant="light"
+                              >
+                                Encerrado em {project.end_year}
+                              </Badge>
+                            )}
+                          </Stack>
+                        </Group>
+                      </Box>
+                    </Link>
+                  ))}
+                </Stack>
+              ) : (
+                <Text size="sm" c="dimmed">
+                  Nenhum projeto encontrado para &quot;{searchQuery}&quot;
+                </Text>
+              )}
+            </ScrollArea>
           ) : (
             <Text c="dimmed">Você não está associado a nenhum projeto até o momento</Text>
           )}

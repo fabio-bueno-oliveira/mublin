@@ -16,6 +16,7 @@ import {
   Button,
   Group,
   Switch,
+  Radio,
   NumberInput,
   Image,
   ActionIcon,
@@ -29,9 +30,9 @@ import {
   CloseButton,
   SimpleGrid,
   Card,
-  Anchor,
 } from '@mantine/core'
 import { useDebouncedCallback } from '@mantine/hooks'
+import { useForm } from '@mantine/form'
 import { DatePickerInput, TimeInput } from '@mantine/dates'
 import { notifications } from '@mantine/notifications'
 import {
@@ -46,8 +47,6 @@ import {
   IconLock,
   IconLockOpen,
 } from '@tabler/icons-react'
-
-// ── Lookup tables ─────────────────────────────────────────
 
 const PRIVACY_TYPES = [
   {
@@ -116,14 +115,15 @@ function VenueCombobox({ selected, onSelect, onClear }) {
 
   if (selected) {
     return (
-      <Group gap="xs">
+      <Group gap="xs" mt="sm">
         <IconMapPin size={14} color="var(--mantine-color-dimmed)" />
         <Text size="sm" fw={500}>
           {selected.name}
         </Text>
         {selected.neighborhood && (
           <Text size="xs" c="dimmed">
-            {selected.neighborhood}
+            {selected.neighborhood} - {selected.cities?.name},{' '}
+            {selected.cities?.regions?.name}
           </Text>
         )}
         <CloseButton
@@ -191,29 +191,37 @@ export default function NewEvent() {
   const { user } = useAuth()
   const imageInputRef = useRef(null)
 
-  // Form state
-  const [name, setName] = useState('')
-  const [description, setDescription] = useState('')
-  const [eventTypeId, setEventTypeId] = useState(null)
-  const [privacyType, setPrivacyType] = useState('1')
-  const [isOnline, setIsOnline] = useState(false)
-  const [selectedVenue, setSelectedVenue] = useState(null)
-  const [dateStart, setDateStart] = useState(null)
-  const [dateEnd, setDateEnd] = useState(null)
-  const [timeStart, setTimeStart] = useState('')
-  const [timeEnd, setTimeEnd] = useState('')
-  const [isFree, setIsFree] = useState(true)
-  const [ticketPrice, setTicketPrice] = useState('')
-  const [ticketsUrl, setTicketsUrl] = useState('')
-  const [websiteUrl, setWebsiteUrl] = useState('')
-  const [minAge, setMinAge] = useState('16')
+  // Form state (useForm do @mantine/form)
+  const form = useForm({
+    mode: 'controlled',
+    initialValues: {
+      name: '',
+      description: '',
+      eventTypeId: null,
+      privacyType: '1',
+      isOnline: false,
+      venue: null,
+      dateStart: null,
+      dateEnd: null,
+      timeStart: '',
+      timeEnd: '',
+      isFree: true,
+      ticketPrice: '',
+      ticketsUrl: '',
+      websiteUrl: '',
+      minAge: '16',
+    },
+    validate: {
+      name: (value) => (value.trim().length === 0 ? 'Informe o nome do evento.' : null),
+      eventTypeId: (value) => (!value ? 'Selecione o tipo de evento.' : null),
+      dateStart: (value) => (!value ? 'Informe a data de início.' : null),
+    },
+  })
 
-  // Image state
+  // Image state (gerenciado separadamente do form, fora do fluxo de validação)
   const [pictureFileName, setPictureFileName] = useState('')
   const [pictureFileId, setPictureFileId] = useState('')
   const [isUploadingImage, setIsUploadingImage] = useState(false)
-
-  const [submitting, setSubmitting] = useState(false)
 
   const { data: eventTypes = [], isLoading: loadingEventTypes } = useQuery({
     queryKey: ['event-types'],
@@ -301,52 +309,33 @@ export default function NewEvent() {
 
   // ── Submit ──────────────────────────────────────────────
 
-  async function handleSubmit() {
-    if (!name.trim()) {
-      notifications.show({
-        color: 'red',
-        position: 'top-center',
-        message: 'Informe o nome do evento.',
-      })
-      return
-    }
-    if (!eventTypeId) {
-      notifications.show({
-        color: 'red',
-        position: 'top-center',
-        message: 'Selecione o tipo de evento.',
-      })
-      return
-    }
-    if (!dateStart) {
-      notifications.show({
-        color: 'red',
-        position: 'top-center',
-        message: 'Informe a data de início.',
-      })
-      return
-    }
+  function handleValidationFailure() {
+    notifications.show({
+      color: 'red',
+      position: 'top-center',
+      message: 'Verifique os campos destacados antes de continuar.',
+    })
+  }
 
-    setSubmitting(true)
-
+  async function handleSubmit(values) {
     const formatDate = (d) => (d ? d.toISOString().split('T')[0] : null)
 
     const payload = {
-      name: name.trim(),
-      description: description.trim() || null,
-      event_type_id: Number(eventTypeId),
-      privacy_type: Number(privacyType),
-      is_online: isOnline,
-      venue_id: selectedVenue?.id ?? null,
-      date_start: formatDate(dateStart),
-      date_end: formatDate(dateEnd),
-      time_event_start: timeStart || null,
-      time_event_end: timeEnd || null,
-      is_free: isFree,
-      ticket_price: isFree ? 0 : Number(ticketPrice) || 0,
-      tickets_url: ticketsUrl.trim() || null,
-      website_url: websiteUrl.trim() || null,
-      min_age: Number(minAge),
+      name: values.name.trim(),
+      description: values.description.trim() || null,
+      event_type_id: Number(values.eventTypeId),
+      privacy_type: Number(values.privacyType),
+      is_online: values.isOnline,
+      venue_id: values.venue?.id ?? null,
+      date_start: formatDate(values.dateStart),
+      date_end: formatDate(values.dateEnd),
+      time_event_start: values.timeStart || null,
+      time_event_end: values.timeEnd || null,
+      is_free: values.isFree,
+      ticket_price: values.isFree ? 0 : Number(values.ticketPrice) || 0,
+      tickets_url: values.ticketsUrl.trim() || null,
+      website_url: values.websiteUrl.trim() || null,
+      min_age: Number(values.minAge),
       picture_url: pictureFileName || null,
       author_id: user.id,
       updated_by: user.id,
@@ -365,7 +354,6 @@ export default function NewEvent() {
         message: 'Não foi possível criar o evento. Tente novamente.',
         position: 'top-center',
       })
-      setSubmitting(false)
       return
     }
 
@@ -386,16 +374,8 @@ export default function NewEvent() {
       </Title>
 
       <Stack gap="sm">
-        {/* Imagem de capa */}
+        {/* Imagem representativa do evento a ser criado */}
         <Box>
-          <Text size="xs" c="dimmed" fw={500} mb={6}>
-            <IconPhoto
-              size={16}
-              stroke={1.4}
-              style={{ marginRight: 4, verticalAlign: 'middle' }}
-            />
-            Imagem de capa
-          </Text>
           {pictureFileName ? (
             <Box style={{ position: 'relative', display: 'inline-block' }}>
               <Image
@@ -418,7 +398,7 @@ export default function NewEvent() {
             </Box>
           ) : (
             <Button
-              variant="default"
+              variant="outline"
               size="sm"
               leftSection={
                 isUploadingImage ? <Loader size={13} /> : <IconPhoto size={14} />
@@ -427,7 +407,7 @@ export default function NewEvent() {
               htmlFor="event-image-input"
               disabled={isUploadingImage}
             >
-              {isUploadingImage ? 'Enviando...' : 'Adicionar imagem de capa'}
+              {isUploadingImage ? 'Enviando...' : 'Adicionar imagem do evento'}
             </Button>
           )}
           <input
@@ -444,15 +424,12 @@ export default function NewEvent() {
           />
         </Box>
 
-        <Divider />
-
         {/* Nome e tipo */}
         <TextInput
           label="Nome do evento"
           placeholder="Ex: Show de lançamento do álbum"
           required
-          value={name}
-          onChange={(e) => setName(e.target.value)}
+          {...form.getInputProps('name')}
         />
 
         <Select
@@ -460,10 +437,9 @@ export default function NewEvent() {
           placeholder="Selecione..."
           required
           data={eventTypes}
-          value={eventTypeId}
-          onChange={setEventTypeId}
           disabled={loadingEventTypes}
           rightSection={loadingEventTypes ? <Loader size="xs" /> : undefined}
+          {...form.getInputProps('eventTypeId')}
         />
 
         <Textarea
@@ -472,8 +448,7 @@ export default function NewEvent() {
           minRows={3}
           autosize
           maxRows={8}
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
+          {...form.getInputProps('description')}
         />
 
         <Divider label="Data e hora" labelPosition="left" />
@@ -484,17 +459,15 @@ export default function NewEvent() {
             placeholder="Selecione..."
             required
             leftSection={<IconCalendar size={14} />}
-            value={dateStart}
-            onChange={setDateStart}
             minDate={new Date()}
+            {...form.getInputProps('dateStart')}
           />
           <DatePickerInput
             label="Data de fim"
             placeholder="Selecione..."
             leftSection={<IconCalendar size={14} />}
-            value={dateEnd}
-            onChange={setDateEnd}
-            minDate={dateStart ?? new Date()}
+            minDate={form.values.dateStart ?? new Date()}
+            {...form.getInputProps('dateEnd')}
           />
         </SimpleGrid>
 
@@ -502,32 +475,34 @@ export default function NewEvent() {
           <TimeInput
             label="Horário de início"
             leftSection={<IconClock size={14} />}
-            value={timeStart}
-            onChange={(e) => setTimeStart(e.target.value)}
+            {...form.getInputProps('timeStart')}
           />
           <TimeInput
             label="Horário de fim"
             leftSection={<IconClock size={14} />}
-            value={timeEnd}
-            onChange={(e) => setTimeEnd(e.target.value)}
+            {...form.getInputProps('timeEnd')}
           />
         </SimpleGrid>
 
         <Divider label="Local" labelPosition="left" />
 
-        <Switch
-          label="Evento online"
-          description="O evento acontece remotamente ou por streaming"
-          checked={isOnline}
-          onChange={(e) => {
-            setIsOnline(e.currentTarget.checked)
-            if (e.currentTarget.checked) {
-              setSelectedVenue(null)
+        <Radio.Group
+          value={form.values.isOnline ? 'online' : 'presencial'}
+          onChange={(value) => {
+            const checked = value === 'online'
+            form.setFieldValue('isOnline', checked)
+            if (checked) {
+              form.setFieldValue('venue', null)
             }
           }}
-        />
+        >
+          <Group gap="lg">
+            <Radio value="presencial" label="Evento presencial" />
+            <Radio value="online" label="Evento online" />
+          </Group>
+        </Radio.Group>
 
-        {!isOnline && (
+        {!form.values.isOnline && (
           <Box>
             <Group mb={4} gap={10}>
               <Text size="sm" fw={500}>
@@ -540,9 +515,9 @@ export default function NewEvent() {
               </Link>
             </Group>
             <VenueCombobox
-              selected={selectedVenue}
-              onSelect={setSelectedVenue}
-              onClear={() => setSelectedVenue(null)}
+              selected={form.values.venue}
+              onSelect={(item) => form.setFieldValue('venue', item)}
+              onClear={() => form.setFieldValue('venue', null)}
             />
           </Box>
         )}
@@ -551,16 +526,17 @@ export default function NewEvent() {
 
         <Switch
           label="Evento gratuito"
-          checked={isFree}
+          checked={form.values.isFree}
           onChange={(e) => {
-            setIsFree(e.currentTarget.checked)
-            if (e.currentTarget.checked) {
-              setTicketPrice('')
+            const checked = e.currentTarget.checked
+            form.setFieldValue('isFree', checked)
+            if (checked) {
+              form.setFieldValue('ticketPrice', '')
             }
           }}
         />
 
-        {!isFree && (
+        {!form.values.isFree && (
           <NumberInput
             label="Valor do ingresso (R$)"
             placeholder="0,00"
@@ -568,8 +544,7 @@ export default function NewEvent() {
             decimalScale={2}
             fixedDecimalScale
             leftSection={<IconTicket size={14} />}
-            value={ticketPrice}
-            onChange={setTicketPrice}
+            {...form.getInputProps('ticketPrice')}
           />
         )}
 
@@ -577,8 +552,7 @@ export default function NewEvent() {
           label="Link para ingressos"
           placeholder="https://..."
           leftSection={<IconTicket size={14} />}
-          value={ticketsUrl}
-          onChange={(e) => setTicketsUrl(e.target.value)}
+          {...form.getInputProps('ticketsUrl')}
         />
 
         <Divider label="Configurações" labelPosition="left" />
@@ -587,15 +561,14 @@ export default function NewEvent() {
           <Select
             label="Idade mínima"
             data={MIN_AGES}
-            value={minAge}
-            onChange={(v) => setMinAge(v ?? '16')}
+            value={form.values.minAge}
+            onChange={(v) => form.setFieldValue('minAge', v ?? '16')}
           />
           <TextInput
             label="Website do evento"
             placeholder="https://..."
             leftSection={<IconWorld size={14} />}
-            value={websiteUrl}
-            onChange={(e) => setWebsiteUrl(e.target.value)}
+            {...form.getInputProps('websiteUrl')}
           />
         </SimpleGrid>
 
@@ -612,11 +585,11 @@ export default function NewEvent() {
                 withBorder
                 orientation="horizontal"
                 style={(theme) => ({
-                  border: `1px solid ${privacyType === value ? theme.colors.violet[5] : theme.colors.gray[3]}`,
+                  border: `1px solid ${form.values.privacyType === value ? theme.colors.violet[5] : theme.colors.gray[3]}`,
                   cursor: 'pointer',
                   transition: 'all 0.15s ease',
                 })}
-                onClick={() => setPrivacyType(value)}
+                onClick={() => form.setFieldValue('privacyType', value)}
               >
                 <Card.Section inheritPadding px="xs" withBorder>
                   <Flex h="100%" align="center">
@@ -624,7 +597,7 @@ export default function NewEvent() {
                       size={18}
                       stroke={1.5}
                       color={
-                        privacyType === value
+                        form.values.privacyType === value
                           ? 'var(--mantine-color-violet-6)'
                           : 'var(--mantine-color-dimmed)'
                       }
@@ -649,10 +622,17 @@ export default function NewEvent() {
         <Divider />
 
         <Group justify="flex-end">
-          <Button variant="default" onClick={() => navigate(-1)} disabled={submitting}>
+          <Button
+            variant="default"
+            onClick={() => navigate(-1)}
+            disabled={form.submitting}
+          >
             Cancelar
           </Button>
-          <Button loading={submitting} onClick={handleSubmit}>
+          <Button
+            loading={form.submitting}
+            onClick={() => form.onSubmit(handleSubmit, handleValidationFailure)()}
+          >
             Criar evento
           </Button>
         </Group>
