@@ -220,10 +220,11 @@ export default function AppSidebar() {
                 <Stack gap="md">
                   {filteredProjects.map((project) => (
                     <Link
+                      key={project.id}
                       to={`/project/${project?.slug}`}
                       style={{ textDecoration: 'none', color: 'inherit' }}
                     >
-                      <Box key={project.id}>
+                      <Box>
                         <Group gap={10} align="flex-start">
                           <Avatar
                             size={40}

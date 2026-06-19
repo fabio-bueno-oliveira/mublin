@@ -123,7 +123,7 @@ function VenueCombobox({ selected, onSelect, onClear }) {
         {selected.neighborhood && (
           <Text size="xs" c="dimmed">
             {selected.neighborhood} - {selected.cities?.name},{' '}
-            {selected.cities?.regions?.name}
+            {selected.cities?.regions?.uf ?? selected.cities?.regions?.name}
           </Text>
         )}
         <CloseButton
@@ -318,7 +318,7 @@ export default function NewEvent() {
   }
 
   async function handleSubmit(values) {
-    const formatDate = (d) => (d ? d.toISOString().split('T')[0] : null)
+    const formatDate = (d) => (d ? new Date(d).toISOString().split('T')[0] : null)
 
     const payload = {
       name: values.name.trim(),
@@ -344,7 +344,7 @@ export default function NewEvent() {
     const { data, error } = await supabase
       .from('events')
       .insert(payload)
-      .select('id')
+      .select('id, slug')
       .single()
 
     if (error) {
@@ -362,7 +362,7 @@ export default function NewEvent() {
       message: 'Evento criado com sucesso!',
       position: 'top-center',
     })
-    navigate(`/events/${data.id}`)
+    navigate(`/event/${data.slug}`)
   }
 
   // ── Render ──────────────────────────────────────────────

@@ -41,6 +41,7 @@ import Brand from './pages/Brand'
 import NewGear from './pages/NewGear'
 // -- Events pages
 import NewEvent from './pages/NewEvent'
+import Event from './pages/Event'
 import NewVenue from './pages/NewVenue'
 import Venue from './pages/Venue'
 // -- Feed pages
@@ -111,6 +112,7 @@ export const router = createBrowserRouter([
       { path: 'new/gear', element: <NewGear /> },
       { path: 'artist/:slug', element: <Artist /> },
       { path: 'new/event', element: <NewEvent /> },
+      { path: 'event/:slug', element: <Event /> },
       { path: 'new/venue', element: <NewVenue /> },
       { path: 'venue/:slug', element: <Venue /> },
       { path: '/:username/gear', element: <ProfileGear /> },
