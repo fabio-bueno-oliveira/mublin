@@ -3,39 +3,43 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useQuery } from '@tanstack/react-query'
 import { fetchUserProjects, fetchUserRoles } from '../queries/user'
+import { fetchEvents } from '../queries/events'
+import { fetchNewsFeed } from '../queries/feed'
+import NewsCard from '../components/feed/NewsCard'
 import { MEMBER_ENGAGEMENT_TYPE } from '../constants/projects'
 // prettier-ignore
 import {
-  useMantineColorScheme,
   Skeleton, Tabs,
-  Group, Flex, Card,
-  Container, Stack, Box,
-  Button, Badge, Pill, 
-  Loader, Divider,
-  Center, Indicator, Paper, 
-  Text, Title, Anchor, TextInput,
-  Avatar, ActionIcon, ThemeIcon,
-  Select,
+  Box, Card,
+  Group, Flex,
+  Container, Grid,
+  Text, Title, 
+  Image, Avatar,
+  Select, ThemeIcon
 } from '@mantine/core'
-import { useMediaQuery } from '@mantine/hooks'
+import { useMediaQuery, useScroller } from '@mantine/hooks'
 import AppNavbarMobile from '../components/AppNavbarMobile'
 import dayjs from 'dayjs'
 import 'dayjs/locale/pt-br'
-import { IconMicrophone2, IconUserSearch } from '@tabler/icons-react'
+import {
+  IconChevronLeft,
+  IconChevronRight,
+  IconMicrophone2,
+  IconUserSearch,
+} from '@tabler/icons-react'
 
 const CDN_PREFIX = 'https://ik.imagekit.io/mublin'
-const USER_AVATAR_PATH = `${CDN_PREFIX}/tr:h-68,c-maintain_ratio/users/avatars/`
-const PROJECT_AVATAR_PATH = `${CDN_PREFIX}/projects`
+const AVATAR_PATH =
+  'https://ik.imagekit.io/mublin/tr:h-80,c-maintain_ratio/users/avatars/'
 
 export default function Home() {
   const { user, profile, loading } = useAuth()
   const navigate = useNavigate()
   const isMobile = useMediaQuery('(max-width: 48em)')
   const isDesktop = useMediaQuery('(min-width: 48em)')
+  const scroller = useScroller()
+
   const [defaultRole, setDefaultRole] = useState('')
-  const [search, setSearch] = useState('')
-  const { colorScheme } = useMantineColorScheme()
-  const isDark = colorScheme === 'dark'
 
   useEffect(() => {
     if (isDesktop && profile?.feed_as_home) {
@@ -56,9 +60,21 @@ export default function Home() {
   })
 
   const { data: userRoles = [], isLoading: loadingUserRoles } = useQuery({
-    queryKey: ['profile-roles', user?.id],
+    queryKey: ['profile-roles'],
     queryFn: () => fetchUserRoles(user.id),
     enabled: !!user?.id,
+    staleTime: 1000 * 60 * 5,
+  })
+
+  const { data: events = [], isLoading: loadingEvents } = useQuery({
+    queryKey: ['events'],
+    queryFn: () => fetchEvents(3),
+    staleTime: 1000 * 60 * 5,
+  })
+
+  const { data: news = [], isLoading: loadingNews } = useQuery({
+    queryKey: ['news', user?.id],
+    queryFn: () => fetchNewsFeed(3),
     staleTime: 1000 * 60 * 5,
   })
 
@@ -72,8 +88,6 @@ export default function Home() {
       setDefaultRole(String(userRoles[0]?.id_role))
     }
   }, [userRoles])
-
-  console.log(defaultRole)
 
   if (loading) {
     return null
@@ -127,9 +141,9 @@ export default function Home() {
               <Title size="24px" fw={600} lh={1.2} mt={4}>
                 {greeting}, {profile?.username}
               </Title>
-              <Text size="sm" c="dimmed">
+              {/* <Text size="sm" c="dimmed">
                 {dayjs().format('dddd, D [de] MMMM [de] YYYY')}
-              </Text>
+              </Text> */}
             </Group>
 
             <Tabs variant="outline" defaultValue="search-gigs" my="lg">
@@ -223,7 +237,101 @@ export default function Home() {
               </Tabs.Panel>
             </Tabs>
 
-            <Text>Gig em destaque</Text>
+            <Group justify="space-between" align="center" mt="xl" mb="xs">
+              <Title order={3} fw={600} fz="lg">
+                Eventos
+              </Title>
+              {events.length > 3 && (
+                <Group>
+                  <ThemeIcon
+                    variant="default"
+                    onClick={scroller.scrollStart}
+                    opacity={scroller.canScrollStart ? 1 : 0.5}
+                  >
+                    <IconChevronLeft style={{ width: '70%', height: '70%' }} />
+                  </ThemeIcon>
+                  <ThemeIcon
+                    variant="default"
+                    onClick={scroller.scrollEnd}
+                    opacity={scroller.canScrollEnd ? 1 : 0.5}
+                  >
+                    <IconChevronRight style={{ width: '70%', height: '70%' }} />
+                  </ThemeIcon>
+                </Group>
+              )}
+            </Group>
+
+            <Box>
+              <div
+                ref={scroller.ref}
+                {...scroller.dragHandlers}
+                style={{
+                  overflow: 'auto',
+                  cursor: scroller.isDragging ? 'grabbing' : 'default',
+                }}
+              >
+                <Group wrap="nowrap" gap="md">
+                  {events.map((event) => (
+                    <Link
+                      to={`/event/${event.slug}`}
+                      style={{ textDecoration: 'none', color: 'inherit' }}
+                    >
+                      <Card
+                        key={event.id}
+                        p="xs"
+                        w={160}
+                        shadow="sm"
+                        padding="lg"
+                        withBorder
+                      >
+                        <Card.Section>
+                          <Image
+                            src={`${CDN_PREFIX}/tr:h-320,c-maintain_ratio/events/${event.picture_url}`}
+                            height={160}
+                            alt={event.name}
+                          />
+                        </Card.Section>
+                        <Title order={4} fw={600} fz="sm" mt="xs" mb={5}>
+                          {event.name}
+                        </Title>
+                        <Text size="10px" mb={8}>
+                          {dayjs(event.date_start).format('DD/MM/YYYY')} {' a '}
+                          {dayjs(event.date_end).format('DD/MM/YYYY')}
+                        </Text>
+                        <Text lineClamp={2} size="xs" c="dimmed">
+                          {event.description}
+                        </Text>
+                        <Flex gap={6} align="center" mt={6}>
+                          <Text size="10px" span c="dimmed">
+                            Criado por
+                          </Text>
+                          <Avatar
+                            src={AVATAR_PATH + event.author?.avatar}
+                            size={20}
+                            title={event.author?.full_name}
+                          />
+                          <Text size="10px" span lineClamp={1}>
+                            {event.author?.username}
+                          </Text>
+                        </Flex>
+                      </Card>
+                    </Link>
+                  ))}
+                </Group>
+              </div>
+            </Box>
+
+            <Title order={3} fw={600} fz="lg" mt="xl" mb="xs">
+              Notícias recentes
+            </Title>
+
+            <Grid>
+              {news.map((item) => (
+                <Grid.Col key={item.id} span={{ base: 12, md: 4 }}>
+                  <NewsCard item={item} />
+                </Grid.Col>
+              ))}
+            </Grid>
 
             {/* <Card bg="mublinColor.9">
               <Title order={2}>Guitarrista</Title>

@@ -22,12 +22,7 @@ import {
   List,
   ThemeIcon,
 } from '@mantine/core'
-import {
-  IconBrandSpotify,
-  IconCheck,
-  IconClock,
-  IconHourglassEmpty,
-} from '@tabler/icons-react'
+import { IconCheck, IconClock } from '@tabler/icons-react'
 import dayjs from 'dayjs'
 
 const EVENTS_PATH =
@@ -37,7 +32,6 @@ const AVATAR_PATH =
 const PROJECT_AVATAR_PATH = 'https://ik.imagekit.io/mublin/projects/'
 
 export default function Event() {
-  const { user } = useAuth()
   const { slug } = useParams()
 
   useEffect(() => {

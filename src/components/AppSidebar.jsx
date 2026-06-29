@@ -20,7 +20,7 @@ import {
   Collapse,
   TextInput,
 } from '@mantine/core'
-import ProPlanBadge from './ProPlanBadge'
+// import ProPlanBadge from './ProPlanBadge'
 import { IconRosetteDiscountCheckFilled, IconSearch } from '@tabler/icons-react'
 
 const AVATAR_PATH =
@@ -141,7 +141,7 @@ export default function AppSidebar() {
                   <Anchor
                     component={Link}
                     to={`/${profile?.username}`}
-                    underline="hover"
+                    underline="never"
                     c="var(--mantine-color-text)"
                     fw={600}
                     size="lg"
@@ -162,7 +162,7 @@ export default function AppSidebar() {
                   <Text size="xs" opacity={0.7} fw={400} lineClamp={1} lh={1}>
                     @{profile?.username}
                   </Text>
-                  {profile?.plan === 'Pro' && <ProPlanBadge small />}
+                  {/* {profile?.plan === 'Pro' && <ProPlanBadge small />} */}
                 </Group>
                 {profile?.title && (
                   <Text size="13px" lh={1.3} mt={4} c="dimmed" lineClamp={2}>
@@ -179,7 +179,7 @@ export default function AppSidebar() {
             mb={searchOpened ? 4 : 'sm'}
             wrap="nowrap"
           >
-            <Title order={3} fw={600} fz="16px">
+            <Title order={3} fw={600} fz="md">
               Projetos
             </Title>
             {!loadingProjects && userProjects.length > 0 && (

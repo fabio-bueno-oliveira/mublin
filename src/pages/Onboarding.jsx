@@ -671,6 +671,7 @@ export default function Onboarding() {
                       <IconX size={16} color="var(--mantine-color-red-6)" />
                     ) : null
                   }
+                  success={!usernameChecking && usernameAvailable === true}
                   error={
                     profileForm.errors.username ||
                     (usernameAvailable === false

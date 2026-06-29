@@ -102,7 +102,7 @@ async function resetExpiredLive(userId) {
 // ── Componente principal ──────────────────────────────────
 
 export default function EditMyProfile() {
-  const { user, profile: authProfile } = useAuth()
+  const { user, loading, profile: authProfile } = useAuth()
   const queryClient = useQueryClient()
   const [, scrollTo] = useWindowScroll()
 
@@ -514,6 +514,7 @@ export default function EditMyProfile() {
                 withAsterisk
                 label="Nome"
                 placeholder="Nome completo"
+                disabled={loading}
                 {...form.getInputProps('full_name')}
               />
             </Grid.Col>
@@ -522,7 +523,9 @@ export default function EditMyProfile() {
                 withAsterisk
                 label="Username"
                 placeholder="ex: joaosilva"
+                success={!usernameChecking && usernameAvailable === true}
                 loading={usernameChecking}
+                disabled={loading}
                 rightSection={
                   !usernameChecking && usernameAvailable === true ? (
                     <IconCheck size={16} color="var(--mantine-color-green-6)" />

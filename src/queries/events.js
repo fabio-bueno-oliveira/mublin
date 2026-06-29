@@ -1,5 +1,38 @@
 import { supabase } from '../lib/supabaseClient'
 
+export async function fetchEvents(limit) {
+  const { data, error } = await supabase
+    .from('events')
+    .select(
+      `
+      id, name, description, slug,
+      picture_url,
+      is_online, is_free, ticket_price,
+      date_start, date_end,
+      time_event_start, time_event_end,
+      min_age,
+      website_url, tickets_url,
+      event_type:event_types ( name ),
+      privacy:event_privacy_types ( name ),
+      author:profiles!events_author_id_fkey ( full_name, username, title, avatar, is_verified ),
+      venue:venues (
+        name, slug,
+        address, address_number, neighborhood,
+        latitude, longitude, 
+        website_url, capacity,
+        venue_type:venue_types ( name ),
+        city:cities ( id, name, region:regions ( id, name, uf ) )
+      )
+    `,
+    )
+    .order('created_at', { ascending: false })
+    .limit(limit)
+  if (error) {
+    throw new Error(error.message)
+  }
+  return data
+}
+
 export async function fetchEventDetails(slug) {
   const { data, error } = await supabase
     .from('events')

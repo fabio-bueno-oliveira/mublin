@@ -140,3 +140,15 @@ export async function deletePost(postId) {
     throw new Error(error.message)
   }
 }
+
+export async function fetchNewsFeed(limit) {
+  const { data, error } = await supabase
+    .from('news_cache')
+    .select('*')
+    .order('published_at', { ascending: false })
+    .limit(limit)
+  if (error) {
+    throw new Error(error.message)
+  }
+  return data
+}
