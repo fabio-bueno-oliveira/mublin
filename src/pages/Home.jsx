@@ -2,17 +2,17 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useQuery } from '@tanstack/react-query'
-import { fetchUserProjects, fetchUserRoles } from '../queries/user'
+import { fetchUserRoles } from '../queries/user'
 import { fetchEvents } from '../queries/events'
 import { fetchNewsFeed } from '../queries/feed'
 import NewsCard from '../components/feed/NewsCard'
 import { MEMBER_ENGAGEMENT_TYPE } from '../constants/projects'
 // prettier-ignore
 import {
-  Skeleton, Tabs,
+  Skeleton, Tabs, Scroller, 
   Box, Card,
   Group, Flex,
-  Container, Grid,
+  Container,
   Text, Title, 
   Image, Avatar,
   Select, ThemeIcon
@@ -26,6 +26,11 @@ import {
   IconChevronRight,
   IconMicrophone2,
   IconUserSearch,
+  IconCircleArrowLeftFilled,
+  IconCircleArrowRightFilled,
+  IconMusic,
+  IconUsersGroup,
+  IconUser,
 } from '@tabler/icons-react'
 
 const CDN_PREFIX = 'https://ik.imagekit.io/mublin'
@@ -51,13 +56,6 @@ export default function Home() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile])
-
-  const { data: projects = [], isLoading: loadingProjects } = useQuery({
-    queryKey: ['user-projects', user?.id],
-    queryFn: () => fetchUserProjects(user.id),
-    enabled: !!user?.id,
-    staleTime: 1000 * 60 * 4,
-  })
 
   const { data: userRoles = [], isLoading: loadingUserRoles } = useQuery({
     queryKey: ['profile-roles'],
@@ -93,32 +91,6 @@ export default function Home() {
     return null
   }
 
-  const userProjects = projects.map((p) => ({
-    id: p.projects.id,
-    name: p.projects.name,
-    slug: p.projects.slug,
-    description: p.projects.description,
-    end_year: p.projects.end_year,
-    is_founder: p.is_founder,
-    is_admin: p.is_admin,
-    is_ex_member: p.is_ex_member,
-    engagementType: p.engagement_type_id,
-    picture: p.projects.picture,
-    request_status: p.status,
-    activity_status: p.projects.activity_status,
-    activity_status_name: p.projects.project_statuses?.description_ptbr,
-    activity_status_color: p.projects.project_statuses?.color,
-    main_role: p.roles.name_ptbr,
-    genre: p.projects.genres?.name,
-    genreCategoryColor: p.projects.genres?.primary_category?.color,
-    type: p.projects.project_types?.name_ptbr,
-    joined_at: p.joined_at ? new Date(p.joined_at).getFullYear() : null,
-    left_at: p.left_at ? new Date(p.left_at).getFullYear() : null,
-    role_2_id: p.role_2_id,
-    role_3_id: p.role_3_id,
-    totalMembers: p.projects.project_members?.length || 0,
-  }))
-
   // Saudação dinâmica
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite'
@@ -128,7 +100,7 @@ export default function Home() {
       {isMobile && <AppNavbarMobile fixed={false} />}
 
       <Container size="xl" pt="xs" px={{ base: 'sm', sm: 0 }} mt={{ base: 16, sm: 0 }}>
-        {loading || loadingProjects ? (
+        {loading ? (
           <>
             <Title size="h2" fw={600} lh={1.2} mt={4} mb={4}>
               Carregando...
@@ -137,8 +109,8 @@ export default function Home() {
           </>
         ) : (
           <>
-            <Group justify="space-between" align="flex-start">
-              <Title size="24px" fw={600} lh={1.2} mt={4}>
+            <Group justify="space-between" align="flex-start" mt={4} mb="xl">
+              <Title size="24px" fw={600} lh={1.2}>
                 {greeting}, {profile?.username}
               </Title>
               {/* <Text size="sm" c="dimmed">
@@ -146,20 +118,20 @@ export default function Home() {
               </Text> */}
             </Group>
 
-            <Tabs variant="outline" defaultValue="search-gigs" my="lg">
-              <Tabs.List>
-                <Tabs.Tab value="search-gigs" leftSection={<IconMicrophone2 size={16} />}>
-                  Quero trabalhar
+            <Tabs variant="pills" defaultValue="gigs">
+              <Tabs.List justify="center">
+                <Tabs.Tab leftSection={<IconMusic size={18} />} value="gigs">
+                  Gigs
                 </Tabs.Tab>
-                <Tabs.Tab
-                  value="search-people"
-                  leftSection={<IconUserSearch size={16} />}
-                >
-                  Encontrar pessoas
+                <Tabs.Tab leftSection={<IconUsersGroup size={18} />} value="projects">
+                  Projetos
+                </Tabs.Tab>
+                <Tabs.Tab leftSection={<IconUser size={18} />} value="people">
+                  Pessoas
                 </Tabs.Tab>
               </Tabs.List>
 
-              <Tabs.Panel value="search-gigs" pt="md">
+              <Tabs.Panel value="gigs" pt="md">
                 <Flex
                   gap="sm"
                   justify="space-between"
@@ -201,7 +173,7 @@ export default function Home() {
                   />
                 </Flex>
               </Tabs.Panel>
-              <Tabs.Panel value="search-people" pt="md">
+              <Tabs.Panel value="people" pt="md">
                 <Group justify="space-between" align="flex-start" mb="md">
                   <Select
                     label="Busco"
@@ -273,17 +245,11 @@ export default function Home() {
                 <Group wrap="nowrap" gap="md">
                   {events.map((event) => (
                     <Link
+                      key={event.id}
                       to={`/event/${event.slug}`}
                       style={{ textDecoration: 'none', color: 'inherit' }}
                     >
-                      <Card
-                        key={event.id}
-                        p="xs"
-                        w={160}
-                        shadow="sm"
-                        padding="lg"
-                        withBorder
-                      >
+                      <Card p="xs" w={160} shadow="sm" padding="lg" withBorder>
                         <Card.Section>
                           <Image
                             src={`${CDN_PREFIX}/tr:h-320,c-maintain_ratio/events/${event.picture_url}`}
@@ -325,13 +291,21 @@ export default function Home() {
               Notícias recentes
             </Title>
 
-            <Grid>
-              {news.map((item) => (
-                <Grid.Col key={item.id} span={{ base: 12, md: 4 }}>
-                  <NewsCard item={item} />
-                </Grid.Col>
-              ))}
-            </Grid>
+            <Scroller
+              key={news.length}
+              draggable={isMobile}
+              controlSize="xl"
+              startControlIcon={<IconCircleArrowLeftFilled size={36} />}
+              endControlIcon={<IconCircleArrowRightFilled size={36} />}
+            >
+              <Group gap="xs" wrap="nowrap">
+                {loadingNews
+                  ? [1, 2].map((i) => <Skeleton key={i} width={300} height={144} />)
+                  : news.map((item) => (
+                      <NewsCard key={item.id} item={item} width={300} />
+                    ))}
+              </Group>
+            </Scroller>
 
             {/* <Card bg="mublinColor.9">
               <Title order={2}>Guitarrista</Title>

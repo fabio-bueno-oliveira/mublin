@@ -1,6 +1,7 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom'
 import PublicLayout from './components/layouts/PublicLayout'
 import AppLayout from './components/layouts/AppLayout'
+import AppProfileLayout from './components/layouts/AppProfileLayout'
 import BackstageLayout from './components/layouts/BackstageLayout'
 import AppSettingsLayout from './components/layouts/AppSettingsLayout'
 // Public pages
@@ -115,8 +116,12 @@ export const router = createBrowserRouter([
       { path: 'event/:slug', element: <Event /> },
       { path: 'new/venue', element: <NewVenue /> },
       { path: 'venue/:slug', element: <Venue /> },
-      { path: '/:username/gear', element: <ProfileGear /> },
     ],
+  },
+  // ── Subpáginas de perfil ──────────────
+  {
+    element: <AppProfileLayout />,
+    children: [{ path: '/:username/gear', element: <ProfileGear /> }],
   },
   // ── Backstage ──────────────────────────
   {

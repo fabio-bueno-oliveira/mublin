@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useUI } from '../contexts/UIContext'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import {
   fetchProfileBasicDetails,
@@ -10,6 +10,9 @@ import {
 import { useAuth } from '../hooks/useAuth'
 import {
   Container,
+  Grid,
+  EmptyState,
+  Button,
   Avatar,
   Title,
   Text,
@@ -35,9 +38,12 @@ import {
   IconShieldCheckFilled,
   IconArrowLeft,
   IconMusic,
+  IconZoom,
+  IconRosetteDiscountCheck,
 } from '@tabler/icons-react'
 import parse from 'html-react-parser'
 import linkifyStr from 'linkify-string'
+import { getAvatarUrl } from '../utils/profile'
 
 const AVATAR_PATH =
   'https://ik.imagekit.io/mublin/tr:h-100,c-maintain_ratio/users/avatars/'
@@ -50,6 +56,7 @@ export default function ProfileGear() {
   const { username } = useParams()
   const { loading: authLoading } = useAuth()
   const { setHideFooter } = useUI()
+  const navigate = useNavigate()
 
   // ── Modal de detalhe ──────────────────────────────────
   const [modalOpened, { open: openModal, close: closeModal }] = useDisclosure(false)
@@ -58,6 +65,7 @@ export default function ProfileGear() {
   useEffect(() => {
     setHideFooter(modalOpened)
     return () => setHideFooter(false)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [modalOpened])
 
   function handleOpenModal(item) {
@@ -71,7 +79,7 @@ export default function ProfileGear() {
     isLoading: loadingProfile,
     isError,
   } = useQuery({
-    queryKey: ['profile', username],
+    queryKey: ['basicProfile', username],
     queryFn: () => fetchProfileBasicDetails(username),
     enabled: !!username && !authLoading,
     staleTime: 1000 * 60 * 5,
@@ -92,7 +100,6 @@ export default function ProfileGear() {
     staleTime: 1000 * 60 * 5,
   })
 
-  // ── Loading ───────────────────────────────────────────
   if (authLoading || loadingProfile) {
     return (
       <Container size="lg" py={24}>
@@ -135,135 +142,139 @@ export default function ProfileGear() {
 
   return (
     <>
-      {/* ── Cabeçalho ────────────────────────────────── */}
-      <Container size="lg" pt="md" pb="xs" mb="md">
-        <Flex gap={12} align="center">
-          <Avatar
-            size={56}
-            src={profile.avatar ? AVATAR_PATH + profile.avatar : undefined}
-            component={Link}
-            to={`/${username}`}
-            style={{ cursor: 'pointer' }}
-          />
-          <Box>
-            <Flex align="center" gap={4}>
-              <Title order={1} size="h3" lh={1}>
-                {profile.full_name}
-              </Title>
-              {!!profile.is_verified && (
-                <IconRosetteDiscountCheckFilled
-                  className="iconVerified"
-                  title="Perfil verificado"
-                />
-              )}
-              {!!profile.is_legend && (
-                <IconShieldCheckFilled className="iconLegend" title="Lenda da música" />
-              )}
-            </Flex>
-            <Text size="sm" c="dimmed">
-              {loadingGear ? '...' : gear.length} {gear.length === 1 ? 'item' : 'itens'}{' '}
-              no equipamento
+      <Grid gap="xl">
+        <Grid.Col span={{ base: 12, md: 2 }} mt="md" visibleFrom="sm">
+          <Center mb="sm">
+            <Link to={`/${profile.username}`}>
+              <Avatar
+                size={140}
+                src={getAvatarUrl(profile.avatar, profile.is_open_to_work, 140)}
+              />
+            </Link>
+          </Center>
+          <Flex align="center" gap={4}>
+            <Text size="lg" fw={500} lineClamp={1} truncate="end">
+              {profile.full_name}
             </Text>
-            <Anchor component={Link} to={`/${username}`} underline="hover" size="xs">
-              <Group gap={3} mt={2}>
-                <IconArrowLeft size={13} />
-                <Text size="xs">Voltar ao perfil</Text>
-              </Group>
-            </Anchor>
-          </Box>
-        </Flex>
-      </Container>
-
-      {/* ── Grid Masonry ─────────────────────────────── */}
-      <Container size="lg" pb={100}>
-        {loadingGear ? null : gear.length === 0 ? (
-          <Text size="sm" c="dimmed" ta="center" mt="xl">
-            Nenhum equipamento adicionado ainda.
+            {!!profile.is_verified && (
+              <IconRosetteDiscountCheck
+                className="iconVerified"
+                title="Perfil verificado"
+              />
+            )}
+          </Flex>
+          <Text size="sm" c="dimmed">
+            {loadingGear ? '...' : gear.length} {gear.length === 1 ? 'item' : 'itens'} no
+            equipamento
           </Text>
-        ) : (
-          <ResponsiveMasonry
-            columnsCountBreakPoints={{ 350: 2, 750: 3, 900: 4 }}
-            gutterBreakpoints={{ 350: '8px', 750: '8px', 900: '8px' }}
-          >
-            <Masonry>
-              {gear.map((item) => (
-                <Card
-                  key={item.id}
-                  withBorder
-                  px={10}
-                  pb={10}
-                  pt={6}
-                  w="100%"
-                  bg="white"
-                  radius="md"
-                  style={{ cursor: 'pointer' }}
-                  onClick={() => handleOpenModal(item)}
+        </Grid.Col>
+        <Grid.Col span={{ base: 12, md: 10 }} mt="lg">
+          {loadingGear ? null : gear.length === 0 ? (
+            <EmptyState>
+              <EmptyState.Indicator>
+                <IconZoom />
+              </EmptyState.Indicator>
+              <EmptyState.Title>Nada por aqui :(</EmptyState.Title>
+              <EmptyState.Description>
+                {profile.full_name} ainda não adicionou nenhum equipamento até o momento.
+              </EmptyState.Description>
+              <EmptyState.Actions>
+                <Button
+                  variant="default"
+                  leftSection={<IconArrowLeft />}
+                  onClick={() => navigate(`/${username}`)}
                 >
-                  <Center>
-                    <Image
-                      src={
-                        item.products?.picture
-                          ? PRODUCT_IMG + item.products.picture
-                          : undefined
-                      }
-                      h={120}
-                      mah={120}
-                      w="auto"
-                      fit="contain"
-                      mb={8}
-                      radius="md"
-                    />
-                  </Center>
+                  Voltar ao perfil
+                </Button>
+                {/* <Button variant="default">Create new</Button> */}
+              </EmptyState.Actions>
+            </EmptyState>
+          ) : (
+            <ResponsiveMasonry
+              columnsCountBreakPoints={{ 350: 2, 750: 3, 900: 4 }}
+              // gutterBreakpoints={{ 350: '12px', 750: '12px', 900: '12px' }}
+            >
+              <Masonry>
+                {gear.map((item) => (
+                  <Card
+                    key={item.id}
+                    withBorder
+                    px={10}
+                    pb={10}
+                    pt={6}
+                    w="100%"
+                    bg="white"
+                    radius="md"
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => handleOpenModal(item)}
+                  >
+                    <Center>
+                      <Image
+                        src={
+                          item.products?.picture
+                            ? PRODUCT_IMG + item.products.picture
+                            : undefined
+                        }
+                        h={120}
+                        mah={120}
+                        w="auto"
+                        fit="contain"
+                        mb={8}
+                        radius="md"
+                      />
+                    </Center>
 
-                  <Text ta="center" size="xs" c="black" fw={400}>
-                    {item.products?.product_categories?.name_ptbr} ·{' '}
-                    {item.products?.brands?.name}
-                  </Text>
-                  <Text ta="center" size="md" c="black" fw={550} lh={1.3} mt={2}>
-                    {item.products?.name}
-                  </Text>
-
-                  {item.tunings?.name_ptbr && (
-                    <Text size="xs" c="dimmed" ta="center" mt={4}>
-                      Afinação: {item.tunings.name_ptbr}
+                    <Text ta="center" size="xs" c="black" fw={400}>
+                      {item.products?.product_categories?.name_ptbr} ·{' '}
+                      {item.products?.brands?.name}
                     </Text>
-                  )}
-
-                  {item.is_for_sale && (
-                    <Flex direction="column" align="center" gap={2} mt={6}>
-                      <Badge size="xs" color="dark" variant="filled">
-                        À venda
-                      </Badge>
-                      {item.price && (
-                        <Text size="xs" c="black" fw={500}>
-                          {Number(item.price).toLocaleString('pt-br', {
-                            style: 'currency',
-                            currency: 'BRL',
-                          })}
-                        </Text>
-                      )}
-                    </Flex>
-                  )}
-                  {setupNames[item.id_product]?.length > 0 && (
-                    <Text size="xs" c="dimmed" ta="center" mt={6}>
-                      Incluído no{setupNames[item.id_product]?.length !== 1 && 's'} setup
-                      {setupNames[item.id_product]?.length !== 1 && 's'} :{' '}
-                      <strong>{setupNames[item.id_product].join(', ')}</strong>
+                    <Text ta="center" size="md" c="black" fw={550} lh={1.3} mt={2}>
+                      {item.products?.name}
                     </Text>
-                  )}
-                  {item.owner_comments && (
-                    <Paper p="xs" bg="#d3d3d3" mt={8} w="100%">
-                      <Text size="xs" c="black" lineClamp={2}>
-                        {item.owner_comments}
+
+                    {item.tunings?.name_ptbr && (
+                      <Text size="xs" c="dimmed" ta="center" mt={4}>
+                        Afinação: {item.tunings.name_ptbr}
                       </Text>
-                    </Paper>
-                  )}
-                </Card>
-              ))}
-            </Masonry>
-          </ResponsiveMasonry>
-        )}
-      </Container>
+                    )}
+
+                    {item.is_for_sale && (
+                      <Flex direction="column" align="center" gap={2} mt={6}>
+                        <Badge size="xs" color="dark" variant="filled">
+                          À venda
+                        </Badge>
+                        {item.price && (
+                          <Text size="xs" c="black" fw={500}>
+                            {Number(item.price).toLocaleString('pt-br', {
+                              style: 'currency',
+                              currency: 'BRL',
+                            })}
+                          </Text>
+                        )}
+                      </Flex>
+                    )}
+                    {setupNames[item.id_product]?.length > 0 && (
+                      <Text size="xs" c="dimmed" ta="center" mt={6}>
+                        Incluído no{setupNames[item.id_product]?.length !== 1 && 's'}{' '}
+                        setup
+                        {setupNames[item.id_product]?.length !== 1 && 's'} :{' '}
+                        <strong>{setupNames[item.id_product].join(', ')}</strong>
+                      </Text>
+                    )}
+                    {item.owner_comments && (
+                      <Paper p="xs" bg="#d3d3d3" mt={8} w="100%">
+                        <Text size="xs" c="black" lineClamp={2}>
+                          {item.owner_comments}
+                        </Text>
+                      </Paper>
+                    )}
+                  </Card>
+                ))}
+              </Masonry>
+            </ResponsiveMasonry>
+          )}
+        </Grid.Col>
+      </Grid>
 
       {/* ── Modal de detalhe ─────────────────────────── */}
       <Modal

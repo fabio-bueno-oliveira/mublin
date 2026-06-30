@@ -73,23 +73,23 @@ export async function fetchProfileBasicDetails(profileUsername) {
     .from('profiles')
     .select(
       `
-      id,
-      full_name,
-      username,
-      avatar,
-      title,
-      is_verified,
-      is_legend,
-      is_open_to_work,
-      plan,
-      is_live,
-      cities (
-        name, countries ( name, name_ptbr )
-      ),
-      regions (
-        name, uf
-      ),
-    `,
+  id,
+  full_name,
+  username,
+  avatar,
+  title,
+  is_verified,
+  is_legend,
+  is_open_to_work,
+  plan,
+  is_live,
+  cities (
+    name, countries ( name, name_ptbr )
+  ),
+  regions (
+    name, uf
+  )
+  `,
     )
     .eq('username', profileUsername)
     .single()

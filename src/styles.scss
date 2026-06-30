@@ -209,10 +209,11 @@
 }
 
 .iconVerified {
-  color: var(--mantine-color-mublinColor-3);
+  // color: var(--mantine-color-mublinColor-3);
   width: calc(1.1rem);
   height: calc(1.1rem);
   margin-left: 1px;
+  opacity: 0.6;
 
   &.small {
     width: calc(1rem);

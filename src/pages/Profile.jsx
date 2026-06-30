@@ -643,13 +643,13 @@ export default function Profile() {
               </Affix>
             )}
 
-            <Stack gap={1} flex={1} mb="md" visibleFrom="sm">
+            <Stack gap={0} flex={1} mb="md" visibleFrom="sm">
               <Flex align="center" gap={4} wrap="wrap">
                 <Title
                   order={1}
                   fw={600}
                   size="26px"
-                  lh="1"
+                  // lh="1"
                   component={Text}
                   lineClamp={2}
                 >
@@ -683,7 +683,7 @@ export default function Profile() {
                 )}
               </Flex>
               {profile.title && (
-                <Text size="sm" fw={400} maw={420} lh={1.3} my={3}>
+                <Text size="sm" fw={400} maw={420} lh={1.2} my={3}>
                   {profile.title}
                 </Text>
               )}

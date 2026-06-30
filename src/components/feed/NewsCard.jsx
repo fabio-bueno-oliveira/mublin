@@ -11,7 +11,7 @@ import {
 import { IconExternalLink } from '@tabler/icons-react'
 import dayjs from 'dayjs'
 
-export default function NewsCard({ item }) {
+export default function NewsCard({ item, width }) {
   const timeAgo = item.published_at ? dayjs(item.published_at).fromNow() : ''
 
   const CATEGORY_COLORS = {
@@ -24,6 +24,7 @@ export default function NewsCard({ item }) {
 
   return (
     <Card
+      w={width ?? '100%'}
       radius="md"
       withBorder
       padding="sm"

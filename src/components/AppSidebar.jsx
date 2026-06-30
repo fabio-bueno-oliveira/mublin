@@ -21,7 +21,11 @@ import {
   TextInput,
 } from '@mantine/core'
 // import ProPlanBadge from './ProPlanBadge'
-import { IconRosetteDiscountCheckFilled, IconSearch } from '@tabler/icons-react'
+import {
+  IconRosetteDiscountCheck,
+  IconRosetteDiscountCheckFilled,
+  IconSearch,
+} from '@tabler/icons-react'
 
 const AVATAR_PATH =
   'https://ik.imagekit.io/mublin/tr:h-140,c-maintain_ratio/users/avatars/'
@@ -152,8 +156,8 @@ export default function AppSidebar() {
                     {profile?.full_name}
                   </Anchor>
                   {!!profile?.is_verified && (
-                    <IconRosetteDiscountCheckFilled
-                      className="iconVerified small"
+                    <IconRosetteDiscountCheck
+                      className="iconVerified"
                       title="Perfil verificado"
                     />
                   )}
