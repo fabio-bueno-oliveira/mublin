@@ -109,7 +109,7 @@ export function NewsFeed() {
       <Stack gap="sm">
         {loading
           ? Array.from({ length: 5 }).map((_, i) => <NewsCardSkeleton key={i} />)
-          : news.map((item) => <NewsCard item={item} />)}
+          : news.map((item) => <NewsCard key={item.id} item={item} />)}
 
         {!loading && news.length === 0 && !error && (
           <Text c="dimmed" ta="center" py="xl">

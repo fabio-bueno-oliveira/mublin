@@ -31,10 +31,7 @@ import {
   Menu,
   Loader,
   Modal,
-  Title,
   Skeleton,
-  Switch,
-  Tooltip,
   Divider,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
@@ -49,7 +46,6 @@ import {
   IconRefresh,
   IconUser,
 } from '@tabler/icons-react'
-import { supabase } from '../lib/supabaseClient'
 import LinkedItem from '../components/feed/LinkedItem'
 import VideoPlayerNative from '../components/VideoPlayerNative'
 import VideoPlayerYoutube from '../components/feed/VideoPlayerYoutube'
@@ -73,28 +69,9 @@ export default function Feed({ from = '' }) {
   const isDesktop = useMediaQuery('(min-width: 48em)')
 
   const queryClient = useQueryClient()
-  const { profile, user, loading, refreshProfile } = useAuth()
+  const { profile, user, loading } = useAuth()
   const [isStale, setIsStale] = useState(false)
   const [feedType, setFeedType] = useState('explore')
-  const [updatingFeedAsHome, setUpdatingFeedAsHome] = useState(false)
-
-  async function handleFeedAsHomeToggle(checked) {
-    setUpdatingFeedAsHome(true)
-    const { error } = await supabase
-      .from('profiles')
-      .update({ feed_as_home: checked })
-      .eq('id', user.id)
-    if (!error) {
-      await refreshProfile()
-    } else {
-      notifications.show({
-        color: 'red',
-        position: 'top-center',
-        message: 'Erro ao salvar preferência.',
-      })
-    }
-    setUpdatingFeedAsHome(false)
-  }
 
   const {
     data: feedData,
@@ -255,34 +232,6 @@ export default function Feed({ from = '' }) {
             </Center>
           ) : (
             <>
-              <Group
-                mb="xs"
-                visibleFrom="sm"
-                align="center"
-                justify="flex-start"
-                className="paddingX"
-                gap="lg"
-              >
-                <Title order={2} fz="h3" fw={600}>
-                  Feed
-                </Title>
-                <Tooltip
-                  label="Quando ativado, você sempre será direcionado ao Feed ao entrar no Mublin pelo computador"
-                  withArrow
-                  multiline
-                  w={220}
-                  position="bottom-start"
-                >
-                  <Switch
-                    size="xs"
-                    label="Definir Feed como página inicial ao acessar o Mublin"
-                    // description="Quando ativado, você sempre será direcionado ao Feed ao entrar no Mublin"
-                    checked={profile?.feed_as_home ?? false}
-                    onChange={(e) => handleFeedAsHomeToggle(e.currentTarget.checked)}
-                    disabled={updatingFeedAsHome}
-                  />
-                </Tooltip>
-              </Group>
               {(feedType === 'explore' || feedType === 'following') && (
                 <ScrollArea
                   h={{ base: 'auto', md: from ? 'calc(90vh - 120px)' : 'auto' }}
@@ -292,6 +241,7 @@ export default function Feed({ from = '' }) {
                   <Paper
                     className="paperWrapper"
                     mb="sm"
+                    mt="xs"
                     py="xs"
                     px={{ base: 'md', md: 0 }}
                   >

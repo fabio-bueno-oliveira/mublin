@@ -32,7 +32,7 @@
 
 [data-mantine-color-scheme='dark'] {
   .mantine-Divider-root {
-    opacity: 0.4 !important;
+    opacity: 0.8 !important;
   }
 }
 
@@ -213,7 +213,7 @@
   width: calc(1.1rem);
   height: calc(1.1rem);
   margin-left: 1px;
-  opacity: 0.6;
+  opacity: 0.8;
 
   &.small {
     width: calc(1rem);
@@ -355,4 +355,13 @@
   display: block;
   border-radius: 50%;
   outline: 3px solid var(--mantine-color-body);
+}
+
+.scrollerHidden {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge legado */
+}
+
+.scrollerHidden::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Edge novo */
 }

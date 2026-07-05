@@ -42,7 +42,8 @@ export default function Home() {
   const navigate = useNavigate()
   const isMobile = useMediaQuery('(max-width: 48em)')
   const isDesktop = useMediaQuery('(min-width: 48em)')
-  const scroller = useScroller()
+  const eventsScroller = useScroller()
+  const newsScroller = useScroller()
 
   const [defaultRole, setDefaultRole] = useState('')
 
@@ -72,7 +73,7 @@ export default function Home() {
 
   const { data: news = [], isLoading: loadingNews } = useQuery({
     queryKey: ['news', user?.id],
-    queryFn: () => fetchNewsFeed(3),
+    queryFn: () => fetchNewsFeed(5),
     staleTime: 1000 * 60 * 5,
   })
 
@@ -217,15 +218,15 @@ export default function Home() {
                 <Group>
                   <ThemeIcon
                     variant="default"
-                    onClick={scroller.scrollStart}
-                    opacity={scroller.canScrollStart ? 1 : 0.5}
+                    onClick={eventsScroller.scrollStart}
+                    opacity={eventsScroller.canScrollStart ? 1 : 0.5}
                   >
                     <IconChevronLeft style={{ width: '70%', height: '70%' }} />
                   </ThemeIcon>
                   <ThemeIcon
                     variant="default"
-                    onClick={scroller.scrollEnd}
-                    opacity={scroller.canScrollEnd ? 1 : 0.5}
+                    onClick={eventsScroller.scrollEnd}
+                    opacity={eventsScroller.canScrollEnd ? 1 : 0.5}
                   >
                     <IconChevronRight style={{ width: '70%', height: '70%' }} />
                   </ThemeIcon>
@@ -235,11 +236,11 @@ export default function Home() {
 
             <Box>
               <div
-                ref={scroller.ref}
-                {...scroller.dragHandlers}
+                ref={eventsScroller.ref}
+                {...eventsScroller.dragHandlers}
                 style={{
                   overflow: 'auto',
-                  cursor: scroller.isDragging ? 'grabbing' : 'default',
+                  cursor: eventsScroller.isDragging ? 'grabbing' : 'default',
                 }}
               >
                 <Group wrap="nowrap" gap="md">
@@ -287,25 +288,64 @@ export default function Home() {
               </div>
             </Box>
 
-            <Title order={3} fw={600} fz="lg" mt="xl" mb="xs">
-              Notícias recentes
-            </Title>
+            <Group justify="space-between" align="center" mt="xl" mb="xs">
+              <Title order={3} fw={600} fz="lg">
+                Notícias recentes
+              </Title>
+              {news.length > 2 && (
+                <Group>
+                  <ThemeIcon
+                    variant="default"
+                    style={{
+                      cursor: newsScroller.canScrollStart ? 'pointer' : 'default',
+                    }}
+                    onClick={newsScroller.scrollStart}
+                    opacity={newsScroller.canScrollStart ? 1 : 0.5}
+                  >
+                    <IconChevronLeft style={{ width: '70%', height: '70%' }} />
+                  </ThemeIcon>
+                  <ThemeIcon
+                    variant="default"
+                    style={{
+                      cursor: newsScroller.canScrollEnd ? 'pointer' : 'default',
+                    }}
+                    onClick={newsScroller.scrollEnd}
+                    opacity={newsScroller.canScrollEnd ? 1 : 0.5}
+                  >
+                    <IconChevronRight style={{ width: '70%', height: '70%' }} />
+                  </ThemeIcon>
+                </Group>
+              )}
+            </Group>
 
-            <Scroller
-              key={news.length}
-              draggable={isMobile}
-              controlSize="xl"
-              startControlIcon={<IconCircleArrowLeftFilled size={36} />}
-              endControlIcon={<IconCircleArrowRightFilled size={36} />}
-            >
-              <Group gap="xs" wrap="nowrap">
-                {loadingNews
-                  ? [1, 2].map((i) => <Skeleton key={i} width={300} height={144} />)
-                  : news.map((item) => (
-                      <NewsCard key={item.id} item={item} width={300} />
-                    ))}
-              </Group>
-            </Scroller>
+            <Box>
+              <div
+                ref={newsScroller.ref}
+                {...newsScroller.dragHandlers}
+                className="scrollerHidden"
+                style={{
+                  overflow: 'auto',
+                  cursor: newsScroller.isDragging ? 'grabbing' : 'default',
+                }}
+              >
+                <Group gap="xs" wrap="nowrap">
+                  {loadingNews
+                    ? [1, 2, 3, 4, 5].map((i) => (
+                        <Skeleton
+                          key={i}
+                          width={300}
+                          height={144}
+                          style={{ flexShrink: 0 }}
+                        />
+                      ))
+                    : news.map((item) => (
+                        <Box key={item.id} style={{ flexShrink: 0 }}>
+                          <NewsCard item={item} width={300} />
+                        </Box>
+                      ))}
+                </Group>
+              </div>
+            </Box>
 
             {/* <Card bg="mublinColor.9">
               <Title order={2}>Guitarrista</Title>
