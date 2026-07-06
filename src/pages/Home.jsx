@@ -6,10 +6,9 @@ import { fetchUserRoles } from '../queries/user'
 import { fetchEvents } from '../queries/events'
 import { fetchNewsFeed } from '../queries/feed'
 import NewsCard from '../components/feed/NewsCard'
-import { MEMBER_ENGAGEMENT_TYPE } from '../constants/projects'
 // prettier-ignore
 import {
-  Skeleton, Tabs, Scroller, 
+  Skeleton, Tabs,
   Box, Card,
   Group, Flex,
   Container,
@@ -17,6 +16,7 @@ import {
   Image, Avatar,
   Select, ThemeIcon
 } from '@mantine/core'
+import { WeekView } from '@mantine/schedule'
 import { useMediaQuery, useScroller } from '@mantine/hooks'
 import AppNavbarMobile from '../components/AppNavbarMobile'
 import dayjs from 'dayjs'
@@ -24,18 +24,41 @@ import 'dayjs/locale/pt-br'
 import {
   IconChevronLeft,
   IconChevronRight,
-  IconMicrophone2,
-  IconUserSearch,
-  IconCircleArrowLeftFilled,
-  IconCircleArrowRightFilled,
   IconMusic,
   IconUsersGroup,
   IconUser,
 } from '@tabler/icons-react'
 
 const CDN_PREFIX = 'https://ik.imagekit.io/mublin'
-const AVATAR_PATH =
-  'https://ik.imagekit.io/mublin/tr:h-80,c-maintain_ratio/users/avatars/'
+const EVENTS_IMG_PATH = `${CDN_PREFIX}/tr:h-320,c-maintain_ratio/events/`
+const AVATAR_PATH = `${CDN_PREFIX}/tr:h-80,c-maintain_ratio/users/avatars/`
+
+const today = dayjs().format('YYYY-MM-DD')
+const tomorrow = dayjs().add(1, 'day').format('YYYY-MM-DD')
+
+const initialEvents = [
+  {
+    id: 1,
+    title: 'Ensaio',
+    start: `${today} 09:00:00`,
+    end: `${today} 09:30:00`,
+    color: 'blue',
+  },
+  {
+    id: 2,
+    title: 'Show particular',
+    start: `${tomorrow} 11:15:00`,
+    end: `${tomorrow} 12:00:00`,
+    color: 'green',
+  },
+  {
+    id: 3,
+    title: 'Ensaio',
+    start: `${today} 14:00:00`,
+    end: `${today} 14:45:00`,
+    color: 'violet',
+  },
+]
 
 export default function Home() {
   const { user, profile, loading } = useAuth()
@@ -44,6 +67,9 @@ export default function Home() {
   const isDesktop = useMediaQuery('(min-width: 48em)')
   const eventsScroller = useScroller()
   const newsScroller = useScroller()
+
+  const [events, setEvents] = useState(initialEvents)
+  const [date, setDate] = useState(dayjs().format('YYYY-MM-DD'))
 
   const [defaultRole, setDefaultRole] = useState('')
 
@@ -65,7 +91,7 @@ export default function Home() {
     staleTime: 1000 * 60 * 5,
   })
 
-  const { data: events = [], isLoading: loadingEvents } = useQuery({
+  const { data: globalEvents = [], isLoading: loadingGlobalEvents } = useQuery({
     queryKey: ['events'],
     queryFn: () => fetchEvents(3),
     staleTime: 1000 * 60 * 5,
@@ -118,6 +144,32 @@ export default function Home() {
                 {dayjs().format('dddd, D [de] MMMM [de] YYYY')}
               </Text> */}
             </Group>
+
+            <WeekView
+              mb="xl"
+              date={date}
+              onDateChange={setDate}
+              events={events}
+              viewSelectProps={{ views: [] }}
+              highlightToday
+              startTime="07:00:00"
+              endTime="23:50:00"
+              intervalMinutes={15}
+              withSubHourGridLines
+              withCurrentTimeIndicator
+              withHeader
+              withWeekNumber={false}
+              withAllDaySlots={false}
+              withEventResize={false}
+              // onEventResize={handleEventResize}
+              labels={{
+                time: 'Hora',
+                event: 'Evento',
+                allDay: 'Dia inteiro',
+                more: 'Mais',
+                today: 'Hoje',
+              }}
+            />
 
             <Tabs variant="pills" defaultValue="gigs">
               <Tabs.List justify="center">
@@ -214,7 +266,7 @@ export default function Home() {
               <Title order={3} fw={600} fz="lg">
                 Eventos
               </Title>
-              {events.length > 3 && (
+              {globalEvents.length > 3 && (
                 <Group>
                   <ThemeIcon
                     variant="default"
@@ -244,7 +296,7 @@ export default function Home() {
                 }}
               >
                 <Group wrap="nowrap" gap="md">
-                  {events.map((event) => (
+                  {globalEvents.map((event) => (
                     <Link
                       key={event.id}
                       to={`/event/${event.slug}`}
@@ -253,7 +305,7 @@ export default function Home() {
                       <Card p="xs" w={160} shadow="sm" padding="lg" withBorder>
                         <Card.Section>
                           <Image
-                            src={`${CDN_PREFIX}/tr:h-320,c-maintain_ratio/events/${event.picture_url}`}
+                            src={EVENTS_IMG_PATH + event.picture_url}
                             height={160}
                             alt={event.name}
                           />

@@ -55,10 +55,10 @@ import parse from 'html-react-parser'
 import linkifyStr from 'linkify-string'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
-import 'dayjs/locale/pt-br'
+// import 'dayjs/locale/pt-br'
 
 dayjs.extend(relativeTime)
-dayjs.locale('pt-br')
+// dayjs.locale('pt-br')
 
 const AVATAR_PATH =
   'https://ik.imagekit.io/mublin/tr:h-68,c-maintain_ratio/users/avatars/'
@@ -282,7 +282,6 @@ export default function Feed({ from = '' }) {
                         { label: 'Seguindo', value: 'following' },
                       ]}
                     />
-                    <Divider flex={1} />
                   </Flex>
 
                   {isStale && (
