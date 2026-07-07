@@ -22,13 +22,13 @@ export function WorkAvailabilityItem({ item }) {
       <Group justify="space-between" wrap="nowrap">
         {hasRate ? (
           <Group gap={6} wrap="nowrap">
-            <Text size="xs" opacity={0.7}>
+            <Text size="xs" opacity={0.8}>
               Média de preço: {formattedRate}
               {rate_types?.name_ptbr && ` ${rate_types.name_ptbr.toLowerCase()}`}
             </Text>
           </Group>
         ) : (
-          <Text size="xs" opacity={0.7}>
+          <Text size="xs" opacity={0.8}>
             Média de preço: a combinar
           </Text>
         )}

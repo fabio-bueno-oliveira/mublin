@@ -1,11 +1,11 @@
 import { Outlet, Navigate } from 'react-router-dom'
-import { AppShell, Flex, Center, Box, Container, Loader, Text } from '@mantine/core'
+import { AppShell, Center, Container, Loader } from '@mantine/core'
 import { useMediaQuery } from '@mantine/hooks'
 import { useAuth } from '../../hooks/useAuth'
 import { useUI } from '../../contexts/UIContext'
 import AppNavbar from '../AppNavbar'
 import AppFooterMobile from '../AppFooterMobile'
-import Dashbar from '../Dashbar'
+// import Dashbar from '../Dashbar'
 
 export default function AppLayout({ children }) {
   const { session, loading } = useAuth()
@@ -44,7 +44,7 @@ export default function AppLayout({ children }) {
         </Container>
       </AppShell.Main>
 
-      <Dashbar />
+      {/* <Dashbar /> */}
       {!hideFooter && <AppFooterMobile />}
     </AppShell>
   )

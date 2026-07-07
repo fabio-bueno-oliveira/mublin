@@ -88,6 +88,7 @@ import SimilarProfiles from '../components/SimilarProfiles'
 import { getAvatarUrl } from '../utils/profile'
 import { truncateString } from '../utils/formatter'
 import { isProfileLive } from '../utils/live'
+import { isMublinOG } from '../utils/badges'
 import { AVAILABLE_FROM_LABELS } from '../constants/availability'
 import { SOCIAL_CONFIG } from '../constants/socialConfig'
 import dayjs from 'dayjs'
@@ -144,6 +145,23 @@ export default function Profile() {
     retry: 1,
   })
 
+  const isOwnProfile = !!profile?.id && !!user?.id && profile.id === user.id
+
+  const { data: profileViewCount } = useQuery({
+    queryKey: ['profile-view-count', profile?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('get_profile_view_count', {
+        p_profile_id: profile.id,
+      })
+      if (error) {
+        throw error
+      }
+      return data
+    },
+    enabled: isOwnProfile,
+    staleTime: 1000 * 60, // 1 min — o dado muda com frequência, não precisa cachear tanto quanto o resto do perfil
+  })
+
   const MENU_ITEMS = [
     { id: 'about', label: 'Sobre', active: true },
     { id: 'projects', label: 'Projetos', active: true },
@@ -165,6 +183,40 @@ export default function Profile() {
     setExpandedBio(false)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [username])
+
+  useEffect(() => {
+    if (!profile?.id || !user?.id) {
+      return
+    }
+    if (profile.id === user.id) {
+      return
+    } // não conta visita ao próprio perfil
+
+    supabase.rpc('log_profile_view', { p_profile_id: profile.id }).then(({ error }) => {
+      if (error) {
+        console.error('Erro ao registrar visita ao perfil:', error)
+      }
+    })
+  }, [profile?.id, user?.id])
+
+  const { data: recognitions = [] } = useQuery({
+    queryKey: ['profile-recognitions', profile?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('profile_recognitions')
+        .select('type')
+        .eq('profile_id', profile.id)
+      if (error) {
+        throw error
+      }
+      return data.map((r) => r.type)
+    },
+    enabled: !!profile?.id,
+    staleTime: 1000 * 60 * 10, // muda raramente
+  })
+
+  const isGrammyNominee = recognitions.includes('grammy_nominee')
+  const isLegend = recognitions.includes('legend')
 
   useEffect(() => {
     if (!isMobile) {
@@ -715,16 +767,26 @@ export default function Profile() {
               </Flex>
               <Group gap="md" mt={3}>
                 <Anchor underline="never" onClick={openFollowers}>
-                  <Text size="sm" fw={500}>
+                  <Text size="sm" fw={600}>
                     {followersList.length} seguidores
                   </Text>
                 </Anchor>
                 <Anchor underline="never" onClick={openFollowing}>
-                  <Text size="sm" fw={500}>
+                  <Text size="sm" fw={600}>
                     {followingList.length} seguindo
                   </Text>
                 </Anchor>
               </Group>
+
+              {isOwnProfile && typeof profileViewCount === 'number' && (
+                <Text size="xs" c="dimmed" mt={4}>
+                  {profileViewCount === 0
+                    ? 'Ninguém visualizou seu perfil ainda'
+                    : profileViewCount === 1
+                      ? '1 pessoa visualizou seu perfil'
+                      : `${profileViewCount} pessoas visualizaram seu perfil`}
+                </Text>
+              )}
             </Stack>
 
             <Stack gap={12} mt={{ base: 'md', md: 'md' }}>
@@ -1226,7 +1288,7 @@ export default function Profile() {
                         profile.available_from}
                     </Text>
                   ) : (
-                    <Text size="sm" opacity={0.8}>
+                    <Text size="sm" c="dimmed">
                       Não informado
                     </Text>
                   )}
@@ -1239,15 +1301,13 @@ export default function Profile() {
                   {workAvailability.length > 0 ? (
                     <Flex gap="xs" wrap="wrap" direction="column">
                       {workAvailability.map((item) => (
-                        <>
-                          <Stack gap={1}>
-                            <WorkAvailabilityItem item={item} />
-                          </Stack>
-                        </>
+                        <Stack gap={1} key={item.id}>
+                          <WorkAvailabilityItem item={item} />
+                        </Stack>
                       ))}
                     </Flex>
                   ) : (
-                    <Text size="sm" opacity={0.8}>
+                    <Text size="sm" c="dimmed">
                       Não informado
                     </Text>
                   )}
@@ -1267,7 +1327,7 @@ export default function Profile() {
                       ))}
                     </Group>
                   ) : (
-                    <Text size="sm" opacity={0.8}>
+                    <Text size="sm" c="dimmed">
                       Não informado
                     </Text>
                   )}
@@ -1287,7 +1347,7 @@ export default function Profile() {
                           {travelPreference?.travel_preferences?.label}
                         </Text>
                       ) : (
-                        <Text size="sm" opacity={0.8}>
+                        <Text size="sm" c="dimmed">
                           Não informado
                         </Text>
                       )}
@@ -1311,12 +1371,14 @@ export default function Profile() {
                   edgeGradientColor="transparent"
                 >
                   <Group gap={12} wrap="nowrap" align="flex-start">
-                    <RecognitionBadge
-                      label="Mublin OG"
-                      description="Perfil entre os primeiros usuários da plataforma"
-                      color="dark"
-                    />
-                    {!!profile.is_legend && (
+                    {isMublinOG(profile.created_at) && (
+                      <RecognitionBadge
+                        label="Mublin OG"
+                        description="Perfil entre os primeiros usuários da plataforma"
+                        color="dark"
+                      />
+                    )}
+                    {isLegend && (
                       <RecognitionBadge
                         icon={IconShieldCheckFilled}
                         label="Lenda da música"
@@ -1324,24 +1386,28 @@ export default function Profile() {
                         color="purple"
                       />
                     )}
-                    <RecognitionBadge
-                      icon={IconTrophy}
-                      label="Grammy Nominee"
-                      description="Indicação ou vitória comprovada no Grammy"
-                      color="amber"
-                    />
-                    <RecognitionBadge
+                    {isGrammyNominee && (
+                      <RecognitionBadge
+                        icon={IconTrophy}
+                        label="Grammy Nominee"
+                        description="Indicação ou vitória comprovada no Grammy"
+                        color="amber"
+                      />
+                    )}
+                    {/* <RecognitionBadge
                       icon={IconPlane}
                       label="Internacional "
                       description="Atuação em mais de um país"
                       color="green"
-                    />
-                    <RecognitionBadge
-                      icon={IconGuitarPick}
-                      label="Bem equipado"
-                      description="10 ou mais itens no gear"
-                      color="coral"
-                    />
+                    /> */}
+                    {gear.length > 10 && (
+                      <RecognitionBadge
+                        icon={IconGuitarPick}
+                        label="Bem equipado"
+                        description="10 ou mais itens no gear"
+                        color="coral"
+                      />
+                    )}
                   </Group>
                 </Scroller>
               </SectionPanel>

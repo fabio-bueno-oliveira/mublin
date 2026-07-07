@@ -6,6 +6,7 @@ export async function fetchProfileDetails(profileUsername) {
     .select(
       `
       id,
+      created_at,
       full_name,
       username,
       avatar,

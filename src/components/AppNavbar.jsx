@@ -32,6 +32,7 @@ import {
   Image,
   Indicator,
   ScrollArea,
+  Flex,
 } from '@mantine/core'
 import {
   IconSearch,
@@ -157,27 +158,40 @@ export default function AppNavbar({ children }) {
                 />
               </Link>
               {/* Nav items — apenas desktop */}
-              <Group gap={5} ml="lg" align="center" visibleFrom="sm">
+              <Group gap="md" ml="lg" align="center" visibleFrom="sm">
                 {NAV_ITEMS.map((item) => {
                   const Icon = item.icon
                   return (
-                    <Button
+                    <Flex
                       key={item.path}
+                      direction="column"
+                      align="center"
+                      gap={1}
                       component={Link}
                       to={item.path}
-                      variant="transparent"
-                      color="gray"
-                      size="compact-sm"
-                      radius="0"
                       opacity={isActive(item.path) ? 1 : 0.8}
-                      leftSection={<Icon size={20} stroke={1.7} />}
+                      style={{ textDecoration: 'none', color: 'inherit' }}
                     >
-                      {item.label}
-                    </Button>
+                      {/* <Button
+                        key={item.path}
+                        component={Link}
+                        to={item.path}
+                        variant="transparent"
+                        color="gray"
+                        size="compact-sm"
+                        radius="0"
+                        opacity={isActive(item.path) ? 1 : 0.8}
+                        leftSection={<Icon size={20} stroke={1.7} />}
+                      >
+                        {item.label}
+                      </Button> */}
+                      <Icon size={20} stroke={1.7} />
+                      <Text size="xs">{item.label}</Text>
+                    </Flex>
                   )
                 })}
                 {/* Quick Actions — apenas desktop */}
-                <Button
+                {/* <Button
                   variant="transparent"
                   color="gray"
                   size="compact-sm"
@@ -187,7 +201,18 @@ export default function AppNavbar({ children }) {
                   onClick={() => openActionsMenu()}
                 >
                   Criar
-                </Button>
+                </Button> */}
+                <Flex
+                  direction="column"
+                  align="center"
+                  gap={1}
+                  opacity={isActive('/create') ? 1 : 0.8}
+                  onClick={() => openActionsMenu()}
+                  style={{ cursor: 'pointer', textDecoration: 'none', color: 'inherit' }}
+                >
+                  <IconPlus size={20} stroke={1.7} />
+                  <Text size="xs">Criar</Text>
+                </Flex>
               </Group>
             </Group>
 
