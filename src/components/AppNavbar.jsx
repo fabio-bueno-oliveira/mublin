@@ -172,36 +172,12 @@ export default function AppNavbar({ children }) {
                       opacity={isActive(item.path) ? 1 : 0.8}
                       style={{ textDecoration: 'none', color: 'inherit' }}
                     >
-                      {/* <Button
-                        key={item.path}
-                        component={Link}
-                        to={item.path}
-                        variant="transparent"
-                        color="gray"
-                        size="compact-sm"
-                        radius="0"
-                        opacity={isActive(item.path) ? 1 : 0.8}
-                        leftSection={<Icon size={20} stroke={1.7} />}
-                      >
-                        {item.label}
-                      </Button> */}
                       <Icon size={20} stroke={1.7} />
                       <Text size="xs">{item.label}</Text>
                     </Flex>
                   )
                 })}
                 {/* Quick Actions — apenas desktop */}
-                {/* <Button
-                  variant="transparent"
-                  color="gray"
-                  size="compact-sm"
-                  radius="0"
-                  opacity={isActive('/create') ? 1 : 0.8}
-                  leftSection={<IconPlus size={24} stroke={1.7} />}
-                  onClick={() => openActionsMenu()}
-                >
-                  Criar
-                </Button> */}
                 <Flex
                   direction="column"
                   align="center"

@@ -13,7 +13,7 @@ import {
 export const NAV_ITEMS = [
   { label: 'Home', icon: IconHome, path: '/home' },
   { label: 'Feed', icon: IconRss, path: '/feed' },
-  { label: 'Minhas gigs', icon: IconCalendarMonthFilled, path: '/gigs' },
+  { label: 'Gigs', icon: IconCalendarMonthFilled, path: '/gigs' },
 ]
 
 export const QUICK_ACTIONS = [
