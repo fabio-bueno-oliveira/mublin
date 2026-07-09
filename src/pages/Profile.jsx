@@ -24,6 +24,7 @@ import {
   useMantineColorScheme,
   Container,
   Modal,
+  Drawer,
   Grid,
   Scroller,
   Avatar,
@@ -52,6 +53,7 @@ import {
   Divider,
 } from '@mantine/core'
 import { useMediaQuery, useDisclosure, useWindowScroll } from '@mantine/hooks'
+import { notifications } from '@mantine/notifications'
 import LoadingSkeleton from '../components/profile/LoadingSkeleton'
 import LinkedItem from '../components/feed/LinkedItem'
 import VideoPlayerYoutube from '../components/feed/VideoPlayerYoutube'
@@ -77,6 +79,7 @@ import {
   IconHeart,
   IconUserX,
   IconUserPlus,
+  IconLink,
   IconEye,
 } from '@tabler/icons-react'
 import ProfileHeaderMobile from '../components/profile/ProfileHeaderMobile'
@@ -129,6 +132,7 @@ export default function Profile() {
   const [contactInfoOpened, { open: openContactInfo, close: closeContactInfo }] =
     useDisclosure(false)
   const [inviteOpened, { open: openInvite, close: closeInvite }] = useDisclosure(false)
+  const [actionsOpened, { open: openActions, close: closeActions }] = useDisclosure(false)
 
   const {
     data: profile,
@@ -780,22 +784,22 @@ export default function Profile() {
                 Editar meu perfil
               </Button>
             ) : (
-              <Box hiddenFrom="sm" mt="sm">
+              <Group justify="space-around" hiddenFrom="sm" px="sm" mt="sm">
                 {followingInfo?.id ? (
                   <Button
-                    fullWidth
+                    flex={1}
                     size="sm"
                     radius="md"
                     variant="filled"
                     className="defaultMublinButton"
-                    onClick={() => unfollowProfile(user.id, profile.id)}
-                    disabled={loadingFollowingInfo}
+                    onClick={openInvite}
+                    leftSection={<IconSend size={16} />}
                   >
-                    Deixar de seguir
+                    Convidar para gig
                   </Button>
                 ) : (
                   <Button
-                    fullWidth
+                    flex={1}
                     size="sm"
                     radius="md"
                     variant="gradient"
@@ -806,7 +810,16 @@ export default function Profile() {
                     Seguir
                   </Button>
                 )}
-              </Box>
+                <ActionIcon
+                  variant="subtle"
+                  color="gray"
+                  size="lg"
+                  aria-label="Opções de equipamento"
+                  onClick={openActions}
+                >
+                  <IconDotsVerticalFilled size={20} />
+                </ActionIcon>
+              </Group>
             )}
 
             <Stack gap={12} mt={{ base: 'md', md: 'sm' }}>
@@ -1696,6 +1709,59 @@ export default function Profile() {
           title: profile.title,
         }}
       />
+
+      <Drawer opened={actionsOpened} onClose={closeActions} position="bottom" size="xs">
+        <Stack gap="md" mt="sm">
+          {followingInfo?.id ? (
+            <Button
+              variant="transparent"
+              onClick={() => unfollowProfile(user.id, profile.id)}
+              disabled={loadingFollowingInfo}
+            >
+              Deixar de seguir
+            </Button>
+          ) : (
+            <Button
+              variant="transparent"
+              onClick={() => followProfile(user.id, profile.id)}
+              disabled={loadingFollowingInfo}
+            >
+              Seguir
+            </Button>
+          )}
+          <Button
+            variant="transparent"
+            leftSection={<IconHeart size={16} />}
+            onClick={() => {
+              notifications.show({
+                title: 'Ops!',
+                message: 'Não conseguimos adicionar aos favoritos neste momento',
+                color: 'red',
+                position: 'top-center',
+              })
+            }}
+          >
+            Adicionar aos favoritos
+          </Button>
+          <Button
+            variant="transparent"
+            leftSection={<IconLink size={16} />}
+            onClick={() => {
+              navigator.clipboard.writeText(
+                `${window.location.origin}/${profile?.username}`,
+              )
+              notifications.show({
+                title: 'Pronto!',
+                message: 'URL copiada!',
+                color: 'green',
+                position: 'top-center',
+              })
+            }}
+          >
+            Copiar URL deste perfil
+          </Button>
+        </Stack>
+      </Drawer>
     </>
   )
 }

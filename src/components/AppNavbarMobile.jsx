@@ -8,20 +8,14 @@ import {
   useComputedColorScheme,
   Flex,
   Box,
-  Button,
   Image,
   ActionIcon,
   Text,
-  Drawer,
-  Stack,
   Badge,
   Indicator,
 } from '@mantine/core'
-import { useDisclosure } from '@mantine/hooks'
-import { notifications } from '@mantine/notifications'
 import {
   IconArrowLeft,
-  IconDotsVerticalFilled,
   IconHeart,
   IconMenu2Filled,
   IconXFilled,
@@ -38,7 +32,6 @@ export default function AppNavbarMobile({
   const { user, profile: userProfile } = useAuth()
   const computedColorScheme = useComputedColorScheme('light')
   const isDark = computedColorScheme === 'dark'
-  const [opened, { open, close }] = useDisclosure(false)
 
   const { data: unreadCount = 0 } = useQuery({
     queryKey: ['notifications-unread-count'],
@@ -123,97 +116,50 @@ export default function AppNavbarMobile({
             </ActionIcon>
           ) : (
             <>
-              {userProfile?.username === profile?.username || pathname === '/home' ? (
-                <Flex gap="xs">
-                  <ActionIcon
-                    variant="transparent"
-                    aria-label="Notificações"
-                    size="xl"
-                    radius={false}
-                    pt={5}
-                    onClick={() => navigate('/notifications')}
-                    c="var(--mantine-color-text)"
-                  >
-                    <Indicator
-                      inline
-                      label={
-                        <Text fw={500} fz="9px">
-                          {unreadCount}
-                        </Text>
-                      }
-                      maxValue={99}
-                      size={16}
-                      disabled={unreadCount === 0}
-                      color="red.8"
-                      offset={4}
+              {userProfile?.username === profile?.username ||
+                (pathname === '/home' && (
+                  <Flex gap="xs">
+                    <ActionIcon
+                      variant="transparent"
+                      aria-label="Notificações"
+                      size="xl"
+                      radius={false}
+                      pt={5}
+                      onClick={() => navigate('/notifications')}
+                      c="var(--mantine-color-text)"
                     >
-                      <IconHeart size={24} />
-                    </Indicator>
-                  </ActionIcon>
-                  <ActionIcon
-                    variant="transparent"
-                    aria-label="Menu"
-                    size="lg"
-                    pt={12}
-                    onClick={() => navigate('/menu')}
-                    c="var(--mantine-color-text)"
-                  >
-                    <IconMenu2Filled size={28} />
-                  </ActionIcon>
-                </Flex>
-              ) : (
-                profile && (
-                  <ActionIcon
-                    variant="transparent"
-                    aria-label="Menu"
-                    size="lg"
-                    p={0}
-                    onClick={open}
-                  >
-                    <IconDotsVerticalFilled size={22} />
-                  </ActionIcon>
-                )
-              )}
+                      <Indicator
+                        inline
+                        label={
+                          <Text fw={500} fz="9px">
+                            {unreadCount}
+                          </Text>
+                        }
+                        maxValue={99}
+                        size={16}
+                        disabled={unreadCount === 0}
+                        color="red.8"
+                        offset={4}
+                      >
+                        <IconHeart size={24} />
+                      </Indicator>
+                    </ActionIcon>
+                    <ActionIcon
+                      variant="transparent"
+                      aria-label="Menu"
+                      size="lg"
+                      pt={12}
+                      onClick={() => navigate('/menu')}
+                      c="var(--mantine-color-text)"
+                    >
+                      <IconMenu2Filled size={28} />
+                    </ActionIcon>
+                  </Flex>
+                ))}
             </>
           )}
         </Box>
       </Flex>
-      {profile && (
-        <Drawer
-          opened={opened}
-          onClose={close}
-          title={profile?.username}
-          position="bottom"
-        >
-          <Stack gap={4} mt="sm">
-            <Button size="sm" radius="xs" variant="transparent" p={0}>
-              Seguir
-            </Button>
-            <Button size="sm" radius="xs" variant="transparent" p={0}>
-              Bloquear
-            </Button>
-            <Button
-              size="sm"
-              radius="xs"
-              variant="transparent"
-              p={0}
-              onClick={() => {
-                navigator.clipboard.writeText(
-                  `${window.location.origin}/${profile?.username}`,
-                )
-                notifications.show({
-                  title: 'Pronto!',
-                  message: 'URL copiada!',
-                  color: 'green',
-                  position: 'top-center',
-                })
-              }}
-            >
-              Copiar URL deste perfil
-            </Button>
-          </Stack>
-        </Drawer>
-      )}
     </>
   )
 }
