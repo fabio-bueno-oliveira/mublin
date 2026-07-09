@@ -168,7 +168,7 @@ function App() {
         colorSchemeManager={colorSchemeManager}
         cssVariablesResolver={resolver}
       >
-        <Notifications autoClose={1200} />
+        <Notifications autoClose={1400} />
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
             <UIProvider>

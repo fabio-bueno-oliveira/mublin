@@ -113,6 +113,98 @@ export async function fetchUserGigsCount(userId) {
   return count
 }
 
+export async function fetchUserFavoriteProfiles(userId) {
+  const { data, error } = await supabase
+    .from('profile_favorites')
+    .select(
+      `
+      id,
+      created_at,
+      note,
+      profile:profiles!profile_favorites_profile_id_fkey (
+        id,
+        username,
+        full_name,
+        title,
+        avatar,
+        is_verified,
+        is_legend
+      )
+    `,
+    )
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+  if (error) {
+    throw new Error(error.message)
+  }
+  return data
+}
+
+export async function removeFavoriteProfile(profileId, userId) {
+  if (profileId === userId) {
+    throw new Error('Você não pode desfavoritar seu próprio perfil.')
+  }
+
+  const { error, count } = await supabase
+    .from('profile_favorites')
+    .delete({ count: 'exact' })
+    .eq('user_id', userId)
+    .eq('profile_id', profileId)
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  return {
+    success: true,
+    action: 'unfavorited',
+    removed: count > 0,
+  }
+}
+
+export async function fetchUserFavoriteProducts(userId) {
+  const { data, error } = await supabase
+    .from('product_favorites')
+    .select(
+      `
+      id,
+      created_at,
+      note,
+      product:products (
+        id,
+        name,
+        slug,
+        description,
+        picture
+      )
+    `,
+    )
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+  if (error) {
+    throw new Error(error.message)
+  }
+  return data
+}
+
+export async function removeFavoriteProduct(productId, userId) {
+  const { error, count } = await supabase
+    .from('product_favorites')
+    .delete({ count: 'exact' })
+    .eq('user_id', userId)
+    .eq('product_id', productId)
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  return {
+    success: true,
+    action: 'unfavorited',
+    removed: count > 0,
+  }
+}
+
 export async function fetchUserProfileOnboarding(userId) {
   const { data, error } = await supabase
     .from('profiles')

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { useParams, Link } from 'react-router-dom'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query'
 import {
   fetchProfileDetails,
   fetchCheckFollowing,
@@ -17,6 +17,8 @@ import {
   fetchProfileWorkFocuses,
   fetchProfileTravelPreference,
   fetchProfileInspirations,
+  fetchCheckFavorite,
+  toggleFavorite,
 } from '../queries/profiles'
 import { useAuth } from '../hooks/useAuth'
 import { Helmet } from 'react-helmet-async'
@@ -47,10 +49,10 @@ import {
   Affix,
   Transition,
   Menu,
-  em,
   Badge,
   Center,
   Divider,
+  em,
 } from '@mantine/core'
 import { useMediaQuery, useDisclosure, useWindowScroll } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
@@ -81,6 +83,7 @@ import {
   IconUserPlus,
   IconLink,
   IconEye,
+  IconHeartFilled,
 } from '@tabler/icons-react'
 import ProfileHeaderMobile from '../components/profile/ProfileHeaderMobile'
 import AppNavbarMobile from '../components/AppNavbarMobile'
@@ -93,9 +96,7 @@ import { AVAILABLE_FROM_LABELS } from '../constants/availability'
 import { SOCIAL_CONFIG } from '../constants/socialConfig'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
-import 'dayjs/locale/pt-br'
 import { WorkAvailabilityItem } from '../components/profile/WorkAvailabilityItem'
-
 dayjs.extend(relativeTime)
 dayjs.locale('pt-br')
 
@@ -258,6 +259,64 @@ export default function Profile() {
       setActiveSection(id)
     }
   }
+
+  const { data: favoriteInfo, isLoading: loadingFavoriteInfo } = useQuery({
+    queryKey: ['profile-favorite-info', profile?.id],
+    queryFn: () => fetchCheckFavorite(profile.id, user.id),
+    enabled: !!profile?.id && !!user?.id && profile.id !== user.id,
+    staleTime: 1000 * 60 * 5,
+  })
+
+  const { mutate: handleToggleFavorite, isPending: togglingFavorite } = useMutation({
+    mutationFn: (currentlyFavorited) =>
+      toggleFavorite(profile.id, user.id, currentlyFavorited),
+
+    onMutate: async (currentlyFavorited) => {
+      const queryKey = ['profile-favorite-info', profile.id]
+
+      // Cancela qualquer refetch em andamento pra não sobrescrever nossa atualização otimista
+      await queryClient.cancelQueries({ queryKey })
+
+      const previousFavoriteInfo = queryClient.getQueryData(queryKey)
+
+      // Aplica o resultado esperado imediatamente na tela
+      queryClient.setQueryData(queryKey, currentlyFavorited ? null : { id: 'optimistic' })
+
+      // Retorna o valor anterior pro caso precisar reverter em onError
+      return { previousFavoriteInfo }
+    },
+
+    onError: (error, _currentlyFavorited, context) => {
+      // Reverte pro estado anterior se a chamada falhar
+      queryClient.setQueryData(
+        ['profile-favorite-info', profile.id],
+        context?.previousFavoriteInfo,
+      )
+      notifications.show({
+        title: 'Ops!',
+        message:
+          error.message || 'Não conseguimos atualizar seus favoritos neste momento',
+        color: 'red',
+        position: 'top-center',
+      })
+    },
+
+    onSuccess: (_data, currentlyFavorited) => {
+      notifications.show({
+        title: currentlyFavorited ? 'Removido' : 'Adicionado',
+        message: currentlyFavorited
+          ? 'Perfil removido dos seus favoritos'
+          : 'Perfil adicionado aos seus favoritos',
+        color: 'green',
+        position: 'top-center',
+      })
+    },
+
+    onSettled: () => {
+      // Garante que o cache reflita o estado real do banco, mesmo em sucesso
+      queryClient.invalidateQueries({ queryKey: ['profile-favorite-info', profile.id] })
+    },
+  })
 
   const { data: followingInfo = [], isLoading: loadingFollowingInfo } = useQuery({
     queryKey: ['profile-following-info', profile?.id],
@@ -653,11 +712,18 @@ export default function Profile() {
                   size="xs"
                   radius="md"
                   variant="filled"
+                  leftSection={
+                    favoriteInfo?.id ? (
+                      <IconHeartFilled size={16} color="red" />
+                    ) : (
+                      <IconHeart size={16} />
+                    )
+                  }
                   className="defaultMublinButton"
-                  onClick={openInvite}
-                  leftSection={<IconHeart size={16} />}
+                  onClick={() => handleToggleFavorite(!!favoriteInfo?.id)}
+                  disabled={loadingFavoriteInfo || togglingFavorite}
                 >
-                  Salvar nos favoritos
+                  {favoriteInfo?.id ? 'Salvo' : 'Salvar nos favoritos'}
                 </Button>
               </Stack>
             )}
@@ -1591,14 +1657,22 @@ export default function Profile() {
                 />
               </SectionPanel>
               {profile?.plan === 'Pro' && (
-                <SectionPanel>
-                  <Flex gap={6} align="center">
-                    <ProPlanBadge small />
-                    <Text size="xs" c="dimmed" lh={1} mt={3}>
-                      {profile?.full_name} possui uma conta Premium
-                    </Text>
-                  </Flex>
-                </SectionPanel>
+                <Tooltip
+                  multiline
+                  w={220}
+                  withArrow
+                  transitionProps={{ duration: 200 }}
+                  label="Usuários com conta premium têm acesso a recursos exclusivos como adicionar equipamentos e subir vídeos"
+                >
+                  <SectionPanel>
+                    <Flex gap={6} align="center">
+                      <ProPlanBadge small />
+                      <Text size="xs" c="dimmed" lh={1} mt={3}>
+                        {profile?.full_name} possui uma conta Premium
+                      </Text>
+                    </Flex>
+                  </SectionPanel>
+                </Tooltip>
               )}
             </Stack>
           </Grid.Col>
@@ -1732,16 +1806,10 @@ export default function Profile() {
           <Button
             variant="transparent"
             leftSection={<IconHeart size={16} />}
-            onClick={() => {
-              notifications.show({
-                title: 'Ops!',
-                message: 'Não conseguimos adicionar aos favoritos neste momento',
-                color: 'red',
-                position: 'top-center',
-              })
-            }}
+            onClick={() => handleToggleFavorite(!!favoriteInfo?.id)}
+            disabled={loadingFavoriteInfo || togglingFavorite}
           >
-            Adicionar aos favoritos
+            {favoriteInfo?.id ? 'Salvo' : 'Salvar nos favoritos'}
           </Button>
           <Button
             variant="transparent"

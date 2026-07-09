@@ -300,3 +300,49 @@ export async function getBrandOwners(brandId) {
 
   return data
 }
+
+export async function fetchCheckFavoriteProduct(productId, userId) {
+  const { data, error } = await supabase
+    .from('product_favorites')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('product_id', productId)
+    .maybeSingle()
+
+  if (error) {
+    throw new Error(error.message)
+  }
+  return data
+}
+
+export async function toggleFavoriteProduct(productId, userId, isFavorited) {
+  if (isFavorited) {
+    const { error } = await supabase
+      .from('product_favorites')
+      .delete()
+      .eq('user_id', userId)
+      .eq('product_id', productId)
+
+    if (error) {
+      throw new Error(error.message)
+    }
+
+    return { success: true, action: 'unfavorited' }
+  }
+
+  const { data, error } = await supabase
+    .from('product_favorites')
+    .insert({ user_id: userId, product_id: productId })
+    .select()
+    .single()
+
+  if (error) {
+    if (error.code === '23505') {
+      // Registro já existe: clique duplo ou cache
+      return { success: true, action: 'favorited', alreadyExisted: true }
+    }
+    throw new Error(error.message)
+  }
+
+  return { success: true, action: 'favorited', data }
+}

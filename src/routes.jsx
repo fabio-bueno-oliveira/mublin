@@ -19,6 +19,7 @@ import CalendarPage from './pages/Calendar' // for mobile devices
 import Onboarding from './pages/Onboarding'
 import Home from './pages/Home'
 import Feed from './pages/Feed'
+import MySavedFavorites from './pages/Saved'
 // -- Search pages
 import Search from './pages/Search'
 // -- Profile pages
@@ -38,6 +39,7 @@ import NewGig from './pages/NewGig'
 // -- Gear pages
 import Gear from './pages/Gear'
 import GearItem from './pages/GearItem'
+import GearItemZoom from './pages/GearItemZoom'
 import Brand from './pages/Brand'
 import NewGear from './pages/NewGear'
 // -- Events pages
@@ -110,12 +112,14 @@ export const router = createBrowserRouter([
       { path: 'new/post', element: <NewPost /> },
       { path: 'gear', element: <Gear /> },
       { path: 'gear/:slug', element: <GearItem /> },
+      { path: 'gear/:slug/zoom', element: <GearItemZoom /> },
       { path: 'new/gear', element: <NewGear /> },
       { path: 'artist/:slug', element: <Artist /> },
       { path: 'new/event', element: <NewEvent /> },
       { path: 'event/:slug', element: <Event /> },
       { path: 'new/venue', element: <NewVenue /> },
       { path: 'venue/:slug', element: <Venue /> },
+      { path: 'saved', element: <MySavedFavorites /> },
     ],
   },
   // ── Subpáginas de perfil ──────────────

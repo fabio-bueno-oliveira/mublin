@@ -416,3 +416,55 @@ export async function fetchProfileFollowingList(profileId) {
   // Mapeia para simplificar a estrutura no front-end
   return data.map((item) => item.profiles).filter(Boolean)
 }
+
+export async function toggleFavorite(profileId, userId, isFavorited) {
+  if (profileId === userId) {
+    throw new Error('Você não pode favoritar seu próprio perfil.')
+  }
+
+  if (isFavorited) {
+    const { error } = await supabase
+      .from('profile_favorites')
+      .delete()
+      .eq('user_id', userId)
+      .eq('profile_id', profileId)
+
+    if (error) {
+      throw new Error(error.message)
+    }
+
+    return { success: true, action: 'unfavorited' }
+  }
+
+  const { data, error } = await supabase
+    .from('profile_favorites')
+    .insert({ user_id: userId, profile_id: profileId })
+    .select()
+    .single()
+
+  if (error) {
+    if (error.code === '23505') {
+      // Corrida entre cliques ou cache desatualizado: o registro já existe.
+      // Do ponto de vista do usuário, o objetivo ("estar favoritado") já foi
+      // alcançado, então tratamos como sucesso em vez de erro.
+      return { success: true, action: 'favorited', alreadyExisted: true }
+    }
+    throw new Error(error.message)
+  }
+
+  return { success: true, action: 'favorited', data }
+}
+
+export async function fetchCheckFavorite(profileId, userId) {
+  const { data, error } = await supabase
+    .from('profile_favorites')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('profile_id', profileId)
+    .maybeSingle()
+
+  if (error) {
+    throw new Error(error.message)
+  }
+  return data
+}

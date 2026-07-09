@@ -41,6 +41,9 @@ import {
   IconBell,
   IconChevronDown,
   IconClock,
+  IconUser,
+  IconSettings2,
+  IconBookmark,
 } from '@tabler/icons-react'
 import { NAV_ITEMS, QUICK_ACTIONS } from '../constants/navItems'
 
@@ -82,8 +85,8 @@ export default function AppNavbar({ children }) {
       return count ?? 0
     },
     enabled: !!user?.id,
-    staleTime: 1000 * 60 * 3, // 3 min
-    refetchInterval: 1000 * 60 * 3, // polling a cada 3 min
+    staleTime: 1000 * 60 * 6, // 6 min
+    refetchInterval: 1000 * 60 * 6, // polling a cada 6 min
     refetchOnWindowFocus: true, // mas atualiza sempre que voltar à aba
   })
 
@@ -336,11 +339,27 @@ export default function AppNavbar({ children }) {
                 </Menu.Target>
                 <Menu.Dropdown>
                   <Menu.Label>{profile?.full_name}</Menu.Label>
-                  <Menu.Item component={Link} to={`/${profile?.username}`}>
+                  <Menu.Item
+                    component={Link}
+                    to={`/${profile?.username}`}
+                    leftSection={<IconUser size={14} />}
+                  >
                     Meu perfil
                   </Menu.Item>
-                  <Menu.Item component={Link} to="/settings">
+                  <Menu.Item
+                    component={Link}
+                    to="/settings"
+                    leftSection={<IconSettings2 size={14} />}
+                  >
                     Configurações
+                  </Menu.Item>
+                  <Menu.Divider />
+                  <Menu.Item
+                    component={Link}
+                    to="/saved"
+                    leftSection={<IconBookmark size={14} />}
+                  >
+                    Salvos
                   </Menu.Item>
                   <Menu.Divider />
                   <Menu.Item onClick={toggleColorScheme}>

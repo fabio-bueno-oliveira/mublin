@@ -121,11 +121,11 @@ export default function Brand() {
             }}
           >
             <Image
-              src={`https://ik.imagekit.io/mublin/products/brands/tr:w-870,h-100,cm-extract,fo-auto/${brand?.cover}`}
+              src={`https://ik.imagekit.io/mublin/products/brands/tr:w-870,cm-extract,fo-auto/${brand?.cover}`}
               alt={`${brand?.name} cover`}
               mih={isMobile ? 80 : 100}
               w="100%"
-              fit="cover"
+              fit="fill"
             />
           </Box>
         ) : (
@@ -155,12 +155,13 @@ export default function Brand() {
             }
             size={100}
             radius="xl"
+            alt={brand?.name}
           />
         </Center>
         <Flex direction="column" align="center">
-          <Title order={1} fz="h2" visibleFrom="sm">
+          {/* <Title order={1} fz="h2" visibleFrom="sm">
             {brand?.name}
-          </Title>
+          </Title> */}
           <Text size="xs" c="dimmed" ta="center">
             {brand?.brands_categories?.name_ptbr}
           </Text>
@@ -176,7 +177,7 @@ export default function Brand() {
         <Stack gap={10} mx={{ base: 'lg', sm: 0 }}>
           {/* Artists Section */}
           <Box mt="md">
-            <Title order={2} fz="h5" fw={500} mb="xs">
+            <Title order={4} fw={500} mb="xs">
               Artistas
             </Title>
 
@@ -223,11 +224,9 @@ export default function Brand() {
           </Box>
 
           {/* Products Section */}
-          <Box mt="md">
-            <Title order={2} fz="h5" fw={500}>
-              Itens
-            </Title>
-          </Box>
+          <Title order={4} fw={500} mt="sm">
+            Itens
+          </Title>
           {isLoadingProducts ? (
             <Center pt={30}>
               <Loader size="lg" color="primary" type="bars" opacity={0.5} />

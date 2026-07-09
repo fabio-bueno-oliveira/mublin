@@ -1,8 +1,16 @@
 import { useState, useEffect } from 'react'
+import { supabase } from '../lib/supabaseClient'
+import { useAuth } from '../hooks/useAuth'
 import { useParams, Link } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Helmet } from 'react-helmet-async'
-import { fetchProductInfo, fetchProductColors, fetchProductOwners } from '../queries/gear'
+import {
+  fetchProductInfo,
+  fetchProductColors,
+  fetchProductOwners,
+  fetchCheckFavoriteProduct,
+  toggleFavoriteProduct,
+} from '../queries/gear'
 import {
   Container,
   Grid,
@@ -11,6 +19,7 @@ import {
   Flex,
   Stack,
   Center,
+  Button,
   Title,
   Text,
   Image,
@@ -19,14 +28,12 @@ import {
   ColorSwatch,
   ActionIcon,
   Skeleton,
-  Modal,
-  ScrollArea,
   Affix,
-  Transition,
   Paper,
   Avatar,
   em,
 } from '@mantine/core'
+import { notifications } from '@mantine/notifications'
 import { useMediaQuery, useWindowScroll } from '@mantine/hooks'
 
 import {
@@ -35,6 +42,9 @@ import {
   IconDiamond,
   IconChevronUp,
   IconMessage,
+  IconHeart,
+  IconHeartFilled,
+  IconPlus,
 } from '@tabler/icons-react'
 import AppNavbarMobile from '../components/AppNavbarMobile'
 import parse from 'html-react-parser'
@@ -48,7 +58,8 @@ const PATH_COLOR_SAMPLE = 'https://ik.imagekit.io/mublin/products/colors/'
 
 export default function GearItem() {
   const { slug } = useParams()
-  const [modalZoomOpen, setModalZoomOpen] = useState(false)
+  const { user } = useAuth()
+  const queryClient = useQueryClient()
   const [selectedColorId, setSelectedColorId] = useState(null)
   const isMobile = useMediaQuery(`(max-width: ${em(750)})`)
   const [, scrollTo] = useWindowScroll()
@@ -79,10 +90,38 @@ export default function GearItem() {
     },
   })
 
+  const { data: userGearItem, isLoading: loadingUserGearItem } = useQuery({
+    queryKey: ['user-gear-item', user?.id, product?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('profile_gear')
+        .select('id')
+        .eq('id_user', user.id)
+        .eq('id_product', product.id)
+        .maybeSingle()
+
+      if (error) {
+        throw new Error(error.message)
+      }
+      return data
+    },
+    enabled: !!user?.id && !!product?.id,
+    staleTime: 1000 * 60 * 5,
+  })
+
+  const alreadyAdded = !!userGearItem
+
   const { data: owners = [], isLoading: isLoadingOwners } = useQuery({
     queryKey: ['productOwners', product?.id],
     queryFn: () => fetchProductOwners(product?.id),
     enabled: !!product?.id,
+    staleTime: 1000 * 60 * 5,
+  })
+
+  const { data: favoriteInfo, isLoading: loadingFavoriteInfo } = useQuery({
+    queryKey: ['product-favorite-info', product?.id],
+    queryFn: () => fetchCheckFavoriteProduct(product.id, user.id),
+    enabled: !!product?.id && !!user?.id,
     staleTime: 1000 * 60 * 5,
   })
 
@@ -94,7 +133,51 @@ export default function GearItem() {
 
   const hasColors = productColors.length > 0
   const activePicture = hasColors ? selectedColor?.picture : product?.picture
-  const zoomSrc = activePicture ? PATH_PRODUCT_IMG + activePicture : undefined
+  const zoomSrc = activePicture ? activePicture : undefined
+
+  const { mutate: handleToggleFavorite, isPending: togglingFavorite } = useMutation({
+    mutationFn: (currentlyFavorited) =>
+      toggleFavoriteProduct(product.id, user.id, currentlyFavorited),
+
+    onMutate: async (currentlyFavorited) => {
+      const queryKey = ['product-favorite-info', product.id]
+
+      await queryClient.cancelQueries({ queryKey })
+
+      const previousFavoriteInfo = queryClient.getQueryData(queryKey)
+
+      queryClient.setQueryData(queryKey, currentlyFavorited ? null : { id: 'optimistic' })
+
+      return { previousFavoriteInfo }
+    },
+
+    onError: (error, _currentlyFavorited, context) => {
+      queryClient.setQueryData(
+        ['product-favorite-info', product.id],
+        context?.previousFavoriteInfo,
+      )
+      notifications.show({
+        title: 'Ops!',
+        message: error.message || 'Não foi possível alterar o favorito',
+        color: 'red',
+      })
+    },
+
+    onSuccess: (_data, currentlyFavorited) => {
+      notifications.show({
+        title: currentlyFavorited ? 'Removido' : 'Adicionado',
+        message: currentlyFavorited
+          ? 'Produto removido dos seus favoritos'
+          : 'Produto adicionado aos seus favoritos',
+        color: 'green',
+      })
+    },
+
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['product-favorite-info', product.id] })
+      queryClient.invalidateQueries({ queryKey: ['user-favorite-products', user.id] })
+    },
+  })
 
   if (isLoading) {
     return (
@@ -136,13 +219,13 @@ export default function GearItem() {
 
       {isMobile && (
         <Affix position={{ top: 0, left: 0 }} w="100%">
-          <AppNavbarMobile pageName={`${product?.brands?.name} ${product?.name}`} />
+          <AppNavbarMobile pageName="Detalhes do item" />
         </Affix>
       )}
 
       <Container size="lg" mt={{ base: 60, sm: 16 }} pb={20}>
         {/* Header: logo da marca + nome */}
-        <Flex gap={14} align="center" mb={24}>
+        <Flex gap={14} align="center" mb={14}>
           <Anchor component={Link} to={`/brand/${product?.brands?.slug}`}>
             <Image
               src={
@@ -177,7 +260,7 @@ export default function GearItem() {
 
               {product?.product_series?.name}
             </Text>
-            <Title order={1} fz="h3" fw={600} lh={1.2}>
+            <Title order={1} fz="h3" fw={600} lh={1.1}>
               {product?.name}
             </Title>
             {product?.subtitle && (
@@ -185,21 +268,57 @@ export default function GearItem() {
                 {product?.subtitle}
               </Text>
             )}
-            <Group gap={6} mt={4}>
-              {product?.is_rare && (
-                <Group gap={4} align="center">
-                  <IconDiamond size={14} color="var(--mantine-color-indigo-5)" />
-                  <Text size="xs" c="indigo" fw={500}>
-                    Item raro ou limitado
-                  </Text>
-                </Group>
-              )}
-            </Group>
+            {product?.is_rare && (
+              <Group gap={4} align="center">
+                <IconDiamond size={14} color="var(--mantine-color-indigo-5)" />
+                <Text size="xs" c="indigo" fw={500}>
+                  Item raro ou limitado
+                </Text>
+              </Group>
+            )}
+            {product?.is_discontinued && (
+              <Badge color="gray" variant="outline" size="xs" opacity={0.6}>
+                Descontinuado pelo fabricante
+              </Badge>
+            )}
           </Box>
         </Flex>
 
+        <Group gap="xs">
+          <Button
+            mb={14}
+            onClick={() => handleToggleFavorite(!!favoriteInfo?.id)}
+            loading={togglingFavorite}
+            disabled={loadingFavoriteInfo || togglingFavorite}
+            leftSection={
+              favoriteInfo?.id ? (
+                <IconHeartFilled size={16} color="red" />
+              ) : (
+                <IconHeart size={16} />
+              )
+            }
+            variant="default"
+            size="xs"
+            radius="md"
+          >
+            {favoriteInfo?.id ? 'Salvo' : 'Salvar'}
+          </Button>
+          <Button
+            mb={14}
+            leftSection={alreadyAdded ? <IconX size={16} /> : <IconPlus size={16} />}
+            variant="default"
+            size="xs"
+            radius="md"
+            component={Link}
+            to={alreadyAdded ? '/settings/gear' : `/new/gear?id=${product?.id}`}
+            loading={isLoading || loadingUserGearItem}
+            disabled={isLoading || loadingUserGearItem}
+          >
+            {alreadyAdded ? 'Remover do meu equipamento' : 'Adicionar ao meu equipamento'}
+          </Button>
+        </Group>
+
         <Grid gutter="xl">
-          {/* Coluna esquerda: imagem + swatches */}
           <Grid.Col span={{ base: 12, md: 4 }}>
             <Box pos="relative">
               <Center
@@ -208,9 +327,7 @@ export default function GearItem() {
                   borderRadius: 'var(--mantine-radius-md)',
                   overflow: 'hidden',
                   aspectRatio: '1 / 1',
-                  cursor: activePicture ? 'zoom-in' : 'default',
                 }}
-                onClick={() => activePicture && setModalZoomOpen(true)}
               >
                 <Image
                   src={activePicture ? PATH_PRODUCT_IMG + activePicture : undefined}
@@ -223,15 +340,16 @@ export default function GearItem() {
               {activePicture && (
                 <ActionIcon
                   variant="default"
-                  size="lg"
+                  size="xl"
                   radius="xl"
                   aria-label="Zoom"
                   pos="absolute"
                   bottom={10}
                   left={10}
-                  onClick={() => setModalZoomOpen(true)}
+                  component={Link}
+                  to={`zoom?src=${zoomSrc}`}
                 >
-                  <IconZoom size={18} stroke={1.5} />
+                  <IconZoom size={22} stroke={1.5} />
                 </ActionIcon>
               )}
             </Box>
@@ -292,11 +410,6 @@ export default function GearItem() {
               <Title size="md" fw={600} mb={3}>
                 Sobre
               </Title>
-              {product?.is_discontinued && (
-                <Text size="xs" mb={2}>
-                  Item descontinuado pelo fabricante
-                </Text>
-              )}
               {product?.description ? (
                 <Stack gap={4}>
                   <Text size="sm" style={{ whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
@@ -445,50 +558,6 @@ export default function GearItem() {
           </Grid.Col>
         </Grid>
       </Container>
-
-      {/* Modal zoom */}
-      <Modal
-        centered
-        fullScreen
-        opened={modalZoomOpen}
-        onClose={() => setModalZoomOpen(false)}
-        title={
-          <Box>
-            <Text size="md" fw={500}>
-              {product?.brands?.name} · {product?.name}
-            </Text>
-            {selectedColor?.colors && (
-              <Text size="sm" c="dimmed">
-                Cor: {selectedColor.colors.name_ptbr ?? selectedColor.colors.name}
-              </Text>
-            )}
-          </Box>
-        }
-        withCloseButton
-        closeButtonProps={{ icon: <IconX size={22} stroke={2} /> }}
-      >
-        <ScrollArea w="auto">
-          <Flex justify="center" mb={34}>
-            <Image w="auto" maw="100%" src={zoomSrc} fit="contain" />
-          </Flex>
-        </ScrollArea>
-        <Affix position={{ bottom: 20, right: '48.5%' }}>
-          <Transition transition="fade-up" mounted={modalZoomOpen}>
-            {(styles) => (
-              <ActionIcon
-                style={styles}
-                variant="default"
-                size="xl"
-                radius="xl"
-                aria-label="Fechar zoom"
-                onClick={() => setModalZoomOpen(false)}
-              >
-                <IconX size={18} stroke={1.5} />
-              </ActionIcon>
-            )}
-          </Transition>
-        </Affix>
-      </Modal>
     </>
   )
 }

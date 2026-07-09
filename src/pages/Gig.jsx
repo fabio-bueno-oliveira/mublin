@@ -23,6 +23,7 @@ import {
   ActionIcon,
   Alert,
   Spoiler,
+  EmptyState,
 } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
 import {
@@ -31,6 +32,8 @@ import {
   IconClock,
   IconEye,
   IconX,
+  IconZoom,
+  IconMoodSad,
 } from '@tabler/icons-react'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
@@ -44,14 +47,14 @@ const PROJECT_AVATAR_PATH = 'https://ik.imagekit.io/mublin/projects'
 // ── Helpers ───────────────────────────────────────────────
 
 function gigDate(gig) {
-  return gig?.events?.date_start ?? gig.gigs?.date ?? null
+  return gig?.events?.date_start ?? gig?.gigs?.date ?? null
 }
 
 function gigVenue(gig) {
-  if (gig.events?.venues?.name) {
-    const city = gig.events?.venues.cities?.name
-    const uf = gig.events.venues.cities?.regions?.uf
-    return `${gig.events.venues.name}${city ? ` · ${city}` : ''}${uf ? `/${uf}` : ''}`
+  if (gig?.events?.venues?.name) {
+    const city = gig?.events?.venues.cities?.name
+    const uf = gig?.events.venues.cities?.regions?.uf
+    return `${gig?.events.venues.name}${city ? ` · ${city}` : ''}${uf ? `/${uf}` : ''}`
   }
   return null
 }
@@ -124,7 +127,11 @@ export default function GigApplicationDetail() {
     openRoleDetail()
   }
 
-  const { data: gig = [], isLoading: loadingGig } = useQuery({
+  const {
+    data: gig = [],
+    isLoading: loadingGig,
+    isSuccess,
+  } = useQuery({
     queryKey: ['gig-details', id],
     queryFn: () => fetchGigDetails(id),
     enabled: !!id,
@@ -159,8 +166,8 @@ export default function GigApplicationDetail() {
     <>
       <Helmet>
         <meta charSet="utf-8" />
-        <title>{`${gig?.events?.name} · Mublin`}</title>
-        <link rel="canonical" href={`https://mublin.com/gig/${gigs?.slug}`} />
+        <title>{isSuccess ? `${gig?.events?.name} · Mublin` : 'Mublin'}</title>
+        <link rel="canonical" href={`https://mublin.com/gig/${gig?.slug}`} />
         <meta name="description" content={`Gig '${gig?.events?.name}' no Mublin`} />
       </Helmet>
       <AppNavbarMobile />
@@ -186,7 +193,7 @@ export default function GigApplicationDetail() {
                 <Skeleton height={12} width={180} radius="lg" />
               </Stack>
             </Paper>
-          ) : gig ? (
+          ) : isSuccess ? (
             <Paper p="sm" radius="lg" withBorder>
               <Stack gap={2}>
                 <Stack gap={0} mb={8}>
@@ -253,8 +260,8 @@ export default function GigApplicationDetail() {
                     <Table.Tr>
                       <Table.Th bg="transparent">Horário</Table.Th>
                       <Table.Td>
-                        das {gig.time_stage_start?.slice(0, 5)} às{' '}
-                        {gig.time_stage_end.slice(0, 5)}
+                        das {gig?.time_stage_start?.slice(0, 5)} às{' '}
+                        {gig?.time_stage_end?.slice(0, 5)}
                       </Table.Td>
                     </Table.Tr>
 
@@ -267,7 +274,7 @@ export default function GigApplicationDetail() {
 
                     <Table.Tr>
                       <Table.Th bg="transparent">Remunerado</Table.Th>
-                      <Table.Td>{gig.has_remuneration ? 'Sim' : 'Não'}</Table.Td>
+                      <Table.Td>{gig?.has_remuneration ? 'Sim' : 'Não'}</Table.Td>
                     </Table.Tr>
 
                     <Table.Tr>
@@ -279,23 +286,20 @@ export default function GigApplicationDetail() {
               </Stack>
             </Paper>
           ) : (
-            <Paper withBorder radius="lg" p="sm" ta="center">
-              <Text size="sm" c="dimmed" mb="xs">
-                Nenhuma gig agendada por enquanto.
-              </Text>
-              <Button
-                size="xs"
-                variant="default"
-                radius="xl"
-                component={Link}
-                to="/search"
-              >
-                Encontrar gigs
-              </Button>
-            </Paper>
+            <EmptyState
+              icon={<IconMoodSad />}
+              title="Gig não encontrada"
+              description="Talvez ela tenha sido removida ou você tenha digitado um endereço incorreto."
+            >
+              <EmptyState.Actions>
+                <Button variant="default" component={Link} to="/search">
+                  Encontrar gigs
+                </Button>
+              </EmptyState.Actions>
+            </EmptyState>
           )}
 
-          {gig.description && (
+          {isSuccess && (
             <Paper p="sm" radius="lg" withBorder>
               <Title order={5}>Sobre a gig</Title>
               <Spoiler
@@ -304,67 +308,74 @@ export default function GigApplicationDetail() {
                 showLabel="...ver mais"
                 hideLabel="...ver menos"
               >
-                <Text size="sm">{gig.description}</Text>
+                <Text size="sm">{gig?.description}</Text>
               </Spoiler>
             </Paper>
           )}
 
-          <Paper p="sm" radius="lg" withBorder>
-            <Title order={5} mb="xs">
-              Vagas para esta gig:
-            </Title>
-            {!loadingGig && !loadingGigApplicationDetails && (
-              <Stack>
-                {gig.gig_roles?.map((role) => (
-                  <Paper
-                    withBorder
-                    bg="mublinColor.8"
-                    c="white"
-                    key={role.id}
-                    value={role.id}
-                    p="xs"
-                  >
-                    <Group justify="space-between">
-                      <Stack gap={4}>
-                        <Group gap={6} align="center">
-                          <Text size="md" lh={1}>
-                            {role.roles?.description_ptbr}
-                          </Text>
-                          {gig.has_remuneration && !role.is_filled && (
-                            <Badge variant="filled" size="md" color="lime.2" autoContrast>
-                              {role.fee
-                                ? role.fee.toLocaleString('pt-br', {
-                                    style: 'currency',
-                                    currency: 'BRL',
-                                  })
-                                : 'Não disponível'}
-                            </Badge>
+          {gig?.id && (
+            <Paper p="sm" radius="lg" withBorder>
+              <Title order={5} mb="xs">
+                Vagas para esta gig:
+              </Title>
+              {!loadingGig && !loadingGigApplicationDetails && (
+                <Stack>
+                  {gig?.gig_roles?.map((role) => (
+                    <Paper
+                      withBorder
+                      bg="mublinColor.8"
+                      c="white"
+                      key={role.id}
+                      value={role.id}
+                      p="xs"
+                    >
+                      <Group justify="space-between">
+                        <Stack gap={4}>
+                          <Group gap={6} align="center">
+                            <Text size="md" lh={1}>
+                              {role.roles?.description_ptbr}
+                            </Text>
+                            {gig?.has_remuneration && !role.is_filled && (
+                              <Badge
+                                variant="filled"
+                                size="md"
+                                color="lime.2"
+                                autoContrast
+                              >
+                                {role.fee
+                                  ? role.fee.toLocaleString('pt-br', {
+                                      style: 'currency',
+                                      currency: 'BRL',
+                                    })
+                                  : 'Não disponível'}
+                              </Badge>
+                            )}
+                            {role.is_filled && (
+                              <Badge variant="outline" size="md" color="white">
+                                Vaga preenchida
+                              </Badge>
+                            )}
+                          </Group>
+                          {role.id === gigApplication?.gig_roles.id && (
+                            <Text size="xs" lh={1}>
+                              ✓ Você aplicou para esta vaga{' '}
+                              {dayjs(gigApplication.created_at).fromNow()}
+                            </Text>
                           )}
-                          {role.is_filled && (
-                            <Badge variant="outline" size="md" color="white">
-                              Vaga preenchida
-                            </Badge>
-                          )}
-                        </Group>
-                        {role.id === gigApplication?.gig_roles.id && (
-                          <Text size="xs" lh={1}>
-                            ✓ Você aplicou para esta vaga{' '}
-                            {dayjs(gigApplication.created_at).fromNow()}
-                          </Text>
-                        )}
-                      </Stack>
-                      <ActionIcon
-                        size="lg"
-                        onClick={() => handleOpenModalRoleDetail(role)}
-                      >
-                        <IconEye size={22} color="white" />
-                      </ActionIcon>
-                    </Group>
-                  </Paper>
-                ))}
-              </Stack>
-            )}
-          </Paper>
+                        </Stack>
+                        <ActionIcon
+                          size="lg"
+                          onClick={() => handleOpenModalRoleDetail(role)}
+                        >
+                          <IconEye size={22} color="white" />
+                        </ActionIcon>
+                      </Group>
+                    </Paper>
+                  ))}
+                </Stack>
+              )}
+            </Paper>
+          )}
         </Stack>
       </Container>
       <Modal

@@ -21,7 +21,6 @@ import {
   useMantineColorScheme,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import ProPlanBadge from '../components/ProPlanBadge'
 import {
   IconUser,
   IconSettings,
@@ -33,6 +32,7 @@ import {
   IconUpload,
   IconMusic,
   IconCalendar,
+  IconBookmark,
 } from '@tabler/icons-react'
 
 const AVATAR_BASE =
@@ -125,6 +125,7 @@ export default function Menu() {
     { icon: IconUser, label: 'Ir para meu perfil', to: `/${profile?.username}` },
     { icon: IconMusic, label: 'Meus projetos de música', to: `/projects` },
     { icon: IconCalendar, label: 'Minhas gigs', to: `/gigs` },
+    { icon: IconBookmark, label: 'Salvos', to: `/saved` },
     { icon: IconSettings, label: 'Configurações', to: `/settings` },
     // { icon: IconCalendarEvent,          label: 'Gigs',                          to: '/gigs' },
     // { icon: IconCalendarMonth,          label: 'Disponibilidade para gigs',     to: '/settings/availability' },
