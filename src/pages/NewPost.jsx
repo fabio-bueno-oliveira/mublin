@@ -27,7 +27,15 @@ import {
 } from '@mantine/core'
 import { useDebouncedCallback } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
-import { IconMicrophone2, IconBox, IconLink, IconPhoto, IconX } from '@tabler/icons-react'
+import {
+  IconMicrophone2,
+  IconBox,
+  IconLink,
+  IconPhoto,
+  IconX,
+  IconVideo,
+  IconLock,
+} from '@tabler/icons-react'
 
 const AVATAR_PATH =
   'https://ik.imagekit.io/mublin/tr:h-68,c-maintain_ratio/users/avatars/'
@@ -167,6 +175,16 @@ export default function NewPost() {
   const [isUploadingImage, setIsUploadingImage] = useState(false)
   const [submitting, setSubmitting] = useState(false)
 
+  // Vídeo nativo (upload direto para o Supabase Storage, exclusivo Pro)
+  const videoInputRef = useRef(null)
+  const [videoMode, setVideoMode] = useState('none') // 'none' | 'youtube' | 'upload'
+  const [isUploadingVideo, setIsUploadingVideo] = useState(false)
+  const [nativeVideoPreview, setNativeVideoPreview] = useState('')
+  const [nativeVideoIsVertical, setNativeVideoIsVertical] = useState(false)
+  const [nativeVideoPublicUrl, setNativeVideoPublicUrl] = useState('')
+  const [nativeVideoStoragePath, setNativeVideoStoragePath] = useState('')
+  const [nativeVideoId, setNativeVideoId] = useState(null)
+
   const { data: savedProjects = [], isLoading: loadingProjects } = useQuery({
     queryKey: ['user-home-projects', user?.id],
     queryFn: () => fetchUserProjects(user.id),
@@ -261,6 +279,145 @@ export default function NewPost() {
     }
   }
 
+  // Lê a orientação do vídeo (vertical/horizontal) antes de subir, usando um <video> temporário
+  function readVideoOrientation(file) {
+    return new Promise((resolve) => {
+      const url = URL.createObjectURL(file)
+      const videoEl = document.createElement('video')
+      videoEl.preload = 'metadata'
+      videoEl.src = url
+      videoEl.onloadedmetadata = () => {
+        resolve(videoEl.videoHeight > videoEl.videoWidth)
+      }
+      videoEl.onerror = () => {
+        URL.revokeObjectURL(url)
+        resolve(false)
+      }
+    })
+  }
+
+  async function handleVideoFileChange(file) {
+    if (!file) {
+      return
+    }
+
+    if (profile?.plan !== 'Pro') {
+      notifications.show({
+        color: 'red',
+        position: 'top-center',
+        message: 'O upload de vídeo é exclusivo para assinantes Pro.',
+      })
+      return
+    }
+
+    if (file.type !== 'video/mp4') {
+      notifications.show({
+        color: 'red',
+        position: 'top-center',
+        message: 'Envie um arquivo no formato .mp4.',
+      })
+      return
+    }
+
+    const maxSizeMb = 25
+    if (file.size > maxSizeMb * 1024 * 1024) {
+      notifications.show({
+        color: 'red',
+        position: 'top-center',
+        message: `O vídeo deve ter no máximo ${maxSizeMb}MB.`,
+      })
+      return
+    }
+
+    setIsUploadingVideo(true)
+
+    let uploadedPath = null
+
+    try {
+      const isVertical = await readVideoOrientation(file)
+      const path = `${user.id}/${crypto.randomUUID()}.mp4`
+      uploadedPath = path
+
+      const { error: uploadError } = await supabase.storage
+        .from('mublin-videos')
+        .upload(path, file, {
+          cacheControl: '3600',
+          upsert: false,
+          contentType: file.type,
+        })
+
+      if (uploadError) {
+        throw uploadError
+      }
+
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from('mublin-videos').getPublicUrl(path)
+
+      const { data: videoRow, error: insertError } = await supabase
+        .from('videos')
+        .insert({
+          user_id: user.id,
+          source: 'mublin',
+          storage_path: path,
+          is_vertical: isVertical,
+        })
+        .select('id')
+        .single()
+
+      if (insertError) {
+        throw insertError
+      }
+
+      setNativeVideoPreview(URL.createObjectURL(file))
+      setNativeVideoIsVertical(isVertical)
+      setNativeVideoPublicUrl(publicUrl)
+      setNativeVideoStoragePath(path)
+      setNativeVideoId(videoRow.id)
+      setVideoMode('upload')
+      setShowVideoField(false)
+      setVideoUrl('')
+    } catch (err) {
+      console.error('Erro ao enviar vídeo:', err)
+      if (uploadedPath) {
+        await supabase.storage.from('mublin-videos').remove([uploadedPath])
+      }
+      notifications.show({
+        color: 'red',
+        position: 'top-center',
+        message: 'Erro ao enviar vídeo. Tente novamente.',
+      })
+    } finally {
+      setIsUploadingVideo(false)
+    }
+  }
+
+  async function handleRemoveNativeVideo() {
+    try {
+      if (nativeVideoId) {
+        await supabase.from('videos').delete().eq('id', nativeVideoId)
+      }
+      if (nativeVideoStoragePath) {
+        await supabase.storage.from('mublin-videos').remove([nativeVideoStoragePath])
+      }
+    } catch (err) {
+      console.error('Erro ao remover vídeo:', err)
+    } finally {
+      if (nativeVideoPreview) {
+        URL.revokeObjectURL(nativeVideoPreview)
+      }
+      setNativeVideoPreview('')
+      setNativeVideoIsVertical(false)
+      setNativeVideoPublicUrl('')
+      setNativeVideoStoragePath('')
+      setNativeVideoId(null)
+      setVideoMode('none')
+      if (videoInputRef.current) {
+        videoInputRef.current.value = ''
+      }
+    }
+  }
+
   async function handleSubmit() {
     if (!body.trim()) {
       notifications.show({
@@ -275,7 +432,11 @@ export default function NewPost() {
 
     const payload = {
       body: body.trim(),
-      video_url: videoUrl.trim() || null,
+      video_url: videoMode === 'youtube' ? videoUrl.trim() || null : null,
+      video_source: videoMode === 'upload' ? 'mublin' : null,
+      video_storage_path: videoMode === 'upload' ? nativeVideoPublicUrl : null,
+      video_title: videoMode === 'upload' ? body.trim().slice(0, 60) || null : null,
+      video_is_vertical: videoMode === 'upload' ? nativeVideoIsVertical : null,
       image: postImage || null,
       author_profile_id: authorType === 'profile' ? user.id : null,
       author_project_id:
@@ -453,17 +614,60 @@ export default function NewPost() {
 
         {/* Vídeo */}
         <Box>
-          {!showVideoField ? (
-            <Button
-              variant="subtle"
-              color="gray"
-              size="xs"
-              leftSection={<IconLink size={13} />}
-              onClick={() => setShowVideoField(true)}
-            >
-              Adicionar link de vídeo do YouTube
-            </Button>
-          ) : (
+          {videoMode === 'none' && !showVideoField && (
+            <Group gap="xs">
+              <Button
+                variant="subtle"
+                color="gray"
+                size="xs"
+                leftSection={<IconLink size={13} />}
+                onClick={() => {
+                  setShowVideoField(true)
+                  setVideoMode('youtube')
+                }}
+              >
+                Adicionar link de vídeo do YouTube
+              </Button>
+
+              <Button
+                variant="subtle"
+                color="gray"
+                size="xs"
+                leftSection={
+                  isUploadingVideo ? (
+                    <Loader size={13} />
+                  ) : profile?.plan === 'Pro' ? (
+                    <IconVideo size={13} />
+                  ) : (
+                    <IconLock size={13} />
+                  )
+                }
+                component="label"
+                htmlFor="post-video-input"
+                disabled={isUploadingVideo}
+              >
+                {isUploadingVideo
+                  ? 'Enviando vídeo...'
+                  : profile?.plan === 'Pro'
+                    ? 'Upload de vídeo'
+                    : 'Upload de vídeo (exclusivo Pro)'}
+              </Button>
+              <input
+                ref={videoInputRef}
+                id="post-video-input"
+                type="file"
+                accept="video/mp4"
+                style={{ display: 'none' }}
+                onChange={(e) => {
+                  if (e.target.files?.[0]) {
+                    handleVideoFileChange(e.target.files[0])
+                  }
+                }}
+              />
+            </Group>
+          )}
+
+          {showVideoField && videoMode === 'youtube' && (
             <Group gap="xs" align="flex-end">
               <TextInput
                 flex={1}
@@ -480,11 +684,38 @@ export default function NewPost() {
                 onClick={() => {
                   setShowVideoField(false)
                   setVideoUrl('')
+                  setVideoMode('none')
                 }}
               >
                 <IconX size={14} />
               </ActionIcon>
             </Group>
+          )}
+
+          {videoMode === 'upload' && nativeVideoPreview && (
+            <Box style={{ position: 'relative', display: 'inline-block' }}>
+              <video
+                src={nativeVideoPreview}
+                muted
+                playsInline
+                controls
+                style={{
+                  display: 'block',
+                  maxWidth: nativeVideoIsVertical ? 220 : 400,
+                  borderRadius: 12,
+                }}
+              />
+              <ActionIcon
+                color="red"
+                variant="filled"
+                size="sm"
+                radius="xl"
+                style={{ position: 'absolute', top: 6, right: 6 }}
+                onClick={handleRemoveNativeVideo}
+              >
+                <IconX size={12} />
+              </ActionIcon>
+            </Box>
           )}
         </Box>
 
@@ -550,7 +781,7 @@ export default function NewPost() {
             fw={700}
             loading={submitting}
             onClick={handleSubmit}
-            disabled={!body.trim()}
+            disabled={!body.trim() || isUploadingVideo}
           >
             Publicar
           </Button>
