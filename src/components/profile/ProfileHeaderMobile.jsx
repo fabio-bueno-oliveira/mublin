@@ -10,11 +10,7 @@ import {
   Group,
   Anchor,
 } from '@mantine/core'
-import {
-  IconRosetteDiscountCheck,
-  IconLink,
-  IconShieldCheckFilled,
-} from '@tabler/icons-react'
+import { IconRosetteDiscountCheck, IconLink } from '@tabler/icons-react'
 import { isProfileLive } from '../../utils/live'
 import { truncateString } from '../../utils/formatter'
 import { getAvatarUrl } from '../../utils/profile'
@@ -104,21 +100,6 @@ export default function ProfileHeaderMobile({ profile, city, region, country, us
             </Text>
           </Flex>
         </Anchor>
-      )}
-
-      {user?.id === profile.id && (
-        <Button
-          mt="md"
-          component={Link}
-          to="/settings/profile"
-          size="sm"
-          radius="md"
-          variant="filled"
-          className="defaultMublinButton"
-          fullWidth
-        >
-          Editar meu perfil
-        </Button>
       )}
     </Box>
   )

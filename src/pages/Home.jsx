@@ -123,7 +123,7 @@ export default function Home() {
           </>
         ) : (
           <>
-            <Title size="24px" fw={600} lh={1.2} ta="center" my="xl">
+            <Title size="24px" fw={600} lh={1.2} ta="center" my="md">
               {greeting}, {profile?.username}
             </Title>
             {/* <Text size="sm" c="dimmed">

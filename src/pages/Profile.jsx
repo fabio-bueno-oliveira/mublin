@@ -46,7 +46,6 @@ import {
   Affix,
   Transition,
   Menu,
-  Select,
   em,
   Badge,
   Center,
@@ -69,24 +68,22 @@ import {
   IconCircleArrowRightFilled,
   IconCheck,
   IconBrandWhatsapp,
-  IconPencil,
   IconTrophy,
   IconDotsVerticalFilled,
   IconArrowsMaximize,
-  IconPlane,
   IconGuitarPick,
   IconRosetteDiscountCheck,
   IconSend,
   IconHeart,
   IconUserX,
   IconUserPlus,
+  IconEye,
 } from '@tabler/icons-react'
 import ProfileHeaderMobile from '../components/profile/ProfileHeaderMobile'
 import AppNavbarMobile from '../components/AppNavbarMobile'
 import ProPlanBadge from '../components/ProPlanBadge'
 import SimilarProfiles from '../components/SimilarProfiles'
 import { getAvatarUrl } from '../utils/profile'
-import { truncateString } from '../utils/formatter'
 import { isProfileLive } from '../utils/live'
 import { isMublinOG } from '../utils/badges'
 import { AVAILABLE_FROM_LABELS } from '../constants/availability'
@@ -592,6 +589,7 @@ export default function Profile() {
             region={region}
             country={country}
             user={user}
+            profileViewCount={profileViewCount}
           />
         )}
         <Grid>
@@ -713,26 +711,6 @@ export default function Profile() {
                     title="Perfil verificado"
                   />
                 )}
-                {/* {!!profile?.is_legend && (
-                    <IconShieldCheckFilled
-                      className="iconLegend"
-                      title="Lenda da música"
-                    />
-                  )} */}
-                {/* {profile?.plan === 'Pro' && <ProPlanBadge />} */}
-                {user?.id === profile.id && (
-                  <ActionIcon
-                    component={Link}
-                    to="/settings/profile"
-                    radius="xl"
-                    size="sm"
-                    variant="subtle"
-                    aria-label="Editar meu perfil"
-                    title="Editar meu perfil"
-                  >
-                    <IconPencil size={18} stroke={2} />
-                  </ActionIcon>
-                )}
               </Flex>
               {profile.title && (
                 <Text size="sm" fw={400} maw={420} lh={1.2} my={3}>
@@ -765,31 +743,56 @@ export default function Profile() {
                   </Group>
                 )}
               </Flex>
-              <Group gap="md" mt={3}>
-                <Anchor underline="never" onClick={openFollowers}>
-                  <Text size="sm" fw={600}>
-                    {followersList.length} seguidores
-                  </Text>
-                </Anchor>
-                <Anchor underline="never" onClick={openFollowing}>
-                  <Text size="sm" fw={600}>
-                    {followingList.length} seguindo
-                  </Text>
-                </Anchor>
-              </Group>
-
-              {isOwnProfile && typeof profileViewCount === 'number' && (
-                <Text size="xs" c="dimmed" mt={4}>
-                  {profileViewCount === 0
-                    ? 'Ninguém visualizou seu perfil ainda'
-                    : profileViewCount === 1
-                      ? '1 pessoa visualizou seu perfil'
-                      : `${profileViewCount} pessoas visualizaram seu perfil`}
-                </Text>
-              )}
             </Stack>
 
-            <Stack gap={12} mt={{ base: 'md', md: 'md' }}>
+            <Group
+              gap="md"
+              justify={isMobile ? 'center' : 'flex-start'}
+              mt={{ base: 'sm', md: 'xs' }}
+            >
+              <Anchor underline="never" onClick={openFollowers}>
+                <Text size="sm" fw={600}>
+                  {followersList.length} seguidores
+                </Text>
+              </Anchor>
+              <Anchor underline="never" onClick={openFollowing}>
+                <Text size="sm" fw={600}>
+                  {followingList.length} seguindo
+                </Text>
+              </Anchor>
+            </Group>
+
+            {user?.id === profile.id && (
+              <Button
+                mt="md"
+                component={Link}
+                to="/settings/profile"
+                size="sm"
+                radius="md"
+                variant="filled"
+                className="defaultMublinButton"
+                fullWidth
+              >
+                Editar meu perfil
+              </Button>
+            )}
+
+            <Stack gap={12} mt={{ base: 'md', md: 'sm' }}>
+              {isOwnProfile && typeof profileViewCount === 'number' && (
+                <SectionPanel id="visitors">
+                  <Group gap="xs">
+                    <IconEye color="gray" size={16} />
+                    <Text size="sm" c="dimmed">
+                      {profileViewCount === 0
+                        ? 'Ninguém visualizou seu perfil ainda'
+                        : profileViewCount === 1
+                          ? '1 pessoa visualizou seu perfil'
+                          : `${profileViewCount} pessoas visualizaram seu perfil`}
+                    </Text>
+                  </Group>
+                </SectionPanel>
+              )}
+
               <SectionPanel id="about">
                 {profile.bio && (
                   <>
@@ -1164,7 +1167,7 @@ export default function Profile() {
                           <IconArrowsMaximize size={18} />
                         </ActionIcon>
                       </Group>
-                      <Group gap={10} mb={4} mx={{ base: 'sm', md: 0 }}>
+                      {/* <Group gap={10} mb={4} mx={{ base: 'sm', md: 0 }}>
                         {gearCategories.length > 1 && (
                           <Select
                             size="md"
@@ -1184,7 +1187,7 @@ export default function Profile() {
                             ]}
                           />
                         )}
-                      </Group>
+                      </Group> */}
                       <Box h="100%">
                         <Scroller
                           key={gear.length}

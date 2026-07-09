@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useAuth } from '../hooks/useAuth'
 import { Helmet } from 'react-helmet-async'
 import { useParams, Link } from 'react-router-dom'
@@ -33,6 +33,7 @@ const PROJECT_AVATAR_PATH = 'https://ik.imagekit.io/mublin/projects/'
 
 export default function Event() {
   const { slug } = useParams()
+  const [expandedDescription, setExpandedDescription] = useState(false)
 
   useEffect(() => {
     scrollTo({ y: 0 })
@@ -120,7 +121,14 @@ export default function Event() {
                           {event.author?.full_name}
                         </Text>
                       </Flex>
-                      <Text mt="md" size="sm" lineClamp={3}>
+                      <Text
+                        mt="md"
+                        fz="md"
+                        lh={1.4}
+                        style={{ whiteSpace: 'pre-line', cursor: 'default' }}
+                        lineClamp={expandedDescription ? undefined : 3}
+                        onClick={() => setExpandedDescription(!expandedDescription)}
+                      >
                         {event?.description}
                       </Text>
                     </Stack>
@@ -179,7 +187,7 @@ export default function Event() {
                             ))}
                           </Group>
                         ) : (
-                          <Text size="xs" mb="md">
+                          <Text size="sm" mb="md">
                             Nenhuma gig cadastrada para este evento
                           </Text>
                         )}

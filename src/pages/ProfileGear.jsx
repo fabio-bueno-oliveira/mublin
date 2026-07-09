@@ -10,11 +10,11 @@ import {
 import { useAuth } from '../hooks/useAuth'
 import {
   Container,
+  Affix,
   Grid,
   EmptyState,
   Button,
   Avatar,
-  Title,
   Text,
   Group,
   Flex,
@@ -29,18 +29,18 @@ import {
   Modal,
   Center,
   Paper,
+  em,
 } from '@mantine/core'
-import { useDisclosure } from '@mantine/hooks'
+import { useMediaQuery, useDisclosure } from '@mantine/hooks'
 import Masonry, { ResponsiveMasonry } from 'react-responsive-masonry'
 import {
   IconMoodSad,
-  IconRosetteDiscountCheckFilled,
-  IconShieldCheckFilled,
   IconArrowLeft,
   IconMusic,
   IconZoom,
   IconRosetteDiscountCheck,
 } from '@tabler/icons-react'
+import AppNavbarMobile from '../components/AppNavbarMobile'
 import parse from 'html-react-parser'
 import linkifyStr from 'linkify-string'
 import { getAvatarUrl } from '../utils/profile'
@@ -57,6 +57,7 @@ export default function ProfileGear() {
   const { loading: authLoading } = useAuth()
   const { setHideFooter } = useUI()
   const navigate = useNavigate()
+  const isMobile = useMediaQuery(`(max-width: ${em(750)})`)
 
   // ── Modal de detalhe ──────────────────────────────────
   const [modalOpened, { open: openModal, close: closeModal }] = useDisclosure(false)
@@ -142,7 +143,16 @@ export default function ProfileGear() {
 
   return (
     <>
-      <Grid gap="xl">
+      {isMobile && (
+        <Affix position={{ top: 0, left: 0 }} w="100%">
+          <AppNavbarMobile
+            pageName={profile.username}
+            // profile={profile}
+            // featured={profile.is_open_to_work}
+          />
+        </Affix>
+      )}
+      <Grid gap="xl" mt={{ base: 51, sm: 0 }}>
         <Grid.Col span={{ base: 12, md: 2 }} mt="md" visibleFrom="sm">
           <Center mb="sm">
             <Link to={`/${profile.username}`}>
@@ -168,7 +178,7 @@ export default function ProfileGear() {
             equipamento
           </Text>
         </Grid.Col>
-        <Grid.Col span={{ base: 12, md: 10 }} mt="lg">
+        <Grid.Col span={{ base: 12, md: 10 }} mt="lg" px={{ base: 'md', md: 0 }}>
           {loadingGear ? null : gear.length === 0 ? (
             <EmptyState>
               <EmptyState.Indicator>
@@ -389,7 +399,7 @@ export default function ProfileGear() {
                 mt={2}
                 onClick={closeModal}
               >
-                Ir para a página deste produto →
+                Ir para a página deste item →
               </Anchor>
             </Group>
           </>
