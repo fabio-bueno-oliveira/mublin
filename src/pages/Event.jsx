@@ -129,54 +129,60 @@ export default function Event() {
                       <Text>Carregando gigs relacionadas a este evento...</Text>
                     ) : (
                       <Box>
-                        <Text size="sm" c="dimmed" lh={1}>
-                          Gigs para este evento
+                        <Text size="sm" c="dimmed">
+                          Gigs cadastradas para este evento:
                         </Text>
-                        <Group mb="md" mt={8}>
-                          {gigs.map((gig) => (
-                            <Card p="xs" w={180}>
-                              <Avatar
-                                src={
-                                  gig.project?.picture
-                                    ? `${PROJECT_AVATAR_PATH}/${gig.project?.id}/tr:h-200,w-200,c-maintain_ratio/${gig.project?.picture}`
-                                    : undefined
-                                }
-                                radius="sm"
-                                size={40}
-                                mb="xs"
-                              />
-                              <Text size="xs">{gig.project?.name}</Text>
-                              <Text size="xs" opacity={0.7}>
-                                {gig.project?.type?.name_ptbr}
-                              </Text>
-                              {gig.roles?.length > 0 && (
-                                <List listStyleType="none" mt={6} type="unordered">
-                                  {gig.roles?.map((role) => (
-                                    <List.Item
-                                      icon={
-                                        <ThemeIcon
-                                          color={role.is_filled ? 'green' : 'blue'}
-                                          size={18}
-                                          radius="md"
-                                        >
-                                          {role.is_filled ? (
-                                            <IconCheck size={12} />
-                                          ) : (
-                                            <IconClock size={12} />
-                                          )}
-                                        </ThemeIcon>
-                                      }
-                                    >
-                                      <Text size="11px">
-                                        {role.role.description_ptbr}
-                                      </Text>
-                                    </List.Item>
-                                  ))}
-                                </List>
-                              )}
-                            </Card>
-                          ))}
-                        </Group>
+                        {gigs.length > 0 ? (
+                          <Group mb="md" mt={8}>
+                            {gigs.map((gig) => (
+                              <Card p="xs" w={180}>
+                                <Avatar
+                                  src={
+                                    gig.project?.picture
+                                      ? `${PROJECT_AVATAR_PATH}/${gig.project?.id}/tr:h-200,w-200,c-maintain_ratio/${gig.project?.picture}`
+                                      : undefined
+                                  }
+                                  radius="sm"
+                                  size={40}
+                                  mb="xs"
+                                />
+                                <Text size="xs">{gig.project?.name}</Text>
+                                <Text size="xs" opacity={0.7}>
+                                  {gig.project?.type?.name_ptbr}
+                                </Text>
+                                {gig.roles?.length > 0 && (
+                                  <List listStyleType="none" mt={6} type="unordered">
+                                    {gig.roles?.map((role) => (
+                                      <List.Item
+                                        icon={
+                                          <ThemeIcon
+                                            color={role.is_filled ? 'green' : 'blue'}
+                                            size={18}
+                                            radius="md"
+                                          >
+                                            {role.is_filled ? (
+                                              <IconCheck size={12} />
+                                            ) : (
+                                              <IconClock size={12} />
+                                            )}
+                                          </ThemeIcon>
+                                        }
+                                      >
+                                        <Text size="11px">
+                                          {role.role.description_ptbr}
+                                        </Text>
+                                      </List.Item>
+                                    ))}
+                                  </List>
+                                )}
+                              </Card>
+                            ))}
+                          </Group>
+                        ) : (
+                          <Text size="xs" mb="md">
+                            Nenhuma gig cadastrada para este evento
+                          </Text>
+                        )}
                       </Box>
                     )}
 

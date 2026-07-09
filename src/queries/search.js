@@ -175,3 +175,66 @@ export async function fetchGearOwners(productId, limit = 6) {
   }
   return data.map((r) => r.profiles).filter(Boolean)
 }
+
+export async function fetchRecentProfiles(limit = 10) {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select(
+      `
+      id,
+      created_at,
+      full_name,
+      username,
+      avatar,
+      cover_image,
+      title,
+      bio,
+      city_id,
+      region_id,
+      is_verified,
+      is_legend,
+      is_open_to_work,
+      is_live,
+      live_platform,
+      live_expires_at,
+      phone_number_is_public,
+      phone_number_is_whatsapp,
+      cities (
+        name, countries ( name, name_ptbr )
+      ),
+      regions (
+        name, uf
+      ),
+      profile_social_links (
+        id,
+        platform,
+        handle
+      ),
+      profile_roles (
+        id,
+        main_activity,
+        roles (
+          id,
+          name_ptbr,
+          name_en,
+          description_ptbr,
+          instrumentalist
+        )
+      ),
+      profile_genres (
+        id,
+        main_genre,
+        genres (
+          id, name
+        )
+      )
+    `,
+    )
+    .order('created_at', { ascending: false })
+    .limit(limit)
+
+  if (error) {
+    throw new Error(error.message)
+  }
+  return data
+}

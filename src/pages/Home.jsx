@@ -3,33 +3,32 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useQuery } from '@tanstack/react-query'
 import { fetchUserRoles } from '../queries/user'
+import { fetchRecentProfiles } from '../queries/search'
+import { fetchFeaturedProducts } from '../queries/gear'
 import { fetchEvents } from '../queries/events'
 import { fetchNewsFeed } from '../queries/feed'
 import NewsCard from '../components/feed/NewsCard'
 // prettier-ignore
 import {
-  Skeleton, Tabs,
+  Skeleton,
   Box, Card,
   Group, Flex,
   Container,
   Text, Title, 
   Image, Avatar,
-  Select, ThemeIcon
+  Select, ThemeIcon,
+  Stack,
+  Badge
 } from '@mantine/core'
 import { useMediaQuery, useScroller } from '@mantine/hooks'
 import AppNavbarMobile from '../components/AppNavbarMobile'
 import dayjs from 'dayjs'
 import 'dayjs/locale/pt-br'
-import {
-  IconChevronLeft,
-  IconChevronRight,
-  IconMusic,
-  IconUsersGroup,
-  IconUser,
-} from '@tabler/icons-react'
+import { IconUser, IconChevronLeft, IconChevronRight } from '@tabler/icons-react'
 
 const CDN_PREFIX = 'https://ik.imagekit.io/mublin'
 const EVENTS_IMG_PATH = `${CDN_PREFIX}/tr:h-320,c-maintain_ratio/events/`
+const GEAR_IMG_PATH = `${CDN_PREFIX}/products/tr:w-160,h-160,cm-pad_resize,bg-FFFFFF,fo-x/`
 const AVATAR_PATH = `${CDN_PREFIX}/tr:h-80,c-maintain_ratio/users/avatars/`
 
 export default function Home() {
@@ -37,6 +36,8 @@ export default function Home() {
   const navigate = useNavigate()
   const isMobile = useMediaQuery('(max-width: 48em)')
   const isDesktop = useMediaQuery('(min-width: 48em)')
+  const peopleScroller = useScroller()
+  const gearScroller = useScroller()
   const eventsScroller = useScroller()
   const newsScroller = useScroller()
 
@@ -57,6 +58,18 @@ export default function Home() {
     queryKey: ['profile-roles'],
     queryFn: () => fetchUserRoles(user.id),
     enabled: !!user?.id,
+    staleTime: 1000 * 60 * 5,
+  })
+
+  const { data: recentProfiles = [], isLoading: loadingRecentProfiles } = useQuery({
+    queryKey: ['recent-profiles'],
+    queryFn: () => fetchRecentProfiles(10),
+    staleTime: 1000 * 60 * 5,
+  })
+
+  const { data: featuredProducts = [], isLoading: loadingFeaturedProducts } = useQuery({
+    queryKey: ['featured-gear'],
+    queryFn: () => fetchFeaturedProducts(),
     staleTime: 1000 * 60 * 5,
   })
 
@@ -105,105 +118,271 @@ export default function Home() {
           </>
         ) : (
           <>
-            <Group justify="space-between" align="flex-start" mt={4} mb="xl">
-              <Title size="24px" fw={600} lh={1.2}>
-                {greeting}, {profile?.username}
+            <Title size="24px" fw={600} lh={1.2} ta="center" my="xl">
+              {greeting}, {profile?.username}
+            </Title>
+            {/* <Text size="sm" c="dimmed">
+              {dayjs().format('dddd, D [de] MMMM [de] YYYY')}
+            </Text> */}
+
+            <Card shadow="sm" padding="md" withBorder>
+              <Title order={4}>Gigs</Title>
+              <Text>Encontrar ou cadastrar gigs para tocar</Text>
+              <Flex
+                mt="sm"
+                gap="sm"
+                justify="space-between"
+                align="flex-start"
+                direction={isMobile ? 'column' : 'row'}
+              >
+                <Select
+                  variant="default"
+                  w={isMobile ? '100%' : '33%'}
+                  label="Sou"
+                  placeholder="Selecione"
+                  withAsterisk
+                  disabled={loadingUserRoles}
+                  defaultValue={defaultRole}
+                  data={userRolesOptions}
+                />
+                <Select
+                  w={isMobile ? '100%' : '33%'}
+                  label="Vínculo desejado"
+                  placeholder="Selecione"
+                  withAsterisk
+                  defaultValue="1"
+                  data={[
+                    { value: '1', label: 'Contratado' },
+                    { value: '2', label: 'Integrante' },
+                  ]}
+                />
+                <Select
+                  w={isMobile ? '100%' : '33%'}
+                  label="Conteúdo principal"
+                  placeholder="Selecione"
+                  withAsterisk
+                  data={[
+                    { value: '1', label: 'Autoral' },
+                    { value: '2', label: 'Cover' },
+                    { value: '3', label: 'Autoral + Cover' },
+                  ]}
+                />
+              </Flex>
+            </Card>
+
+            <Group justify="space-between" align="center" mt="xl" mb="xs">
+              <Title order={3} fw={600} fz="lg">
+                Novos por aqui
               </Title>
-              {/* <Text size="sm" c="dimmed">
-                {dayjs().format('dddd, D [de] MMMM [de] YYYY')}
-              </Text> */}
+              {recentProfiles.length > 4 && (
+                <Group>
+                  <ThemeIcon
+                    variant="default"
+                    style={{
+                      cursor: peopleScroller.canScrollStart ? 'pointer' : 'default',
+                    }}
+                    onClick={peopleScroller.scrollStart}
+                    opacity={peopleScroller.canScrollStart ? 1 : 0.5}
+                  >
+                    <IconChevronLeft style={{ width: '70%', height: '70%' }} />
+                  </ThemeIcon>
+                  <ThemeIcon
+                    variant="default"
+                    style={{
+                      cursor: peopleScroller.canScrollEnd ? 'pointer' : 'default',
+                    }}
+                    onClick={peopleScroller.scrollEnd}
+                    opacity={peopleScroller.canScrollEnd ? 1 : 0.5}
+                  >
+                    <IconChevronRight style={{ width: '70%', height: '70%' }} />
+                  </ThemeIcon>
+                </Group>
+              )}
             </Group>
 
-            <Tabs variant="pills" defaultValue="gigs">
-              <Tabs.List justify="center">
-                <Tabs.Tab leftSection={<IconMusic size={18} />} value="gigs">
-                  Gigs
-                </Tabs.Tab>
-                <Tabs.Tab leftSection={<IconUsersGroup size={18} />} value="projects">
-                  Projetos
-                </Tabs.Tab>
-                <Tabs.Tab leftSection={<IconUser size={18} />} value="people">
-                  Pessoas
-                </Tabs.Tab>
-              </Tabs.List>
+            <Box>
+              <div
+                ref={peopleScroller.ref}
+                {...peopleScroller.dragHandlers}
+                className="scrollerHidden"
+                style={{
+                  overflow: 'auto',
+                  cursor: peopleScroller.isDragging ? 'grabbing' : 'default',
+                }}
+              >
+                <Group wrap="nowrap" gap="md">
+                  {loadingRecentProfiles
+                    ? [1, 2, 3, 4, 5].map((i) => (
+                        <Skeleton
+                          key={i}
+                          width={140}
+                          height={190}
+                          radius="md"
+                          style={{ flexShrink: 0 }}
+                        />
+                      ))
+                    : recentProfiles.map((p) => {
+                        const location = p.cities?.name
+                          ? `${p.cities.name}${p.cities.countries?.name_ptbr ? `, ${p.cities.countries.name_ptbr}` : ''}`
+                          : p.regions?.name
+                            ? `${p.regions.name}${p.regions.uf ? ` - ${p.regions.uf}` : ''}`
+                            : null
 
-              <Tabs.Panel value="gigs" pt="md">
-                <Flex
-                  gap="sm"
-                  justify="space-between"
-                  align="flex-start"
-                  direction={isMobile ? 'column' : 'row'}
-                  mb="md"
-                >
-                  <Select
-                    variant="default"
-                    w={isMobile ? '100%' : '33%'}
-                    label="Sou"
-                    placeholder="Selecione"
-                    withAsterisk
-                    disabled={loadingUserRoles}
-                    defaultValue={defaultRole}
-                    data={userRolesOptions}
-                  />
-                  <Select
-                    w={isMobile ? '100%' : '33%'}
-                    label="Vínculo desejado"
-                    placeholder="Selecione"
-                    withAsterisk
-                    defaultValue="1"
-                    data={[
-                      { value: '1', label: 'Contratado' },
-                      { value: '2', label: 'Integrante' },
-                    ]}
-                  />
-                  <Select
-                    w={isMobile ? '100%' : '33%'}
-                    label="Conteúdo principal"
-                    placeholder="Selecione"
-                    withAsterisk
-                    data={[
-                      { value: '1', label: 'Autoral' },
-                      { value: '2', label: 'Cover' },
-                      { value: '3', label: 'Autoral + Cover' },
-                    ]}
-                  />
-                </Flex>
-              </Tabs.Panel>
-              <Tabs.Panel value="people" pt="md">
-                <Group justify="space-between" align="flex-start" mb="md">
-                  <Select
-                    label="Busco"
-                    placeholder="Selecione"
-                    withAsterisk
-                    data={[
-                      { value: '1', label: 'Autoral' },
-                      { value: '2', label: 'Cover' },
-                      { value: '3', label: 'Autoral + Cover' },
-                    ]}
-                  />
-                  <Select
-                    label="Conteúdo principal"
-                    placeholder="Selecione"
-                    withAsterisk
-                    data={[
-                      { value: '1', label: 'Autoral' },
-                      { value: '2', label: 'Cover' },
-                      { value: '3', label: 'Autoral + Cover' },
-                    ]}
-                  />
-                  <Select
-                    label="Conteúdo principal"
-                    placeholder="Selecione"
-                    withAsterisk
-                    data={[
-                      { value: '1', label: 'Autoral' },
-                      { value: '2', label: 'Cover' },
-                      { value: '3', label: 'Autoral + Cover' },
-                    ]}
-                  />
+                        const mainRole = p.profile_roles?.find((r) => r.main_activity)
+                          ?.roles?.name_ptbr
+
+                        return (
+                          <Link
+                            key={p.id}
+                            to={`/${p.username}`}
+                            style={{ textDecoration: 'none', color: 'inherit' }}
+                          >
+                            <Card
+                              p="xs"
+                              w={140}
+                              shadow="sm"
+                              withBorder
+                              style={{ flexShrink: 0 }}
+                            >
+                              <Stack align="center" gap={6}>
+                                <Avatar
+                                  src={p.avatar ? AVATAR_PATH + p.avatar : null}
+                                  size={64}
+                                  radius="xl"
+                                >
+                                  {!p.avatar && <IconUser size={28} />}
+                                </Avatar>
+                                <Text size="sm" fw={600} ta="center" lineClamp={1}>
+                                  {p.full_name || p.username}
+                                </Text>
+                                {mainRole && (
+                                  <Text size="xs" c="dimmed" ta="center" lineClamp={1}>
+                                    {mainRole}
+                                  </Text>
+                                )}
+                                {location && (
+                                  <Text size="10px" c="dimmed" ta="center" lineClamp={1}>
+                                    {location}
+                                  </Text>
+                                )}
+                              </Stack>
+                            </Card>
+                          </Link>
+                        )
+                      })}
                 </Group>
-              </Tabs.Panel>
-            </Tabs>
+              </div>
+            </Box>
+
+            <Group justify="space-between" align="center" mt="xl" mb="xs">
+              <Title order={3} fw={600} fz="lg">
+                Equipamentos
+              </Title>
+              {featuredProducts.length > 4 && (
+                <Group>
+                  <ThemeIcon
+                    variant="default"
+                    style={{
+                      cursor: gearScroller.canScrollStart ? 'pointer' : 'default',
+                    }}
+                    onClick={gearScroller.scrollStart}
+                    opacity={gearScroller.canScrollStart ? 1 : 0.5}
+                  >
+                    <IconChevronLeft style={{ width: '70%', height: '70%' }} />
+                  </ThemeIcon>
+                  <ThemeIcon
+                    variant="default"
+                    style={{
+                      cursor: gearScroller.canScrollEnd ? 'pointer' : 'default',
+                    }}
+                    onClick={gearScroller.scrollEnd}
+                    opacity={gearScroller.canScrollEnd ? 1 : 0.5}
+                  >
+                    <IconChevronRight style={{ width: '70%', height: '70%' }} />
+                  </ThemeIcon>
+                </Group>
+              )}
+            </Group>
+
+            <Box>
+              <div
+                ref={gearScroller.ref}
+                {...gearScroller.dragHandlers}
+                className="scrollerHidden"
+                style={{
+                  overflow: 'auto',
+                  cursor: gearScroller.isDragging ? 'grabbing' : 'default',
+                }}
+              >
+                <Group wrap="nowrap" gap="md">
+                  {loadingFeaturedProducts
+                    ? [1, 2, 3, 4, 5].map((i) => (
+                        <Skeleton
+                          key={i}
+                          width={150}
+                          height={200}
+                          radius="md"
+                          style={{ flexShrink: 0 }}
+                        />
+                      ))
+                    : featuredProducts.map((gear) => (
+                        <Link
+                          key={gear.id}
+                          to={`/gear/${gear.slug}`}
+                          style={{ textDecoration: 'none', color: 'inherit' }}
+                        >
+                          <Card
+                            p="xs"
+                            w={150}
+                            shadow="sm"
+                            withBorder
+                            style={{ flexShrink: 0 }}
+                            pos="relative"
+                          >
+                            <Card.Section>
+                              <Image
+                                src={
+                                  gear.picture
+                                    ? `${GEAR_IMG_PATH}${gear.picture}`
+                                    : undefined
+                                }
+                                height={130}
+                                fit="contain"
+                                fallbackSrc="https://placehold.co/130x130?text=?"
+                                alt={gear.name}
+                              />
+                            </Card.Section>
+                            {gear.brand_name && (
+                              <Text size="10px" c="dimmed" mt="xs" lineClamp={1}>
+                                {gear.brand_name}
+                              </Text>
+                            )}
+                            <Text size="sm" fw={600} lineClamp={1}>
+                              {gear.name}
+                            </Text>
+                            {gear.subtitle && (
+                              <Text size="xs" c="dimmed" lineClamp={1}>
+                                {gear.subtitle}
+                              </Text>
+                            )}
+                            {gear.is_rare && (
+                              <Badge
+                                size="xs"
+                                variant="light"
+                                color="yellow"
+                                pos="absolute"
+                                top={6}
+                                right={14}
+                              >
+                                Raro
+                              </Badge>
+                            )}
+                          </Card>
+                        </Link>
+                      ))}
+                </Group>
+              </div>
+            </Box>
 
             <Group justify="space-between" align="center" mt="xl" mb="xs">
               <Title order={3} fw={600} fz="lg">
@@ -283,7 +462,7 @@ export default function Home() {
               </div>
             </Box>
 
-            <Group justify="space-between" align="center" mt="xl" mb="xs">
+            <Group justify="space-between" align="center" mt="lg" mb="xs">
               <Title order={3} fw={600} fz="lg">
                 Notícias recentes
               </Title>

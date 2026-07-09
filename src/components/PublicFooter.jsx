@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { Group, Container, Text, Box, Anchor } from '@mantine/core'
 
-const LINKS = ['Sobre', 'Privacidade', 'Termos', 'Contato']
+const LINKS = ['Sobre', 'Privacidade', 'Contato']
 
 export default function PublicFooter() {
   const navigate = useNavigate()
@@ -25,7 +25,7 @@ export default function PublicFooter() {
               </Anchor>
             ))}
           </Group>
-          <Text size="xs" c="dimmed">
+          <Text size="xs" c="dimmed" visibleFrom="sm">
             © {new Date().getFullYear()} Mublin
           </Text>
         </Group>
