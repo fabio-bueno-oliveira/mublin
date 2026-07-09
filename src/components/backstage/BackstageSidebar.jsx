@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
 import { useComputedColorScheme, Box, Title, Card, Skeleton } from '@mantine/core'
-import { IconRosetteDiscountCheckFilled } from '@tabler/icons-react'
+import { IconMusic, IconRosetteDiscountCheckFilled } from '@tabler/icons-react'
 
 const AVATAR_PATH =
   'https://ik.imagekit.io/mublin/tr:h-96,c-maintain_ratio/users/avatars/'
@@ -12,7 +12,7 @@ export default function BackstageSidebar() {
   const isDark = computedColorScheme === 'dark'
 
   return (
-    <Box p="md" h="100%">
+    <Box p="md" h="100%" pt="xl">
       {loading && (
         <Card withBorder={false} shadow="xs" radius="md" p="md" mt={4} mb="md">
           <Skeleton height={48} circle mb="sm" />
@@ -21,7 +21,8 @@ export default function BackstageSidebar() {
           <Skeleton width={136} height={12} radius="md" />
         </Card>
       )}
-      <Title>Projeto</Title>
+      {/* <Title>Projeto</Title> */}
+      <IconMusic color="gray" size={44} />
     </Box>
   )
 }

@@ -66,7 +66,7 @@ export default function Project() {
   const PICTURE_AVATAR_PATH = `https://ik.imagekit.io/mublin/projects/${project?.id}/tr:h-200,w-200,c-maintain_ratio/`
   const PICTURE_COVER_PATH = `https://ik.imagekit.io/mublin/projects/${project?.id}/tr:h-100,w-1042,fo-top,c-maintain_ratio/`
   const DEFAULT_COVER_PICTURE =
-    'https://ik.imagekit.io/mublin/bg/tr:w-1042,h-100,bg-F3F3F3,fo-bottom,bl-20/project-cover-default.png'
+    'https://ik.imagekit.io/mublin/bg/tr:fo-bottom,bl-8/project-cover-default-b.png'
 
   const currentYear = new Date().getFullYear()
   const [modalJoinOpened, { open: openJoinModal, close: closeJoinModal }] =
@@ -196,20 +196,22 @@ export default function Project() {
               />
             )}
 
-            {/* Gradiente sobre a capa */}
+            {/* Gradiente escuro sobre a capa (sempre por cima da imagem) */}
             <Box
               pos="absolute"
               bottom={0}
               left={0}
               right={0}
-              h={60}
+              h={70}
               style={{
-                background: 'linear-gradient(to bottom, transparent, rgba(0,0,0,0.55))',
+                background:
+                  'linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.35) 45%, rgba(0,0,0,0.8) 100%)',
                 pointerEvents: 'none',
+                zIndex: 1,
               }}
             />
 
-            <Group pos="absolute" top={12} right={30}>
+            <Group pos="absolute" top={12} right={20}>
               {project?.on_tour && (
                 <Badge size="md" color="dark">
                   Em turnê
@@ -218,7 +220,7 @@ export default function Project() {
             </Group>
 
             {/* Avatar do projeto sobreposto */}
-            <Box pos="absolute" bottom={-30} left={30}>
+            <Box pos="absolute" bottom={-30} left={30} style={{ zIndex: 2 }}>
               {isLoading ? (
                 <Skeleton height={100} width={100} />
               ) : (
@@ -275,7 +277,7 @@ export default function Project() {
                           <Menu.Dropdown>
                             <Menu.Item
                               leftSection={<IconDoor size={14} />}
-                              onClick={() => navigate(`/backstage?project=${slug}`)}
+                              onClick={() => navigate(`/backstage/${slug}`)}
                             >
                               Acessar Backstage
                             </Menu.Item>
@@ -301,13 +303,13 @@ export default function Project() {
                     </Group>
                     <Group gap={3}>
                       {project?.instagram && (
-                        <Tooltip label="Instagram" position="bottom">
+                        <Tooltip label="Instagram" position="bottom" mb="xs">
                           <ActionIcon
                             component="a"
                             href={`https://instagram.com/${project.instagram}`}
                             target="_blank"
                             variant="subtle"
-                            color="pink"
+                            color="gray"
                             size="lg"
                           >
                             <IconBrandInstagram size={22} />
@@ -315,13 +317,13 @@ export default function Project() {
                         </Tooltip>
                       )}
                       {project?.spotify_id && (
-                        <Tooltip label="Spotify" position="bottom">
+                        <Tooltip label="Spotify" position="bottom" mb="xs">
                           <ActionIcon
                             component="a"
                             href={`https://open.spotify.com/artist/${project.spotify_id}`}
                             target="_blank"
                             variant="subtle"
-                            color="green"
+                            color="gray"
                             size="lg"
                           >
                             <IconBrandSpotify size={22} />
@@ -329,13 +331,13 @@ export default function Project() {
                         </Tooltip>
                       )}
                       {project?.soundcloud && (
-                        <Tooltip label="SoundCloud" position="bottom">
+                        <Tooltip label="SoundCloud" position="bottom" mb="xs">
                           <ActionIcon
                             component="a"
                             href={`https://soundcloud.com/${project.soundcloud}`}
                             target="_blank"
                             variant="subtle"
-                            color="orange"
+                            color="gray"
                             size="lg"
                           >
                             <IconBrandSoundcloud size={22} />
@@ -427,14 +429,14 @@ export default function Project() {
                   </Card>
                   <Card>
                     <Title order={5} fw={600} mb="xs">
-                      Objetivo
+                      Objetivo do projeto
                     </Title>
                     <Text size="sm">
                       {project?.purpose ? (
                         project.purpose
                       ) : (
                         <Text span c="dimmed">
-                          Objetivo não disponível
+                          Não disponível
                         </Text>
                       )}
                     </Text>
@@ -516,8 +518,8 @@ export default function Project() {
                   )}
                 </Card>
               </Grid.Col>
-              <Grid.Col span={{ base: 12, md: 6, lg: 6 }}>3</Grid.Col>
-              <Grid.Col span={{ base: 12, md: 6, lg: 6 }}>4</Grid.Col>
+              {/* <Grid.Col span={{ base: 12, md: 6, lg: 6 }}>3</Grid.Col>
+              <Grid.Col span={{ base: 12, md: 6, lg: 6 }}>4</Grid.Col> */}
             </Grid>
           )}
         </Box>

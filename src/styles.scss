@@ -221,6 +221,13 @@
     margin-left: 2px;
     cursor: default;
   }
+
+  &.large {
+    width: calc(1.3rem);
+    height: calc(1.3rem);
+    margin-left: 2px;
+    cursor: default;
+  }
 }
 
 .iconLegend {

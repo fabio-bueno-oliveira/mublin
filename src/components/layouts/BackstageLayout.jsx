@@ -58,7 +58,7 @@ export default function AppLayout({ children }) {
         </Container>
       </AppShell.Main>
 
-      <Dashbar />
+      {/* <Dashbar /> */}
       {!hideFooter && <AppFooterMobile />}
     </AppShell>
   )

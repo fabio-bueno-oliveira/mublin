@@ -266,7 +266,7 @@ export default function Profile() {
     queryKey: ['profileFollowers', profile?.id],
     queryKeyHashFn: () => `profileFollowers-${profile?.id}`,
     queryFn: () => fetchProfileFollowers(profile?.id),
-    enabled: !!profile?.id && followersOpened,
+    enabled: !!profile?.id,
     staleTime: 0,
   })
 
@@ -274,7 +274,7 @@ export default function Profile() {
     queryKey: ['profileFollowingList', profile?.id],
     queryKeyHashFn: () => `profileFollowingList-${profile?.id}`,
     queryFn: () => fetchProfileFollowingList(profile?.id),
-    enabled: !!profile?.id && followingOpened,
+    enabled: !!profile?.id,
     staleTime: 0,
   })
 
@@ -707,7 +707,7 @@ export default function Profile() {
                 </Title>
                 {!!profile.is_verified && (
                   <IconRosetteDiscountCheck
-                    className="iconVerified"
+                    className="iconVerified large"
                     title="Perfil verificado"
                   />
                 )}
@@ -748,7 +748,7 @@ export default function Profile() {
             <Group
               gap="md"
               justify={isMobile ? 'center' : 'flex-start'}
-              mt={{ base: 'sm', md: 'xs' }}
+              mt={{ base: 'sm', md: 0 }}
             >
               <Anchor underline="never" onClick={openFollowers}>
                 <Text size="sm" fw={600}>

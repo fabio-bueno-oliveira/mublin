@@ -47,9 +47,8 @@ export default function ProfileHeaderMobile({ profile, city, region, country, us
             </Title>
             {!!profile.is_verified && (
               <IconRosetteDiscountCheck
-                className="iconVerified"
+                className="iconVerified small"
                 title="Perfil verificado"
-                color="var(--mantine-color-mublinColor-3)"
               />
             )}
             {/* {!!profile.is_legend && (
