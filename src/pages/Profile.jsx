@@ -433,6 +433,8 @@ export default function Profile() {
       .select()
 
     queryClient.invalidateQueries({ queryKey: ['profile-following-info', profile.id] })
+    queryClient.invalidateQueries({ queryKey: ['profileFollowers', profile.id] })
+    queryClient.invalidateQueries({ queryKey: ['profileFollowersList', profile.id] })
 
     if (error) {
       if (error.code === '23505') {
@@ -452,6 +454,8 @@ export default function Profile() {
       .eq('following_id', targetUserId)
 
     queryClient.invalidateQueries({ queryKey: ['profile-following-info', profile.id] })
+    queryClient.invalidateQueries({ queryKey: ['profileFollowers', profile.id] })
+    queryClient.invalidateQueries({ queryKey: ['profileFollowersList', profile.id] })
 
     if (error) {
       throw new Error(error.message)
@@ -762,7 +766,7 @@ export default function Profile() {
               </Anchor>
             </Group>
 
-            {user?.id === profile.id && (
+            {user?.id === profile.id ? (
               <Button
                 mt="md"
                 component={Link}
@@ -775,6 +779,34 @@ export default function Profile() {
               >
                 Editar meu perfil
               </Button>
+            ) : (
+              <Box hiddenFrom="sm" mt="sm">
+                {followingInfo?.id ? (
+                  <Button
+                    fullWidth
+                    size="sm"
+                    radius="md"
+                    variant="filled"
+                    className="defaultMublinButton"
+                    onClick={() => unfollowProfile(user.id, profile.id)}
+                    disabled={loadingFollowingInfo}
+                  >
+                    Deixar de seguir
+                  </Button>
+                ) : (
+                  <Button
+                    fullWidth
+                    size="sm"
+                    radius="md"
+                    variant="gradient"
+                    gradient={{ from: 'grape.8', to: 'mublinColor.8', deg: 55 }}
+                    onClick={() => followProfile(user.id, profile.id)}
+                    disabled={loadingFollowingInfo}
+                  >
+                    Seguir
+                  </Button>
+                )}
+              </Box>
             )}
 
             <Stack gap={12} mt={{ base: 'md', md: 'sm' }}>
