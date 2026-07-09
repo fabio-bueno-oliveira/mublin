@@ -165,14 +165,24 @@ export default function Gigs() {
               </Text>
             )}
           </Box>
-          <Button
-            size="sm"
-            leftSection={<IconPlus size={15} />}
-            component={Link}
-            to="/new/event"
-          >
-            Nova gig
-          </Button>
+          <Group>
+            <Button
+              size="sm"
+              leftSection={<IconCalendar size={15} />}
+              component={Link}
+              to="/calendar"
+            >
+              Ver calendário
+            </Button>
+            <Button
+              size="sm"
+              leftSection={<IconPlus size={15} />}
+              component={Link}
+              to="/new/event"
+            >
+              Nova gig
+            </Button>
+          </Group>
         </Group>
 
         {/* ── Próxima gig em destaque ───────────────── */}

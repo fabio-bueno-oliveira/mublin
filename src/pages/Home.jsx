@@ -131,7 +131,6 @@ export default function Home() {
             </Text> */}
 
             <Card shadow="sm" padding="md" withBorder>
-              <Title order={4}>Gigs</Title>
               <Text>Encontrar ou cadastrar gigs para tocar</Text>
               <Flex
                 mt="sm"
@@ -175,8 +174,8 @@ export default function Home() {
                 <ActionIcon
                   variant="subtle"
                   color="gray"
-                  size="md"
-                  mb={4}
+                  size="lg"
+                  mb={2}
                   aria-label="Settings"
                   component={Link}
                   to="/search"
