@@ -12,19 +12,24 @@ import NewsCard from '../components/feed/NewsCard'
 import {
   Skeleton,
   Box, Card,
-  Group, Flex,
   Container,
+  Group, Flex,
+  ActionIcon,
+  Stack, Badge,
   Text, Title, 
   Image, Avatar,
   Select, ThemeIcon,
-  Stack,
-  Badge
 } from '@mantine/core'
 import { useMediaQuery, useScroller } from '@mantine/hooks'
 import AppNavbarMobile from '../components/AppNavbarMobile'
 import dayjs from 'dayjs'
 import 'dayjs/locale/pt-br'
-import { IconUser, IconChevronLeft, IconChevronRight } from '@tabler/icons-react'
+import {
+  IconUser,
+  IconChevronLeft,
+  IconChevronRight,
+  IconZoom,
+} from '@tabler/icons-react'
 
 const CDN_PREFIX = 'https://ik.imagekit.io/mublin'
 const EVENTS_IMG_PATH = `${CDN_PREFIX}/tr:h-320,c-maintain_ratio/events/`
@@ -132,7 +137,7 @@ export default function Home() {
                 mt="sm"
                 gap="sm"
                 justify="space-between"
-                align="flex-start"
+                align="flex-end"
                 direction={isMobile ? 'column' : 'row'}
               >
                 <Select
@@ -152,7 +157,7 @@ export default function Home() {
                   withAsterisk
                   defaultValue="1"
                   data={[
-                    { value: '1', label: 'Contratado' },
+                    { value: '1', label: 'Sideman' },
                     { value: '2', label: 'Integrante' },
                   ]}
                 />
@@ -167,6 +172,17 @@ export default function Home() {
                     { value: '3', label: 'Autoral + Cover' },
                   ]}
                 />
+                <ActionIcon
+                  variant="subtle"
+                  color="gray"
+                  size="md"
+                  mb={4}
+                  aria-label="Settings"
+                  component={Link}
+                  to="/search"
+                >
+                  <IconZoom style={{ width: '70%', height: '70%' }} />
+                </ActionIcon>
               </Flex>
             </Card>
 
