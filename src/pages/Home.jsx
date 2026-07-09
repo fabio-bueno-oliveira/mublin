@@ -289,7 +289,7 @@ export default function Home() {
               </div>
             </Box>
 
-            <Group justify="space-between" align="center" mt="xl" mb="xs">
+            {/* <Group justify="space-between" align="center" mt="xl" mb="xs">
               <Title order={3} fw={600} fz="lg">
                 Equipamentos
               </Title>
@@ -317,9 +317,9 @@ export default function Home() {
                   </ThemeIcon>
                 </Group>
               )}
-            </Group>
+            </Group> */}
 
-            <Box>
+            {/* <Box>
               <div
                 ref={gearScroller.ref}
                 {...gearScroller.dragHandlers}
@@ -397,7 +397,7 @@ export default function Home() {
                       ))}
                 </Group>
               </div>
-            </Box>
+            </Box> */}
 
             <Group justify="space-between" align="center" mt="xl" mb="xs">
               <Title order={3} fw={600} fz="lg">
@@ -439,7 +439,7 @@ export default function Home() {
                       to={`/event/${event.slug}`}
                       style={{ textDecoration: 'none', color: 'inherit' }}
                     >
-                      <Card p="xs" w={160} shadow="sm" padding="lg" withBorder>
+                      <Card p="xs" w={160} h={280} shadow="sm" padding="lg" withBorder>
                         <Card.Section>
                           <Image
                             src={EVENTS_IMG_PATH + event.picture_url}
@@ -447,9 +447,9 @@ export default function Home() {
                             alt={event.name}
                           />
                         </Card.Section>
-                        <Title order={4} fw={600} fz="sm" mt="xs" mb={5}>
+                        <Text fw={600} fz="sm" mt="xs" mb={5} lineClamp={1}>
                           {event.name}
-                        </Title>
+                        </Text>
                         <Text size="10px" mb={8}>
                           {dayjs(event.date_start).format('DD/MM/YYYY')} {' a '}
                           {dayjs(event.date_end).format('DD/MM/YYYY')}

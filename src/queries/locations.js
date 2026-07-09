@@ -58,7 +58,8 @@ export async function fetchVenueDetails(slug) {
       id, name, description, 
       picture_url, 
       address, address_number, neighborhood, 
-      website_url, capacity, 
+      website_url, instagram_handle,
+      capacity, 
       venue_types ( name ),
       cities ( id, name ),
       regions:cities ( regions ( id, name, uf ) )

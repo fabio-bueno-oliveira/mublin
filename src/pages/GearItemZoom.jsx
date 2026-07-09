@@ -56,7 +56,7 @@ export default function GearItemZoom() {
         </Affix>
       )} */}
 
-      <Container size="lg" mt={{ base: 60, sm: 16 }} pb={20}>
+      <Container size="lg" mt={{ base: 60, sm: 16 }} p={0}>
         <Group visibleFrom="sm">
           <IconArrowLeft
             size={22}
@@ -69,10 +69,10 @@ export default function GearItemZoom() {
         </Group>
 
         <Box
-          mt={26}
+          mt={{ base: 80, sm: 26 }}
           style={{
             width: '100%',
-            height: '100vh',
+            height: '68vh',
             background: '#000',
             overflow: 'hidden',
           }}

@@ -199,7 +199,7 @@ export default function Event() {
                         <Text size="sm" c="dimmed" lh={1}>
                           Website
                         </Text>
-                        <Anchor size="xs" href={event?.website_url} target="_blank">
+                        <Anchor size="sm" href={event?.website_url} target="_blank">
                           {event?.website_url}
                         </Anchor>
                       </Box>
@@ -207,8 +207,8 @@ export default function Event() {
                         <Text size="sm" c="dimmed" lh={1}>
                           Ingressos
                         </Text>
-                        <Anchor size="xs" href={event?.tickets_url} target="_blank">
-                          {event?.tickets_url}
+                        <Anchor size="sm" href={event?.tickets_url} target="_blank">
+                          Acessar site de compra de ingressos
                         </Anchor>
                       </Box>
                       <Box>

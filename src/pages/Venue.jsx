@@ -1,5 +1,4 @@
 import { useEffect } from 'react'
-import { useAuth } from '../hooks/useAuth'
 import { Helmet } from 'react-helmet-async'
 import { useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
@@ -17,13 +16,11 @@ import {
   Flex,
   Affix,
 } from '@mantine/core'
-import { IconBrandSpotify } from '@tabler/icons-react'
 
 const VENUES_PATH =
   'https://ik.imagekit.io/mublin/venues/tr:h-200,w-200,c-maintain_ratio/'
 
 export default function Venue() {
-  const { user } = useAuth()
   const { slug } = useParams()
 
   useEffect(() => {
@@ -99,6 +96,14 @@ export default function Venue() {
                         {venue?.cities.name},{' '}
                         {venue?.regions?.regions?.uf ?? venue?.regions?.regions?.name}
                       </Text>
+                      <Anchor
+                        mt="md"
+                        size="xs"
+                        href={`https://instagram.com/${venue?.instagram_handle}`}
+                        target="_blank"
+                      >
+                        https://instagram.com/{venue?.instagram_handle}
+                      </Anchor>
                       <Anchor mt="md" size="xs" href={venue?.website_url} target="_blank">
                         {venue?.website_url}
                       </Anchor>

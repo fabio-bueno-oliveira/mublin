@@ -56,7 +56,7 @@ function generateSlug(name) {
   return `${base}-${suffix}`
 }
 
-const VENUE_PICTURE_PATH = 'https://ik.imagekit.io/mublin/venues/tr:w-800/'
+const VENUE_PICTURE_PATH = 'https://ik.imagekit.io/mublin/venues/temp/tr:w-800/'
 
 // ── Queries ───────────────────────────────────────────────
 
@@ -310,6 +310,7 @@ export default function NewVenue() {
       .from('venues')
       .insert({
         name: name.trim(),
+        created_by_profile_id: user.id,
         slug,
         description: description.trim() || null,
         venue_type_id: venueTypeId ? Number(venueTypeId) : null,
@@ -341,6 +342,7 @@ export default function NewVenue() {
     }
 
     const venueId = newVenue.id
+    const venueSlug = newVenue.slug
 
     // 2. Move a imagem do folder temp para o folder definitivo
     let finalPictureUrl = null
@@ -349,7 +351,7 @@ export default function NewVenue() {
         const response = await uploadToImageKit({
           file: pictureFile,
           fileName: `${venueId}_.jpg`,
-          folder: `/venues/${venueId}/`,
+          folder: `/venues/`,
           tags: ['venue', 'picture'],
         })
         const n = response.filePath.lastIndexOf('/')
@@ -369,7 +371,7 @@ export default function NewVenue() {
       message: 'Estabelecimento cadastrado com sucesso!',
       position: 'top-center',
     })
-    navigate(`/venues/${venueId}`)
+    navigate(`/venue/${venueSlug}`)
   }
 
   return (
@@ -394,8 +396,8 @@ export default function NewVenue() {
               <Image
                 src={`${VENUE_PICTURE_PATH}${pictureFileName}`}
                 radius="md"
-                maw={500}
-                mah={280}
+                maw={200}
+                mah={180}
                 fit="cover"
               />
               <ActionIcon
@@ -405,6 +407,7 @@ export default function NewVenue() {
                 radius="xl"
                 style={{ position: 'absolute', top: 6, right: 6 }}
                 onClick={handleRemoveImage}
+                title="Remover imagem"
               >
                 <IconX size={12} />
               </ActionIcon>

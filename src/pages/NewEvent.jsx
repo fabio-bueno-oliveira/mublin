@@ -210,6 +210,8 @@ export default function NewEvent() {
       ticketsUrl: '',
       websiteUrl: '',
       minAge: '16',
+      has_food_options: false,
+      has_meet_and_greet: false,
     },
     validate: {
       name: (value) => (value.trim().length === 0 ? 'Informe o nome do evento.' : null),
@@ -339,6 +341,8 @@ export default function NewEvent() {
       picture_url: pictureFileName || null,
       author_id: user.id,
       updated_by: user.id,
+      has_food_options: values.has_food_options,
+      has_meet_and_greet: values.has_meet_and_greet,
     }
 
     const { data, error } = await supabase
@@ -357,12 +361,19 @@ export default function NewEvent() {
       return
     }
 
+    const { data: event } = await supabase
+      .from('events')
+      .select('id, slug')
+      .eq('id', inserted.id)
+      .single()
+
     notifications.show({
       color: 'green',
       message: 'Evento criado com sucesso!',
       position: 'top-center',
     })
-    navigate(`/event/${data.slug}`)
+
+    navigate(`/event/${event.slug}`)
   }
 
   // ── Render ──────────────────────────────────────────────
@@ -381,8 +392,8 @@ export default function NewEvent() {
               <Image
                 src={`${EVENT_PICTURE_PATH}${pictureFileName}`}
                 radius="md"
-                maw={500}
-                mah={280}
+                maw={200}
+                mah={180}
                 fit="cover"
               />
               <ActionIcon
@@ -522,6 +533,21 @@ export default function NewEvent() {
           </Box>
         )}
 
+        <Divider label="Recursos do evento" labelPosition="left" />
+
+        <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
+          <Switch
+            label="Oferece opções de alimentação"
+            description="Food truck, restaurante, praça de alimentação"
+            {...form.getInputProps('has_food_options', { type: 'checkbox' })}
+          />
+          <Switch
+            label="Terá Meet & Greet"
+            description="Encontro com artistas/convidados"
+            {...form.getInputProps('has_meet_and_greet', { type: 'checkbox' })}
+          />
+        </SimpleGrid>
+
         <Divider label="Ingressos" labelPosition="left" />
 
         <Switch
@@ -622,13 +648,13 @@ export default function NewEvent() {
         <Divider />
 
         <Group justify="flex-end">
-          <Button
+          {/* <Button
             variant="default"
             onClick={() => navigate(-1)}
             disabled={form.submitting}
           >
             Cancelar
-          </Button>
+          </Button> */}
           <Button
             loading={form.submitting}
             onClick={() => form.onSubmit(handleSubmit, handleValidationFailure)()}
