@@ -154,19 +154,19 @@ export default function InviteToGigModal({ opened, onClose, targetProfile }) {
             </Text>
           </Stack>
         </Group>
-        <Box>
+        {/* <Box>
           {targetProfile?.title && (
             <Text size="xs" c="dimmed" lh={1.2}>
               {targetProfile.title}
             </Text>
           )}
-        </Box>
+        </Box> */}
       </Stack>
 
       <Divider mb="xs" />
 
       {noGigs && (
-        <Alert color="red" radius="md" mb="md" title="Nenhuma gig encontrada">
+        <Alert color="red" radius="md" mb="md">
           Você ainda não criou nenhuma gig. Crie uma gig antes de enviar convites.
         </Alert>
       )}

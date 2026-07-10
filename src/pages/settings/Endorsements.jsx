@@ -3,15 +3,31 @@ import { useAuth } from '../../hooks/useAuth'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabaseClient'
 import {
-  Stack, Group, Text, Button, Divider, Modal,
-  TextInput, Loader, ScrollArea, Box, Anchor, Avatar,
-  Badge, ActionIcon, Select, NumberInput, Flex, Skeleton,
+  Stack,
+  Group,
+  Text,
+  Button,
+  Divider,
+  Modal,
+  TextInput,
+  Loader,
+  ScrollArea,
+  Box,
+  Anchor,
+  Avatar,
+  Badge,
+  ActionIcon,
+  Select,
+  NumberInput,
+  Flex,
+  Skeleton,
 } from '@mantine/core'
 import { useDisclosure, useDebouncedCallback } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
 import { IconPlus, IconSearch, IconTrash, IconX } from '@tabler/icons-react'
 
-const LOGO_PATH = 'https://ik.imagekit.io/mublin/products/brands/tr:w-120,h-120,cm-pad_resize,bg-FFFFFF,fo-x/'
+const LOGO_PATH =
+  'https://ik.imagekit.io/mublin/products/brands/tr:w-120,h-120,cm-pad_resize,bg-FFFFFF,fo-x/'
 const currentYear = new Date().getFullYear()
 
 // ── Queries locais ────────────────────────────────────────
@@ -22,7 +38,9 @@ async function fetchUserPartners(userId) {
     .select('id, type, since_year, featured, active, brands(id, name, slug, logo)')
     .eq('id_user', userId)
     .order('since_year', { ascending: false })
-  if (error) throw new Error(error.message)
+  if (error) {
+    throw new Error(error.message)
+  }
   return data
 }
 
@@ -34,7 +52,9 @@ async function searchBrands(query) {
     .ilike('name', `%${query}%`)
     .order('name')
     .limit(10)
-  if (error) throw new Error(error.message)
+  if (error) {
+    throw new Error(error.message)
+  }
   return data
 }
 
@@ -106,10 +126,12 @@ export default function Endorsements() {
 
   // ── Adicionar parceiro ────────────────────────────────
   async function handleAdd() {
-    if (!selectedBrand) return
+    if (!selectedBrand) {
+      return
+    }
 
     // Verifica duplicata no frontend antes de bater no banco
-    const alreadyAdded = userPartners.find(p => p.brands?.id === selectedBrand.id)
+    const alreadyAdded = userPartners.find((p) => p.brands?.id === selectedBrand.id)
     if (alreadyAdded) {
       notifications.show({
         color: 'orange',
@@ -120,16 +142,14 @@ export default function Endorsements() {
     }
 
     setIsAdding(true)
-    const { error } = await supabase
-      .from('profile_partners')
-      .insert({
-        id_user:    user.id,
-        id_brand:   selectedBrand.id,
-        type:       partnerType,
-        since_year: sinceYear ?? null,
-        featured:   false,
-        active:     true,
-      })
+    const { error } = await supabase.from('profile_partners').insert({
+      id_user: user.id,
+      id_brand: selectedBrand.id,
+      type: partnerType,
+      since_year: sinceYear ?? null,
+      featured: false,
+      active: true,
+    })
 
     if (error) {
       notifications.show({
@@ -152,10 +172,7 @@ export default function Endorsements() {
   // ── Remover parceiro ──────────────────────────────────
   async function handleRemove(partnerId) {
     setIsRemoving(partnerId)
-    const { error } = await supabase
-      .from('profile_partners')
-      .delete()
-      .eq('id', partnerId)
+    const { error } = await supabase.from('profile_partners').delete().eq('id', partnerId)
 
     if (error) {
       notifications.show({
@@ -169,8 +186,8 @@ export default function Endorsements() {
     setIsRemoving(null)
   }
 
-  // ── IDs já adicionados (para feedback visual no search) 
-  const addedBrandIds = userPartners.map(p => p.brands?.id)
+  // ── IDs já adicionados (para feedback visual no search)
+  const addedBrandIds = userPartners.map((p) => p.brands?.id)
 
   // ── Render ────────────────────────────────────────────
   return (
@@ -197,7 +214,7 @@ export default function Endorsements() {
 
           {isLoading ? (
             <Stack gap="sm">
-              {[1, 2, 3].map(i => (
+              {[1, 2, 3].map((i) => (
                 <Flex key={i} align="center" gap="sm">
                   <Skeleton width={36} height={36} radius="sm" />
                   <Stack gap={4} style={{ flex: 1 }}>
@@ -215,7 +232,11 @@ export default function Endorsements() {
                   <Group justify="space-between" py="sm">
                     <Group gap="sm">
                       <Avatar
-                        src={partner.brands?.logo ? LOGO_PATH + partner.brands.logo : undefined}
+                        src={
+                          partner.brands?.logo
+                            ? LOGO_PATH + partner.brands.logo
+                            : undefined
+                        }
                         size={60}
                         radius="sm"
                       >
@@ -223,7 +244,9 @@ export default function Endorsements() {
                       </Avatar>
                       <Stack gap={2}>
                         <Group gap="xs">
-                          <Text size="sm" fw={600}>{partner.brands?.name}</Text>
+                          <Text size="sm" fw={600}>
+                            {partner.brands?.name}
+                          </Text>
                           <Badge
                             size="xs"
                             variant="light"
@@ -233,7 +256,9 @@ export default function Endorsements() {
                           </Badge>
                         </Group>
                         {partner.since_year && (
-                          <Text size="xs" c="dimmed">desde {partner.since_year}</Text>
+                          <Text size="xs" c="dimmed">
+                            desde {partner.since_year}
+                          </Text>
                         )}
                         <ActionIcon
                           variant="subtle"
@@ -252,7 +277,9 @@ export default function Endorsements() {
               ))}
             </Stack>
           ) : (
-            <Text size="sm" c="dimmed">Nenhum parceiro ou endorsement cadastrado.</Text>
+            <Text size="sm" c="dimmed">
+              Nenhum parceiro ou endorsement cadastrado.
+            </Text>
           )}
         </Stack>
       </Stack>
@@ -267,14 +294,15 @@ export default function Endorsements() {
         centered
       >
         <Stack gap="md">
-
           {/* Busca de brand */}
           {!selectedBrand ? (
             <Stack gap="xs">
               <TextInput
                 label="Buscar marca"
                 placeholder="Nome da marca..."
-                leftSection={brandSearchLoading ? <Loader size={15} /> : <IconSearch size={15} />}
+                leftSection={
+                  brandSearchLoading ? <Loader size={15} /> : <IconSearch size={15} />
+                }
                 value={brandQuery}
                 onChange={(e) => {
                   setBrandQuery(e.target.value)
@@ -283,12 +311,14 @@ export default function Endorsements() {
                 data-autofocus
               />
               {noBrandResults && (
-                <Text size="xs" c="dimmed">Nenhuma marca encontrada.</Text>
+                <Text size="xs" c="dimmed">
+                  Nenhuma marca encontrada.
+                </Text>
               )}
               {brandResults.length > 0 && (
                 <ScrollArea h={180} type="auto">
                   <Stack gap={0}>
-                    {brandResults.map(brand => {
+                    {brandResults.map((brand) => {
                       const alreadyAdded = addedBrandIds.includes(brand.id)
                       return (
                         <Box key={brand.id}>
@@ -313,7 +343,9 @@ export default function Endorsements() {
                               </Avatar>
                               <Text size="sm">{brand.name}</Text>
                               {alreadyAdded && (
-                                <Text size="xs" c="dimmed">(já adicionado)</Text>
+                                <Text size="xs" c="dimmed">
+                                  (já adicionado)
+                                </Text>
                               )}
                             </Group>
                           </Anchor>
@@ -337,7 +369,9 @@ export default function Endorsements() {
                   >
                     {selectedBrand.name[0]}
                   </Avatar>
-                  <Text size="sm" fw={600}>{selectedBrand.name}</Text>
+                  <Text size="sm" fw={600}>
+                    {selectedBrand.name}
+                  </Text>
                 </Group>
                 <ActionIcon
                   variant="subtle"
@@ -356,7 +390,7 @@ export default function Endorsements() {
                 label="Tipo de relação"
                 data={[
                   { value: 'Endorser', label: 'Esta marca é minha Endorser' },
-                  { value: 'Partner',  label: 'Esta marca é minha Parceira'  },
+                  { value: 'Partner', label: 'Esta marca é minha Parceira' },
                 ]}
                 value={partnerType}
                 onChange={(v) => setPartnerType(v)}

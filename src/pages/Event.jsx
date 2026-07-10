@@ -1,28 +1,60 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useAuth } from '../hooks/useAuth'
 import { Helmet } from 'react-helmet-async'
 import { useParams, Link } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
-import { fetchEventDetails, fetchEventGigs } from '../queries/events'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import {
+  fetchEventDetails,
+  fetchEventGigs,
+  fetchEventAttendees,
+  fetchInterestTypes,
+  fetchMyEventInterest,
+  upsertEventInterest,
+  deleteEventInterest,
+} from '../queries/events'
 import AppNavbarMobile from '../components/AppNavbarMobile'
 import {
   Container,
+  Skeleton,
+  Modal,
+  Grid,
+  Checkbox,
+  Alert,
+  Switch,
+  Group,
   Anchor,
+  Avatar,
   Box,
   Title,
   Text,
   Stack,
-  Skeleton,
-  Avatar,
   Center,
   Flex,
-  Group,
   Affix,
   Card,
   List,
   ThemeIcon,
+  ScrollArea,
+  Tooltip,
+  Spoiler,
+  Badge,
+  Paper,
+  Button,
+  Divider,
 } from '@mantine/core'
-import { IconCheck, IconClock } from '@tabler/icons-react'
+import { notifications } from '@mantine/notifications'
+import { useDisclosure } from '@mantine/hooks'
+import { useForm } from '@mantine/form'
+import {
+  IconCheck,
+  IconClock,
+  IconHeart,
+  IconHeartFilled,
+  IconCircleCheck,
+  IconInfoCircle,
+  IconX,
+  IconInfoCircleFilled,
+} from '@tabler/icons-react'
 import dayjs from 'dayjs'
 
 const EVENTS_PATH =
@@ -32,8 +64,11 @@ const AVATAR_PATH =
 const PROJECT_AVATAR_PATH = 'https://ik.imagekit.io/mublin/projects/'
 
 export default function Event() {
+  const { user } = useAuth()
   const { slug } = useParams()
-  const [expandedDescription, setExpandedDescription] = useState(false)
+  const queryClient = useQueryClient()
+
+  const [opened, { open, close }] = useDisclosure(false)
 
   useEffect(() => {
     scrollTo({ y: 0 })
@@ -50,11 +85,123 @@ export default function Event() {
     staleTime: 1000 * 60 * 4,
   })
 
+  const { data: attendees, isLoading: loadingAttendees } = useQuery({
+    queryKey: ['event-attendees', event?.id],
+    queryFn: () => fetchEventAttendees(event.id),
+    enabled: !!event?.id,
+  })
+
   const { data: gigs = [], isLoading: isLoadingGigs } = useQuery({
     queryKey: ['event-gigs', event?.id],
     queryFn: () => fetchEventGigs(event?.id),
     enabled: !!event?.id,
     staleTime: 1000 * 60 * 5,
+  })
+
+  // Busca meu interesse atual
+  const { data: myInterest } = useQuery({
+    queryKey: ['my-event-interest', event?.id, user?.id],
+    queryFn: () => fetchMyEventInterest(event.id, user.id),
+    enabled: !!event?.id && !!user?.id,
+  })
+
+  // Busca tipos disponíveis
+  const { data: interestTypes } = useQuery({
+    queryKey: ['interest-types'],
+    queryFn: fetchInterestTypes,
+  })
+
+  // Form do modal
+  const interestForm = useForm({
+    initialValues: {
+      is_interested: false,
+      is_confirmed: false,
+      type_ids: [],
+    },
+  })
+
+  // Sincroniza form com dados do banco quando abrir
+  useEffect(() => {
+    if (myInterest && opened) {
+      interestForm.setValues({
+        is_interested: myInterest.is_interested,
+        is_confirmed: myInterest.is_confirmed,
+        type_ids: myInterest.type_ids || [],
+      })
+    }
+  }, [myInterest, opened])
+
+  // Mutation pra salvar
+  const saveMutation = useMutation({
+    mutationFn: upsertEventInterest,
+    onSuccess: () => {
+      notifications.show({
+        color: 'green',
+        message: 'Interesse registrado!',
+        icon: <IconCircleCheck size={18} />,
+      })
+      queryClient.invalidateQueries({ queryKey: ['my-event-interest', event?.id] })
+      queryClient.invalidateQueries({ queryKey: ['event-attendees', event?.id] })
+      close()
+    },
+    onError: () => {
+      notifications.show({
+        color: 'red',
+        title: 'Ops...',
+        message: 'Não foi possível salvar. Tente novamente.',
+      })
+    },
+  })
+
+  function handleSaveInterest(values) {
+    if (!user) {
+      notifications.show({
+        color: 'orange',
+        message: 'Faça login para demonstrar interesse',
+      })
+      return
+    }
+
+    // Se desmarcou "Tenho interesse", deleta o registro
+    if (!values.is_interested && myInterest) {
+      deleteMutation.mutate()
+      return
+    }
+
+    saveMutation.mutate({
+      eventId: event.id,
+      userId: user.id,
+      isInterested: values.is_interested,
+      isConfirmed: values.is_confirmed,
+      typeIds: values.type_ids,
+    })
+  }
+
+  useEffect(() => {
+    // Se marcar "Estou entre as atrações", confirma automaticamente
+    if (interestForm.values.type_ids.includes('4')) {
+      interestForm.setFieldValue('is_confirmed', true)
+    }
+  }, [interestForm.values.type_ids])
+
+  const deleteMutation = useMutation({
+    mutationFn: () => deleteEventInterest(event.id, user.id),
+    onSuccess: () => {
+      notifications.show({
+        color: 'blue',
+        message: 'Interesse removido',
+      })
+      queryClient.invalidateQueries({ queryKey: ['my-event-interest', event?.id] })
+      queryClient.invalidateQueries({ queryKey: ['event-attendees', event?.id] })
+      interestForm.reset()
+      close() // fecha o modal
+    },
+    onError: () => {
+      notifications.show({
+        color: 'red',
+        message: 'Erro ao remover. Tente novamente.',
+      })
+    },
   })
 
   return (
@@ -120,26 +267,138 @@ export default function Event() {
                         <Text size="xs" span c="dimmed">
                           {event.author?.full_name}
                         </Text>
+                        <Tooltip
+                          multiline
+                          w={240}
+                          label="O criador deste evento no Mublin não necessariamente representa a organização oficial"
+                        >
+                          <IconInfoCircleFilled size={14} color="gray" />
+                        </Tooltip>
                       </Flex>
-                      <Text
-                        mt="md"
-                        fz="md"
-                        lh={1.4}
-                        style={{ whiteSpace: 'pre-line', cursor: 'default' }}
-                        lineClamp={expandedDescription ? undefined : 3}
-                        onClick={() => setExpandedDescription(!expandedDescription)}
+                      {user && (
+                        <Flex justify="center" mt="sm">
+                          <Button
+                            size="sm"
+                            variant={myInterest?.is_interested ? 'light' : 'filled'}
+                            leftSection={
+                              myInterest?.is_interested ? (
+                                <IconHeartFilled size={18} />
+                              ) : (
+                                <IconHeart size={18} />
+                              )
+                            }
+                            color={myInterest?.is_interested ? 'pink' : 'mublinColor'}
+                            onClick={open}
+                          >
+                            {myInterest?.is_interested
+                              ? 'Interesse registrado'
+                              : 'Demonstrar interesse'}
+                          </Button>
+                        </Flex>
+                      )}
+                      <Spoiler
+                        mt="lg"
+                        maxHeight={68}
+                        showLabel="Ver mais"
+                        hideLabel="Ver menos"
+                        fz="sm"
+                        style={{ whiteSpace: 'pre-line' }}
                       >
                         {event?.description}
-                      </Text>
+                      </Spoiler>
                     </Stack>
+
+                    {loadingAttendees ? (
+                      <Text c="dimmed">
+                        Carregando pessoas interessadas neste evento...
+                      </Text>
+                    ) : (
+                      <>
+                        {attendees && attendees.length > 0 && (
+                          <>
+                            <Divider
+                              label={`Quem vai (${attendees.length})`}
+                              labelPosition="left"
+                            />
+
+                            <ScrollArea type="hover" offsetScrollbars>
+                              <Group gap="md" wrap="nowrap" py="xs">
+                                {attendees.map((person) => (
+                                  <Paper
+                                    key={person.id}
+                                    withBorder
+                                    p="xs"
+                                    radius="md"
+                                    miw={140}
+                                    component={Link}
+                                    to={`/${person.username}`}
+                                    style={{
+                                      cursor: 'pointer',
+                                      textDecoration: 'none',
+                                      color: 'inherit',
+                                    }}
+                                  >
+                                    <Stack align="center" gap={2}>
+                                      <Avatar
+                                        src={AVATAR_PATH + person.avatar}
+                                        size={40}
+                                        radius="xl"
+                                      >
+                                        {person.full_name?.charAt(0)}
+                                      </Avatar>
+                                      <Group gap={4}>
+                                        <Text
+                                          ta="center"
+                                          size="sm"
+                                          fw={500}
+                                          lineClamp={1}
+                                        >
+                                          {person.full_name}
+                                        </Text>
+                                      </Group>
+
+                                      {person.is_confirmed && (
+                                        <Tooltip label="Presença confirmada">
+                                          <Badge
+                                            size="xs"
+                                            fz="8px"
+                                            variant="filled"
+                                            color="green"
+                                            leftSection={<IconCheck size={10} />}
+                                          >
+                                            Confirmou
+                                          </Badge>
+                                        </Tooltip>
+                                      )}
+
+                                      {person.interests.length > 0 && (
+                                        <Text
+                                          size="xs"
+                                          c="dimmed"
+                                          ta="center"
+                                          lineClamp={2}
+                                        >
+                                          {person.interests.join(', ')}
+                                        </Text>
+                                      )}
+                                    </Stack>
+                                  </Paper>
+                                ))}
+                              </Group>
+                            </ScrollArea>
+                          </>
+                        )}
+                      </>
+                    )}
 
                     {isLoadingGigs ? (
                       <Text>Carregando gigs relacionadas a este evento...</Text>
                     ) : (
                       <Box>
-                        <Text size="sm" c="dimmed">
-                          Gigs cadastradas para este evento:
-                        </Text>
+                        <Divider
+                          label={`Gigs neste evento: (${gigs.length})`}
+                          labelPosition="left"
+                        />
                         {gigs.length > 0 ? (
                           <Group mb="md" mt={8}>
                             {gigs.map((gig) => (
@@ -188,29 +447,36 @@ export default function Event() {
                           </Group>
                         ) : (
                           <Text size="sm" mb="md">
-                            Nenhuma gig cadastrada para este evento
+                            Nenhuma gig vinculada a este evento até o momento
                           </Text>
                         )}
                       </Box>
                     )}
 
-                    <Stack gap="sm">
-                      <Box>
-                        <Text size="sm" c="dimmed" lh={1}>
-                          Website
-                        </Text>
-                        <Anchor size="sm" href={event?.website_url} target="_blank">
-                          {event?.website_url}
-                        </Anchor>
-                      </Box>
-                      <Box>
-                        <Text size="sm" c="dimmed" lh={1}>
-                          Ingressos
-                        </Text>
-                        <Anchor size="sm" href={event?.tickets_url} target="_blank">
-                          Acessar site de compra de ingressos
-                        </Anchor>
-                      </Box>
+                    <Stack mt="lg" gap="sm">
+                      <Grid>
+                        <Grid.Col span={6}>
+                          <Box>
+                            <Text size="sm" c="dimmed" lh={1}>
+                              Website
+                            </Text>
+                            <Anchor size="sm" href={event?.website_url} target="_blank">
+                              {event?.website_url}
+                            </Anchor>
+                          </Box>
+                        </Grid.Col>
+                        <Grid.Col span={6}>
+                          <Box>
+                            <Text size="sm" c="dimmed" lh={1}>
+                              Ingressos
+                            </Text>
+                            <Anchor size="sm" href={event?.tickets_url} target="_blank">
+                              Acessar site de compra de ingressos
+                            </Anchor>
+                          </Box>
+                        </Grid.Col>
+                      </Grid>
+
                       <Box>
                         <Text size="sm" c="dimmed">
                           Local
@@ -258,6 +524,81 @@ export default function Event() {
           )}
         </Stack>
       </Container>
+      <Modal opened={opened} onClose={close} title="Demonstrar interesse">
+        <Stack mt="xs">
+          <Switch
+            label="Tenho interesse neste evento"
+            description="Você será notificado sobre novidades"
+            size="sm"
+            {...interestForm.getInputProps('is_interested', { type: 'checkbox' })}
+          />
+
+          <Switch
+            label="Minha presença está confirmada"
+            description="Já comprei ingresso / vou comparecer"
+            size="sm"
+            disabled={!interestForm.values.is_interested}
+            {...interestForm.getInputProps('is_confirmed', { type: 'checkbox' })}
+          />
+
+          <Divider label="Qual seu interesse?" labelPosition="left" />
+
+          <Checkbox.Group
+            {...interestForm.getInputProps('type_ids')}
+            label="Selecione uma ou mais opções"
+          >
+            <Stack gap="xs" mt="xs">
+              {interestTypes?.map((type) => (
+                <Checkbox
+                  key={type.id}
+                  value={String(type.id)}
+                  label={type.name}
+                  description={type.description}
+                  disabled={!interestForm.values.is_interested}
+                />
+              ))}
+            </Stack>
+          </Checkbox.Group>
+
+          {interestForm.values.type_ids.includes('4') && (
+            <Alert icon={<IconInfoCircle size={16} />} color="blue" variant="light">
+              Marcando "Estou entre as atrações confirmadas", sua presença será
+              automaticamente confirmada.
+            </Alert>
+          )}
+
+          <Group justify="space-between" mt="md">
+            <Box>
+              {myInterest?.is_interested && (
+                <Button
+                  variant="subtle"
+                  color="red"
+                  size="xs"
+                  loading={deleteMutation.isPending}
+                  onClick={() => deleteMutation.mutate()}
+                  leftSection={<IconX size={16} />}
+                >
+                  Remover interesse
+                </Button>
+              )}
+            </Box>
+
+            <Group>
+              <Button size="xs" variant="default" onClick={close}>
+                Cancelar
+              </Button>
+              <Button
+                size="xs"
+                loading={saveMutation.isPending}
+                onClick={() => interestForm.onSubmit(handleSaveInterest)()}
+                disabled={!interestForm.values.is_interested}
+              >
+                Salvar
+              </Button>
+            </Group>
+          </Group>
+        </Stack>
+      </Modal>
     </>
   )
 }

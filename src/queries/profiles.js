@@ -380,6 +380,20 @@ export async function fetchProfileInspirations(profileId) {
   return data
 }
 
+export async function fetchProfilePartners(profileId) {
+  const { data, error } = await supabase
+    .from('profile_partners')
+    .select(
+      'id, type, since_year, featured, active, company:brands(id, name, slug, logo)',
+    )
+    .eq('id_user', profileId)
+    .order('since_year', { ascending: false })
+  if (error) {
+    throw new Error(error.message)
+  }
+  return data
+}
+
 export async function fetchProfileFollowers(profileId) {
   const { data, error } = await supabase
     .from('profile_followers')

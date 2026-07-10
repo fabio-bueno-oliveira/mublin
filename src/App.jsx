@@ -168,7 +168,7 @@ function App() {
         colorSchemeManager={colorSchemeManager}
         cssVariablesResolver={resolver}
       >
-        <Notifications autoClose={1400} />
+        <Notifications autoClose={1400} position="top-center" />
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
             <UIProvider>

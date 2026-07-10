@@ -17,6 +17,7 @@ import {
   fetchProfileWorkFocuses,
   fetchProfileTravelPreference,
   fetchProfileInspirations,
+  fetchProfilePartners,
   fetchCheckFavorite,
   toggleFavorite,
 } from '../queries/profiles'
@@ -52,9 +53,15 @@ import {
   Badge,
   Center,
   Divider,
+  ThemeIcon,
   em,
 } from '@mantine/core'
-import { useMediaQuery, useDisclosure, useWindowScroll } from '@mantine/hooks'
+import {
+  useMediaQuery,
+  useDisclosure,
+  useWindowScroll,
+  useScroller,
+} from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
 import LoadingSkeleton from '../components/profile/LoadingSkeleton'
 import LinkedItem from '../components/feed/LinkedItem'
@@ -84,6 +91,8 @@ import {
   IconLink,
   IconEye,
   IconHeartFilled,
+  IconChevronLeft,
+  IconChevronRight,
 } from '@tabler/icons-react'
 import ProfileHeaderMobile from '../components/profile/ProfileHeaderMobile'
 import AppNavbarMobile from '../components/AppNavbarMobile'
@@ -104,6 +113,8 @@ const AVATAR_PATH =
   'https://ik.imagekit.io/mublin/tr:h-200,c-maintain_ratio/users/avatars/'
 const ARTISTS_PATH =
   'https://ik.imagekit.io/mublin/artists/tr:h-96,w-96,c-maintain_ratio/'
+const COMPANY_PATH =
+  'https://ik.imagekit.io/mublin/products/brands/tr:h-96,w-96,cm-pad_resize,bg-FFFFFF,fo-x/'
 
 function SectionTitle({ text, mb, mt = 0, ...props }) {
   return (
@@ -123,6 +134,9 @@ export default function Profile() {
 
   const isMobile = useMediaQuery(`(max-width: ${em(750)})`)
   const [scroll, scrollTo] = useWindowScroll()
+  const inspirationsScroller = useScroller()
+  const partnersScroller = useScroller()
+
   const [activeSection, setActiveSection] = useState('')
   const [expandedBio, setExpandedBio] = useState(false)
 
@@ -175,7 +189,8 @@ export default function Profile() {
       active: profile?.show_availability_info,
     },
     { id: 'recognitions', label: 'Reconhecimentos', active: true },
-    { id: 'inspirations', label: 'Inspirações', active: profile?.is_legend },
+    { id: 'inspirations', label: 'Inspirações', active: true },
+    { id: 'partners', label: 'Parceiros', active: true },
     { id: 'suggested-profiles', label: 'Perfis parecidos', active: true },
     { id: 'social', label: 'Redes', active: true },
   ]
@@ -415,6 +430,13 @@ export default function Profile() {
   const { data: inspirations = [], isLoading: loadingInspirations } = useQuery({
     queryKey: ['profile-inspirations', profile?.id],
     queryFn: () => fetchProfileInspirations(profile.id),
+    enabled: !!profile?.id,
+    staleTime: 1000 * 60 * 10,
+  })
+
+  const { data: partners = [], isLoading: loadingPartners } = useQuery({
+    queryKey: ['profile-partners', profile?.id],
+    queryFn: () => fetchProfilePartners(profile.id),
     enabled: !!profile?.id,
     staleTime: 1000 * 60 * 10,
   })
@@ -1001,10 +1023,11 @@ export default function Profile() {
                     id="projects"
                     mt="xs"
                     mb="xs"
+                    pb="xs"
                     w="100%"
                     type={isMobile ? 'never' : 'auto'}
                     offsetScrollbars={isMobile ? false : 'present'}
-                    scrollbarSize={18}
+                    scrollbarSize={8}
                   >
                     <Flex gap={12}>
                       {isMobile && <Box style={{ flexShrink: 10, width: '5px' }} />}
@@ -1030,15 +1053,15 @@ export default function Profile() {
                               style={{ borderRadius: 12, overflow: 'hidden' }}
                             >
                               <Image
-                                w={180}
-                                h={180}
+                                w={130}
+                                h={130}
                                 fit="cover"
                                 src={
                                   item.picture
-                                    ? `https://ik.imagekit.io/mublin/projects/${item.id}/tr:h-320,w-320,c-maintain_ratio/${item.picture}`
+                                    ? `https://ik.imagekit.io/mublin/projects/${item.id}/tr:h-260,w-260,c-maintain_ratio/${item.picture}`
                                     : undefined
                                 }
-                                fallbackSrc="https://placehold.co/180x180?text=Sem+foto"
+                                fallbackSrc="https://placehold.co/130x130?text=Sem+foto"
                                 opacity={item.status === 1 ? 0.4 : 1}
                                 style={{ transition: 'opacity 0.2s' }}
                               />
@@ -1527,10 +1550,41 @@ export default function Profile() {
               </SectionPanel>
 
               <SectionPanel id="inspirations">
-                <SectionTitle
-                  text="Inspirações"
+                <Group
+                  justify="space-between"
+                  align="center"
                   mb={inspirations.length > 0 ? 4 : 'sm'}
-                />
+                >
+                  <SectionTitle text="Inspirações" />
+                  {inspirations.length > 4 && (
+                    <Group>
+                      <ThemeIcon
+                        variant="default"
+                        style={{
+                          cursor: inspirationsScroller.canScrollStart
+                            ? 'pointer'
+                            : 'default',
+                        }}
+                        onClick={inspirationsScroller.scrollStart}
+                        opacity={inspirationsScroller.canScrollStart ? 1 : 0.5}
+                      >
+                        <IconChevronLeft style={{ width: '70%', height: '70%' }} />
+                      </ThemeIcon>
+                      <ThemeIcon
+                        variant="default"
+                        style={{
+                          cursor: inspirationsScroller.canScrollEnd
+                            ? 'pointer'
+                            : 'default',
+                        }}
+                        onClick={inspirationsScroller.scrollEnd}
+                        opacity={inspirationsScroller.canScrollEnd ? 1 : 0.5}
+                      >
+                        <IconChevronRight style={{ width: '70%', height: '70%' }} />
+                      </ThemeIcon>
+                    </Group>
+                  )}
+                </Group>
                 {inspirations.length > 0 && (
                   <Text size="xs" c="dimmed" mb="sm">
                     Figuras consagradas que inspiram {profile?.full_name}
@@ -1539,14 +1593,23 @@ export default function Profile() {
                 {loadingInspirations ? (
                   <Text size="sm">Carregando...</Text>
                 ) : inspirations.length > 0 ? (
-                  <Scroller
+                  <div
+                    ref={inspirationsScroller.ref}
+                    {...inspirationsScroller.dragHandlers}
+                    className="scrollerHidden"
+                    style={{
+                      overflow: 'auto',
+                      cursor: inspirationsScroller.isDragging ? 'grabbing' : 'default',
+                    }}
+                  >
+                    {/* <Scroller
                     key={inspirations.length}
                     draggable={isMobile}
                     controlSize="xl"
                     startControlIcon={<IconCircleArrowLeftFilled size={24} />}
                     endControlIcon={<IconCircleArrowRightFilled size={24} />}
                     edgeGradientColor="transparent"
-                  >
+                  > */}
                     <Group gap="xs" wrap="nowrap">
                       {inspirations.map(({ id, artists: artist }) => (
                         <Flex
@@ -1586,7 +1649,91 @@ export default function Profile() {
                         </Flex>
                       ))}
                     </Group>
-                  </Scroller>
+                    {/* </Scroller> */}
+                  </div>
+                ) : (
+                  <Text size="sm" c="dimmed">
+                    Não informado
+                  </Text>
+                )}
+              </SectionPanel>
+
+              <SectionPanel id="partners">
+                <Group justify="space-between" align="center" mb="sm">
+                  <SectionTitle text="Parceiros" />
+                  {partners.length > 4 && (
+                    <Group>
+                      <ThemeIcon
+                        variant="default"
+                        style={{
+                          cursor: partnersScroller.canScrollStart ? 'pointer' : 'default',
+                        }}
+                        onClick={partnersScroller.scrollStart}
+                        opacity={partnersScroller.canScrollStart ? 1 : 0.5}
+                      >
+                        <IconChevronLeft style={{ width: '70%', height: '70%' }} />
+                      </ThemeIcon>
+                      <ThemeIcon
+                        variant="default"
+                        style={{
+                          cursor: partnersScroller.canScrollEnd ? 'pointer' : 'default',
+                        }}
+                        onClick={partnersScroller.scrollEnd}
+                        opacity={partnersScroller.canScrollEnd ? 1 : 0.5}
+                      >
+                        <IconChevronRight style={{ width: '70%', height: '70%' }} />
+                      </ThemeIcon>
+                    </Group>
+                  )}
+                </Group>
+                {loadingPartners ? (
+                  <Text size="sm">Carregando...</Text>
+                ) : partners.length > 0 ? (
+                  <div
+                    ref={partnersScroller.ref}
+                    {...partnersScroller.dragHandlers}
+                    className="scrollerHidden"
+                    style={{
+                      overflow: 'auto',
+                      cursor: partnersScroller.isDragging ? 'grabbing' : 'default',
+                    }}
+                  >
+                    <Group gap="xs" wrap="nowrap">
+                      {partners.map(({ id, company, type }) => (
+                        <Flex
+                          key={id}
+                          direction="column"
+                          align="center"
+                          gap={4}
+                          w={64}
+                          component={Link}
+                          to={`/brand/${company?.slug}`}
+                          style={{ textDecoration: 'none', color: 'inherit' }}
+                        >
+                          <Avatar
+                            size={56}
+                            radius="xl"
+                            src={company?.logo ? COMPANY_PATH + company.logo : undefined}
+                            alt={`Foto de ${company?.name}`}
+                          />
+                          <Text
+                            size="xs"
+                            fw={500}
+                            ta="center"
+                            lineClamp={2}
+                            lh={1.2}
+                            w={64}
+                            title={company?.name}
+                          >
+                            {company?.name}
+                          </Text>
+                          <Text size="10px" c="dimmed" ta="center" lineClamp={1}>
+                            {type}
+                          </Text>
+                        </Flex>
+                      ))}
+                    </Group>
+                  </div>
                 ) : (
                   <Text size="sm" c="dimmed">
                     Não informado
@@ -1645,7 +1792,7 @@ export default function Profile() {
                   </Group>
                 ) : (
                   <Text size="sm" c="dimmed">
-                    Nenhuma rede disponível
+                    Nenhuma rede informada
                   </Text>
                 )}
               </SectionPanel>

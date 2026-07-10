@@ -69,6 +69,7 @@ import AdminProducts from './pages/admin/AdminProducts'
 import AdminVenues from './pages/admin/AdminVenues'
 import AdminPlans from './pages/admin/AdminPlans'
 import AdminColors from './pages/admin/AdminColors'
+import AdminArtists from './pages/admin/AdminArtists'
 
 export const router = createBrowserRouter([
   // ── Rotas públicas ──────────────────────────────
@@ -167,6 +168,7 @@ export const router = createBrowserRouter([
           { path: 'venues', element: <AdminVenues /> },
           { path: 'plans', element: <AdminPlans /> },
           { path: 'colors', element: <AdminColors /> },
+          { path: 'artists', element: <AdminArtists /> },
         ],
       },
     ],

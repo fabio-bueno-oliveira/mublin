@@ -15,12 +15,13 @@ import {
   Container,
   Group, Flex,
   ActionIcon,
-  Stack, Badge,
+  Collapse,
+  Stack, Button,
   Text, Title, 
   Image, Avatar,
   Select, ThemeIcon,
 } from '@mantine/core'
-import { useMediaQuery, useScroller } from '@mantine/hooks'
+import { useMediaQuery, useScroller, useDisclosure } from '@mantine/hooks'
 import AppNavbarMobile from '../components/AppNavbarMobile'
 import dayjs from 'dayjs'
 import 'dayjs/locale/pt-br'
@@ -46,6 +47,7 @@ export default function Home() {
   const eventsScroller = useScroller()
   const newsScroller = useScroller()
 
+  const [expanded, { toggle }] = useDisclosure(false)
   const [defaultRole, setDefaultRole] = useState('')
 
   useEffect(() => {
@@ -130,60 +132,71 @@ export default function Home() {
               {dayjs().format('dddd, D [de] MMMM [de] YYYY')}
             </Text> */}
 
-            <Card shadow="sm" padding="md" withBorder>
-              <Text>Encontrar ou cadastrar gigs para tocar</Text>
-              <Flex
-                mt="sm"
-                gap="sm"
-                justify="space-between"
-                align="flex-end"
-                direction={isMobile ? 'column' : 'row'}
-              >
-                <Select
-                  variant="default"
-                  w={isMobile ? '100%' : '33%'}
-                  label="Sou"
-                  placeholder="Selecione"
-                  withAsterisk
-                  disabled={loadingUserRoles}
-                  defaultValue={defaultRole}
-                  data={userRolesOptions}
-                />
-                <Select
-                  w={isMobile ? '100%' : '33%'}
-                  label="Vínculo desejado"
-                  placeholder="Selecione"
-                  withAsterisk
-                  defaultValue="1"
-                  data={[
-                    { value: '1', label: 'Sideman' },
-                    { value: '2', label: 'Integrante' },
-                  ]}
-                />
-                <Select
-                  w={isMobile ? '100%' : '33%'}
-                  label="Conteúdo principal"
-                  placeholder="Selecione"
-                  withAsterisk
-                  data={[
-                    { value: '1', label: 'Autoral' },
-                    { value: '2', label: 'Cover' },
-                    { value: '3', label: 'Autoral + Cover' },
-                  ]}
-                />
-                <ActionIcon
-                  variant="subtle"
-                  color="gray"
-                  size="lg"
-                  mb={2}
-                  aria-label="Settings"
-                  component={Link}
-                  to="/search"
+            <Box mx="auto">
+              <Group justify="center" mb={5}>
+                <Button
+                  variant="gradient"
+                  size="sm"
+                  gradient={{ from: 'grape.9', to: 'mublinColor.9', deg: 190 }}
+                  onClick={toggle}
+                  leftSection={<IconZoom size={14} />}
                 >
-                  <IconZoom style={{ width: '70%', height: '70%' }} />
-                </ActionIcon>
-              </Flex>
-            </Card>
+                  Encontre gigs e projetos para tocar
+                </Button>
+              </Group>
+
+              <Collapse expanded={expanded}>
+                <Card shadow="sm" padding="md" withBorder>
+                  <Flex
+                    gap="sm"
+                    justify="space-between"
+                    align="flex-end"
+                    direction={isMobile ? 'column' : 'row'}
+                  >
+                    <Select
+                      variant="default"
+                      w={isMobile ? '100%' : '33%'}
+                      label="Sou"
+                      placeholder="Selecione"
+                      disabled={loadingUserRoles}
+                      defaultValue={defaultRole}
+                      data={userRolesOptions}
+                    />
+                    <Select
+                      w={isMobile ? '100%' : '33%'}
+                      label="Vínculo desejado"
+                      placeholder="Selecione"
+                      defaultValue="1"
+                      data={[
+                        { value: '1', label: 'Sideman' },
+                        { value: '2', label: 'Integrante' },
+                      ]}
+                    />
+                    <Select
+                      w={isMobile ? '100%' : '33%'}
+                      label="Conteúdo principal"
+                      placeholder="Selecione"
+                      data={[
+                        { value: '1', label: 'Autoral' },
+                        { value: '2', label: 'Cover' },
+                        { value: '3', label: 'Autoral + Cover' },
+                      ]}
+                    />
+                    <ActionIcon
+                      variant="subtle"
+                      color="gray"
+                      size="lg"
+                      mb={2}
+                      aria-label="Settings"
+                      component={Link}
+                      to="/search"
+                    >
+                      <IconZoom style={{ width: '70%', height: '70%' }} />
+                    </ActionIcon>
+                  </Flex>
+                </Card>
+              </Collapse>
+            </Box>
 
             <Group justify="space-between" align="center" mt="xl" mb="xs">
               <Title order={3} fw={600} fz="lg">
