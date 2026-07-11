@@ -403,13 +403,15 @@ export async function fetchProfilePortfolio(profileId) {
       id,
       order_number,
       notes,
-      role_id,
       project_id,
       artist_id,
-      role:roles ( id, name_ptbr ),
-      project:projects ( 
-        id, name, slug, picture, description, 
-        type:project_types ( name_ptbr ) 
+      year_start,
+      year_end,
+      is_sporadic,
+      is_mublin_facilitated,
+      project:projects (
+        id, name, slug, picture, description,
+        type:project_types ( name_ptbr )
       ),
       artist:artists (
         id,
@@ -420,6 +422,12 @@ export async function fetchProfilePortfolio(profileId) {
         is_verified,
         genre:genres!artists_genre_id_fkey ( name, name_ptbr ),
         countries ( name )
+      ),
+      roles:portfolio_roles (
+        role:roles ( id, name_ptbr )
+      ),
+      engagement_types:portfolio_engagement_types (
+        engagement_type:project_engagement_types ( id, name_ptbr )
       )
     `,
     )

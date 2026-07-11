@@ -47,7 +47,11 @@ export default function Home() {
   const eventsScroller = useScroller()
   const newsScroller = useScroller()
 
-  const [expanded, { toggle }] = useDisclosure(false)
+  const [expanded, { toggle }] = useDisclosure(
+    typeof window !== 'undefined'
+      ? window.matchMedia('(min-width: 48em)').matches
+      : false,
+  )
   const [defaultRole, setDefaultRole] = useState('')
 
   useEffect(() => {
@@ -155,18 +159,17 @@ export default function Home() {
                   >
                     <Select
                       variant="default"
+                      size="md"
                       w={isMobile ? '100%' : '33%'}
-                      label="Sou"
-                      placeholder="Selecione"
+                      placeholder="Sou..."
                       disabled={loadingUserRoles}
                       defaultValue={defaultRole}
                       data={userRolesOptions}
                     />
                     <Select
+                      size="md"
                       w={isMobile ? '100%' : '33%'}
-                      label="Vínculo desejado"
-                      placeholder="Selecione"
-                      defaultValue="1"
+                      placeholder="Vínculo desejado"
                       data={[
                         { value: '1', label: 'Sideman' },
                         { value: '2', label: 'Integrante' },
@@ -174,8 +177,8 @@ export default function Home() {
                     />
                     <Select
                       w={isMobile ? '100%' : '33%'}
-                      label="Conteúdo principal"
-                      placeholder="Selecione"
+                      size="md"
+                      placeholder="Conteúdo principal"
                       data={[
                         { value: '1', label: 'Autoral' },
                         { value: '2', label: 'Cover' },
@@ -257,7 +260,7 @@ export default function Home() {
                             : null
 
                         const mainRole = p.profile_roles?.find((r) => r.main_activity)
-                          ?.roles?.name_ptbr
+                          ?.roles?.description_ptbr
 
                         return (
                           <Link
@@ -272,7 +275,7 @@ export default function Home() {
                               withBorder
                               style={{ flexShrink: 0 }}
                             >
-                              <Stack align="center" gap={6}>
+                              <Stack align="center" gap={3}>
                                 <Avatar
                                   src={p.avatar ? AVATAR_PATH + p.avatar : null}
                                   size={64}
@@ -284,7 +287,7 @@ export default function Home() {
                                   {p.full_name || p.username}
                                 </Text>
                                 {mainRole && (
-                                  <Text size="xs" c="dimmed" ta="center" lineClamp={1}>
+                                  <Text size="xs" ta="center" lineClamp={1}>
                                     {mainRole}
                                   </Text>
                                 )}

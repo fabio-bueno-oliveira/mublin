@@ -31,6 +31,37 @@ export async function fetchUserRoles(userId) {
   return data
 }
 
+export async function fetchUserPortfolio(userId) {
+  const { data, error } = await supabase
+    .from('portfolio')
+    .select(
+      `
+      id,
+      order_number,
+      notes,
+      project_id,
+      artist_id,
+      year_start,
+      year_end,
+      is_sporadic,
+      is_mublin_facilitated,
+      projects ( id, name, picture ),
+      artists ( id, name, picture ),
+      portfolio_roles ( role_id, roles ( id, name_ptbr ) ),
+      portfolio_engagement_types (
+        engagement_type_id,
+        project_engagement_types ( id, name_ptbr )
+      )
+    `,
+    )
+    .eq('profile_id', userId)
+    .order('order_number', { ascending: true, nullsFirst: false })
+  if (error) {
+    throw new Error(error.message)
+  }
+  return data
+}
+
 export async function fetchUserProjects(userId) {
   const { data, error } = await supabase
     .from('project_members')

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { useParams, Link } from 'react-router-dom'
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query'
@@ -56,6 +56,7 @@ import {
   Divider,
   ThemeIcon,
   em,
+  Spoiler,
 } from '@mantine/core'
 import {
   useMediaQuery,
@@ -95,6 +96,7 @@ import {
   IconChevronLeft,
   IconChevronRight,
   IconSparkles2,
+  IconPencil,
 } from '@tabler/icons-react'
 import ProfileHeaderMobile from '../components/profile/ProfileHeaderMobile'
 import AppNavbarMobile from '../components/AppNavbarMobile'
@@ -108,6 +110,7 @@ import { SOCIAL_CONFIG } from '../constants/socialConfig'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import { WorkAvailabilityItem } from '../components/profile/WorkAvailabilityItem'
+import MublinMLogo from '../assets/svg/mublin-m-logo-silver.svg'
 dayjs.extend(relativeTime)
 dayjs.locale('pt-br')
 
@@ -138,6 +141,7 @@ export default function Profile() {
   const [scroll, scrollTo] = useWindowScroll()
   const inspirationsScroller = useScroller()
   const partnersScroller = useScroller()
+  const menuItemRefs = useRef({})
 
   const [activeSection, setActiveSection] = useState('')
   const [expandedBio, setExpandedBio] = useState(false)
@@ -182,7 +186,8 @@ export default function Profile() {
 
   const MENU_ITEMS = [
     { id: 'about', label: 'Sobre', active: true },
-    { id: 'projects', label: 'Projetos', active: true },
+    { id: 'portfolio', label: 'Portfólio', active: true },
+    // { id: 'projects', label: 'Projetos', active: true },
     { id: 'posts', label: 'Postagens', active: true },
     { id: 'gear', label: 'Equipamento', active: true },
     {
@@ -193,8 +198,8 @@ export default function Profile() {
     { id: 'recognitions', label: 'Reconhecimentos', active: true },
     { id: 'inspirations', label: 'Inspirações', active: true },
     { id: 'partners', label: 'Parceiros', active: true },
-    { id: 'suggested-profiles', label: 'Perfis parecidos', active: true },
     { id: 'social', label: 'Redes', active: true },
+    { id: 'suggested-profiles', label: 'Perfis parecidos', active: true },
   ]
 
   useEffect(() => {
@@ -202,6 +207,21 @@ export default function Profile() {
     setExpandedBio(false)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [username])
+
+  useEffect(() => {
+    if (!isMobile || !activeSection) {
+      return
+    }
+
+    const activeEl = menuItemRefs.current[activeSection]
+    if (activeEl) {
+      activeEl.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest', // não mexe no scroll vertical da página
+        inline: 'center', // centraliza o item no scroll horizontal
+      })
+    }
+  }, [activeSection, isMobile])
 
   useEffect(() => {
     if (!profile?.id || !user?.id) {
@@ -213,6 +233,7 @@ export default function Profile() {
 
     supabase.rpc('log_profile_view', { p_profile_id: profile.id }).then(({ error }) => {
       if (error) {
+        // eslint-disable-next-line no-console
         console.error('Erro ao registrar visita ao perfil:', error)
       }
     })
@@ -619,6 +640,8 @@ export default function Profile() {
         />
       </Helmet>
 
+      {/* <LoadingSkeleton /> */}
+
       {isMobile && (
         <Affix position={{ top: 0, left: 0 }} w="100%">
           <AppNavbarMobile
@@ -691,8 +714,13 @@ export default function Profile() {
           />
         )}
         <Grid>
-          <Grid.Col span={{ base: 12, md: 2 }} visibleFrom="sm">
-            <Center mb="sm">
+          <Grid.Col span={{ base: 12, md: 2 }} visibleFrom="sm" pos="relative">
+            <Center
+              mb="sm"
+              top={profile.cover_image ? -40 : 0}
+              left={profile.cover_image ? 20 : 0}
+              pos={profile.cover_image ? 'absolute' : 'inherit'}
+            >
               <Avatar
                 size={140}
                 src={getAvatarUrl(profile.avatar, profile.is_open_to_work, 140)}
@@ -781,6 +809,9 @@ export default function Profile() {
                           return (
                             <Text
                               key={item.id}
+                              ref={(el) => {
+                                menuItemRefs.current[item.id] = el
+                              }}
                               onClick={() => scrollToSection(item.id)}
                               style={{ cursor: 'pointer', transition: 'all 0.2s ease' }}
                               fw={isActive ? 700 : 400}
@@ -1019,63 +1050,125 @@ export default function Profile() {
               </SectionPanel>
 
               <SectionPanel id="portfolio">
-                <SectionTitle text="Portfolio" />
+                <Group justify="space-between">
+                  <SectionTitle text="Portfólio" />
+                  {isOwnProfile && (
+                    <ActionIcon
+                      variant="subtle"
+                      color="gray"
+                      radius="xl"
+                      aria-label="Editar meu portfólio"
+                      title="Editar meu portfólio"
+                      component={Link}
+                      to="/settings/portfolio"
+                    >
+                      <IconPencil style={{ width: '80%', height: '80%' }} />
+                    </ActionIcon>
+                  )}
+                </Group>
                 {loadingPortfolio ? (
                   <Text mt="md">Carregando...</Text>
                 ) : portfolio.length > 0 ? (
-                  <Stack mt="md">
-                    {portfolio.map((item) => (
-                      <Box key={item.id}>
-                        {item.artist?.name && (
-                          <Group gap="xs" align="flex-start">
+                  <Stack mt="md" gap="lg">
+                    {portfolio.map((item) => {
+                      const isArtist = !!item.artist?.name
+                      const isProject = !!item.project?.name
+                      const entity = isArtist ? item.artist : item.project
+
+                      if (!entity) {
+                        return null
+                      }
+
+                      const roleNames =
+                        item.roles?.map((r) => r.role?.name_ptbr).filter(Boolean) ?? []
+
+                      const engagementNames =
+                        item.engagement_types
+                          ?.map((e) => e.engagement_type?.name_ptbr)
+                          .filter(Boolean) ?? []
+
+                      return (
+                        <Box key={item.id}>
+                          <Group gap="xs" align="flex-start" wrap="nowrap">
                             <Avatar
                               radius="md"
-                              src={ARTISTS_PATH + item.artist?.picture}
                               size={48}
+                              src={
+                                isArtist
+                                  ? ARTISTS_PATH + entity.picture
+                                  : `https://ik.imagekit.io/mublin/projects/${entity.id}/tr:h-260,w-260,c-maintain_ratio/${entity.picture}`
+                              }
                             />
-                            <Stack gap={1}>
-                              <Title order={5} size="sm" lh={1}>
-                                {item.artist?.name}
-                              </Title>
-                              <Text size="xs" c="dimmed">
-                                {item.type?.name_ptbr}
-                              </Text>
-                              <Text size="xs" c="dimmed">
-                                {item.role?.name_ptbr}
-                              </Text>
-                              {item.notes && (
-                                <Text size="xs" c="dimmed">
-                                  {item.notes}
+                            <Stack gap={2} style={{ flex: 1, minWidth: 0 }}>
+                              {roleNames.length > 0 && (
+                                <Text size="15px" fw={600} lh={1}>
+                                  {roleNames.join(', ')}
                                 </Text>
+                              )}
+                              <Group gap={6} align="center" wrap="wrap" mt={2}>
+                                <Text size="sm" opacity={0.9}>
+                                  {entity.name}{' '}
+                                  {isProject
+                                    ? ` · ${item.project?.type?.name_ptbr}`
+                                    : ` · ${item.artist?.genre?.name_ptbr}`}
+                                </Text>
+                              </Group>
+
+                              {engagementNames.length > 0 && (
+                                <Text size="sm" opacity={0.7}>
+                                  {engagementNames.length === 1
+                                    ? 'Vínculo:'
+                                    : 'Vínculos:'}{' '}
+                                  {engagementNames.join(', ')}
+                                </Text>
+                              )}
+
+                              {item.is_sporadic ? (
+                                <Text size="xs" opacity={0.7}>
+                                  Colaboração esporádica
+                                </Text>
+                              ) : (
+                                (item.year_start || item.year_end) && (
+                                  <Text size="xs" opacity={0.7}>
+                                    {item.year_start}
+                                    {item.year_end && item.year_end !== item.year_start
+                                      ? ` – ${item.year_end}`
+                                      : ''}
+                                  </Text>
+                                )
+                              )}
+
+                              {item.is_mublin_facilitated && (
+                                <Flex gap={4} align="center" mt={4} mb={4}>
+                                  <Image
+                                    src={MublinMLogo}
+                                    h={14}
+                                    w="auto"
+                                    fit="contain"
+                                    mb={2}
+                                  />
+                                  <Text size="xs" lh={1}>
+                                    Mublin ajudou a conseguir esta gig
+                                  </Text>
+                                </Flex>
+                              )}
+
+                              {item.notes && (
+                                <Spoiler
+                                  maxHeight={42}
+                                  showLabel={<Text size="sm">Ver mais</Text>}
+                                  hideLabel={<Text size="sm">Ver menos</Text>}
+                                >
+                                  <Text size="sm" style={{ whiteSpace: 'pre-line' }}>
+                                    {item.notes}
+                                  </Text>
+                                </Spoiler>
                               )}
                             </Stack>
                           </Group>
-                        )}
-                        {item.project?.name && (
-                          <Group gap="xs" align="flex-start">
-                            <Avatar
-                              radius="md"
-                              src={`https://ik.imagekit.io/mublin/projects/${item.project?.id}/tr:h-260,w-260,c-maintain_ratio/${item.project?.picture}`}
-                              size={48}
-                            />
-                            <Stack gap={1}>
-                              <Title order={5} size="sm" lh={1}>
-                                {item.project?.name}
-                              </Title>
-                              <Text size="sm">{item.project?.type?.name_ptbr}</Text>
-                              <Text size="xs" c="dimmed">
-                                {item.role?.name_ptbr}
-                              </Text>
-                              {item.notes && (
-                                <Text size="xs" c="dimmed">
-                                  {item.notes}
-                                </Text>
-                              )}
-                            </Stack>
-                          </Group>
-                        )}
-                      </Box>
-                    ))}
+                        </Box>
+                      )
+                    })}
                   </Stack>
                 ) : (
                   <Text size="sm" c="dimmed" mt="sm">
@@ -1218,6 +1311,7 @@ export default function Profile() {
                       /> */}
                       <Scroller
                         // mt="xs"
+                        id="posts"
                         key={profilePosts.length}
                         draggable
                         controlSize="xl"

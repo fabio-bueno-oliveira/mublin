@@ -3,6 +3,7 @@ import { useAuth } from '../../hooks/useAuth'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabaseClient'
 import { fetchAllRoles } from '../../queries/roles'
+import { fetchUserPortfolio } from '../../queries/user'
 import { searchArtist } from '../../queries/artists'
 import {
   Stack,
@@ -10,7 +11,7 @@ import {
   Text,
   Button,
   Modal,
-  NativeSelect,
+  MultiSelect,
   Skeleton,
   Avatar,
   TextInput,
@@ -19,6 +20,9 @@ import {
   Loader,
   Radio,
   Textarea,
+  Switch,
+  Badge,
+  NumberInput,
 } from '@mantine/core'
 import { useDisclosure, useDebouncedCallback } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
@@ -29,6 +33,8 @@ import {
   IconGripVertical,
   IconDisc,
   IconMicrophone2,
+  IconSparkles,
+  IconPencil,
 } from '@tabler/icons-react'
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd'
 
@@ -38,26 +44,16 @@ const ARTISTS_PATH =
 const PROJECTS_PATH =
   'https://ik.imagekit.io/mublin/projects/tr:h-96,w-96,c-maintain_ratio/'
 
+const CURRENT_YEAR = new Date().getFullYear()
+
 // ── Queries locais ────────────────────────────────────────
 
-async function fetchUserPortfolio(profileId) {
+// Todos os tipos de vínculo/engajamento disponíveis (tabela de apoio)
+async function fetchAllEngagementTypes() {
   const { data, error } = await supabase
-    .from('portfolio')
-    .select(
-      `
-      id,
-      order_number,
-      notes,
-      role_id,
-      project_id,
-      artist_id,
-      roles ( id, name_ptbr ),
-      projects ( id, name, picture ),
-      artists ( id, name, picture )
-    `,
-    )
-    .eq('profile_id', profileId)
-    .order('order_number', { ascending: true, nullsFirst: false })
+    .from('project_engagement_types')
+    .select('id, name_ptbr')
+    .order('name_ptbr')
   if (error) {
     throw new Error(error.message)
   }
@@ -84,11 +80,16 @@ export default function Portfolio() {
   const queryClient = useQueryClient()
 
   // ── Estados: formulário do modal ──────────────────────
-  const [selectedRoleId, setSelectedRoleId] = useState('')
+  const [selectedRoleIds, setSelectedRoleIds] = useState([])
+  const [selectedEngagementTypeIds, setSelectedEngagementTypeIds] = useState([])
   const [entryType, setEntryType] = useState('project') // 'project' | 'artist'
   const [selectedProject, setSelectedProject] = useState(null)
   const [selectedArtist, setSelectedArtist] = useState(null)
   const [notes, setNotes] = useState('')
+  const [yearStart, setYearStart] = useState('')
+  const [yearEnd, setYearEnd] = useState('')
+  const [isSporadic, setIsSporadic] = useState(false)
+  const [isMublinFacilitated, setIsMublinFacilitated] = useState(false)
 
   // ── Estados: busca de projeto ──────────────────────────
   const [projectSearch, setProjectSearch] = useState('')
@@ -101,8 +102,9 @@ export default function Portfolio() {
   const [searchingArtists, setSearchingArtists] = useState(false)
 
   // ── Estados: ações ──────────────────────────────────────
-  const [isAddingItem, setIsAddingItem] = useState(false)
+  const [isSavingItem, setIsSavingItem] = useState(false)
   const [isDeletingItem, setIsDeletingItem] = useState(false)
+  const [editingItemId, setEditingItemId] = useState(null)
 
   const [modalOpened, { open: openModal, close: closeModal }] = useDisclosure(false)
 
@@ -111,6 +113,12 @@ export default function Portfolio() {
   const { data: allRoles = [] } = useQuery({
     queryKey: ['all-roles'],
     queryFn: fetchAllRoles,
+    staleTime: Infinity,
+  })
+
+  const { data: allEngagementTypes = [] } = useQuery({
+    queryKey: ['all-engagement-types'],
+    queryFn: fetchAllEngagementTypes,
     staleTime: Infinity,
   })
 
@@ -123,6 +131,22 @@ export default function Portfolio() {
 
   const rolesMusicians = allRoles.filter((r) => r.instrumentalist)
   const rolesManagement = allRoles.filter((r) => !r.instrumentalist)
+
+  const roleSelectData = [
+    {
+      group: 'Gestão, produção e outros',
+      items: rolesManagement.map((r) => ({ value: String(r.id), label: r.name_ptbr })),
+    },
+    {
+      group: 'Instrumentos',
+      items: rolesMusicians.map((r) => ({ value: String(r.id), label: r.name_ptbr })),
+    },
+  ]
+
+  const engagementTypeSelectData = allEngagementTypes.map((t) => ({
+    value: String(t.id),
+    label: t.name_ptbr,
+  }))
 
   // ── Handlers: busca de projeto ─────────────────────────
 
@@ -177,11 +201,17 @@ export default function Portfolio() {
   // ── Handler: reset do formulário ───────────────────────
 
   function resetForm() {
-    setSelectedRoleId('')
+    setEditingItemId(null)
+    setSelectedRoleIds([])
+    setSelectedEngagementTypeIds([])
     setEntryType('project')
     setSelectedProject(null)
     setSelectedArtist(null)
     setNotes('')
+    setYearStart('')
+    setYearEnd('')
+    setIsSporadic(false)
+    setIsMublinFacilitated(false)
     setProjectSearch('')
     setProjectResults([])
     setArtistSearch('')
@@ -193,14 +223,35 @@ export default function Portfolio() {
     resetForm()
   }
 
+  // ── Handler: abrir modal em modo edição ────────────────
+
+  function handleOpenEditModal(item) {
+    const isProject = !!item.projects
+
+    setEditingItemId(item.id)
+    setSelectedRoleIds(item.portfolio_roles?.map((pr) => String(pr.role_id)) ?? [])
+    setSelectedEngagementTypeIds(
+      item.portfolio_engagement_types?.map((pe) => String(pe.engagement_type_id)) ?? [],
+    )
+    setEntryType(isProject ? 'project' : 'artist')
+    setSelectedProject(isProject ? item.projects : null)
+    setSelectedArtist(!isProject ? item.artists : null)
+    setNotes(item.notes ?? '')
+    setYearStart(item.year_start ?? '')
+    setYearEnd(item.year_end ?? '')
+    setIsSporadic(!!item.is_sporadic)
+    setIsMublinFacilitated(!!item.is_mublin_facilitated)
+    openModal()
+  }
+
   // ── Handler: adicionar item ao portfólio ───────────────
 
   async function handleAddPortfolioItem() {
-    if (!selectedRoleId) {
+    if (selectedRoleIds.length === 0) {
       notifications.show({
         color: 'red',
         position: 'top-center',
-        message: 'Selecione o papel exercido no projeto.',
+        message: 'Selecione ao menos um papel exercido no projeto.',
       })
       return
     }
@@ -213,34 +264,167 @@ export default function Portfolio() {
       return
     }
 
-    setIsAddingItem(true)
+    setIsSavingItem(true)
     const nextOrder = userPortfolio.length + 1
 
-    const { error } = await supabase.from('portfolio').insert({
-      profile_id: user.id,
-      role_id: Number(selectedRoleId),
-      project_id: selectedProject ? Number(selectedProject.id) : null,
-      artist_id: selectedArtist ? Number(selectedArtist.id) : null,
-      order_number: nextOrder,
-      notes: notes.trim() ? notes.trim() : null,
-    })
+    const { data: insertedPortfolio, error } = await supabase
+      .from('portfolio')
+      .insert({
+        profile_id: user.id,
+        project_id: selectedProject ? Number(selectedProject.id) : null,
+        artist_id: selectedArtist ? Number(selectedArtist.id) : null,
+        order_number: nextOrder,
+        notes: notes.trim() ? notes.trim() : null,
+        // Se for esporádico, ignoramos os anos mesmo que tenham sido preenchidos antes do toggle
+        year_start: !isSporadic && yearStart ? Number(yearStart) : null,
+        year_end: !isSporadic && yearEnd ? Number(yearEnd) : null,
+        is_sporadic: isSporadic,
+        is_mublin_facilitated: isMublinFacilitated,
+      })
+      .select('id')
+      .single()
 
-    if (error) {
+    if (error || !insertedPortfolio) {
       notifications.show({
         color: 'red',
         position: 'top-center',
         message: 'Erro ao adicionar item ao portfólio. Tente novamente.',
       })
+      setIsSavingItem(false)
+      return
+    }
+
+    const portfolioId = insertedPortfolio.id
+
+    // Popula as tabelas de junção (papéis e tipos de vínculo)
+    const rolesPayload = selectedRoleIds.map((roleId) => ({
+      portfolio_id: portfolioId,
+      role_id: Number(roleId),
+    }))
+    const engagementPayload = selectedEngagementTypeIds.map((typeId) => ({
+      portfolio_id: portfolioId,
+      engagement_type_id: Number(typeId),
+    }))
+
+    const [{ error: rolesError }, engagementResult] = await Promise.all([
+      supabase.from('portfolio_roles').insert(rolesPayload),
+      engagementPayload.length > 0
+        ? supabase.from('portfolio_engagement_types').insert(engagementPayload)
+        : Promise.resolve({ error: null }),
+    ])
+    const engagementError = engagementResult?.error
+
+    if (rolesError || engagementError) {
+      console.error(rolesError || engagementError)
+      notifications.show({
+        color: 'yellow',
+        position: 'top-center',
+        message:
+          'Item criado, mas houve um erro ao salvar papéis/tipos de vínculo. Edite o item para revisar.',
+      })
     } else {
-      await queryClient.refetchQueries({ queryKey: ['user-portfolio', user.id] })
       notifications.show({
         color: 'green',
         position: 'top-center',
         message: 'Item adicionado ao portfólio!',
       })
-      handleCloseModal()
     }
-    setIsAddingItem(false)
+
+    await queryClient.refetchQueries({ queryKey: ['user-portfolio', user.id] })
+    handleCloseModal()
+    setIsSavingItem(false)
+  }
+
+  // ── Handler: atualizar item existente do portfólio ─────
+
+  async function handleUpdatePortfolioItem() {
+    if (selectedRoleIds.length === 0) {
+      notifications.show({
+        color: 'red',
+        position: 'top-center',
+        message: 'Selecione ao menos um papel exercido no projeto.',
+      })
+      return
+    }
+    if (!selectedProject && !selectedArtist) {
+      notifications.show({
+        color: 'red',
+        position: 'top-center',
+        message: 'Selecione um projeto ou artista.',
+      })
+      return
+    }
+
+    setIsSavingItem(true)
+
+    const { error: updateError } = await supabase
+      .from('portfolio')
+      .update({
+        project_id: selectedProject ? Number(selectedProject.id) : null,
+        artist_id: selectedArtist ? Number(selectedArtist.id) : null,
+        notes: notes.trim() ? notes.trim() : null,
+        year_start: !isSporadic && yearStart ? Number(yearStart) : null,
+        year_end: !isSporadic && yearEnd ? Number(yearEnd) : null,
+        is_sporadic: isSporadic,
+        is_mublin_facilitated: isMublinFacilitated,
+      })
+      .eq('id', editingItemId)
+
+    if (updateError) {
+      notifications.show({
+        color: 'red',
+        position: 'top-center',
+        message: 'Erro ao salvar alterações. Tente novamente.',
+      })
+      setIsSavingItem(false)
+      return
+    }
+
+    // Substitui por completo os papéis e tipos de vínculo associados
+    await Promise.all([
+      supabase.from('portfolio_roles').delete().eq('portfolio_id', editingItemId),
+      supabase
+        .from('portfolio_engagement_types')
+        .delete()
+        .eq('portfolio_id', editingItemId),
+    ])
+
+    const rolesPayload = selectedRoleIds.map((roleId) => ({
+      portfolio_id: editingItemId,
+      role_id: Number(roleId),
+    }))
+    const engagementPayload = selectedEngagementTypeIds.map((typeId) => ({
+      portfolio_id: editingItemId,
+      engagement_type_id: Number(typeId),
+    }))
+
+    const [{ error: rolesError }, engagementResult] = await Promise.all([
+      supabase.from('portfolio_roles').insert(rolesPayload),
+      engagementPayload.length > 0
+        ? supabase.from('portfolio_engagement_types').insert(engagementPayload)
+        : Promise.resolve({ error: null }),
+    ])
+    const engagementError = engagementResult?.error
+
+    if (rolesError || engagementError) {
+      console.error(rolesError || engagementError)
+      notifications.show({
+        color: 'yellow',
+        position: 'top-center',
+        message:
+          'Alterações salvas, mas houve um erro ao atualizar papéis/tipos de vínculo. Edite o item novamente para revisar.',
+      })
+    } else {
+      notifications.show({
+        color: 'green',
+        position: 'top-center',
+        message: 'Item do portfólio atualizado!',
+      })
+    }
+
+    await queryClient.refetchQueries({ queryKey: ['user-portfolio', user.id] })
+    handleCloseModal()
+    setIsSavingItem(false)
   }
 
   // ── Handler: remover item do portfólio ─────────────────
@@ -364,8 +548,9 @@ export default function Portfolio() {
                     const entity = item.projects || item.artists
                     const isProject = !!item.projects
                     const picture = entity?.picture
-                      ? (isProject ? `${PROJECTS_PATH}${item.id}/` : ARTISTS_PATH) +
-                        entity.picture
+                      ? (isProject
+                          ? `${PROJECTS_PATH}${item.project_id}/`
+                          : ARTISTS_PATH) + entity.picture
                       : undefined
 
                     return (
@@ -379,8 +564,9 @@ export default function Portfolio() {
                             ref={providedDrag.innerRef}
                             {...providedDrag.draggableProps}
                             gap="sm"
-                            align="center"
+                            align="flex-start"
                             justify="space-between"
+                            wrap="nowrap"
                             style={{
                               ...providedDrag.draggableProps.style,
                               backgroundColor: 'var(--mantine-color-body)',
@@ -388,10 +574,19 @@ export default function Portfolio() {
                               borderRadius: 'var(--mantine-radius-sm)',
                             }}
                           >
-                            <Group gap="sm" align="center">
+                            <Group
+                              gap="sm"
+                              align="flex-start"
+                              wrap="nowrap"
+                              style={{ flex: 1, minWidth: 0 }}
+                            >
                               <Box
                                 {...providedDrag.dragHandleProps}
-                                style={{ display: 'flex', alignItems: 'center' }}
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  marginTop: 10,
+                                }}
                               >
                                 <IconGripVertical
                                   size={14}
@@ -399,32 +594,91 @@ export default function Portfolio() {
                                   style={{ cursor: 'grab' }}
                                 />
                               </Box>
-                              <Avatar size={40} radius="xl" src={picture}>
+                              <Avatar
+                                size={40}
+                                radius="xl"
+                                src={picture}
+                                style={{ flexShrink: 0 }}
+                              >
                                 <IconDisc size={18} />
                               </Avatar>
-                              <Stack gap={0}>
-                                <Text size="sm" fw={600}>
-                                  {entity?.name || 'Sem título'}
+                              <Stack gap={2} style={{ minWidth: 0 }}>
+                                <Group gap={6} align="center">
+                                  <Text size="sm" fw={600}>
+                                    {entity?.name || 'Sem título'}
+                                  </Text>
+                                  {item.is_mublin_facilitated && (
+                                    <Badge
+                                      size="xs"
+                                      variant="light"
+                                      color="mublinColor"
+                                      leftSection={<IconSparkles size={10} />}
+                                    >
+                                      Via Mublin
+                                    </Badge>
+                                  )}
+                                </Group>
+                                <Text size="xs">
+                                  {item.portfolio_roles
+                                    ?.map((pr) => pr.roles?.name_ptbr)
+                                    .filter(Boolean)
+                                    .join(', ')}
                                 </Text>
-                                <Text size="xs" c="dimmed">
-                                  Atividade: {item.roles?.name_ptbr}
-                                </Text>
+                                {item.portfolio_engagement_types?.length > 0 && (
+                                  <Text size="xs" c="dimmed">
+                                    {item.portfolio_engagement_types
+                                      .map((pe) => pe.project_engagement_types?.name_ptbr)
+                                      .filter(Boolean)
+                                      .join(', ')}
+                                  </Text>
+                                )}
+                                {item.is_sporadic ? (
+                                  <Text size="xs" c="dimmed">
+                                    Colaboração esporádica
+                                  </Text>
+                                ) : (
+                                  (item.year_start || item.year_end) && (
+                                    <Text size="xs" c="dimmed">
+                                      {item.year_start}
+                                      {item.year_end && item.year_end !== item.year_start
+                                        ? ` – ${item.year_end}`
+                                        : ''}
+                                    </Text>
+                                  )
+                                )}
                                 {item.notes && (
-                                  <Text size="xs" c="dimmed" fs="italic" mt={2}>
+                                  <Text
+                                    w="60%"
+                                    size="xs"
+                                    c="dimmed"
+                                    fs="italic"
+                                    mt={2}
+                                    truncate
+                                  >
                                     "{item.notes}"
                                   </Text>
                                 )}
                               </Stack>
                             </Group>
-                            <ActionIcon
-                              size="md"
-                              variant="subtle"
-                              color="red"
-                              onClick={() => handleDeletePortfolioItem(item.id)}
-                              title="Remover item"
-                            >
-                              <IconTrash size={14} />
-                            </ActionIcon>
+                            <Group gap={4} style={{ flexShrink: 0 }} wrap="nowrap">
+                              <ActionIcon
+                                size="md"
+                                variant="subtle"
+                                onClick={() => handleOpenEditModal(item)}
+                                title="Editar item"
+                              >
+                                <IconPencil size={14} />
+                              </ActionIcon>
+                              <ActionIcon
+                                size="md"
+                                variant="subtle"
+                                color="red"
+                                onClick={() => handleDeletePortfolioItem(item.id)}
+                                title="Remover item"
+                              >
+                                <IconTrash size={14} />
+                              </ActionIcon>
+                            </Group>
                           </Group>
                         )}
                       </Draggable>
@@ -453,9 +707,9 @@ export default function Portfolio() {
         </div>
       </Stack>
 
-      {/* ── Modal: adicionar item ao portfólio ────────── */}
+      {/* ── Modal: adicionar ou editar item do portfólio ────────── */}
       <Modal
-        title="Adicionar ao portfólio"
+        title={editingItemId ? 'Editar item do portfólio' : 'Adicionar ao portfólio'}
         opened={modalOpened}
         onClose={handleCloseModal}
         size="sm"
@@ -463,28 +717,33 @@ export default function Portfolio() {
         centered
       >
         <Stack gap="sm">
-          <NativeSelect
-            label="Papel exercido"
-            size="md"
-            value={selectedRoleId}
-            onChange={(e) => setSelectedRoleId(e.currentTarget.value)}
-          >
-            <option value="">Selecione</option>
-            <optgroup label="Gestão, produção e outros">
-              {rolesManagement.map((role) => (
-                <option key={role.id} value={String(role.id)}>
-                  {role.name_ptbr}
-                </option>
-              ))}
-            </optgroup>
-            <optgroup label="Instrumentos">
-              {rolesMusicians.map((role) => (
-                <option key={role.id} value={String(role.id)}>
-                  {role.name_ptbr}
-                </option>
-              ))}
-            </optgroup>
-          </NativeSelect>
+          <MultiSelect
+            label="Papéis exercidos"
+            placeholder={
+              selectedRoleIds.length === 0 ? 'Selecione um ou mais papéis' : undefined
+            }
+            data={roleSelectData}
+            value={selectedRoleIds}
+            onChange={setSelectedRoleIds}
+            searchable
+            clearable
+            size="sm"
+          />
+
+          <MultiSelect
+            label="Tipo de vínculo (opcional)"
+            placeholder={
+              selectedEngagementTypeIds.length === 0
+                ? 'Ex: turnê, gravação, show único...'
+                : undefined
+            }
+            data={engagementTypeSelectData}
+            value={selectedEngagementTypeIds}
+            onChange={setSelectedEngagementTypeIds}
+            searchable
+            clearable
+            size="sm"
+          />
 
           <Radio.Group
             label="O que você está adicionando?"
@@ -495,9 +754,14 @@ export default function Portfolio() {
               setSelectedArtist(null)
             }}
           >
-            <Group gap="lg" mt={4}>
+            <Group gap="xs" mt={6}>
               <Radio value="project" label="Projeto cadastrado no Mublin" size="sm" />
-              <Radio value="artist" label="Artista/projeto externo" size="sm" />
+              <Radio
+                value="artist"
+                label="Artista ou projeto externo"
+                description="Artistas mainstream e outras figuras do mercado"
+                size="sm"
+              />
             </Group>
           </Radio.Group>
 
@@ -671,13 +935,57 @@ export default function Portfolio() {
               </Stack>
             ))}
 
+          <Switch
+            label="Colaboração esporádica"
+            description="Ex: uma ou mais participações pontuais em show ou gravação, sem período fixo"
+            checked={isSporadic}
+            onChange={(e) => {
+              const checked = e.currentTarget.checked
+              setIsSporadic(checked)
+              if (checked) {
+                setYearStart('')
+                setYearEnd('')
+              }
+            }}
+          />
+
+          {!isSporadic && (
+            <Group grow gap="sm">
+              <NumberInput
+                label="Ano de início"
+                placeholder="Ex: 2019"
+                min={1900}
+                max={CURRENT_YEAR + 1}
+                value={yearStart}
+                onChange={setYearStart}
+                hideControls
+              />
+              <NumberInput
+                label="Ano de término"
+                placeholder="Deixe em branco se atual"
+                min={1900}
+                max={CURRENT_YEAR + 1}
+                value={yearEnd}
+                onChange={setYearEnd}
+                hideControls
+              />
+            </Group>
+          )}
+
+          <Switch
+            label="Esse vínculo foi facilitado pelo Mublin"
+            color="lime"
+            checked={isMublinFacilitated}
+            onChange={(e) => setIsMublinFacilitated(e.currentTarget.checked)}
+          />
+
           <Textarea
             label="Comentário (opcional)"
             placeholder="Ex: Guitarrista na turnê de 2019, gravei os vocais de apoio no álbum..."
-            description={`${notes.length}/280`}
+            description={`${notes.length}/2000`}
             minRows={2}
-            maxRows={4}
-            maxLength={280}
+            maxRows={9}
+            maxLength={2000}
             value={notes}
             onChange={(e) => setNotes(e.currentTarget.value)}
           />
@@ -685,11 +993,14 @@ export default function Portfolio() {
           <Button
             fullWidth
             mt="xs"
-            loading={isAddingItem}
-            disabled={!selectedRoleId || (!selectedProject && !selectedArtist)}
-            onClick={handleAddPortfolioItem}
+            size="sm"
+            loading={isSavingItem}
+            disabled={
+              selectedRoleIds.length === 0 || (!selectedProject && !selectedArtist)
+            }
+            onClick={editingItemId ? handleUpdatePortfolioItem : handleAddPortfolioItem}
           >
-            Adicionar ao meu portfólio
+            {editingItemId ? 'Salvar alterações' : 'Adicionar ao meu portfólio'}
           </Button>
         </Stack>
       </Modal>

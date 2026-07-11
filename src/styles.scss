@@ -81,8 +81,13 @@
       text-decoration: none;
     }
   }
-  &[data-has-spoiler='true'] {
-    bottom: 8px !important;
+  // &[data-has-spoiler='true'] {
+  //   bottom: 8px !important;
+  // }
+  @media (hover: hover) and (max-width: 48em) {
+    &[data-has-spoiler='true'] {
+      bottom: 28px !important;
+    }
   }
 }
 
