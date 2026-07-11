@@ -18,6 +18,7 @@ import {
   fetchProfileTravelPreference,
   fetchProfileInspirations,
   fetchProfilePartners,
+  fetchProfilePortfolio,
   fetchCheckFavorite,
   toggleFavorite,
 } from '../queries/profiles'
@@ -93,6 +94,7 @@ import {
   IconHeartFilled,
   IconChevronLeft,
   IconChevronRight,
+  IconSparkles2,
 } from '@tabler/icons-react'
 import ProfileHeaderMobile from '../components/profile/ProfileHeaderMobile'
 import AppNavbarMobile from '../components/AppNavbarMobile'
@@ -437,6 +439,13 @@ export default function Profile() {
   const { data: partners = [], isLoading: loadingPartners } = useQuery({
     queryKey: ['profile-partners', profile?.id],
     queryFn: () => fetchProfilePartners(profile.id),
+    enabled: !!profile?.id,
+    staleTime: 1000 * 60 * 10,
+  })
+
+  const { data: portfolio = [], isLoading: loadingPortfolio } = useQuery({
+    queryKey: ['profile-portfolio', profile?.id],
+    queryFn: () => fetchProfilePortfolio(profile.id),
     enabled: !!profile?.id,
     staleTime: 1000 * 60 * 10,
   })
@@ -930,6 +939,19 @@ export default function Profile() {
                 {profile.bio && (
                   <>
                     <SectionTitle text="Sobre" mb={12} />
+                    {profile.is_fake_profile && (
+                      <Alert
+                        icon={<IconSparkles2 />}
+                        variant="light"
+                        color="gray"
+                        px={8}
+                        py={4}
+                        mb="xs"
+                      >
+                        Este perfil foi criado por IA para fins de teste e não representa
+                        uma pessoa real
+                      </Alert>
+                    )}
                     <Text
                       fz="sm"
                       lh={1.4}
@@ -995,29 +1017,74 @@ export default function Profile() {
                   </>
                 )}
               </SectionPanel>
-              {/* <SectionPanel>
-                <SectionTitle text="Gêneros musicais de atuação" mb={12} />
-                {genres && genres.length > 0 ? (
-                  <Group gap={6} mt={6}>
-                    {genres.map(({ id, genres: genre }) => (
-                      <Badge
-                        radius="xl"
-                        size="md"
-                        variant="light"
-                        color="var(--mantine-color-text)"
-                        key={id}
-                      >
-                        {genre?.name}
-                      </Badge>
+
+              <SectionPanel id="portfolio">
+                <SectionTitle text="Portfolio" />
+                {loadingPortfolio ? (
+                  <Text mt="md">Carregando...</Text>
+                ) : portfolio.length > 0 ? (
+                  <Stack mt="md">
+                    {portfolio.map((item) => (
+                      <Box key={item.id}>
+                        {item.artist?.name && (
+                          <Group gap="xs" align="flex-start">
+                            <Avatar
+                              radius="md"
+                              src={ARTISTS_PATH + item.artist?.picture}
+                              size={48}
+                            />
+                            <Stack gap={1}>
+                              <Title order={5} size="sm" lh={1}>
+                                {item.artist?.name}
+                              </Title>
+                              <Text size="xs" c="dimmed">
+                                {item.type?.name_ptbr}
+                              </Text>
+                              <Text size="xs" c="dimmed">
+                                {item.role?.name_ptbr}
+                              </Text>
+                              {item.notes && (
+                                <Text size="xs" c="dimmed">
+                                  {item.notes}
+                                </Text>
+                              )}
+                            </Stack>
+                          </Group>
+                        )}
+                        {item.project?.name && (
+                          <Group gap="xs" align="flex-start">
+                            <Avatar
+                              radius="md"
+                              src={`https://ik.imagekit.io/mublin/projects/${item.project?.id}/tr:h-260,w-260,c-maintain_ratio/${item.project?.picture}`}
+                              size={48}
+                            />
+                            <Stack gap={1}>
+                              <Title order={5} size="sm" lh={1}>
+                                {item.project?.name}
+                              </Title>
+                              <Text size="sm">{item.project?.type?.name_ptbr}</Text>
+                              <Text size="xs" c="dimmed">
+                                {item.role?.name_ptbr}
+                              </Text>
+                              {item.notes && (
+                                <Text size="xs" c="dimmed">
+                                  {item.notes}
+                                </Text>
+                              )}
+                            </Stack>
+                          </Group>
+                        )}
+                      </Box>
                     ))}
-                  </Group>
+                  </Stack>
                 ) : (
-                  <Text size="xs" c="dimmed">
-                    Não informado
+                  <Text size="sm" c="dimmed" mt="sm">
+                    Nenhum item informado até o momento
                   </Text>
                 )}
-              </SectionPanel> */}
-              {profileProjects.length > 0 && (
+              </SectionPanel>
+
+              {/* {profileProjects.length > 0 && (
                 <>
                   <ScrollArea
                     id="projects"
@@ -1128,7 +1195,8 @@ export default function Profile() {
                     </Flex>
                   </ScrollArea>
                 </>
-              )}
+              )} */}
+
               {loadingPosts ? (
                 <Box mx="xs">
                   <SectionTitle text="Postagens" mb="md" />
@@ -1142,13 +1210,14 @@ export default function Profile() {
                 <>
                   {profilePosts.length > 0 ? (
                     <>
-                      <SectionTitle
+                      {/* <SectionTitle
                         text="Postagens"
-                        mb="xs"
+                        mt="sm"
                         mx={{ base: 'sm', md: 0 }}
                         id="posts"
-                      />
+                      /> */}
                       <Scroller
+                        // mt="xs"
                         key={profilePosts.length}
                         draggable
                         controlSize="xl"
@@ -1237,6 +1306,7 @@ export default function Profile() {
                   )}
                 </>
               )}
+
               {loadingGear ? (
                 <Box mx="xs">
                   <SectionTitle text="Equipamento" mb="md" />

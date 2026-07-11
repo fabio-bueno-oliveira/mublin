@@ -9,6 +9,7 @@ import {
   IconRadar,
   IconBox,
   IconCamera,
+  IconListCheckFilled,
 } from '@tabler/icons-react'
 import classes from './settings.module.css'
 
@@ -36,6 +37,12 @@ const SETTINGS_TABS = [
     label: 'Preferências musicais',
     icon: IconMusic,
     path: '/settings/musical-preferences',
+  },
+  {
+    value: 'portfolio',
+    label: 'Portfolio',
+    icon: IconListCheckFilled,
+    path: '/settings/portfolio',
   },
   {
     value: 'partners',

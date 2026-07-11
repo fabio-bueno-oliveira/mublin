@@ -50,7 +50,7 @@ export default function SimilarProfiles({ profiles = [], loading }) {
               </Box>
               <Stack gap={0} style={{ flexGrow: 1 }} maw="80%">
                 <Group gap={3} align="center" wrap="nowrap">
-                  <Text size="15px" fw={500} lineClamp={1} truncate="end">
+                  <Text size="14px" fw={500} lineClamp={1} truncate="end">
                     {p.full_name}
                   </Text>
                   {!!p.is_verified && (
@@ -63,7 +63,7 @@ export default function SimilarProfiles({ profiles = [], loading }) {
                   {/* {p.plan === 'Pro' && <ProPlanBadge small />} */}
                 </Group>
                 {p.title && (
-                  <Text size="14px" lineClamp={1} title={p.title}>
+                  <Text size="xs" lineClamp={1} title={p.title}>
                     {p.title}
                   </Text>
                 )}

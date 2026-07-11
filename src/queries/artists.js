@@ -107,7 +107,9 @@ export async function fetchArtistRoles(artistId) {
 export async function searchArtist(keyword) {
   const { data, error } = await supabase
     .from('artists')
-    .select('id, name, slug, picture, is_band, genres ( name_ptbr )')
+    .select(
+      'id, name, slug, picture, is_band, genres!artists_genre_id_fkey ( name_ptbr )',
+    )
     .ilike('name', `%${keyword}%`)
     .eq('is_active', true)
     .order('name')

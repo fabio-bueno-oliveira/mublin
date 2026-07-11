@@ -1,7 +1,6 @@
 import { useRef } from 'react'
-import { Outlet, useNavigate, useLocation, Link } from 'react-router-dom'
-import { Container, Tabs, Title, Text, Group, Scroller } from '@mantine/core'
-import { NAV_ITEMS, QUICK_ACTIONS } from '../constants/navItems'
+import { useNavigate, useLocation } from 'react-router-dom'
+import { Container, Tabs } from '@mantine/core'
 import {
   IconUser,
   IconMusic,
@@ -10,6 +9,7 @@ import {
   IconRadar,
   IconBox,
   IconCamera,
+  IconListCheckFilled,
 } from '@tabler/icons-react'
 import classes from '../pages/settings/settings.module.css'
 
@@ -37,6 +37,12 @@ const SETTINGS_TABS = [
     label: 'Preferências musicais',
     icon: IconMusic,
     path: '/settings/musical-preferences',
+  },
+  {
+    value: 'portfolio',
+    label: 'Portfolio',
+    icon: IconListCheckFilled,
+    path: '/settings/portfolio',
   },
   {
     value: 'partners',

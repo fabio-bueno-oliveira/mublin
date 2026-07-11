@@ -41,6 +41,7 @@ import {
   Paper,
   Button,
   Divider,
+  Popover,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { useDisclosure } from '@mantine/hooks'
@@ -54,6 +55,7 @@ import {
   IconInfoCircle,
   IconX,
   IconInfoCircleFilled,
+  IconBrandInstagram,
 } from '@tabler/icons-react'
 import dayjs from 'dayjs'
 
@@ -246,18 +248,75 @@ export default function Event() {
                   </Center>
                   <Flex justify="center" direction="column">
                     <Stack align="center" gap={2} mb="lg">
-                      <Title order={1} fz="h2">
-                        {event?.name}
-                      </Title>
-                      <Text size="sm">
-                        {dayjs(event.date_start).format('DD/MM/YYYY')} {' a '}
-                        {dayjs(event.date_end).format('DD/MM/YYYY')}
-                      </Text>
-                      {/* <Text size="10px" c="dimmed">
-                        {dayjs(event.date_start).format('dddd D [de] MMMM')} {' a '}
-                        {dayjs(event.date_end).format('dddd D [de] MMMM [de] YYYY')}
-                      </Text> */}
-                      <Flex gap={6} align="center" mt="sm">
+                      <Group align="center" gap="md" mb="sm">
+                        {/* Caixinha da data */}
+                        {event.date_start === event.date_end ? (
+                          <Paper
+                            withBorder
+                            radius="md"
+                            w={70}
+                            style={{ overflow: 'hidden' }}
+                          >
+                            <Stack gap={0} align="center">
+                              <Text
+                                size="xs"
+                                fw={700}
+                                tt="uppercase"
+                                c="white"
+                                bg="red.6"
+                                w="100%"
+                                ta="center"
+                                py={2}
+                              >
+                                {dayjs(event.date_start).format('MMM')}
+                              </Text>
+                              <Text size="xl" fw={700} py={4}>
+                                {dayjs(event.date_start).format('DD')}
+                              </Text>
+                            </Stack>
+                          </Paper>
+                        ) : (
+                          <Paper
+                            withBorder
+                            radius="md"
+                            w={70}
+                            style={{ overflow: 'hidden' }}
+                          >
+                            <Stack gap={0} align="center">
+                              <Text
+                                size="xs"
+                                fw={700}
+                                tt="uppercase"
+                                c="white"
+                                bg="red.6"
+                                w="100%"
+                                ta="center"
+                                py={2}
+                              >
+                                {dayjs(event.date_start).format('MMM')}
+                              </Text>
+                              <Text size="sm" fw={700} py={12}>
+                                {dayjs(event.date_start).format('DD')} a{' '}
+                                {dayjs(event.date_end).format('DD')}
+                              </Text>
+                            </Stack>
+                          </Paper>
+                        )}
+
+                        {/* Título do evento */}
+                        <Stack gap={2} style={{ flex: 1 }}>
+                          <Title order={1} fz="h2">
+                            {event?.name}
+                          </Title>
+                          <Text size="xs" c="dimmed">
+                            {dayjs(event.date_start).format('dddd, DD [de] MMMM')}
+                            <br />
+                            {event.date_start !== event.date_end &&
+                              `a ${dayjs(event.date_end).format('dddd, DD [de] MMMM [de] YYYY')}`}
+                          </Text>
+                        </Stack>
+                      </Group>
+                      <Flex gap={6} align="center">
                         <Text size="xs" span c="dimmed">
                           Evento criado por
                         </Text>
@@ -267,13 +326,21 @@ export default function Event() {
                         <Text size="xs" span c="dimmed">
                           {event.author?.full_name}
                         </Text>
-                        <Tooltip
-                          multiline
-                          w={240}
-                          label="O criador deste evento no Mublin não necessariamente representa a organização oficial"
-                        >
-                          <IconInfoCircleFilled size={14} color="gray" />
-                        </Tooltip>
+                        <Popover width={240} position="bottom" withArrow shadow="md">
+                          <Popover.Target>
+                            <IconInfoCircleFilled
+                              size={16}
+                              color="gray"
+                              style={{ cursor: 'pointer' }}
+                            />
+                          </Popover.Target>
+                          <Popover.Dropdown>
+                            <Text size="xs">
+                              O criador deste evento no Mublin não necessariamente
+                              representa a organização oficial
+                            </Text>
+                          </Popover.Dropdown>
+                        </Popover>
                       </Flex>
                       {user && (
                         <Flex justify="center" mt="sm">
@@ -299,8 +366,8 @@ export default function Event() {
                       <Spoiler
                         mt="lg"
                         maxHeight={68}
-                        showLabel="Ver mais"
-                        hideLabel="Ver menos"
+                        showLabel={<Text size="sm">Ver mais</Text>}
+                        hideLabel={<Text size="sm">Ver menos</Text>}
                         fz="sm"
                         style={{ whiteSpace: 'pre-line' }}
                       >
@@ -329,23 +396,19 @@ export default function Event() {
                                     withBorder
                                     p="xs"
                                     radius="md"
-                                    miw={140}
-                                    component={Link}
-                                    to={`/${person.username}`}
-                                    style={{
-                                      cursor: 'pointer',
-                                      textDecoration: 'none',
-                                      color: 'inherit',
-                                    }}
+                                    w={140}
+                                    h={150}
                                   >
                                     <Stack align="center" gap={2}>
-                                      <Avatar
-                                        src={AVATAR_PATH + person.avatar}
-                                        size={40}
-                                        radius="xl"
-                                      >
-                                        {person.full_name?.charAt(0)}
-                                      </Avatar>
+                                      <Link to={`/${person.username}`}>
+                                        <Avatar
+                                          src={AVATAR_PATH + person.avatar}
+                                          size={40}
+                                          radius="xl"
+                                        >
+                                          {person.full_name?.charAt(0)}
+                                        </Avatar>
+                                      </Link>
                                       <Group gap={4}>
                                         <Text
                                           ta="center"
@@ -373,12 +436,12 @@ export default function Event() {
 
                                       {person.interests.length > 0 && (
                                         <Text
-                                          size="xs"
+                                          fz="11px"
                                           c="dimmed"
                                           ta="center"
-                                          lineClamp={2}
+                                          lineClamp={3}
                                         >
-                                          {person.interests.join(', ')}
+                                          Interesses: {person.interests.join(', ')}
                                         </Text>
                                       )}
                                     </Stack>
@@ -446,16 +509,18 @@ export default function Event() {
                             ))}
                           </Group>
                         ) : (
-                          <Text size="sm" mb="md">
-                            Nenhuma gig vinculada a este evento até o momento
-                          </Text>
+                          <Card p="xs" mt="xs" mb="sm">
+                            <Text ta="center" c="dimmed" size="sm">
+                              Nenhuma gig vinculada a este evento até o momento
+                            </Text>
+                          </Card>
                         )}
                       </Box>
                     )}
 
-                    <Stack mt="lg" gap="sm">
+                    <Stack mt="md" gap="sm">
                       <Grid>
-                        <Grid.Col span={6}>
+                        <Grid.Col span={{ base: 12, md: 6 }}>
                           <Box>
                             <Text size="sm" c="dimmed" lh={1}>
                               Website
@@ -465,7 +530,7 @@ export default function Event() {
                             </Anchor>
                           </Box>
                         </Grid.Col>
-                        <Grid.Col span={6}>
+                        <Grid.Col span={{ base: 12, md: 6 }}>
                           <Box>
                             <Text size="sm" c="dimmed" lh={1}>
                               Ingressos
@@ -476,6 +541,24 @@ export default function Event() {
                           </Box>
                         </Grid.Col>
                       </Grid>
+
+                      {event?.instagram_handle && (
+                        <Box>
+                          <Group gap={4}>
+                            <Text size="sm" c="dimmed" lh={1}>
+                              Instagram
+                            </Text>
+                            <IconBrandInstagram size={16} color="gray" />
+                          </Group>
+                          <Anchor
+                            size="sm"
+                            href={event?.instagram_handle}
+                            target="_blank"
+                          >
+                            @{event?.instagram_handle}
+                          </Anchor>
+                        </Box>
+                      )}
 
                       <Box>
                         <Text size="sm" c="dimmed">

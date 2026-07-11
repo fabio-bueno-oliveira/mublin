@@ -82,7 +82,7 @@ export default function Home() {
 
   const { data: globalEvents = [], isLoading: loadingGlobalEvents } = useQuery({
     queryKey: ['events'],
-    queryFn: () => fetchEvents(3),
+    queryFn: () => fetchEvents(10),
     staleTime: 1000 * 60 * 5,
   })
 
@@ -133,7 +133,7 @@ export default function Home() {
             </Text> */}
 
             <Box mx="auto">
-              <Group justify="center" mb={5}>
+              <Group justify="center" mb="sm">
                 <Button
                   variant="gradient"
                   size="sm"
@@ -416,7 +416,7 @@ export default function Home() {
               <Title order={3} fw={600} fz="lg">
                 Eventos
               </Title>
-              {globalEvents.length > 3 && (
+              {globalEvents.length > 2 && (
                 <Group>
                   <ThemeIcon
                     variant="default"
@@ -436,59 +436,68 @@ export default function Home() {
               )}
             </Group>
 
-            <Box>
-              <div
-                ref={eventsScroller.ref}
-                {...eventsScroller.dragHandlers}
-                style={{
-                  overflow: 'auto',
-                  cursor: eventsScroller.isDragging ? 'grabbing' : 'default',
-                }}
-              >
-                <Group wrap="nowrap" gap="md">
-                  {globalEvents.map((event) => (
-                    <Link
-                      key={event.id}
-                      to={`/event/${event.slug}`}
-                      style={{ textDecoration: 'none', color: 'inherit' }}
-                    >
-                      <Card p="xs" w={160} h={280} shadow="sm" padding="lg" withBorder>
-                        <Card.Section>
-                          <Image
-                            src={EVENTS_IMG_PATH + event.picture_url}
-                            height={160}
-                            alt={event.name}
-                          />
-                        </Card.Section>
-                        <Text fw={600} fz="sm" mt="xs" mb={5} lineClamp={1}>
-                          {event.name}
-                        </Text>
-                        <Text size="10px" mb={8}>
-                          {dayjs(event.date_start).format('DD/MM/YYYY')} {' a '}
-                          {dayjs(event.date_end).format('DD/MM/YYYY')}
-                        </Text>
-                        <Text lineClamp={2} size="xs" c="dimmed">
-                          {event.description}
-                        </Text>
-                        <Flex gap={6} align="center" mt={6}>
-                          <Text size="10px" span c="dimmed">
-                            Criado por
+            {loadingGlobalEvents ? (
+              <Group wrap="nowrap" gap="md">
+                {[1, 2].map((i) => (
+                  <Skeleton key={i} width={160} height={240} />
+                ))}
+              </Group>
+            ) : (
+              <Box>
+                <div
+                  ref={eventsScroller.ref}
+                  {...eventsScroller.dragHandlers}
+                  className="scrollerHidden"
+                  style={{
+                    overflow: 'auto',
+                    cursor: eventsScroller.isDragging ? 'grabbing' : 'default',
+                  }}
+                >
+                  <Group wrap="nowrap" gap="md">
+                    {globalEvents.map((event) => (
+                      <Link
+                        key={event.id}
+                        to={`/event/${event.slug}`}
+                        style={{ textDecoration: 'none', color: 'inherit' }}
+                      >
+                        <Card p="xs" w={160} h={280} shadow="sm" padding="lg" withBorder>
+                          <Card.Section>
+                            <Image
+                              src={EVENTS_IMG_PATH + event.picture_url}
+                              height={160}
+                              alt={event.name}
+                            />
+                          </Card.Section>
+                          <Text fw={600} fz="sm" mt="xs" mb={5} lineClamp={1}>
+                            {event.name}
                           </Text>
-                          <Avatar
-                            src={AVATAR_PATH + event.author?.avatar}
-                            size={20}
-                            title={event.author?.full_name}
-                          />
-                          <Text size="10px" span lineClamp={1}>
-                            {event.author?.username}
+                          <Text size="10px" mb={8}>
+                            {dayjs(event.date_start).format('DD/MM/YYYY')} {' a '}
+                            {dayjs(event.date_end).format('DD/MM/YYYY')}
                           </Text>
-                        </Flex>
-                      </Card>
-                    </Link>
-                  ))}
-                </Group>
-              </div>
-            </Box>
+                          <Text lineClamp={2} size="xs" c="dimmed">
+                            {event.description}
+                          </Text>
+                          <Flex gap={6} align="center" mt={6}>
+                            <Text size="10px" span c="dimmed">
+                              Criado por
+                            </Text>
+                            <Avatar
+                              src={AVATAR_PATH + event.author?.avatar}
+                              size={20}
+                              title={event.author?.full_name}
+                            />
+                            <Text size="10px" span lineClamp={1}>
+                              {event.author?.username}
+                            </Text>
+                          </Flex>
+                        </Card>
+                      </Link>
+                    ))}
+                  </Group>
+                </div>
+              </Box>
+            )}
 
             <Group justify="space-between" align="center" mt="lg" mb="xs">
               <Title order={3} fw={600} fz="lg">

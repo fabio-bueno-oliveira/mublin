@@ -361,19 +361,13 @@ export default function NewEvent() {
       return
     }
 
-    const { data: event } = await supabase
-      .from('events')
-      .select('id, slug')
-      .eq('id', inserted.id)
-      .single()
-
     notifications.show({
       color: 'green',
       message: 'Evento criado com sucesso!',
       position: 'top-center',
     })
 
-    navigate(`/event/${event.slug}`)
+    navigate(`/event/${data.slug}`)
   }
 
   // ── Render ──────────────────────────────────────────────

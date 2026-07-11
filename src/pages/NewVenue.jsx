@@ -10,7 +10,6 @@ import {
   Stack,
   TextInput,
   Textarea,
-  Select,
   Button,
   Group,
   Switch,
@@ -27,7 +26,6 @@ import {
   Modal,
   ScrollArea,
   Anchor,
-  Badge,
 } from '@mantine/core'
 import { useDebouncedCallback, useDisclosure } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
@@ -45,15 +43,13 @@ import {
 // ── Helpers ───────────────────────────────────────────────
 
 function generateSlug(name) {
-  const base = name
+  return name
     .toLowerCase()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/[^a-z0-9\s]/g, '')
     .trim()
-    .replace(/\s+/g, '-')
-  const suffix = Math.random().toString(36).substring(2, 6)
-  return `${base}-${suffix}`
+    .replace(/\s+/g, '')
 }
 
 const VENUE_PICTURE_PATH = 'https://ik.imagekit.io/mublin/venues/temp/tr:w-800/'
@@ -342,7 +338,7 @@ export default function NewVenue() {
     }
 
     const venueId = newVenue.id
-    const venueSlug = newVenue.slug
+    const venueSlug = slug
 
     // 2. Move a imagem do folder temp para o folder definitivo
     let finalPictureUrl = null
@@ -477,7 +473,6 @@ export default function NewVenue() {
 
         <Divider label="Localização" labelPosition="left" />
 
-        {/* País → Estado → Cidade */}
         <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
           <NativeSelect
             label="País"
@@ -492,7 +487,7 @@ export default function NewVenue() {
             <option value="">Selecione</option>
             {countries.map((c) => (
               <option key={c.id} value={String(c.id)}>
-                {c.name_ptbr || c.name}
+                {c.name_ptbr !== 'NULL' ? c.name_ptbr : c.name}
               </option>
             ))}
           </NativeSelect>

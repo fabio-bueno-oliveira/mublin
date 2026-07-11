@@ -6,6 +6,7 @@ export async function fetchProfileDetails(profileUsername) {
     .select(
       `
       id,
+      is_fake_profile,
       created_at,
       full_name,
       username,
@@ -388,6 +389,42 @@ export async function fetchProfilePartners(profileId) {
     )
     .eq('id_user', profileId)
     .order('since_year', { ascending: false })
+  if (error) {
+    throw new Error(error.message)
+  }
+  return data
+}
+
+export async function fetchProfilePortfolio(profileId) {
+  const { data, error } = await supabase
+    .from('portfolio')
+    .select(
+      `
+      id,
+      order_number,
+      notes,
+      role_id,
+      project_id,
+      artist_id,
+      role:roles ( id, name_ptbr ),
+      project:projects ( 
+        id, name, slug, picture, description, 
+        type:project_types ( name_ptbr ) 
+      ),
+      artist:artists (
+        id,
+        name,
+        slug,
+        picture,
+        is_band,
+        is_verified,
+        genre:genres!artists_genre_id_fkey ( name, name_ptbr ),
+        countries ( name )
+      )
+    `,
+    )
+    .eq('profile_id', profileId)
+    .order('order_number', { ascending: true, nullsFirst: false })
   if (error) {
     throw new Error(error.message)
   }

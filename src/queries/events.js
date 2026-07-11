@@ -25,7 +25,7 @@ export async function fetchEvents(limit) {
       )
     `,
     )
-    .order('created_at', { ascending: false })
+    .order('date_start', { ascending: true })
     .limit(limit)
   if (error) {
     throw new Error(error.message)
@@ -44,7 +44,7 @@ export async function fetchEventDetails(slug) {
       date_start, date_end,
       time_event_start, time_event_end,
       min_age,
-      website_url, tickets_url,
+      instagram_handle, website_url, tickets_url,
       event_type:event_types ( name ),
       privacy:event_privacy_types ( name ),
       author:profiles!events_author_id_fkey ( full_name, username, title, avatar, is_verified ),
