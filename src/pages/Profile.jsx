@@ -88,7 +88,6 @@ import {
   IconRosetteDiscountCheck,
   IconSend,
   IconHeart,
-  IconUserX,
   IconUserPlus,
   IconLink,
   IconEye,
@@ -97,6 +96,8 @@ import {
   IconChevronRight,
   IconSparkles2,
   IconPencil,
+  IconBookmark,
+  IconBookFilled,
 } from '@tabler/icons-react'
 import ProfileHeaderMobile from '../components/profile/ProfileHeaderMobile'
 import AppNavbarMobile from '../components/AppNavbarMobile'
@@ -479,11 +480,6 @@ export default function Profile() {
       picture: r.projects?.picture,
       status: r.status,
       type: r.projects?.project_types?.name_ptbr ?? 'Outro',
-      roles: [
-        r.roles?.description_ptbr,
-        r.role2?.description_ptbr,
-        r.role3?.description_ptbr,
-      ].filter(Boolean),
     })) || []
 
   const rolesOrdered = profile?.profile_roles
@@ -715,77 +711,95 @@ export default function Profile() {
         )}
         <Grid>
           <Grid.Col span={{ base: 12, md: 2 }} visibleFrom="sm" pos="relative">
-            <Center
-              mb="sm"
-              top={profile.cover_image ? -40 : 0}
-              left={profile.cover_image ? 20 : 0}
+            <Box
+              top={profile.cover_image ? -36 : 0}
+              left={0}
               pos={profile.cover_image ? 'absolute' : 'inherit'}
             >
-              <Avatar
-                size={140}
-                src={getAvatarUrl(profile.avatar, profile.is_open_to_work, 140)}
-              />
-            </Center>
-            {user?.id !== profile.id && (
-              <Stack gap={10} className="buttonContentToLeft">
-                {followingInfo?.id ? (
+              <Center mb="sm">
+                <Avatar
+                  size={140}
+                  src={getAvatarUrl(profile.avatar, profile.is_open_to_work, 140)}
+                />
+              </Center>
+
+              <Stack w="174" gap={10} className="buttonContentToLeft">
+                {isOwnProfile ? (
                   <Button
+                    component={Link}
+                    to="/settings/profile"
                     fullWidth
-                    size="xs"
+                    size="sm"
                     radius="md"
                     variant="filled"
                     className="defaultMublinButton"
-                    onClick={() => unfollowProfile(user.id, profile.id)}
-                    disabled={loadingFollowingInfo}
-                    leftSection={<IconUserX size={16} />}
+                    leftSection={<IconPencil size={16} />}
                   >
-                    Deixar de seguir
+                    Editar meu perfil
                   </Button>
                 ) : (
-                  <Button
-                    fullWidth
-                    size="xs"
-                    radius="md"
-                    variant="gradient"
-                    gradient={{ from: 'grape.8', to: 'mublinColor.8', deg: 55 }}
-                    onClick={() => followProfile(user.id, profile.id)}
-                    disabled={loadingFollowingInfo}
-                    leftSection={<IconUserPlus size={16} />}
-                  >
-                    Seguir
-                  </Button>
-                )}
-                <Button
-                  fullWidth
-                  size="xs"
-                  radius="md"
-                  variant="filled"
-                  className="defaultMublinButton"
-                  onClick={openInvite}
-                  leftSection={<IconSend size={16} />}
-                >
-                  Convidar para gig
-                </Button>
-                <Button
-                  fullWidth
-                  size="xs"
-                  radius="md"
-                  variant="filled"
-                  leftSection={
-                    favoriteInfo?.id ? (
-                      <IconHeartFilled size={16} color="red" />
+                  <>
+                    {followingInfo?.id ? (
+                      <Button
+                        fullWidth
+                        size="sm"
+                        radius="md"
+                        variant="filled"
+                        className="defaultMublinButton"
+                        onClick={() => unfollowProfile(user.id, profile.id)}
+                        disabled={loadingFollowingInfo}
+                      >
+                        Deixar de seguir
+                      </Button>
                     ) : (
-                      <IconHeart size={16} />
-                    )
-                  }
-                  className="defaultMublinButton"
-                  onClick={() => handleToggleFavorite(!!favoriteInfo?.id)}
-                  disabled={loadingFavoriteInfo || togglingFavorite}
-                >
-                  {favoriteInfo?.id ? 'Salvo' : 'Salvar nos favoritos'}
-                </Button>
+                      <Button
+                        fullWidth
+                        size="sm"
+                        radius="md"
+                        variant="gradient"
+                        gradient={{ from: 'grape.8', to: 'mublinColor.8', deg: 55 }}
+                        onClick={() => followProfile(user.id, profile.id)}
+                        disabled={loadingFollowingInfo}
+                        leftSection={<IconUserPlus size={16} />}
+                      >
+                        Seguir
+                      </Button>
+                    )}
+                    {profile.available_from !== 'not_available' && (
+                      <Button
+                        fullWidth
+                        size="sm"
+                        radius="md"
+                        variant="filled"
+                        className="defaultMublinButton"
+                        onClick={openInvite}
+                        // leftSection={<IconSend size={12} />}
+                      >
+                        Convidar para gig
+                      </Button>
+                    )}
+                    <Button
+                      fullWidth
+                      size="sm"
+                      radius="md"
+                      variant="filled"
+                      leftSection={
+                        favoriteInfo?.id ? (
+                          <IconBookFilled size={16} color="red" />
+                        ) : (
+                          <IconBookmark size={16} />
+                        )
+                      }
+                      className="defaultMublinButton"
+                      onClick={() => handleToggleFavorite(!!favoriteInfo?.id)}
+                      disabled={loadingFavoriteInfo || togglingFavorite}
+                    >
+                      {favoriteInfo?.id ? 'Salvo' : 'Salvar'}
+                    </Button>
+                  </>
+                )}
               </Stack>
-            )}
+            </Box>
           </Grid.Col>
           <Grid.Col span={{ base: 12, md: 7 }}>
             {isMobile && (
@@ -829,7 +843,7 @@ export default function Profile() {
               </Affix>
             )}
 
-            <Stack gap={0} flex={1} mb="md" visibleFrom="sm">
+            <Stack gap={0} flex={1} mb="xs" visibleFrom="sm">
               <Flex align="center" gap={4} wrap="wrap">
                 <Title
                   order={1}
@@ -898,20 +912,7 @@ export default function Profile() {
               </Anchor>
             </Group>
 
-            {user?.id === profile.id ? (
-              <Button
-                mt="md"
-                component={Link}
-                to="/settings/profile"
-                size="sm"
-                radius="md"
-                variant="filled"
-                className="defaultMublinButton"
-                fullWidth
-              >
-                Editar meu perfil
-              </Button>
-            ) : (
+            {!isOwnProfile && (
               <Group justify="space-around" hiddenFrom="sm" px="sm" mt="sm">
                 {followingInfo?.id ? (
                   <Button
@@ -971,7 +972,8 @@ export default function Profile() {
                   <>
                     <SectionTitle text="Sobre" mb={12} />
                     {profile.is_fake_profile && (
-                      <Alert
+                      <Group gap={4} mb={10} wrap="nowrap">
+                        {/* <Alert
                         icon={<IconSparkles2 />}
                         variant="light"
                         color="gray"
@@ -981,7 +983,13 @@ export default function Profile() {
                       >
                         Este perfil foi criado por IA para fins de teste e não representa
                         uma pessoa real
-                      </Alert>
+                      </Alert> */}
+                        <IconSparkles2 size={20} />
+                        <Text size="xs" lh={1} opacity={0.8}>
+                          Este perfil foi criado por IA para fins de teste e não
+                          representa uma pessoa real
+                        </Text>
+                      </Group>
                     )}
                     <Text
                       fz="sm"
@@ -997,7 +1005,7 @@ export default function Profile() {
 
                 <Title
                   order={3}
-                  fz="xs"
+                  fz="sm"
                   fw={300}
                   mt={profile.bio ? 'lg' : 0}
                   mb="xs"
@@ -1023,7 +1031,7 @@ export default function Profile() {
 
                 {genres && genres.length > 0 && (
                   <>
-                    <Title order={3} fz="xs" fw={300} mt="xs" mb={4} opacity={0.8}>
+                    <Title order={3} fz="sm" fw={300} mt="xs" mb={4} opacity={0.8}>
                       Gêneros musicais de atuação
                     </Title>
                     {genres && genres.length > 0 ? (
@@ -1245,18 +1253,6 @@ export default function Profile() {
                                 gap={0}
                                 inset={10}
                               >
-                                {item.roles.length > 0 && (
-                                  <Text
-                                    size="12px"
-                                    w={126}
-                                    c="white"
-                                    style={{
-                                      textShadow: '0 1px 2px rgba(0,0,0,0.6)',
-                                    }}
-                                  >
-                                    {item.roles.join(', ')} em
-                                  </Text>
-                                )}
                                 <Text
                                   size="lg"
                                   w={140}
@@ -1421,7 +1417,7 @@ export default function Profile() {
                           ml={{ base: 'sm', md: 0 }}
                         />
 
-                        {user?.id === profile.id && (
+                        {isOwnProfile && (
                           <Menu shadow="md" width={200}>
                             <Menu.Target>
                               <ActionIcon

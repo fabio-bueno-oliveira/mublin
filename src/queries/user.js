@@ -69,15 +69,8 @@ export async function fetchUserProjects(userId) {
       `
       project_id,
       status,
-      engagement_type_id,
       is_founder,
       is_admin,
-      is_ex_member,
-      joined_at,
-      left_at,
-      role_2_id,
-      role_3_id,
-      roles!project_members_role_id_fkey ( name_ptbr, description_ptbr ),
       projects (
         id, name, slug, picture, description,
         spotify_id, instagram,

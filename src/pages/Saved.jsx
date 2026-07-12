@@ -22,7 +22,7 @@ import {
   Avatar,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { IconBookmark } from '@tabler/icons-react'
+import { IconBookmark, IconBookmarks } from '@tabler/icons-react'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import 'dayjs/locale/pt-br'
@@ -151,7 +151,7 @@ export default function MySavedFavorites() {
 
       <Container size="xl" pt="xs" px={{ base: 'md', sm: 0 }} mt={{ base: 50, sm: 0 }}>
         <Group gap="xs" mb={4} visibleFrom="sm">
-          <IconBookmark size={32} />
+          <IconBookmarks size={32} />
           <Title order={1} fz="h3" ta="left" fw={600}>
             Itens salvos
           </Title>

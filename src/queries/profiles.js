@@ -182,9 +182,8 @@ export async function fetchProfileProjects(profileId) {
       `
       project_id,
       status,
-      roles!project_members_role_id_fkey ( description_ptbr ),
-      role2:roles!project_members_role_2_id_fkey ( description_ptbr ),
-      role3:roles!project_members_role_3_id_fkey ( description_ptbr ),
+      is_admin,
+      is_founder,
       projects ( id, name, slug, picture, description, project_types ( name_ptbr ) )
     `,
     )
@@ -411,7 +410,8 @@ export async function fetchProfilePortfolio(profileId) {
       is_mublin_facilitated,
       project:projects (
         id, name, slug, picture, description,
-        type:project_types ( name_ptbr )
+        type:project_types ( name_ptbr ),
+        genre:genres ( name_ptbr )
       ),
       artist:artists (
         id,

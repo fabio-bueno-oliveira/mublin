@@ -23,6 +23,7 @@ const AVATAR_PATH =
 
 // Mapeamento de valores do banco para labels exibidos ao usuário
 const AVAILABLE_FROM_OPTIONS = [
+  { value: 'not_available', label: 'Não disponível no momento' },
   { value: 'immediate', label: 'Disponibilidade imediata' },
   { value: 'negotiable', label: 'A combinar' },
   { value: 'few_days', label: 'Em alguns dias' },

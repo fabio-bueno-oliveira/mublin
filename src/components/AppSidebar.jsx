@@ -21,11 +21,7 @@ import {
   TextInput,
 } from '@mantine/core'
 // import ProPlanBadge from './ProPlanBadge'
-import {
-  IconRosetteDiscountCheck,
-  IconRosetteDiscountCheckFilled,
-  IconSearch,
-} from '@tabler/icons-react'
+import { IconRosetteDiscountCheck, IconSearch } from '@tabler/icons-react'
 
 const AVATAR_PATH =
   'https://ik.imagekit.io/mublin/tr:h-140,c-maintain_ratio/users/avatars/'
@@ -47,27 +43,24 @@ export default function AppSidebar() {
     staleTime: 1000 * 60 * 4,
   })
 
-  const userProjects = projects.map((p) => ({
-    id: p.projects.id,
-    name: p.projects.name,
-    slug: p.projects.slug,
-    end_year: p.projects.end_year,
-    is_founder: p.is_founder,
-    is_ex_member: p.is_ex_member,
-    picture: p.projects.picture,
-    request_status: p.status,
-    activity_status: p.projects.activity_status,
-    activity_status_name: p.projects.project_statuses?.description_ptbr,
-    activity_status_color: p.projects.project_statuses?.color,
-    main_role: p.roles.description_ptbr,
-    genre: p.projects.genres?.name,
-    type: p.projects.project_types?.name_ptbr,
-    joined_at: p.joined_at ? new Date(p.joined_at).getFullYear() : null,
-    left_at: p.left_at ? new Date(p.left_at).getFullYear() : null,
-    role_2_id: p.role_2_id,
-    role_3_id: p.role_3_id,
-    totalMembers: p.projects.project_members?.length || 0,
-  }))
+  const userProjects = projects
+    .filter((x) => x.is_admim)
+    .map((p) => ({
+      id: p.projects.id,
+      name: p.projects.name,
+      slug: p.projects.slug,
+      end_year: p.projects.end_year,
+      is_admin: p.is_admin,
+      is_founder: p.is_founder,
+      picture: p.projects.picture,
+      request_status: p.status,
+      activity_status: p.projects.activity_status,
+      activity_status_name: p.projects.project_statuses?.description_ptbr,
+      activity_status_color: p.projects.project_statuses?.color,
+      genre: p.projects.genres?.name,
+      type: p.projects.project_types?.name_ptbr,
+      totalMembers: p.projects.project_members?.length || 0,
+    }))
 
   const normalizedQuery = searchQuery.trim().toLowerCase()
   const filteredProjects = normalizedQuery
@@ -108,7 +101,7 @@ export default function AppSidebar() {
             radius="md"
             p={0}
             mt={4}
-            mb="sm"
+            mb="lg"
             style={{ overflow: 'hidden' }}
             pos="relative"
           >
@@ -176,15 +169,16 @@ export default function AppSidebar() {
               </Stack>
             </Box>
           </Card>
+
           <Group
             justify="flex-start"
             align="center"
             gap="xs"
-            mb={searchOpened ? 4 : 'sm'}
+            mb={searchOpened ? 4 : 'xs'}
             wrap="nowrap"
           >
             <Title order={3} fw={600} fz="md">
-              Projetos
+              Projetos que sou administrador
             </Title>
             {!loadingProjects && userProjects.length > 0 && (
               <ActionIcon
@@ -221,7 +215,7 @@ export default function AppSidebar() {
           ) : userProjects.length > 0 ? (
             <ScrollArea h={192} scrollHideDelay={0}>
               {filteredProjects.length > 0 ? (
-                <Stack gap="md">
+                <Stack gap="sm">
                   {filteredProjects.map((project) => (
                     <Link
                       key={project.id}
@@ -242,9 +236,6 @@ export default function AppSidebar() {
                           />
 
                           <Stack gap={0}>
-                            <Text size="11px" truncate="end" opacity={0.8}>
-                              {project.main_role} em
-                            </Text>
                             <Text size="sm">{project.name}</Text>
                             <Text size="10px" c="dimmed">
                               {project.type} {project.genre && ` · ${project.genre}`}
@@ -271,12 +262,14 @@ export default function AppSidebar() {
                 </Stack>
               ) : (
                 <Text size="sm" c="dimmed">
-                  Nenhum projeto encontrado para &quot;{searchQuery}&quot;
+                  Nenhum projeto encontrado
                 </Text>
               )}
             </ScrollArea>
           ) : (
-            <Text c="dimmed">Você não está associado a nenhum projeto até o momento</Text>
+            <Text size="sm" c="dimmed">
+              Você não gerencia nenhum projeto no momento
+            </Text>
           )}
         </>
       )}

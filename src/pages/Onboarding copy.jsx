@@ -2,9 +2,9 @@ import { useState, useEffect, lazy } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { fetchUserProfile, fetchUserRoles } from '../queries/user'
+import { fetchUserProfile, fetchUserRoles, fetchUserProjects } from '../queries/user'
 import { fetchAllRoles } from '../queries/roles'
-import { searchArtist } from '../queries/artists'
+import { searchProjectsByName } from '../queries/projects'
 import { fetchRegions, searchCitiesByName, fetchCityById } from '../queries/locations'
 import { supabase } from '../lib/supabaseClient'
 import {
@@ -21,8 +21,6 @@ import {
   Textarea,
   TextInput,
   NativeSelect,
-  MultiSelect,
-  Switch,
   Combobox,
   useCombobox,
   Grid,
@@ -33,13 +31,11 @@ import {
   Anchor,
   Divider,
   Badge,
-  Loader,
-  ActionIcon,
-  Radio,
-  NumberInput,
   Pill,
-  Tooltip,
+  Loader,
+  ThemeIcon,
 } from '@mantine/core'
+import JoinProjectModal from '../components/modals/JoinProjectModal'
 import { useForm } from '@mantine/form'
 import { useDebouncedCallback, useDisclosure } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
@@ -57,76 +53,8 @@ import {
   IconUserEdit,
   IconMusic,
   IconUsersGroup,
-  IconPlus,
-  IconTrash,
-  IconDisc,
-  IconMicrophone2,
-  IconStarFilled,
-  IconStar,
 } from '@tabler/icons-react'
 const NewProject = lazy(() => import('./NewProject'))
-
-const ARTISTS_PATH =
-  'https://ik.imagekit.io/mublin/artists/tr:h-96,w-96,c-maintain_ratio/'
-const PROJECTS_PATH =
-  'https://ik.imagekit.io/mublin/projects/tr:h-96,w-96,c-maintain_ratio/'
-
-// ── Queries locais (portfólio) ─────────────────────────────
-
-async function fetchUserPortfolio(profileId) {
-  const { data, error } = await supabase
-    .from('portfolio')
-    .select(
-      `
-      id,
-      order_number,
-      notes,
-      project_id,
-      artist_id,
-      year_start,
-      year_end,
-      is_sporadic,
-      is_mublin_facilitated,
-      projects ( id, name, picture ),
-      artists ( id, name, picture ),
-      portfolio_roles ( role_id, roles ( id, name_ptbr ) ),
-      portfolio_engagement_types (
-        engagement_type_id,
-        project_engagement_types ( id, name_ptbr )
-      )
-    `,
-    )
-    .eq('profile_id', profileId)
-    .order('order_number', { ascending: true, nullsFirst: false })
-  if (error) {
-    throw new Error(error.message)
-  }
-  return data
-}
-
-async function fetchAllEngagementTypes() {
-  const { data, error } = await supabase
-    .from('project_engagement_types')
-    .select('id, name_ptbr')
-    .order('name_ptbr')
-  if (error) {
-    throw new Error(error.message)
-  }
-  return data
-}
-
-// Busca local de projetos já cadastrados no Mublin (mesmo padrão do Portfolio.jsx)
-async function searchProjects(keyword) {
-  const { data, error } = await supabase
-    .from('projects')
-    .select('id, name, picture')
-    .ilike('name', `%${keyword}%`)
-    .limit(10)
-  if (error) {
-    throw new Error(error.message)
-  }
-  return data
-}
 
 // ── Componente principal ──────────────────────────────────
 
@@ -211,30 +139,19 @@ export default function Onboarding() {
     },
   })
 
-  // ── Step 4: Portfólio ──────────────────────────────────
-  const [selectedRoleIds, setSelectedRoleIds] = useState([])
-  const [selectedEngagementTypeIds, setSelectedEngagementTypeIds] = useState([])
-  const [entryType, setEntryType] = useState('project') // 'project' | 'artist'
-  const [selectedProject, setSelectedProject] = useState(null)
-  const [selectedArtist, setSelectedArtist] = useState(null)
-  const [portfolioNotes, setPortfolioNotes] = useState('')
-  const [portfolioYearStart, setPortfolioYearStart] = useState('')
-  const [portfolioYearEnd, setPortfolioYearEnd] = useState('')
-  const [portfolioIsSporadic, setPortfolioIsSporadic] = useState(false)
-  const [portfolioIsMublinFacilitated, setPortfolioIsMublinFacilitated] = useState(false)
-  const [isSavingPortfolioItem, setIsSavingPortfolioItem] = useState(false)
-  const [isDeletingPortfolioItem, setIsDeletingPortfolioItem] = useState(false)
-
+  // ── Step 4: Projetos ──────────────────────────────────
   const [projectSearch, setProjectSearch] = useState('')
   const [projectResults, setProjectResults] = useState([])
   const [projectSearchLoading, setProjectSearchLoading] = useState(false)
-
-  const [artistSearch, setArtistSearch] = useState('')
-  const [artistResults, setArtistResults] = useState([])
-  const [artistSearchLoading, setArtistSearchLoading] = useState(false)
-
-  const [modalPortfolioOpened, { open: openPortfolioModal, close: closePortfolioModal }] =
+  const [userProjects, setUserProjects] = useState([])
+  const [selectedProject, setSelectedProject] = useState(null)
+  const [modalJoinOpened, { open: openJoinModal, close: closeJoinModal }] =
     useDisclosure(false)
+  const [joinRole, setJoinRole] = useState('')
+  const [joinYear, setJoinYear] = useState(currentYear)
+  const [projectFoundationYear, setProjectFoundationYear] = useState('')
+  const [projectEndYear, setProjectEndYear] = useState('')
+  const [joiningProject, setJoiningProject] = useState(false)
 
   // ── Queries ───────────────────────────────────────────
 
@@ -252,9 +169,9 @@ export default function Onboarding() {
     staleTime: 1000 * 60 * 5,
   })
 
-  const { data: userPortfolio = [], isLoading: loadingPortfolio } = useQuery({
-    queryKey: ['profile-portfolio', user?.id],
-    queryFn: () => fetchUserPortfolio(user.id),
+  const { data: savedProjects = [] } = useQuery({
+    queryKey: ['profile-projects', user?.id],
+    queryFn: () => fetchUserProjects(user.id),
     enabled: !!user?.id,
     staleTime: 1000 * 60 * 5,
   })
@@ -263,12 +180,6 @@ export default function Onboarding() {
     queryKey: ['roles'],
     queryFn: fetchAllRoles,
     staleTime: 1000 * 60 * 30,
-  })
-
-  const { data: allEngagementTypes = [] } = useQuery({
-    queryKey: ['all-engagement-types'],
-    queryFn: fetchAllEngagementTypes,
-    staleTime: Infinity,
   })
 
   const { data: regions = [] } = useQuery({
@@ -295,25 +206,15 @@ export default function Onboarding() {
       tags: r.tags,
     }))
 
-  const roleSelectData = [
-    {
-      group: 'Gestão, produção e outros',
-      items: roles
-        .filter((r) => !r.instrumentalist)
-        .map((r) => ({ value: String(r.id), label: r.name_ptbr })),
-    },
-    {
-      group: 'Instrumentos',
-      items: roles
-        .filter((r) => r.instrumentalist)
-        .map((r) => ({ value: String(r.id), label: r.name_ptbr })),
-    },
-  ]
+  const rolesForProject = roles.filter((r) => r.applies_to_a_project)
 
-  const engagementTypeSelectData = allEngagementTypes.map((t) => ({
-    value: String(t.id),
-    label: t.name_ptbr,
-  }))
+  const rolesProjectMusicians = rolesForProject
+    .filter((r) => r.instrumentalist)
+    .map((r) => ({ label: r.name_ptbr, value: String(r.id) }))
+
+  const rolesProjectManagement = rolesForProject
+    .filter((r) => !r.instrumentalist)
+    .map((r) => ({ label: r.name_ptbr, value: String(r.id) }))
 
   // ── Popula os estados iniciais ──
 
@@ -353,6 +254,19 @@ export default function Onboarding() {
     }))
     setUserRoles(mapped)
   }, [savedRoles])
+
+  useEffect(() => {
+    if (!savedProjects.length) {
+      return
+    }
+    const mapped = savedProjects.map((r) => ({
+      id: r.projects.id,
+      name: r.projects.name,
+      slug: r.projects.slug,
+      picture: r.projects.picture,
+    }))
+    setUserProjects(mapped)
+  }, [savedProjects])
 
   // ── Handlers ──────────────────────────────────────────
 
@@ -520,7 +434,7 @@ export default function Onboarding() {
     if (!error) {
       setUserRoles((prev) => [
         ...prev,
-        { id: role.id, name: role.name_ptbr, main_activity: isFirst },
+        { id: role.id, name: role.name_ptbr, profileRoleId: null },
       ])
     }
     setAddingRole(false)
@@ -536,218 +450,70 @@ export default function Onboarding() {
     setUserRoles((prev) => prev.filter((r) => r.id !== roleId))
   }
 
-  async function handleSetMainActivity(roleId) {
-    const previousMain = userRoles.find((r) => r.main_activity)
-    if (previousMain?.id === roleId) {
-      return
-    }
-
-    // Atualização otimista
-    setUserRoles((prev) => prev.map((r) => ({ ...r, main_activity: r.id === roleId })))
-
-    const updates = [
-      supabase
-        .from('profile_roles')
-        .update({ main_activity: true })
-        .eq('id_profile', user.id)
-        .eq('id_role', roleId),
-    ]
-    if (previousMain) {
-      updates.push(
-        supabase
-          .from('profile_roles')
-          .update({ main_activity: false })
-          .eq('id_profile', user.id)
-          .eq('id_role', previousMain.id),
-      )
-    }
-
-    const results = await Promise.all(updates)
-    const hasError = results.some((r) => r.error)
-
-    if (hasError) {
-      // Reverte em caso de erro
-      setUserRoles((prev) =>
-        prev.map((r) => ({
-          ...r,
-          main_activity: previousMain ? r.id === previousMain.id : false,
-        })),
-      )
-      notifications.show({
-        color: 'red',
-        position: 'top-center',
-        message: 'Erro ao atualizar atividade principal. Tente novamente.',
-      })
-    }
-  }
-
-  // Step 4 — Portfólio
+  // Step 4 — Projetos
   const handleProjectSearch = useDebouncedCallback(async (query) => {
-    if (query.trim().length < 2) {
-      setProjectResults([])
-      return
-    }
+    // if (query.length < 2) {
+    //   setProjectResults([])
+    //   return
+    // }
     setProjectSearchLoading(true)
-    try {
-      const results = await searchProjects(query)
-      setProjectResults(results)
-    } catch (err) {
-      console.error(err)
-    } finally {
-      setProjectSearchLoading(false)
-    }
-  }, 500)
+    const results = await searchProjectsByName(query)
+    setProjectResults(results)
+    setProjectSearchLoading(false)
+  }, 600)
 
-  const handleArtistSearch = useDebouncedCallback(async (query) => {
-    if (query.trim().length < 2) {
-      setArtistResults([])
+  function handleSelectProject(project) {
+    if (userProjects.find((p) => p.id === project.id)) {
       return
     }
-    setArtistSearchLoading(true)
-    try {
-      const results = await searchArtist(query)
-      setArtistResults(results)
-    } catch (err) {
-      console.error(err)
-    } finally {
-      setArtistSearchLoading(false)
-    }
-  }, 500)
-
-  function resetPortfolioForm() {
-    setSelectedRoleIds([])
-    setSelectedEngagementTypeIds([])
-    setEntryType('project')
-    setSelectedProject(null)
-    setSelectedArtist(null)
-    setPortfolioNotes('')
-    setPortfolioYearStart('')
-    setPortfolioYearEnd('')
-    setPortfolioIsSporadic(false)
-    setPortfolioIsMublinFacilitated(false)
-    setProjectSearch('')
-    setProjectResults([])
-    setArtistSearch('')
-    setArtistResults([])
+    setSelectedProject(project)
+    setJoinYear(currentYear)
+    setJoinRole('')
+    openJoinModal()
+    setProjectFoundationYear(project.foundation_year)
+    setProjectEndYear(project.end_year)
   }
 
-  function handleOpenPortfolioModal() {
-    resetPortfolioForm()
-    openPortfolioModal()
-  }
-
-  function handleClosePortfolioModal() {
-    closePortfolioModal()
-    resetPortfolioForm()
-  }
-
-  async function handleAddPortfolioItem() {
-    if (selectedRoleIds.length === 0) {
-      notifications.show({
-        color: 'red',
-        position: 'top-center',
-        message: 'Selecione ao menos um papel exercido no projeto.',
-      })
+  async function handleJoinProject() {
+    if (!joinRole || !joinYear) {
       return
     }
-    if (!selectedProject && !selectedArtist) {
-      notifications.show({
-        color: 'red',
-        position: 'top-center',
-        message: 'Selecione um projeto ou artista.',
-      })
-      return
-    }
+    setJoiningProject(true)
 
-    setIsSavingPortfolioItem(true)
-    const nextOrder = userPortfolio.length + 1
+    const { error } = await supabase.from('project_members').insert({
+      project_id: selectedProject.id,
+      profile_id: user.id,
+      role_id: Number(joinRole),
+      joined_at: `${joinYear}-01-01`,
+      is_founder: false,
+      is_admin: false,
+    })
 
-    const { data: insertedPortfolio, error } = await supabase
-      .from('portfolio')
-      .insert({
-        profile_id: user.id,
-        project_id: selectedProject ? Number(selectedProject.id) : null,
-        artist_id: selectedArtist ? Number(selectedArtist.id) : null,
-        order_number: nextOrder,
-        notes: portfolioNotes.trim() ? portfolioNotes.trim() : null,
-        year_start:
-          !portfolioIsSporadic && portfolioYearStart ? Number(portfolioYearStart) : null,
-        year_end:
-          !portfolioIsSporadic && portfolioYearEnd ? Number(portfolioYearEnd) : null,
-        is_sporadic: portfolioIsSporadic,
-        is_mublin_facilitated: portfolioIsMublinFacilitated,
-      })
-      .select('id')
-      .single()
-
-    if (error || !insertedPortfolio) {
-      notifications.show({
-        color: 'red',
-        position: 'top-center',
-        message: 'Erro ao adicionar item ao portfólio. Tente novamente.',
-      })
-      setIsSavingPortfolioItem(false)
-      return
-    }
-
-    const portfolioId = insertedPortfolio.id
-
-    const rolesPayload = selectedRoleIds.map((roleId) => ({
-      portfolio_id: portfolioId,
-      role_id: Number(roleId),
-    }))
-    const engagementPayload = selectedEngagementTypeIds.map((typeId) => ({
-      portfolio_id: portfolioId,
-      engagement_type_id: Number(typeId),
-    }))
-
-    const [{ error: rolesError }, engagementResult] = await Promise.all([
-      supabase.from('portfolio_roles').insert(rolesPayload),
-      engagementPayload.length > 0
-        ? supabase.from('portfolio_engagement_types').insert(engagementPayload)
-        : Promise.resolve({ error: null }),
-    ])
-    const engagementError = engagementResult?.error
-
-    if (rolesError || engagementError) {
-      console.error(rolesError || engagementError)
-      notifications.show({
-        color: 'yellow',
-        position: 'top-center',
-        message:
-          'Item criado, mas houve um erro ao salvar papéis/tipos de vínculo. Você pode revisar depois em Configurações.',
-      })
-    } else {
+    if (!error) {
+      setUserProjects((prev) => [
+        ...prev,
+        {
+          id: selectedProject.id,
+          name: selectedProject.name,
+          picture: selectedProject.picture,
+          slug: selectedProject.slug,
+        },
+      ])
+      closeJoinModal()
       notifications.show({
         color: 'green',
         position: 'top-center',
-        message: 'Item adicionado ao seu portfólio!',
-      })
-    }
-
-    await queryClient.refetchQueries({ queryKey: ['profile-portfolio', user.id] })
-    handleClosePortfolioModal()
-    setIsSavingPortfolioItem(false)
-  }
-
-  async function handleRemovePortfolioItem(itemId) {
-    setIsDeletingPortfolioItem(true)
-    const { error } = await supabase.from('portfolio').delete().eq('id', itemId)
-    if (error) {
-      notifications.show({
-        color: 'red',
-        position: 'top-center',
-        message: 'Erro ao remover item do portfólio.',
+        message: `Você solicitou o ingresso em ${selectedProject.name}!`,
+        autoClose: 5000,
       })
     } else {
       notifications.show({
-        color: 'green',
+        color: 'red',
         position: 'top-center',
-        message: 'Item removido do portfólio.',
+        message: 'Erro ao tentar ingressar. Tente novamente.',
       })
     }
-    await queryClient.refetchQueries({ queryKey: ['profile-portfolio', user.id] })
-    setIsDeletingPortfolioItem(false)
+    setJoiningProject(false)
   }
 
   // ── Navegação entre steps ─────────────────────────────
@@ -1112,50 +878,25 @@ export default function Onboarding() {
             })()}
 
             {userRoles.length > 0 && (
-              <Pill.Group>
+              <Group gap={6}>
                 {userRoles.map((role) => (
-                  <Pill
+                  <Badge
                     key={role.id}
                     size="md"
-                    withRemoveButton
-                    onRemove={() => handleRemoveRole(role.id)}
-                    style={
-                      role.main_activity
-                        ? {
-                            background:
-                              'linear-gradient(190deg, var(--mantine-color-grape-9), var(--mantine-color-mublinColor-9))',
-                            color: 'white',
-                          }
-                        : undefined
+                    variant="gradient"
+                    gradient={{ from: 'grape.9', to: 'mublinColor.9', deg: 190 }}
+                    rightSection={
+                      <IconX
+                        style={{ width: 10, height: 10, cursor: 'pointer' }}
+                        stroke={3}
+                        onClick={() => handleRemoveRole(role.id)}
+                      />
                     }
                   >
-                    <Group gap={4} wrap="nowrap" component="span">
-                      <Tooltip
-                        label={
-                          role.main_activity
-                            ? 'Atividade principal'
-                            : 'Definir como atividade principal'
-                        }
-                        withArrow
-                      >
-                        <ActionIcon
-                          size={14}
-                          variant="transparent"
-                          c={role.main_activity ? 'white' : 'gray'}
-                          onClick={() => handleSetMainActivity(role.id)}
-                        >
-                          {role.main_activity ? (
-                            <IconStarFilled size={12} />
-                          ) : (
-                            <IconStar size={12} />
-                          )}
-                        </ActionIcon>
-                      </Tooltip>
-                      {role.name}
-                    </Group>
-                  </Pill>
+                    {role.name} {role.main_activity ? '( atividade principal)' : ''}
+                  </Badge>
                 ))}
-              </Pill.Group>
+              </Group>
             )}
 
             {userRoles.length === 0 && (
@@ -1165,106 +906,207 @@ export default function Onboarding() {
             )}
           </Stack>
         )}
-        {/* ── Step 3: Portfólio ────────────────────────── */}
+        {/* ── Step 3: Projetos ─────────────────────────── */}
         {active === 3 && (
           <Stack gap="md">
             <Title order={3} fw={700} ta="center">
-              Seu portfólio
+              Seus projetos musicais
             </Title>
             <Text c="dimmed" size="sm" ta="center">
-              Em quais projetos, bandas ou com quais artistas você já atuou?
+              De quais projetos ou bandas você participa ou já participou?
             </Text>
 
-            {loadingPortfolio ? (
-              <Text size="sm" c="dimmed" ta="center">
-                Carregando...
-              </Text>
-            ) : userPortfolio.length > 0 ? (
-              <Stack gap="xs">
-                {userPortfolio.map((item) => {
-                  const entity = item.projects || item.artists
-                  const isProject = !!item.projects
-                  const picture = entity?.picture
-                    ? (isProject ? `${PROJECTS_PATH}${item.project_id}/` : ARTISTS_PATH) +
-                      entity.picture
-                    : undefined
-                  const roleNames =
-                    item.portfolio_roles
-                      ?.map((pr) => pr.roles?.name_ptbr)
-                      .filter(Boolean) ?? []
+            <TextInput
+              placeholder="Buscar projeto ou banda..."
+              size="md"
+              leftSection={<IconSearch size={15} />}
+              rightSection={projectSearchLoading && <Loader size={15} />}
+              value={projectSearch}
+              onChange={(e) => {
+                setProjectSearch(e.target.value)
+                handleProjectSearch(e.target.value)
+              }}
+            />
 
-                  return (
-                    <Group key={item.id} gap="sm" justify="space-between" wrap="nowrap">
-                      <Group
-                        gap="sm"
-                        align="flex-start"
-                        wrap="nowrap"
-                        style={{ flex: 1, minWidth: 0 }}
-                      >
-                        <Avatar
-                          size={40}
-                          radius="xl"
-                          src={picture}
-                          style={{ flexShrink: 0 }}
+            {projectResults.length > 0 && (
+              <ScrollArea h={130} type="always">
+                <Stack gap={0}>
+                  {projectResults.map((project) => {
+                    const alreadyAdded = userProjects.find((p) => p.id === project.id)
+                    return (
+                      <Box key={project.id}>
+                        <Group
+                          py="xs"
+                          gap="sm"
+                          style={{
+                            cursor: alreadyAdded ? 'default' : 'pointer',
+                            opacity: alreadyAdded ? 0.5 : 1,
+                          }}
+                          onClick={() => !alreadyAdded && handleSelectProject(project)}
                         >
-                          {isProject ? (
-                            <IconDisc size={18} />
-                          ) : (
-                            <IconMicrophone2 size={18} />
-                          )}
-                        </Avatar>
-                        <Stack gap={0} style={{ minWidth: 0 }}>
-                          <Text size="sm" fw={600} truncate>
-                            {entity?.name || 'Sem título'}
-                          </Text>
-                          <Text size="xs" c="dimmed" truncate>
-                            {roleNames.join(', ')}
-                          </Text>
-                        </Stack>
-                      </Group>
-                      <ActionIcon
-                        size="md"
-                        variant="subtle"
-                        color="red"
-                        loading={isDeletingPortfolioItem}
-                        onClick={() => handleRemovePortfolioItem(item.id)}
-                        title="Remover item"
-                        style={{ flexShrink: 0 }}
-                      >
-                        <IconTrash size={14} />
-                      </ActionIcon>
-                    </Group>
-                  )
-                })}
+                          <Avatar
+                            size={64}
+                            radius="md"
+                            src={
+                              project.picture
+                                ? `https://ik.imagekit.io/mublin/projects/${project.id}/tr:h-128/${project.picture}`
+                                : undefined
+                            }
+                          />
+                          <Stack gap={2} style={{ flex: 1 }}>
+                            <Group gap="xs">
+                              <Text size="sm" fw={600}>
+                                {project.name}
+                              </Text>
+                              {alreadyAdded && (
+                                <ThemeIcon size={18} radius="xl" color="mublinColor">
+                                  <IconCheck
+                                    style={{ width: 12, height: 12 }}
+                                    stroke={3}
+                                  />
+                                </ThemeIcon>
+                              )}
+                            </Group>
+                            {project.description && (
+                              <Text size="xs" c="dimmed" lineClamp={1}>
+                                {project.description}
+                              </Text>
+                            )}
+                            <Text size="xs">
+                              {project.project_types?.name_ptbr &&
+                                `${project.project_types?.name_ptbr}  · `}
+                              {project.genres?.name_ptbr &&
+                                `${project.genres?.name_ptbr}  · `}
+                              {[
+                                project.cities?.name,
+                                project.cities?.regions?.name,
+                                project.cities?.countries?.name_ptbr ??
+                                  project.cities?.countries?.name,
+                              ]
+                                .filter(Boolean)
+                                .join(', ')}
+                            </Text>
+
+                            {/* ── Membros ───────────────────────────────── */}
+                            {(() => {
+                              const members = [...(project.project_members ?? [])].sort(
+                                (a, b) => (b.is_founder ? 1 : 0) - (a.is_founder ? 1 : 0),
+                              )
+
+                              const visible = members.slice(0, 3)
+                              const extra = members.length - 3
+
+                              if (!visible.length) {
+                                return null
+                              }
+
+                              const names = visible
+                                .map((m) => m.profiles?.full_name)
+                                .filter(Boolean)
+
+                              const suffix =
+                                members.length === 1
+                                  ? ' faz parte deste projeto'
+                                  : ' fazem parte deste projeto'
+
+                              const label =
+                                extra > 0
+                                  ? `${names.join(', ')} e +${extra}${suffix}`
+                                  : `${names.join(', ')}${suffix}`
+
+                              return (
+                                <Text size="xs" c="dimmed" fw={300}>
+                                  {label}
+                                </Text>
+                              )
+                            })()}
+                          </Stack>
+                        </Group>
+                        <Divider />
+                      </Box>
+                    )
+                  })}
+                </Stack>
+              </ScrollArea>
+            )}
+
+            {userProjects.length > 0 && (
+              <Stack gap={4}>
+                <Text size="sm" fw={600} c="dimmed">
+                  {userProjects.length}{' '}
+                  {userProjects.length === 1
+                    ? 'projeto adicionado'
+                    : 'projetos adicionados'}
+                  :
+                </Text>
+                <Group gap={6}>
+                  {userProjects.map((project) => (
+                    <Pill
+                      key={project.id}
+                      withRemoveButton
+                      onRemove={async () => {
+                        // 1. Verifica se há outros membros aceitos neste projeto
+                        const { data: activeMembers } = await supabase
+                          .from('project_members')
+                          .select('id, profile_id')
+                          .eq('project_id', project.id)
+                          .eq('status', 2)
+
+                        const otherActiveMembers = activeMembers?.filter(
+                          (m) => m.profile_id !== user.id,
+                        )
+
+                        if (!otherActiveMembers?.length) {
+                          // 2a. Sem outros membros: deleta o projeto
+                          // (CASCADE remove os project_members automaticamente)
+                          await supabase.from('projects').delete().eq('id', project.id)
+                        } else {
+                          // 2b. Há outros membros: remove só a participação do usuário
+                          await supabase
+                            .from('project_members')
+                            .delete()
+                            .eq('project_id', project.id)
+                            .eq('profile_id', user.id)
+                        }
+
+                        // 3. Atualiza o estado local
+                        setUserProjects((prev) => prev.filter((p) => p.id !== project.id))
+
+                        // 4. Exibe notificação
+                        notifications.show({
+                          color: 'green',
+                          position: 'top-center',
+                          message: !otherActiveMembers?.length
+                            ? 'Projeto permanentemente removido com sucesso do Mublin'
+                            : 'Sua participação foi removida com sucesso do projeto',
+                        })
+                      }}
+                      size="sm"
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <Avatar
+                          src={`https://ik.imagekit.io/mublin/projects/${project.id}/tr:h-150/${project.picture}`}
+                          size={16}
+                        />
+                        {project.name}
+                      </div>
+                    </Pill>
+                  ))}
+                </Group>
               </Stack>
-            ) : (
-              <Text size="sm" c="dimmed" ta="center">
-                Nenhum item adicionado ainda
-              </Text>
             )}
 
             <Button
-              variant="filled"
-              color="mublinColor"
-              size="sm"
-              mt={userPortfolio.length === 0 ? 16 : 0}
-              leftSection={<IconPlus size={14} />}
-              onClick={handleOpenPortfolioModal}
-            >
-              Adicionar ao portfólio
-            </Button>
-
-            <Button
-              mt="xs"
               variant="outline"
               color="teal"
-              size="xs"
+              size="sm"
+              mt={userProjects.length === 0 ? 26 : 0}
               onClick={() => openNewProjectModal()}
             >
               Não encontrou? Cadastre um novo projeto
             </Button>
             <Text size="sm" c="dimmed" ta="center">
-              Não se preocupe, você poderá adicionar mais itens depois!
+              Não se preocupe, você poderá adicionar mais projetos depois!
             </Text>
           </Stack>
         )}
@@ -1391,296 +1233,23 @@ export default function Onboarding() {
         </Stack>
       </Modal>
 
-      {/* ── Modal adicionar ao portfólio ──────────────── */}
-      <Modal
-        title="Adicionar ao portfólio"
-        opened={modalPortfolioOpened}
-        onClose={handleClosePortfolioModal}
-        size="sm"
-        radius="md"
-        centered
-      >
-        <Stack gap="sm">
-          <MultiSelect
-            label="Papéis exercidos"
-            placeholder={
-              selectedRoleIds.length === 0 ? 'Selecione um ou mais papéis' : undefined
-            }
-            data={roleSelectData}
-            value={selectedRoleIds}
-            onChange={setSelectedRoleIds}
-            searchable
-            clearable
-            size="sm"
-          />
-
-          <MultiSelect
-            label="Tipo de vínculo (opcional)"
-            placeholder={
-              selectedEngagementTypeIds.length === 0
-                ? 'Ex: turnê, gravação, show único...'
-                : undefined
-            }
-            data={engagementTypeSelectData}
-            value={selectedEngagementTypeIds}
-            onChange={setSelectedEngagementTypeIds}
-            searchable
-            clearable
-            size="sm"
-          />
-
-          <Radio.Group
-            label="O que você está adicionando?"
-            value={entryType}
-            onChange={(value) => {
-              setEntryType(value)
-              setSelectedProject(null)
-              setSelectedArtist(null)
-            }}
-          >
-            <Group gap="xs" mt={6}>
-              <Radio value="project" label="Projeto cadastrado no Mublin" size="sm" />
-              <Radio
-                value="artist"
-                label="Artista ou projeto externo"
-                description="Artistas mainstream e outras figuras do mercado"
-                size="sm"
-              />
-            </Group>
-          </Radio.Group>
-
-          {entryType === 'project' &&
-            (selectedProject ? (
-              <Group gap="sm" justify="space-between" p={6}>
-                <Group gap="sm">
-                  <Avatar
-                    size={32}
-                    radius="xl"
-                    src={
-                      selectedProject.picture
-                        ? `${PROJECTS_PATH}${selectedProject.id}/${selectedProject.picture}`
-                        : undefined
-                    }
-                  >
-                    <IconDisc size={16} />
-                  </Avatar>
-                  <Text size="sm" fw={600}>
-                    {selectedProject.name}
-                  </Text>
-                </Group>
-                <ActionIcon
-                  size="sm"
-                  variant="subtle"
-                  onClick={() => setSelectedProject(null)}
-                >
-                  <IconTrash size={14} />
-                </ActionIcon>
-              </Group>
-            ) : (
-              <Stack gap="xs">
-                <TextInput
-                  placeholder="Buscar projeto cadastrado no Mublin..."
-                  leftSection={<IconSearch size={15} />}
-                  rightSection={projectSearchLoading ? <Loader size="xs" /> : undefined}
-                  value={projectSearch}
-                  onChange={(e) => {
-                    setProjectSearch(e.target.value)
-                    handleProjectSearch(e.target.value)
-                  }}
-                />
-                {projectResults.length > 0 && (
-                  <Stack gap="xs" mah={220} style={{ overflowY: 'auto' }}>
-                    {projectResults.map((project) => (
-                      <Group key={project.id} gap="sm" justify="space-between">
-                        <Group gap="sm">
-                          <Avatar
-                            size={32}
-                            radius="xl"
-                            src={
-                              project.picture
-                                ? `${PROJECTS_PATH}${project.id}/${project.picture}`
-                                : undefined
-                            }
-                          >
-                            <IconDisc size={16} />
-                          </Avatar>
-                          <Text size="sm">{project.name}</Text>
-                        </Group>
-                        <Button
-                          size="xs"
-                          variant="light"
-                          onClick={() => {
-                            setSelectedProject(project)
-                            setProjectSearch('')
-                            setProjectResults([])
-                          }}
-                        >
-                          Selecionar
-                        </Button>
-                      </Group>
-                    ))}
-                  </Stack>
-                )}
-                {projectSearch.length >= 2 &&
-                  !projectSearchLoading &&
-                  projectResults.length === 0 && (
-                    <Text size="sm" c="dimmed" ta="center">
-                      Nenhum projeto encontrado.
-                    </Text>
-                  )}
-              </Stack>
-            ))}
-
-          {entryType === 'artist' &&
-            (selectedArtist ? (
-              <Group gap="sm" justify="space-between" p={6}>
-                <Group gap="sm">
-                  <Avatar
-                    size={32}
-                    radius="xl"
-                    src={
-                      selectedArtist.picture
-                        ? ARTISTS_PATH + selectedArtist.picture
-                        : undefined
-                    }
-                  >
-                    <IconMicrophone2 size={16} />
-                  </Avatar>
-                  <Text size="sm" fw={600}>
-                    {selectedArtist.name}
-                  </Text>
-                </Group>
-                <ActionIcon
-                  size="sm"
-                  variant="subtle"
-                  onClick={() => setSelectedArtist(null)}
-                >
-                  <IconTrash size={14} />
-                </ActionIcon>
-              </Group>
-            ) : (
-              <Stack gap="xs">
-                <TextInput
-                  placeholder="Buscar artista por nome..."
-                  leftSection={<IconSearch size={15} />}
-                  rightSection={artistSearchLoading ? <Loader size="xs" /> : undefined}
-                  value={artistSearch}
-                  onChange={(e) => {
-                    setArtistSearch(e.target.value)
-                    handleArtistSearch(e.target.value)
-                  }}
-                />
-                {artistResults.length > 0 && (
-                  <Stack gap="xs" mah={220} style={{ overflowY: 'auto' }}>
-                    {artistResults.map((artist) => (
-                      <Group key={artist.id} gap="sm" justify="space-between">
-                        <Group gap="sm">
-                          <Avatar
-                            size={32}
-                            radius="xl"
-                            src={
-                              artist.picture ? ARTISTS_PATH + artist.picture : undefined
-                            }
-                          >
-                            <IconMicrophone2 size={16} />
-                          </Avatar>
-                          <Text size="sm">{artist.name}</Text>
-                        </Group>
-                        <Button
-                          size="xs"
-                          variant="light"
-                          onClick={() => {
-                            setSelectedArtist(artist)
-                            setArtistSearch('')
-                            setArtistResults([])
-                          }}
-                        >
-                          Selecionar
-                        </Button>
-                      </Group>
-                    ))}
-                  </Stack>
-                )}
-                {artistSearch.length >= 2 &&
-                  !artistSearchLoading &&
-                  artistResults.length === 0 && (
-                    <Text size="sm" c="dimmed" ta="center">
-                      Nenhum artista encontrado.
-                    </Text>
-                  )}
-              </Stack>
-            ))}
-
-          <Switch
-            label="Colaboração esporádica"
-            description="Selecione caso você atue ou atuou em participações pontuais em shows ou gravações junto a este projeto, sem um período fixo"
-            checked={portfolioIsSporadic}
-            onChange={(e) => {
-              const checked = e.currentTarget.checked
-              setPortfolioIsSporadic(checked)
-              if (checked) {
-                setPortfolioYearStart('')
-                setPortfolioYearEnd('')
-              }
-            }}
-          />
-
-          {!portfolioIsSporadic && (
-            <Group grow gap="sm">
-              <NumberInput
-                label="Ano de início"
-                description="Início da atuação"
-                placeholder="Ex: 2019"
-                min={1900}
-                max={currentYear + 1}
-                value={portfolioYearStart}
-                onChange={setPortfolioYearStart}
-                hideControls
-              />
-              <NumberInput
-                label="Ano de término"
-                description="Fim da atuação (opcional)"
-                min={1900}
-                max={currentYear + 1}
-                value={portfolioYearEnd}
-                onChange={setPortfolioYearEnd}
-                hideControls
-              />
-            </Group>
-          )}
-
-          <Switch
-            label="Esse vínculo foi facilitado pelo Mublin"
-            color="lime"
-            checked={portfolioIsMublinFacilitated}
-            onChange={(e) => setPortfolioIsMublinFacilitated(e.currentTarget.checked)}
-          />
-
-          <Textarea
-            label="Comentário (opcional)"
-            placeholder="Ex: Guitarrista na turnê de 2019, gravei os vocais de apoio no álbum..."
-            description={`${portfolioNotes.length}/2000`}
-            minRows={2}
-            maxRows={6}
-            maxLength={2000}
-            value={portfolioNotes}
-            onChange={(e) => setPortfolioNotes(e.currentTarget.value)}
-          />
-
-          <Button
-            fullWidth
-            mt="xs"
-            size="sm"
-            loading={isSavingPortfolioItem}
-            disabled={
-              selectedRoleIds.length === 0 || (!selectedProject && !selectedArtist)
-            }
-            onClick={handleAddPortfolioItem}
-          >
-            Adicionar ao meu portfólio
-          </Button>
-        </Stack>
-      </Modal>
+      {/* ── Modal ingressar em projeto ────────────────── */}
+      <JoinProjectModal
+        opened={modalJoinOpened}
+        onClose={closeJoinModal}
+        project={selectedProject}
+        rolesProjectManagement={rolesProjectManagement}
+        rolesProjectMusicians={rolesProjectMusicians}
+        joinRole={joinRole}
+        setJoinRole={setJoinRole}
+        joinYear={joinYear}
+        setJoinYear={setJoinYear}
+        onConfirm={handleJoinProject}
+        loading={joiningProject}
+        currentYear={currentYear}
+        projectEndYear={projectEndYear}
+        projectFoundationYear={projectFoundationYear}
+      />
 
       <Modal
         opened={modalNewProjectOpened}
@@ -1692,8 +1261,7 @@ export default function Onboarding() {
       >
         <NewProject
           onSuccess={() => {
-            // NOTA: se o NewProject.jsx passar a criar o vínculo via "portfolio"
-            // em vez de "project_members", invalide ['profile-portfolio', user?.id] aqui.
+            queryClient.invalidateQueries({ queryKey: ['profile-projects', user?.id] })
             closeNewProjectModal()
           }}
           isModal

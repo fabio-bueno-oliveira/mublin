@@ -54,17 +54,6 @@ function generateSlug(name) {
 }
 
 // ── Queries ──────────────────────────────────────────────
-async function fetchRoles() {
-  const { data, error } = await supabase
-    .from('roles')
-    .select('id, name_ptbr, description_br, instrumentalist, applies_to_a_project')
-    .eq('applies_to_a_project', true)
-    .order('name_ptbr')
-  if (error) {
-    throw new Error(error.message)
-  }
-  return data
-}
 async function fetchRegions() {
   const { data, error } = await supabase
     .from('regions')
@@ -166,11 +155,6 @@ export default function NewProject({ onSuccess, isModal = false }) {
     value: String(type?.id),
     label: type?.name_ptbr,
   }))
-  const { data: roles = [] } = useQuery({
-    queryKey: ['roles'],
-    queryFn: fetchRoles,
-    staleTime: 1000 * 60 * 30,
-  })
   const { data: regions = [] } = useQuery({
     queryKey: ['regions-br'],
     queryFn: fetchRegions,
@@ -199,12 +183,6 @@ export default function NewProject({ onSuccess, isModal = false }) {
         label: genre.name_ptbr,
       })),
   }))
-  const rolesMusicians = roles
-    .filter((r) => r.instrumentalist)
-    .map((r) => ({ label: r.description_ptbr ?? r.name_ptbr, value: String(r.id) }))
-  const rolesManagement = roles
-    .filter((r) => !r.instrumentalist)
-    .map((r) => ({ label: r.description_ptbr ?? r.name_ptbr, value: String(r.id) }))
 
   // Form
   const form = useForm({
@@ -215,12 +193,10 @@ export default function NewProject({ onSuccess, isModal = false }) {
       foundation_year: currentYear,
       end_year: null,
       description: '',
-      main_role_id: '',
       project_type_id: '2',
       kind: '1',
       activity_status: '1',
       is_public: '1',
-      featured: false,
       region_id: '',
       genre_id: '',
       is_founder: true,
@@ -233,7 +209,6 @@ export default function NewProject({ onSuccess, isModal = false }) {
       ),
       end_year: (v, values) =>
         !v && values.activity_status === '2' ? 'Informe o ano de encerramento' : null,
-      main_role_id: isNotEmpty('Informe sua função principal'),
       project_type_id: isNotEmpty('Informe o tipo do projeto'),
       activity_status: isNotEmpty('Informe o status do projeto'),
       region_id: isNotEmpty('Informe o Estado de origem'),
@@ -490,7 +465,6 @@ export default function NewProject({ onSuccess, isModal = false }) {
         on_tour: false,
         city_id: selectedCity?.id || null,
         activity_status: values.activity_status,
-        is_featured: values.featured,
         is_public: values.is_public === '1',
       })
       .select('id')
@@ -566,11 +540,9 @@ export default function NewProject({ onSuccess, isModal = false }) {
     const { error: memberError } = await supabase.from('project_members').insert({
       project_id: projectId,
       profile_id: user.id,
-      role_id: Number(values.main_role_id),
       is_founder: values.is_founder,
       is_admin: true,
       status: 2,
-      joined_at: `${values.foundation_year}-01-01`,
     })
 
     if (memberError) {
@@ -599,7 +571,7 @@ export default function NewProject({ onSuccess, isModal = false }) {
   const regionId = form.getValues().region_id
 
   return (
-    <Container size="sm" py="md" px={{ base: 'md', sm: 'lg' }} pos="relative">
+    <Container size="sm" py="md" px={{ base: 'xs', sm: 'xs' }} pos="relative">
       <LoadingOverlay
         visible={isSubmitting}
         overlayProps={{ radius: 'sm', blur: 2 }}
@@ -635,13 +607,6 @@ export default function NewProject({ onSuccess, isModal = false }) {
                   form.validateField('name')
                 }}
                 error={form.errors.name}
-              />
-              <Checkbox
-                mt="xs"
-                color="indigo"
-                label="Definir como um dos meus projetos principais"
-                key={form.key('featured')}
-                {...form.getInputProps('featured', { type: 'checkbox' })}
               />
             </Grid.Col>
             <Grid.Col span={{ base: 12, md: 6 }}>
@@ -912,10 +877,11 @@ export default function NewProject({ onSuccess, isModal = false }) {
           <Textarea
             label="Bio"
             placeholder="Conte um pouco sobre o projeto (opcional)"
-            maxLength={500}
-            description={`${descriptionValue.length}/500`}
+            maxLength={2000}
+            description={`${descriptionValue.length}/2000`}
             autosize
             minRows={3}
+            maxRows={9}
             value={descriptionValue}
             onChange={(e) => {
               setDescriptionValue(e.target.value)
@@ -923,30 +889,9 @@ export default function NewProject({ onSuccess, isModal = false }) {
             }}
           />
 
-          <NativeSelect
-            withAsterisk
-            label="Sua principal função no projeto"
-            data={[
-              { label: 'Selecione', value: '' },
-              { group: 'Gestão, produção e outros', items: rolesManagement },
-              { group: 'Instrumentos', items: rolesMusicians },
-            ]}
-            key={form.key('main_role_id')}
-            {...form.getInputProps('main_role_id')}
-          />
-
-          <Group mt="xs">
-            <Checkbox label="Administrador" disabled checked />
-            <Checkbox
-              label="Fundador"
-              key={form.key('is_founder')}
-              {...form.getInputProps('is_founder', { type: 'checkbox' })}
-            />
-          </Group>
-
           <Radio.Group
-            label="Visibilidade"
-            description="Exibir o projeto nas buscas do Mublin?"
+            label="Visibilidade do projeto"
+            description="Exibição do projeto nas buscas do Mublin"
             key={form.key('is_public')}
             {...form.getInputProps('is_public')}
           >
@@ -956,6 +901,17 @@ export default function NewProject({ onSuccess, isModal = false }) {
             </Group>
           </Radio.Group>
 
+          <Divider />
+
+          <Group>
+            <Checkbox label="Sou administrador do projeto" disabled checked />
+            <Checkbox
+              label="Sou fundador do projeto"
+              key={form.key('is_founder')}
+              {...form.getInputProps('is_founder', { type: 'checkbox' })}
+            />
+          </Group>
+
           <Group justify="flex-end" mt="sm">
             {!onSuccess && (
               <Button variant="default" onClick={() => navigate(-1)}>
@@ -964,7 +920,7 @@ export default function NewProject({ onSuccess, isModal = false }) {
             )}
             <Button
               type="submit"
-              color="indigo"
+              color="mublinColor"
               disabled={
                 slugChecking ||
                 slugAvailable === false ||

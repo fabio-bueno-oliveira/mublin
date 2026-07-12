@@ -404,112 +404,134 @@ export default function Search() {
                     )}
                   </Box>
 
-                  <Box id="projects">
-                    <Title order={4} fw={600}>
-                      Projetos, artistas e personalidades
-                    </Title>
-
-                    {!!artistsResults?.length && (
-                      <Scroller
-                        key={artistsResults.length}
-                        draggable
-                        controlSize="xl"
-                        showEndControl={artistsResults.length > 2}
-                        startControlIcon={<IconCircleArrowLeftFilled size={26} />}
-                        endControlIcon={<IconCircleArrowRightFilled size={26} />}
-                      >
-                        <Group gap="xs" wrap="nowrap">
-                          {artistsResults?.map((artist) => (
-                            <Flex
-                              key={artist.id}
-                              w={144}
-                              mt="xs"
-                              gap="xs"
-                              align="center"
-                              component={Link}
-                              to={`/artist/${artist.slug}`}
-                              style={{ textDecoration: 'none', color: 'inherit' }}
-                            >
-                              <Avatar
-                                src={
-                                  artist.picture
-                                    ? `https://ik.imagekit.io/mublin/artists/tr:h-100,w-100,c-maintain_ratio/${artist.picture}`
-                                    : null
-                                }
-                                size={50}
-                                radius="xl"
-                              />
-                              <Flex direction="column">
-                                <Group gap={5} align="center">
-                                  <Text size="sm" fw={600} truncate="end" w={82}>
+                  {!!artistsResults?.length && (
+                    <Box id="artists">
+                      <Title order={4} fw={600}>
+                        Artistas e personalidades mainstream
+                      </Title>
+                      {!!artistsResults?.length && (
+                        <Scroller
+                          key={artistsResults.length}
+                          draggable
+                          controlSize="xl"
+                          showEndControl={artistsResults.length > 2}
+                          startControlIcon={<IconCircleArrowLeftFilled size={26} />}
+                          endControlIcon={<IconCircleArrowRightFilled size={26} />}
+                        >
+                          <Group gap="xs" wrap="nowrap">
+                            {artistsResults?.map((artist) => (
+                              <Flex
+                                key={artist.id}
+                                w={82}
+                                mt="xs"
+                                gap="xs"
+                                align="center"
+                                direction="column"
+                                component={Link}
+                                to={`/artist/${artist.slug}`}
+                                style={{ textDecoration: 'none', color: 'inherit' }}
+                              >
+                                <Avatar
+                                  src={
+                                    artist.picture
+                                      ? `https://ik.imagekit.io/mublin/artists/tr:h-100,w-100,c-maintain_ratio/${artist.picture}`
+                                      : null
+                                  }
+                                  size={50}
+                                  radius="xl"
+                                />
+                                <Flex
+                                  justify="flex-start"
+                                  align="center"
+                                  direction="column"
+                                >
+                                  <Text
+                                    size="xs"
+                                    truncate="end"
+                                    w={72}
+                                    fw={500}
+                                    title={artist.name}
+                                  >
                                     {artist.name}
                                   </Text>
-                                </Group>
-                                <Text size="xs" c="dimmed" truncate="end" w={80}>
-                                  {artist.artist_roles?.length > 0 &&
-                                    artist.artist_roles
-                                      .map((ar) => ar.roles?.name_ptbr)
-                                      .join(', ')}
-                                </Text>
+                                  {/* <Text
+                                    size="xs"
+                                    ta="center"
+                                    c="dimmed"
+                                    w="90%"
+                                    truncate="end"
+                                  >
+                                    {artist.artist_roles?.length > 0 &&
+                                      artist.artist_roles
+                                        .map((ar) => ar.roles?.name_ptbr)
+                                        .join(', ')}
+                                  </Text> */}
+                                </Flex>
                               </Flex>
-                            </Flex>
-                          ))}
-                        </Group>
-                      </Scroller>
-                    )}
+                            ))}
+                          </Group>
+                        </Scroller>
+                      )}
+                    </Box>
+                  )}
 
-                    {loadingProjects || loadingArtists ? (
+                  <Box id="projects">
+                    <Title order={4} fw={600}>
+                      Projetos
+                    </Title>
+
+                    {loadingProjects ? (
                       <Text size="sm" c="dimmed">
                         Buscando...
                       </Text>
-                    ) : projectResults.length === 0 && artistsResults.length === 0 ? (
+                    ) : projectResults.length === 0 ? (
                       <Text size="sm" c="dimmed">
                         Nenhum resultado encontrado
                       </Text>
                     ) : (
                       projectResults.map((project) => (
-                        <Stack mt="xs" mb={4}>
-                          <Flex
-                            key={project.id}
-                            component={Link}
-                            to={`/project/${project.slug}`}
-                            justify="flex-start"
-                            gap="md"
-                            style={{ textDecoration: 'none', color: 'inherit' }}
-                          >
-                            <Avatar
-                              src={
-                                project.picture
-                                  ? `${PATH_PROJECT_AVATAR}${project.id}/tr:h-200,w-200,c-maintain_ratio/${project.picture}`
-                                  : undefined
-                              }
-                              size={80}
-                              radius="sm"
-                            />
-                            <Flex direction="column" justify="flex-start">
-                              <Text size="md" fw={600} lh={1.2}>
-                                {project.name}
-                              </Text>
-                              <Text size="xs" opacity={0.8}>
-                                {project.project_type_name}
-                                {project.project_type_name &&
-                                  project.main_genre_name &&
-                                  ' • '}
-                                {project.main_genre_name}
-                              </Text>
-                              {!!project.total_members && (
+                        <Flex
+                          mt="xs"
+                          mb={4}
+                          key={project.id}
+                          component={Link}
+                          to={`/project/${project.slug}`}
+                          justify="flex-start"
+                          gap="md"
+                          style={{ textDecoration: 'none', color: 'inherit' }}
+                        >
+                          <Avatar
+                            src={
+                              project.picture
+                                ? `${PATH_PROJECT_AVATAR}${project.id}/tr:h-200,w-200,c-maintain_ratio/${project.picture}`
+                                : undefined
+                            }
+                            size={80}
+                            radius="sm"
+                          />
+                          <Flex direction="column" justify="center">
+                            <Text size="md" fw={600} lh={1.2}>
+                              {project.name}
+                            </Text>
+                            <Text size="xs" opacity={0.8}>
+                              {project.project_type_name}
+                              {project.project_type_name &&
+                                project.main_genre_name &&
+                                ' • '}
+                              {project.main_genre_name}
+                            </Text>
+                            {/* {!!project.total_members && (
                                 <Text size="xs" opacity={0.8}>
                                   {project.total_members} integrantes
                                 </Text>
-                              )}
-                              {!!project.related_member_username && (
-                                <Text size="xs" opacity={0.4} mt={4}>
-                                  Pessoa relacionada: {project.related_member_full_name}
-                                </Text>
-                              )}
-                            </Flex>
+                              )} */}
+                            {!!project.related_member_username && (
+                              <Text size="xs" opacity={0.4} mt={4}>
+                                Pessoa relacionada: {project.related_member_full_name}
+                              </Text>
+                            )}
                           </Flex>
-                        </Stack>
+                        </Flex>
                       ))
                     )}
                   </Box>

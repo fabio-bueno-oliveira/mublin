@@ -75,7 +75,7 @@ export default function AppNavbar({ children }) {
   })
 
   const { data: unreadNotifications = 0 } = useQuery({
-    queryKey: ['notifications-unread-count'],
+    queryKey: ['notifications-unread-count', user?.id],
     queryFn: async () => {
       const { count } = await supabase
         .from('notifications')
