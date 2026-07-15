@@ -242,7 +242,7 @@ export async function upsertEventInterest({
     const { error: typesError } = await supabase.from('event_interest_to_types').insert(
       typeIds.map((typeId) => ({
         event_interest_id: interest.id,
-        interest_type_id: parseInt(typeId),
+        interest_type_id: parseInt(typeId, 10),
       })),
     )
 

@@ -40,6 +40,7 @@ import NewGig from './pages/NewGig'
 import Gear from './pages/Gear'
 import GearItem from './pages/GearItem'
 import GearItemZoom from './pages/GearItemZoom'
+import GearCategory from './pages/GearCategory'
 import Brand from './pages/Brand'
 import NewGear from './pages/NewGear'
 // -- Events pages
@@ -115,6 +116,7 @@ export const router = createBrowserRouter([
       { path: 'gear', element: <Gear /> },
       { path: 'gear/:slug', element: <GearItem /> },
       { path: 'gear/:slug/zoom', element: <GearItemZoom /> },
+      { path: 'gear/category/:slug', element: <GearCategory /> },
       { path: 'new/gear', element: <NewGear /> },
       { path: 'artist/:slug', element: <Artist /> },
       { path: 'new/event', element: <NewEvent /> },

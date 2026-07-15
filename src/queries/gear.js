@@ -346,3 +346,66 @@ export async function toggleFavoriteProduct(productId, userId, isFavorited) {
 
   return { success: true, action: 'favorited', data }
 }
+
+export async function fetchGearCategoryInfo(slug) {
+  const { data, error } = await supabase
+    .from('product_categories')
+    .select(
+      `
+      id,
+      name_ptbr,
+      name_en,
+      macro_category,
+      macro_category_en
+    `,
+    )
+    .eq('slug', slug)
+    .single()
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  return data
+}
+
+export async function fetchGearCategoryItems(gearCategoryId, page = 1, pageSize = 24) {
+  const from = (page - 1) * pageSize
+  const to = from + pageSize - 1
+
+  const { data, error, count } = await supabase
+    .from('products')
+    .select(
+      `
+      id,
+      name,
+      slug,
+      subtitle,
+      description,
+      description_source,
+      description_source_url,
+      year,
+      is_discontinued,
+      is_rare,
+      is_featured,
+      picture,
+      product_categories (
+        id,
+        name_ptbr,
+        macro_category
+      ),
+      product_series (
+        id,
+        name
+      )
+    `,
+      { count: 'exact' },
+    )
+    .eq('id_category', gearCategoryId)
+    .order('name', { ascending: false })
+    .range(from, to)
+  if (error) {
+    throw new Error(error.message)
+  }
+  return { items: data, count: count ?? 0 }
+}

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
+import { supabase } from '../lib/supabaseClient'
 import { useQuery } from '@tanstack/react-query'
 import { fetchUserProjects } from '../queries/user'
 import {
@@ -21,7 +22,7 @@ import {
   TextInput,
 } from '@mantine/core'
 // import ProPlanBadge from './ProPlanBadge'
-import { IconRosetteDiscountCheck, IconSearch } from '@tabler/icons-react'
+import { IconRosetteDiscountCheck, IconSearch, IconEye } from '@tabler/icons-react'
 
 const AVATAR_PATH =
   'https://ik.imagekit.io/mublin/tr:h-140,c-maintain_ratio/users/avatars/'
@@ -35,6 +36,21 @@ export default function AppSidebar() {
   const [searchOpened, setSearchOpened] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const searchInputRef = useRef(null)
+
+  const { data: profileViewCount, isLoading: loadingProfileViews } = useQuery({
+    queryKey: ['profile-view-count', profile?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('get_profile_view_count', {
+        p_profile_id: profile?.id,
+      })
+      if (error) {
+        throw error
+      }
+      return data
+    },
+    enabled: !!user?.id,
+    staleTime: 1000 * 60,
+  })
 
   const { data: projects = [], isLoading: loadingProjects } = useQuery({
     queryKey: ['user-projects', user?.id],
@@ -101,7 +117,7 @@ export default function AppSidebar() {
             radius="md"
             p={0}
             mt={4}
-            mb="lg"
+            mb="md"
             style={{ overflow: 'hidden' }}
             pos="relative"
           >
@@ -170,107 +186,128 @@ export default function AppSidebar() {
             </Box>
           </Card>
 
-          <Group
-            justify="flex-start"
-            align="center"
-            gap="xs"
-            mb={searchOpened ? 4 : 'xs'}
-            wrap="nowrap"
-          >
-            <Title order={3} fw={600} fz="md">
-              Projetos que sou administrador
-            </Title>
-            {!loadingProjects && userProjects.length > 0 && (
-              <ActionIcon
-                variant="subtle"
-                color="gray"
-                size="sm"
-                onClick={toggleSearch}
-                aria-label="Buscar projeto"
-              >
-                <IconSearch
-                  size={16}
-                  color={searchOpened ? 'var(--mantine-color-text)' : 'gray'}
-                />
-              </ActionIcon>
-            )}
-          </Group>
-
-          {!loadingProjects && userProjects.length > 0 && (
-            <Collapse expanded={searchOpened}>
-              <TextInput
-                ref={searchInputRef}
-                placeholder="Buscar por nome..."
-                size="xs"
-                mb="sm"
-                variant="unstyled"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </Collapse>
-          )}
-
-          {loadingProjects ? (
-            <Text>Carregando...</Text>
-          ) : userProjects.length > 0 ? (
-            <ScrollArea h={192} scrollHideDelay={0}>
-              {filteredProjects.length > 0 ? (
-                <Stack gap="sm">
-                  {filteredProjects.map((project) => (
-                    <Link
-                      key={project.id}
-                      to={`/project/${project?.slug}`}
-                      style={{ textDecoration: 'none', color: 'inherit' }}
-                    >
-                      <Box>
-                        <Group gap={10} align="flex-start">
-                          <Avatar
-                            size={40}
-                            radius="md"
-                            src={
-                              project?.picture
-                                ? `${PROJECT_AVATAR_PATH}/${project?.id}/tr:h-80,w-80,c-maintain_ratio/${project?.picture}`
-                                : undefined
-                            }
-                            title={project.name}
-                          />
-
-                          <Stack gap={0}>
-                            <Text size="sm">{project.name}</Text>
-                            <Text size="10px" c="dimmed">
-                              {project.type} {project.genre && ` · ${project.genre}`}
-                            </Text>
-                            {project.end_year && (
-                              <Badge
-                                px={4}
-                                pt={0}
-                                fz="8px"
-                                size="xs"
-                                fw={200}
-                                mt={2}
-                                color="red"
-                                variant="light"
-                              >
-                                Encerrado em {project.end_year}
-                              </Badge>
-                            )}
-                          </Stack>
-                        </Group>
-                      </Box>
-                    </Link>
-                  ))}
-                </Stack>
+          <Card withBorder={false} shadow="xs" radius="md" p="xs" mb="md">
+            <Group gap="xs" wrap="nowrap">
+              <IconEye color="gray" size={16} />
+              {loadingProfileViews ? (
+                <Text size="xs" c="dimmed">
+                  Carregando visualizações ao perfil...
+                </Text>
               ) : (
-                <Text size="sm" c="dimmed">
-                  Nenhum projeto encontrado
+                <Text size="xs" c="dimmed">
+                  {profileViewCount === 0
+                    ? 'Ninguém visualizou seu perfil ainda'
+                    : profileViewCount === 1
+                      ? '1 pessoa visualizou seu perfil'
+                      : `${profileViewCount} pessoas visualizaram seu perfil`}
                 </Text>
               )}
-            </ScrollArea>
-          ) : (
-            <Text size="sm" c="dimmed">
-              Você não gerencia nenhum projeto no momento
-            </Text>
-          )}
+            </Group>
+          </Card>
+
+          <Card withBorder={false} shadow="xs" radius="md" p="xs">
+            <Group
+              justify="flex-start"
+              align="center"
+              gap="xs"
+              mb={searchOpened ? 4 : 'xs'}
+              wrap="nowrap"
+            >
+              <Title order={3} fw={600} fz="sm">
+                Projetos que sou administrador
+              </Title>
+              {!loadingProjects && userProjects.length > 0 && (
+                <ActionIcon
+                  variant="subtle"
+                  color="gray"
+                  size="sm"
+                  onClick={toggleSearch}
+                  aria-label="Buscar projeto"
+                >
+                  <IconSearch
+                    size={16}
+                    color={searchOpened ? 'var(--mantine-color-text)' : 'gray'}
+                  />
+                </ActionIcon>
+              )}
+            </Group>
+
+            {!loadingProjects && userProjects.length > 0 && (
+              <Collapse expanded={searchOpened}>
+                <TextInput
+                  ref={searchInputRef}
+                  placeholder="Buscar por nome..."
+                  size="xs"
+                  mb="sm"
+                  variant="unstyled"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </Collapse>
+            )}
+
+            {loadingProjects ? (
+              <Text>Carregando...</Text>
+            ) : userProjects.length > 0 ? (
+              <ScrollArea h={192} scrollHideDelay={0}>
+                {filteredProjects.length > 0 ? (
+                  <Stack gap="sm">
+                    {filteredProjects.map((project) => (
+                      <Link
+                        key={project.id}
+                        to={`/project/${project?.slug}`}
+                        style={{ textDecoration: 'none', color: 'inherit' }}
+                      >
+                        <Box>
+                          <Group gap={10} align="flex-start">
+                            <Avatar
+                              size={40}
+                              radius="md"
+                              src={
+                                project?.picture
+                                  ? `${PROJECT_AVATAR_PATH}/${project?.id}/tr:h-80,w-80,c-maintain_ratio/${project?.picture}`
+                                  : undefined
+                              }
+                              title={project.name}
+                            />
+
+                            <Stack gap={0}>
+                              <Text size="sm">{project.name}</Text>
+                              <Text size="10px" c="dimmed">
+                                {project.type} {project.genre && ` · ${project.genre}`}
+                              </Text>
+                              {project.end_year && (
+                                <Badge
+                                  px={4}
+                                  pt={0}
+                                  fz="8px"
+                                  size="xs"
+                                  fw={200}
+                                  mt={2}
+                                  color="red"
+                                  variant="light"
+                                >
+                                  Encerrado em {project.end_year}
+                                </Badge>
+                              )}
+                            </Stack>
+                          </Group>
+                        </Box>
+                      </Link>
+                    ))}
+                  </Stack>
+                ) : (
+                  <Text size="sm" c="dimmed">
+                    Nenhum projeto encontrado
+                  </Text>
+                )}
+              </ScrollArea>
+            ) : (
+              <Text size="xs" c="dimmed">
+                Você não gerencia nenhum projeto no momento
+              </Text>
+            )}
+          </Card>
         </>
       )}
     </Box>

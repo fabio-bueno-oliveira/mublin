@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
+import { Helmet } from 'react-helmet-async'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useQuery } from '@tanstack/react-query'
 import { fetchUserRoles } from '../queries/user'
 import { fetchRecentProfiles } from '../queries/search'
-import { fetchFeaturedProducts } from '../queries/gear'
+// import { fetchFeaturedProducts } from '../queries/gear'
 import { fetchEvents } from '../queries/events'
 import { fetchNewsFeed } from '../queries/feed'
 import NewsCard from '../components/feed/NewsCard'
@@ -43,7 +44,7 @@ export default function Home() {
   const isMobile = useMediaQuery('(max-width: 48em)')
   const isDesktop = useMediaQuery('(min-width: 48em)')
   const peopleScroller = useScroller()
-  const gearScroller = useScroller()
+  // const gearScroller = useScroller()
   const eventsScroller = useScroller()
   const newsScroller = useScroller()
 
@@ -78,11 +79,11 @@ export default function Home() {
     staleTime: 1000 * 60 * 5,
   })
 
-  const { data: featuredProducts = [], isLoading: loadingFeaturedProducts } = useQuery({
-    queryKey: ['featured-gear'],
-    queryFn: () => fetchFeaturedProducts(),
-    staleTime: 1000 * 60 * 5,
-  })
+  // const { data: featuredProducts = [], isLoading: loadingFeaturedProducts } = useQuery({
+  //   queryKey: ['featured-gear'],
+  //   queryFn: () => fetchFeaturedProducts(),
+  //   staleTime: 1000 * 60 * 5,
+  // })
 
   const { data: globalEvents = [], isLoading: loadingGlobalEvents } = useQuery({
     queryKey: ['events'],
@@ -117,6 +118,11 @@ export default function Home() {
 
   return (
     <>
+      <Helmet>
+        <meta charSet="utf-8" />
+        <title>Home · Mublin</title>
+        <link rel="canonical" href="https://mublin.com/home" />
+      </Helmet>
       {isMobile && <AppNavbarMobile fixed={false} />}
 
       <Container size="xl" pt="xs" px={{ base: 'sm', sm: 0 }} mt={{ base: 16, sm: 0 }}>
@@ -145,7 +151,7 @@ export default function Home() {
                   onClick={toggle}
                   leftSection={<IconZoom size={14} />}
                 >
-                  Encontre gigs e projetos para tocar
+                  Encontre gigs e projetos
                 </Button>
               </Group>
 

@@ -44,6 +44,7 @@ import {
   IconUser,
   IconSettings2,
   IconBookmark,
+  IconKey,
 } from '@tabler/icons-react'
 import { NAV_ITEMS, QUICK_ACTIONS } from '../constants/navItems'
 
@@ -299,14 +300,14 @@ export default function AppNavbar({ children }) {
                     <Indicator
                       inline
                       label={
-                        <Text fw={500} fz="10px">
+                        <Text fw={400} fz="9px">
                           {unreadNotifications}
                         </Text>
                       }
                       maxValue={99}
                       color="red.8"
-                      size={16}
-                      offset={2}
+                      size={14}
+                      offset={6}
                       disabled={unreadNotifications === 0}
                     >
                       <IconBell size={20} />
@@ -361,6 +362,18 @@ export default function AppNavbar({ children }) {
                   >
                     Salvos
                   </Menu.Item>
+                  {profile.is_admin && (
+                    <>
+                      <Menu.Divider />
+                      <Menu.Item
+                        component={Link}
+                        to="/admin"
+                        leftSection={<IconKey size={14} />}
+                      >
+                        Admin
+                      </Menu.Item>
+                    </>
+                  )}
                   <Menu.Divider />
                   <Menu.Item onClick={toggleColorScheme}>
                     {isDark ? 'Mudar para tema claro' : 'Mudar para tema escuro'}

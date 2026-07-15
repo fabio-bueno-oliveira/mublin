@@ -176,6 +176,26 @@ export async function fetchGearOwners(productId, limit = 6) {
   return data.map((r) => r.profiles).filter(Boolean)
 }
 
+export async function searchGearCategories(keyword) {
+  if (!keyword || keyword.trim().length < 2) {
+    return []
+  }
+
+  const trimmed = keyword.trim()
+
+  const { data, error } = await supabase
+    .from('product_categories')
+    .select('id, name_ptbr, name_en, macro_category, macro_category_en, slug')
+    .or(`name_ptbr.ilike.%${trimmed}%`)
+    .order('macro_category')
+    .order('name_ptbr')
+    .limit(30)
+  if (error) {
+    throw new Error(error.message)
+  }
+  return data
+}
+
 export async function fetchRecentProfiles(limit = 10) {
   const { data, error } = await supabase
     .from('profiles')
@@ -233,6 +253,44 @@ export async function fetchRecentProfiles(limit = 10) {
     .order('created_at', { ascending: false })
     .limit(limit)
 
+  if (error) {
+    throw new Error(error.message)
+  }
+  return data
+}
+
+export async function searchEvents(keyword) {
+  if (!keyword || keyword.trim().length < 2) {
+    return []
+  }
+
+  const { data, error } = await supabase
+    .from('events')
+    .select(
+      `
+      id, name, description, slug,
+      picture_url,
+      is_online, is_free, ticket_price,
+      date_start, date_end,
+      time_event_start, time_event_end,
+      min_age,
+      website_url, tickets_url,
+      event_type:event_types ( name ),
+      privacy:event_privacy_types ( name ),
+      author:profiles!events_author_id_fkey ( full_name, username, title, avatar, is_verified ),
+      venue:venues (
+        name, slug,
+        address, address_number, neighborhood,
+        latitude, longitude, 
+        website_url, capacity,
+        venue_type:venue_types ( name ),
+        city:cities ( id, name, region:regions ( id, name, uf ) )
+      )
+    `,
+    )
+    .ilike('name', `%${keyword.trim()}%`)
+    .order('date_start', { ascending: true })
+    .limit(30)
   if (error) {
     throw new Error(error.message)
   }

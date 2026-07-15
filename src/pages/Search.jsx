@@ -10,8 +10,10 @@ import {
   searchProjects,
   searchGear,
   fetchGearOwners,
+  searchGearCategories,
   searchBrands,
   searchArtists,
+  searchEvents,
 } from '../queries/search'
 import { useAuth } from '../hooks/useAuth'
 import {
@@ -24,6 +26,7 @@ import {
   Group,
   Center,
   Scroller,
+  Card,
   Title,
   Text,
   Image,
@@ -54,6 +57,7 @@ const PATH_PROJECT_AVATAR = 'https://ik.imagekit.io/mublin/projects/'
 const PATH_PRODUCT_IMAGE_DESKTOP =
   'https://ik.imagekit.io/mublin/products/tr:w-180,h-180,cm-pad_resize,bg-FFFFFF,fo-x/'
 const PATH_BRAND_IMAGES = 'https://ik.imagekit.io/mublin/products/brands/'
+const PATH_EVENTS_IMAGES = 'https://ik.imagekit.io/mublin/events/'
 const MAX_OWNERS_VISIBLE = 5
 
 function GearOwners({ productId, totalOwners }) {
@@ -133,6 +137,13 @@ export default function Search() {
     staleTime: 1000 * 60 * 5,
   })
 
+  const { data: gearCategories = [] } = useQuery({
+    queryKey: ['searched-gear-categories', q],
+    queryFn: () => searchGearCategories(q),
+    enabled: !!q,
+    staleTime: 1000 * 60 * 5,
+  })
+
   const { data: brandResults = [], isLoading: loadingBrands } = useQuery({
     queryKey: ['searched-brands', q],
     queryFn: () => searchBrands(q),
@@ -143,6 +154,13 @@ export default function Search() {
   const { data: artistsResults, isLoading: loadingArtists } = useQuery({
     queryKey: ['searchArtists', q],
     queryFn: () => searchArtists(q),
+    enabled: q.trim().length > 1,
+    staleTime: 1000 * 60 * 3,
+  })
+
+  const { data: eventsResults, isLoading: loadingEvents } = useQuery({
+    queryKey: ['searchEvents', q],
+    queryFn: () => searchEvents(q),
     enabled: q.trim().length > 1,
     staleTime: 1000 * 60 * 3,
   })
@@ -295,6 +313,16 @@ export default function Search() {
                 <NavLink
                   href="#brands"
                   label={loadingBrands ? 'Marcas...' : `Marcas (${brandResults.length})`}
+                  color="gray"
+                  variant="light"
+                  px={{ base: 0, sm: 'xs' }}
+                  py={{ base: 0, sm: 'xs' }}
+                />
+                <NavLink
+                  href="#events"
+                  label={
+                    loadingEvents ? 'Eventos...' : `Eventos (${eventsResults.length})`
+                  }
                   color="gray"
                   variant="light"
                   px={{ base: 0, sm: 'xs' }}
@@ -551,24 +579,65 @@ export default function Search() {
                         Nenhum resultado encontrado
                       </Text>
                     ) : (
-                      <Scroller>
-                        {brandResults.map((brand) => (
-                          <Link key={brand.id} to={`/brand/${brand.slug}`}>
-                            <Image
-                              src={
-                                brand.logo
-                                  ? `${PATH_BRAND_IMAGES}tr:w-130,h-130,cm-pad_resize,bg-FFFFFF,fo-x/${brand.logo}`
-                                  : undefined
-                              }
-                              h={65}
-                              w={65}
-                              fit="contain"
-                              radius="lg"
-                              fallbackSrc="https://placehold.co/48x48?text=?"
-                              title={brand.name}
-                            />
-                          </Link>
-                        ))}
+                      <Scroller pt={6}>
+                        <Group gap="xs" wrap="nowrap">
+                          {brandResults.map((brand) => (
+                            <Link key={brand.id} to={`/brand/${brand.slug}`}>
+                              <Image
+                                src={
+                                  brand.logo
+                                    ? `${PATH_BRAND_IMAGES}tr:w-130,h-130,cm-pad_resize,bg-FFFFFF,fo-x/${brand.logo}`
+                                    : undefined
+                                }
+                                h={65}
+                                w={65}
+                                fit="contain"
+                                radius="lg"
+                                fallbackSrc="https://placehold.co/48x48?text=?"
+                                title={brand.name}
+                              />
+                            </Link>
+                          ))}
+                        </Group>
+                      </Scroller>
+                    )}
+                  </Box>
+
+                  {/* Eventos */}
+                  <Box id="events">
+                    <Title order={4} fw={600}>
+                      Eventos
+                    </Title>
+
+                    {loadingEvents ? (
+                      <Center mt="xl">
+                        <Loader size="sm" />
+                      </Center>
+                    ) : eventsResults.length === 0 ? (
+                      <Text size="sm" c="dimmed">
+                        Nenhum resultado encontrado
+                      </Text>
+                    ) : (
+                      <Scroller pt={6}>
+                        <Group gap="xs" wrap="nowrap">
+                          {eventsResults.map((event) => (
+                            <Link key={event.id} to={`/event/${event.slug}`}>
+                              <Image
+                                src={
+                                  event.picture_url
+                                    ? `${PATH_EVENTS_IMAGES}tr:w-130,h-130,cm-pad_resize,bg-FFFFFF,fo-x/${event.picture_url}`
+                                    : undefined
+                                }
+                                h={65}
+                                w={65}
+                                fit="contain"
+                                radius="lg"
+                                fallbackSrc="https://placehold.co/48x48?text=?"
+                                title={event.name}
+                              />
+                            </Link>
+                          ))}
+                        </Group>
                       </Scroller>
                     )}
                   </Box>
@@ -584,7 +653,9 @@ export default function Search() {
                         <Loader size="sm" />
                       </Center>
                     ) : gearResults.length === 0 ? (
-                      <Text c="dimmed">Nenhum resultado encontrado</Text>
+                      <Text c="dimmed" size="sm">
+                        Nenhum item encontrado
+                      </Text>
                     ) : (
                       <Stack mt="xs">
                         {gearResults.map((gear) => (
@@ -639,6 +710,29 @@ export default function Search() {
                           </Flex>
                         ))}
                       </Stack>
+                    )}
+
+                    {!!gearCategories?.length && (
+                      <>
+                        <Text c="dimmed" size="xs" mt="md">
+                          Categorias de equipamentos relacionadas a "{q}"
+                        </Text>
+
+                        <Stack gap="xs" justify="flex-start">
+                          {gearCategories?.map((category) => (
+                            <Box
+                              key={category.id}
+                              component={Link}
+                              to={`/gear/category/${category.slug}`}
+                              style={{ textDecoration: 'none', color: 'inherit' }}
+                            >
+                              <Text size="sm" fw={500} title={category.name_ptbr}>
+                                Ver todos os itens da categoria {category.name_ptbr}
+                              </Text>
+                            </Box>
+                          ))}
+                        </Stack>
+                      </>
                     )}
                   </Box>
                 </Stack>

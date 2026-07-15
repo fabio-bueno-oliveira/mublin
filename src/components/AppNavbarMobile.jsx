@@ -16,7 +16,7 @@ import {
 } from '@mantine/core'
 import {
   IconArrowLeft,
-  IconHeart,
+  IconBell,
   IconMenu2Filled,
   IconXFilled,
 } from '@tabler/icons-react'
@@ -141,7 +141,7 @@ export default function AppNavbarMobile({
                         color="red.8"
                         offset={4}
                       >
-                        <IconHeart size={24} />
+                        <IconBell size={24} />
                       </Indicator>
                     </ActionIcon>
                     <ActionIcon
