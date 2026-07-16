@@ -12,3 +12,9 @@ export const MEMBER_ENGAGEMENT_TYPE = Object.freeze({
   HIRED: 2,
   GUEST: 3,
 })
+
+export const MEMBER_REQUEST_STATUS = Object.freeze({
+  PENDING: 1,
+  ACCEPTED: 2,
+  DECLINED: 3,
+})

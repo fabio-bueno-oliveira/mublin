@@ -116,11 +116,6 @@ export default function NewProject({ onSuccess, isModal = false }) {
   const [projectFileId, setProjectFileId] = useState('')
   const [projectImageProgress, setProjectImageProgress] = useState(0)
   const [projectImageFile, setProjectImageFile] = useState(null)
-  // Logo do projeto
-  const [projectLogo, setProjectLogo] = useState('')
-  const [projectLogoFileId, setProjectLogoFileId] = useState('')
-  const [projectLogoProgress, setProjectLogoProgress] = useState(0)
-  const [projectLogoFile, setProjectLogoFile] = useState(null)
   // Demais estados
   const [slugValue, setSlugValue] = useState('')
   const [slugChecking, setSlugChecking] = useState(false)
@@ -395,51 +390,6 @@ export default function NewProject({ onSuccess, isModal = false }) {
     }
   }
 
-  async function handleRemoveLogo() {
-    if (!projectLogoFileId) {
-      return
-    }
-    try {
-      await deleteFromImageKit(projectLogoFileId)
-      setProjectLogo('')
-      setProjectLogoFileId('')
-      setProjectLogoFile(null)
-      const el = document.querySelector('#projectLogo')
-      if (el) {
-        el.value = null
-      }
-    } catch (err) {
-      console.error(err)
-    }
-  }
-
-  async function handleLogoUpload(file) {
-    if (!file) {
-      return
-    }
-    setProjectLogoFile(file)
-    try {
-      const response = await uploadToImageKit({
-        file,
-        fileName: `${slugValue || 'project'}_logo_.png`,
-        folder: '/projects/temp/',
-        tags: ['project', 'logo'],
-        onProgress: setProjectLogoProgress,
-      })
-      const n = response.filePath.lastIndexOf('/')
-      setProjectLogo(response.filePath.substring(n + 1))
-      setProjectLogoFileId(response.fileId)
-      setProjectLogoProgress(0)
-    } catch (err) {
-      console.error('Erro detalhado:', err)
-      notifications.show({
-        color: 'red',
-        title: 'Erro no upload da logo',
-        message: 'Não foi possível enviar a logo. Tente novamente.',
-      })
-    }
-  }
-
   // ── Submit ────────────────────────────────────────────────
 
   async function handleSubmit(values) {
@@ -484,7 +434,6 @@ export default function NewProject({ onSuccess, isModal = false }) {
     const targetFolder = `/projects/${projectId}/`
 
     let finalPicture = null
-    let finalLogo = null
 
     try {
       if (projectImageFile) {
@@ -500,20 +449,6 @@ export default function NewProject({ onSuccess, isModal = false }) {
         })
         finalPicture = res.filePath.split('/').pop()
       }
-
-      if (projectLogoFile) {
-        if (projectLogoFileId) {
-          await deleteFromImageKit(projectLogoFileId).catch(() => {})
-        }
-        const res = await uploadToImageKit({
-          file: projectLogoFile,
-          fileName: `${finalSlug}_logo_.png`,
-          folder: targetFolder,
-          tags: ['project', 'logo'],
-          onProgress: setProjectLogoProgress,
-        })
-        finalLogo = res.filePath.split('/').pop()
-      }
     } catch (err) {
       console.error('Erro no upload após criação do projeto:', err)
       notifications.show({
@@ -525,12 +460,11 @@ export default function NewProject({ onSuccess, isModal = false }) {
 
     // UPDATE com imagens (fora do try para garantir execução)
     setLoadingStep('Trabalhando as imagens...')
-    if (finalPicture || finalLogo) {
+    if (finalPicture) {
       const { error: updateError } = await supabase
         .from('projects')
         .update({
           ...(finalPicture && { picture: finalPicture }),
-          ...(finalLogo && { logo: finalLogo }),
         })
         .eq('id', projectId)
     }
@@ -676,87 +610,42 @@ export default function NewProject({ onSuccess, isModal = false }) {
           {/* ── Imagens ── */}
           <Divider label="Imagens do projeto" labelPosition="center" />
 
-          <Grid>
-            {/* Imagem principal */}
-            <Grid.Col span={{ base: 12, md: 6 }}>
-              {!projectImage ? (
-                <>
-                  <FileInput
-                    id="projectImage"
-                    accept="image/png,image/jpeg,image/gif"
-                    label="Imagem do projeto"
-                    description="Uma foto/imagem que representa o projeto"
-                    placeholder="Escolher arquivo"
-                    leftSection={<IconCamera size={18} />}
-                    onChange={(file) => handleImageUpload(file)}
-                  />
-                  {projectImageProgress > 0 && projectImageProgress < 100 && (
-                    <Text size="xs" c="dimmed" mt={4}>
-                      Enviando... {projectImageProgress}%
-                    </Text>
-                  )}
-                </>
-              ) : (
-                <Flex gap={12} align="center">
-                  <Image
-                    radius="md"
-                    h="auto"
-                    w={100}
-                    src={`https://ik.imagekit.io/mublin/tr:w-130/projects/temp/${projectImage}`}
-                  />
-                  <Button
-                    size="xs"
-                    color="red"
-                    variant="light"
-                    leftSection={<IconTrash size={14} />}
-                    onClick={handleRemoveImage}
-                  >
-                    Remover
-                  </Button>
-                </Flex>
+          {!projectImage ? (
+            <>
+              <FileInput
+                id="projectImage"
+                accept="image/png,image/jpeg,image/gif"
+                label="Imagem do projeto"
+                description="Uma foto/imagem que representa o projeto"
+                placeholder="Escolher arquivo"
+                leftSection={<IconCamera size={18} />}
+                onChange={(file) => handleImageUpload(file)}
+              />
+              {projectImageProgress > 0 && projectImageProgress < 100 && (
+                <Text size="xs" c="dimmed" mt={4}>
+                  Enviando... {projectImageProgress}%
+                </Text>
               )}
-            </Grid.Col>
-
-            {/* Logo */}
-            <Grid.Col span={{ base: 12, md: 6 }}>
-              {!projectLogo ? (
-                <>
-                  <FileInput
-                    id="projectLogo"
-                    accept="image/png,image/jpeg,image/gif"
-                    label="Logo do projeto (opcional)"
-                    description="Logotipo/símbolo do projeto"
-                    placeholder="Escolher arquivo"
-                    leftSection={<IconCamera size={18} />}
-                    onChange={(file) => handleLogoUpload(file)}
-                  />
-                  {projectLogoProgress > 0 && projectLogoProgress < 100 && (
-                    <Text size="xs" c="dimmed" mt={4}>
-                      Enviando... {projectLogoProgress}%
-                    </Text>
-                  )}
-                </>
-              ) : (
-                <Flex gap={12} align="center">
-                  <Image
-                    radius="md"
-                    h="auto"
-                    w={80}
-                    src={`https://ik.imagekit.io/mublin/tr:w-100/projects/temp/${projectLogo}`}
-                  />
-                  <Button
-                    size="xs"
-                    color="red"
-                    variant="light"
-                    leftSection={<IconTrash size={14} />}
-                    onClick={handleRemoveLogo}
-                  >
-                    Remover
-                  </Button>
-                </Flex>
-              )}
-            </Grid.Col>
-          </Grid>
+            </>
+          ) : (
+            <Flex gap={12} align="center">
+              <Image
+                radius="md"
+                h="auto"
+                w={100}
+                src={`https://ik.imagekit.io/mublin/tr:w-130/projects/temp/${projectImage}`}
+              />
+              <Button
+                size="xs"
+                color="red"
+                variant="light"
+                leftSection={<IconTrash size={14} />}
+                onClick={handleRemoveImage}
+              >
+                Remover
+              </Button>
+            </Flex>
+          )}
 
           <Divider label="Informações adicionais" labelPosition="center" />
 

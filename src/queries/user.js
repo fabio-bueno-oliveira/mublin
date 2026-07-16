@@ -115,6 +115,59 @@ export async function fetchUserProjects(userId) {
   })
 }
 
+export async function fetchUserAdminProjects(userId) {
+  const { data, error } = await supabase
+    .from('project_members')
+    .select(
+      `
+      project_id,
+      status,
+      is_founder,
+      is_admin,
+      project:projects (
+        id, name, slug, picture,
+        foundation_year, end_year,
+        activity_status,
+        genre:genres (
+          name,
+          primary_category:genre_categories!genres_id_category_fkey (
+            id, name_ptbr, color
+          ),
+          secondary_category:genre_categories!genres_id_category_secondary_fkey (
+            id, name_ptbr, color
+          )
+        ),
+        type:project_types ( name_ptbr ),
+        members:project_members ( status, profiles ( full_name, username, avatar ) ),
+        status:project_statuses ( description_ptbr, color ),
+        city:cities ( name, regions ( name, uf ), countries ( name, name_ptbr ) )
+      )
+    `,
+    )
+    .eq('profile_id', userId)
+    .eq('projects.project_members.status', 2)
+    .eq('is_admin', true)
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  // Projetos sem end_year (ativos) primeiro, com end_year (encerrados) por último
+  return data.sort((a, b) => {
+    const aEnd = a.projects?.end_year ?? null
+    const bEnd = b.projects?.end_year ?? null
+    if (aEnd === null && bEnd === null) {
+      return 0
+    }
+    if (aEnd === null) {
+      return -1
+    }
+    if (bEnd === null) {
+      return 1
+    }
+    return aEnd - bEnd
+  })
+}
+
 export async function fetchUserGearCount(userId) {
   const { count, error } = await supabase
     .from('profile_gear')

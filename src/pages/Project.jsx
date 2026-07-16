@@ -1,53 +1,56 @@
 import { useState } from 'react'
-import { useParams, Link, useNavigate } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
-import { supabase } from '../lib/supabaseClient'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { fetchProjectProfile, cancelParticipationRequest } from '../queries/projects'
-import { fetchAllRoles } from '../queries/roles'
-import JoinProjectModal from '../components/modals/JoinProjectModal'
-import { useDisclosure } from '@mantine/hooks'
-import { notifications } from '@mantine/notifications'
+import { useQuery } from '@tanstack/react-query'
+import {
+  fetchProjectProfile,
+  fetchProjectAdmins,
+  fetchProjectPeople,
+} from '../queries/projects'
 import {
   useMantineColorScheme,
-  Grid,
+  Skeleton,
   Container,
+  Affix,
   Flex,
   Box,
-  Button,
+  Alert,
   Avatar,
+  Button,
   Image,
-  Menu,
   Title,
   Text,
+  TextInput,
+  Textarea,
   Badge,
-  Skeleton,
   Group,
   Stack,
+  Tabs,
   Card,
-  Tooltip,
-  ActionIcon,
-  Pill,
+  Scroller,
+  em,
+  Divider,
+  Center,
 } from '@mantine/core'
+import { useMediaQuery } from '@mantine/hooks'
+import { notifications } from '@mantine/notifications'
 import {
   IconBrandInstagram,
   IconBrandSpotify,
-  IconPencil,
-  IconDoor,
   IconBrandSoundcloud,
   IconSettings,
-  IconX,
-  IconUserUp,
-  IconLogout,
-  IconUserCog,
+  IconRoad,
 } from '@tabler/icons-react'
+import AppNavbarMobile from '../components/AppNavbarMobile'
+import { MEMBER_REQUEST_STATUS } from '../constants/projects'
 
 export default function Project() {
-  const { user, profile } = useAuth()
+  const { user } = useAuth()
   const { slug } = useParams()
-  const queryClient = useQueryClient()
-  const navigate = useNavigate()
   const { colorScheme } = useMantineColorScheme()
+  const isMobile = useMediaQuery(`(max-width: ${em(750)})`)
+
+  const [activeTab, setActiveTab] = useState('about')
 
   const {
     data: project,
@@ -61,97 +64,32 @@ export default function Project() {
     retry: 1,
   })
 
+  const { data: projectAdmins = [], isLoading: loadingProjectAdmins } = useQuery({
+    queryKey: ['project-admins', project?.id],
+    queryFn: () => fetchProjectAdmins(project?.id),
+    enabled: !!project?.id,
+    staleTime: 1000 * 60 * 5,
+  })
+
+  const { data: projectPeople = [], isLoading: loadingProjectPeople } = useQuery({
+    queryKey: ['project-people', project?.id],
+    queryFn: () => fetchProjectPeople(project?.id),
+    enabled: !!project?.id,
+    staleTime: 1000 * 60 * 5,
+  })
+
   const AVATAR_PATH =
-    'https://ik.imagekit.io/mublin/tr:h-240,c-maintain_ratio/users/avatars/'
+    'https://ik.imagekit.io/mublin/tr:h-200,c-maintain_ratio/users/avatars/'
   const PICTURE_AVATAR_PATH = `https://ik.imagekit.io/mublin/projects/${project?.id}/tr:h-200,w-200,c-maintain_ratio/`
   const PICTURE_COVER_PATH = `https://ik.imagekit.io/mublin/projects/${project?.id}/tr:h-100,w-1042,fo-top,c-maintain_ratio/`
   const DEFAULT_COVER_PICTURE =
     'https://ik.imagekit.io/mublin/bg/tr:fo-bottom,bl-8/project-cover-default-b.png'
 
-  const currentYear = new Date().getFullYear()
-  const [modalJoinOpened, { open: openJoinModal, close: closeJoinModal }] =
-    useDisclosure(false)
-  const [joinRole, setJoinRole] = useState('')
-  const [joinYear, setJoinYear] = useState(currentYear)
-
-  const { data: roles = [] } = useQuery({
-    queryKey: ['roles'],
-    queryFn: fetchAllRoles,
-    staleTime: 1000 * 60 * 30,
-  })
-
-  const rolesProjectMusicians = roles
-    .filter((r) => r.applies_to_a_project && r.instrumentalist)
-    .map((r) => ({ label: r.name_ptbr, value: String(r.id) }))
-
-  const rolesProjectManagement = roles
-    .filter((r) => r.applies_to_a_project && !r.instrumentalist)
-    .map((r) => ({ label: r.name_ptbr, value: String(r.id) }))
-
-  const { mutate: cancelRequest, isPending: isCancelling } = useMutation({
-    mutationFn: () => cancelParticipationRequest(project.id, user.id),
-    onSuccess: () => {
-      // Invalida a query para recarregar os membros atualizados
-      queryClient.invalidateQueries({ queryKey: ['project', slug] })
-      notifications.show({
-        message: 'Solicitação cancelada.',
-        color: 'blue',
-        position: 'top-center',
-      })
-    },
-    onError: () => {
-      notifications.show({
-        message: 'Erro ao cancelar solicitação. Tente novamente.',
-        color: 'red',
-      })
-    },
-  })
-
-  const handleCloseJoinModal = () => {
-    setJoinRole('')
-    setJoinYear(currentYear)
-    closeJoinModal()
-  }
-
-  const { mutate: joinProject, isPending: joiningProject } = useMutation({
-    mutationFn: async () => {
-      const { error } = await supabase.from('project_members').insert({
-        project_id: project.id,
-        profile_id: user.id,
-        role_id: Number(joinRole),
-        joined_at: `${joinYear}-01-01`,
-        is_founder: false,
-        is_admin: false,
-        status: 1,
-      })
-      if (error) {
-        throw new Error(error.message)
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['project', slug] })
-      handleCloseJoinModal()
-      notifications.show({
-        color: 'green',
-        position: 'top-center',
-        message: `Solicitação enviada para ${project.name}!`,
-      })
-    },
-    onError: () => {
-      notifications.show({
-        color: 'red',
-        position: 'top-center',
-        message: 'Erro ao enviar solicitação. Tente novamente.',
-      })
-    },
-  })
-
-  const confirmedMembers = project?.members?.filter((m) => m.status === 2) ?? []
   const userMembership = project?.members?.find((m) => m.profile_id === user.id)
-  const userHasRequestedParticipation = userMembership?.status === 1
-  const userIsConfirmedMember = userMembership?.status === 2
-  const userHasNoParticipation = !userMembership
-  const userIsAdmin = userMembership?.is_admin === true
+
+  const userIsAdmin =
+    userMembership?.is_admin === true &&
+    userMembership?.status === MEMBER_REQUEST_STATUS.ACCEPTED
 
   if (isError) {
     return (
@@ -163,15 +101,35 @@ export default function Project() {
     )
   }
 
+  const handleRequestAdminStatus = () => {
+    notifications.show({
+      title: 'Ops!',
+      message:
+        'Não conseguimos solicitar acesso de admin a este projeto neste momento. Tente novamente em instantes.',
+      color: 'red',
+      position: 'top-center',
+    })
+  }
+
   return (
     <>
-      <Container fluid pb="lg" px={0}>
+      {isMobile && (
+        <Affix position={{ top: 0, left: 0 }} w="100%">
+          <AppNavbarMobile
+            pageName={`${project?.name} (${project?.project_type})`}
+            // profile={profile}
+            // featured={profile.is_open_to_work}
+          />
+        </Affix>
+      )}
+      <Container fluid pb="lg" px={0} mt={{ base: 51, sm: 0 }}>
         <Card
-          mx={{ base: 0, sm: 'lg' }}
+          mx={{ base: 0, sm: 'md' }}
           mt={{ base: 0, sm: 'xs' }}
+          mb="md"
           px={0}
           pt={0}
-          pb={4}
+          pb="md"
           shadow="xs"
           radius={{ base: false, sm: 'lg' }}
         >
@@ -213,47 +171,33 @@ export default function Project() {
 
             <Group pos="absolute" top={12} right={20}>
               {project?.on_tour && (
-                <Badge size="md" color="dark">
+                <Badge size="lg" color="dark" leftSection={<IconRoad size={18} />}>
                   Em turnê
                 </Badge>
               )}
             </Group>
 
             {/* Avatar do projeto sobreposto */}
-            <Box pos="absolute" bottom={-30} left={30} style={{ zIndex: 2 }}>
+            <Box pos="absolute" bottom={-30} left={16} style={{ zIndex: 2 }}>
               {isLoading ? (
                 <Skeleton height={100} width={100} />
               ) : (
-                <Group align="flex-start" gap={18}>
-                  <Avatar
-                    src={PICTURE_AVATAR_PATH + project?.picture}
-                    size={100}
-                    radius={0}
-                    style={
-                      colorScheme === 'light'
-                        ? { border: '3px solid white' }
-                        : { border: '3px solid #1c1c1c' }
-                    }
-                  />
-                  {project?.logo && (
-                    <Avatar
-                      src={PICTURE_AVATAR_PATH + project.logo}
-                      size={85}
-                      radius={0}
-                      style={
-                        colorScheme === 'light'
-                          ? { border: '3px solid white' }
-                          : { border: '3px solid #1c1c1c' }
-                      }
-                    />
-                  )}
-                </Group>
+                <Avatar
+                  src={PICTURE_AVATAR_PATH + project?.picture}
+                  size={100}
+                  radius={0}
+                  style={
+                    colorScheme === 'light'
+                      ? { border: '3px solid white' }
+                      : { border: '3px solid #1c1c1c' }
+                  }
+                />
               )}
             </Box>
           </Box>
 
           {/* ── Identidade ── */}
-          <Flex justify="space-between" align="flex-start" wrap="wrap" gap="sm" px="xl">
+          <Flex justify="space-between" align="flex-start" wrap="wrap" gap="sm" px="lg">
             <Stack gap={2} w="100%">
               {isLoading ? (
                 <>
@@ -262,102 +206,23 @@ export default function Project() {
                 </>
               ) : (
                 <>
-                  <Group gap={10} justify="space-between" align="center">
-                    <Group>
-                      <Title order={1} fz="h2" fw={550} lts="-0.01em">
-                        {project?.name}
-                      </Title>
-                      {!isLoading && userIsConfirmedMember && (
-                        <Menu shadow="md" width={200} position="right-start" withArrow>
-                          <Menu.Target>
-                            <ActionIcon variant="subtle" color="gray" size="md">
-                              <IconSettings stroke={1.4} size={24} />
-                            </ActionIcon>
-                          </Menu.Target>
-                          <Menu.Dropdown>
-                            <Menu.Item
-                              leftSection={<IconDoor size={14} />}
-                              onClick={() => navigate(`/backstage/${slug}`)}
-                            >
-                              Acessar Backstage
-                            </Menu.Item>
-                            <Menu.Divider />
-                            <Menu.Item leftSection={<IconPencil size={14} />}>
-                              Editar dados do projeto
-                            </Menu.Item>
-                            <Menu.Item leftSection={<IconSettings size={14} />}>
-                              Gerenciar minha participação
-                            </Menu.Item>
-                            {userIsAdmin && (
-                              <Menu.Item leftSection={<IconUserCog size={14} />}>
-                                Gerenciar pessoas
-                              </Menu.Item>
-                            )}
-                            <Menu.Divider />
-                            <Menu.Item color="red" leftSection={<IconLogout size={14} />}>
-                              Sair deste projeto
-                            </Menu.Item>
-                          </Menu.Dropdown>
-                        </Menu>
-                      )}
-                    </Group>
-                    <Group gap={3}>
-                      {project?.instagram && (
-                        <Tooltip label="Instagram" position="bottom" mb="xs">
-                          <ActionIcon
-                            component="a"
-                            href={`https://instagram.com/${project.instagram}`}
-                            target="_blank"
-                            variant="subtle"
-                            color="gray"
-                            size="lg"
-                          >
-                            <IconBrandInstagram size={22} />
-                          </ActionIcon>
-                        </Tooltip>
-                      )}
-                      {project?.spotify_id && (
-                        <Tooltip label="Spotify" position="bottom" mb="xs">
-                          <ActionIcon
-                            component="a"
-                            href={`https://open.spotify.com/artist/${project.spotify_id}`}
-                            target="_blank"
-                            variant="subtle"
-                            color="gray"
-                            size="lg"
-                          >
-                            <IconBrandSpotify size={22} />
-                          </ActionIcon>
-                        </Tooltip>
-                      )}
-                      {project?.soundcloud && (
-                        <Tooltip label="SoundCloud" position="bottom" mb="xs">
-                          <ActionIcon
-                            component="a"
-                            href={`https://soundcloud.com/${project.soundcloud}`}
-                            target="_blank"
-                            variant="subtle"
-                            color="gray"
-                            size="lg"
-                          >
-                            <IconBrandSoundcloud size={22} />
-                          </ActionIcon>
-                        </Tooltip>
-                      )}
-                    </Group>
+                  <Group>
+                    <Title order={1} fz="h3" fw={600} lts="-0.01em">
+                      {project?.name}
+                    </Title>
                   </Group>
                   <Group w="100%" gap={8} align="center">
                     {project?.project_type && (
-                      <Text size="sm" c="dimmed">
+                      <Text size="md" c="dimmed">
                         {project.project_type}
                       </Text>
                     )}
                     {project?.genre && (
                       <>
-                        <Text size="sm" opacity={0.4} style={{ cursor: 'default' }}>
+                        <Text size="md" opacity={0.4} style={{ cursor: 'default' }}>
                           ·
                         </Text>
-                        <Text size="sm" c="dimmed">
+                        <Text size="md" c="dimmed">
                           {project.genre}
                         </Text>
                       </>
@@ -366,178 +231,287 @@ export default function Project() {
                 </>
               )}
             </Stack>
-
-            {/* Ações */}
-            {!isLoading && (
-              <Group gap={6} align="center">
-                {userHasNoParticipation && (
-                  <Button
-                    size="xs"
-                    variant="default"
-                    onClick={openJoinModal}
-                    leftSection={<IconUserUp size={16} />}
-                  >
-                    Solicitar associação
-                  </Button>
-                )}
-                {userHasRequestedParticipation && (
-                  <Button
-                    size="xs"
-                    variant="light"
-                    color="gray"
-                    onClick={() => cancelRequest()}
-                    loading={isCancelling}
-                    leftSection={<IconX size={16} />}
-                  >
-                    Cancelar solicitação
-                  </Button>
-                )}
-              </Group>
-            )}
           </Flex>
+          <Tabs ml="md" variant="pills" mt="md" value={activeTab} onChange={setActiveTab}>
+            <Tabs.List grow>
+              <Scroller>
+                <Tabs.Tab value="about" mr="xs">
+                  Sobre
+                </Tabs.Tab>
+                <Tabs.Tab value="people" mr="xs">
+                  Pessoas
+                </Tabs.Tab>
+                <Tabs.Tab value="jobs" mr="xs">
+                  Vagas
+                </Tabs.Tab>
+                <Tabs.Tab value="gigs" mr="xs">
+                  Gigs
+                </Tabs.Tab>
+                <Tabs.Tab value="social" mr="xs">
+                  Redes
+                </Tabs.Tab>
+                {userIsAdmin && (
+                  <Tabs.Tab
+                    value="admin"
+                    leftSection={<IconSettings size={16} />}
+                    mr="xs"
+                  >
+                    Admin
+                  </Tabs.Tab>
+                )}
+              </Scroller>
+            </Tabs.List>
+          </Tabs>
         </Card>
 
-        <Box px="lg" py="lg">
-          {isLoading && (
-            <Grid gap="md" rowGap="xl" columnGap="sm">
-              <Grid.Col span={{ base: 12, sm: 6 }}>
-                <Skeleton height={130} width="100%" />
-              </Grid.Col>
-              <Grid.Col span={{ base: 12, sm: 6 }}>
-                <Skeleton height={130} width="100%" />
-              </Grid.Col>
-            </Grid>
-          )}
+        {activeTab === 'about' && (
+          <Card mx={{ base: 0, sm: 'md' }}>
+            <Title order={5} fw={600}>
+              Visão geral
+            </Title>
+            <Text size="sm">
+              {project?.description ? (
+                project.description
+              ) : (
+                <Text span c="dimmed">
+                  Descrição não disponível
+                </Text>
+              )}
+            </Text>
+            <Title mt="md" order={5} fw={600}>
+              Objetivo do projeto
+            </Title>
+            <Text size="sm">
+              {project?.purpose ? (
+                project.purpose
+              ) : (
+                <Text span c="dimmed">
+                  Não disponível
+                </Text>
+              )}
+            </Text>
+          </Card>
+        )}
 
-          {!isLoading && (
-            <Grid gap="md" rowGap="xl" columnGap="sm">
-              <Grid.Col span={{ base: 12, md: 6, lg: 6 }}>
-                <Stack gap="md">
-                  <Card>
-                    <Title order={5} fw={600} mb="xs">
-                      Sobre
-                    </Title>
-                    <Text size="sm">
-                      {project?.description ? (
-                        project.description
-                      ) : (
-                        <Text span c="dimmed">
-                          Descrição não disponível
-                        </Text>
-                      )}
-                    </Text>
-                  </Card>
-                  <Card>
-                    <Title order={5} fw={600} mb="xs">
-                      Objetivo do projeto
-                    </Title>
-                    <Text size="sm">
-                      {project?.purpose ? (
-                        project.purpose
-                      ) : (
-                        <Text span c="dimmed">
-                          Não disponível
-                        </Text>
-                      )}
-                    </Text>
-                  </Card>
-                </Stack>
-              </Grid.Col>
-              <Grid.Col span={{ base: 12, md: 6, lg: 6 }}>
-                <Card mih={300}>
-                  <Title order={5} fw={600} mb="xs">
-                    Integrantes e Staff ({confirmedMembers.length})
-                  </Title>
-                  {isLoading && (
-                    <Flex gap={12} wrap="wrap">
-                      {Array.from({ length: 4 }).map((_, i) => (
-                        <Flex key={i} direction="column" align="center" gap={6}>
-                          <Skeleton circle height={52} width={52} />
-                          <Skeleton height={10} width={50} />
+        {activeTab === 'people' && (
+          <Stack gap="xs">
+            <Card mx={{ base: 0, sm: 'md' }}>
+              <Group justify="space-between">
+                <Title order={5} fw={600}>
+                  Administradores ({projectAdmins.length})
+                </Title>
+                <Button size="xs" onClick={() => handleRequestAdminStatus()}>
+                  Solicitar acesso admin
+                </Button>
+              </Group>
+              {loadingProjectAdmins ? (
+                <Text size="sm">Carregando...</Text>
+              ) : (
+                <>
+                  {projectAdmins.length > 0 ? (
+                    <Group mt="xs">
+                      {projectAdmins.map((person) => (
+                        <Flex
+                          key={person.id}
+                          gap={6}
+                          direction="column"
+                          w={85}
+                          justify="center"
+                        >
+                          <Center>
+                            <Link to={`/${person.profile.username}`}>
+                              <Avatar
+                                size={50}
+                                src={`${AVATAR_PATH}${person.profile.avatar}`}
+                              />
+                            </Link>
+                          </Center>
+                          <Text size="11px" ta="center" truncate="end">
+                            {person.profile.full_name}
+                          </Text>
                         </Flex>
                       ))}
-                    </Flex>
-                  )}
-
-                  {!isLoading && confirmedMembers.length === 0 && (
-                    <Text size="sm" c="dimmed">
-                      Nenhum integrante confirmado.
+                    </Group>
+                  ) : (
+                    <Text span c="dimmed" size="sm">
+                      Nenhum administrador neste projeto. <b>Quero ser administrador</b>
                     </Text>
                   )}
-
-                  {!isLoading && confirmedMembers.length > 0 && (
-                    <Flex gap={16} wrap="wrap">
-                      {confirmedMembers.map((member) => (
-                        <Card p="xs" withBorder>
-                          <Flex
-                            key={member.id}
-                            direction="column"
-                            align="center"
-                            gap={6}
-                            component={Link}
-                            to={`/${member.username}`}
-                            style={{
-                              textDecoration: 'none',
-                              color: 'inherit',
-                              cursor: 'pointer',
-                            }}
-                          >
-                            <Avatar
-                              src={AVATAR_PATH + member.avatar}
-                              size={50}
-                              radius="xl"
-                            />
-                            <Stack gap={3} align="center">
-                              <Text size="xs" fw={500} ta="center" w={70} lineClamp={1}>
-                                {member.name}
-                              </Text>
-                              <Text
-                                size="xs"
-                                ta="center"
-                                w={70}
-                                lineClamp={1}
-                                title={[member.role, member.role_2]
-                                  .filter(Boolean)
-                                  .join(', ')}
-                              >
-                                {[member.role, member.role_2].filter(Boolean).join(', ')}
-                              </Text>
-                            </Stack>
-                            {member.username === profile?.username && (
-                              <Pill size="xs">Você</Pill>
-                            )}
-                            {member.is_founder && (
-                              <Badge size="xs" variant="light" color="green">
-                                Fundador
-                              </Badge>
-                            )}
-                          </Flex>
-                        </Card>
+                </>
+              )}
+            </Card>
+            <Card mx={{ base: 0, sm: 'md' }}>
+              <Title order={5} fw={600}>
+                Pessoas associadas ({projectPeople.length})
+              </Title>
+              {loadingProjectPeople ? (
+                <Text size="sm">Carregando...</Text>
+              ) : (
+                <>
+                  {projectPeople.length > 0 ? (
+                    <Group mt="xs">
+                      {projectPeople.map((person) => (
+                        <Flex
+                          key={person.id}
+                          gap={2}
+                          direction="column"
+                          w={85}
+                          justify="center"
+                        >
+                          <Center>
+                            <Link to={`/${person.profile.username}`}>
+                              <Avatar
+                                size={50}
+                                src={`${AVATAR_PATH}${person.profile.avatar}`}
+                              />
+                            </Link>
+                          </Center>
+                          <Text fz="12px" ta="center" truncate="end">
+                            {person.profile.full_name}
+                          </Text>
+                          <Text fz="11px" ta="center" c="dimmed" lh={1.2}>
+                            {person.roles.map((r) => r.role.name_ptbr).join(', ')}
+                          </Text>
+                          <Badge size="xs" fw={300}>
+                            {person.engagement_types
+                              .map((e) => e.engagement_type.name_ptbr)
+                              .join(', ')}
+                          </Badge>
+                          <Text fz="11px" ta="center" opacity={0.7}>
+                            {person.year_start} ›{' '}
+                            {person.year_end ? person.year_end : 'Atualmente'}
+                          </Text>
+                        </Flex>
                       ))}
-                    </Flex>
+                    </Group>
+                  ) : (
+                    <Text span c="dimmed" size="sm">
+                      Nenhum perfil associado a este projeto até o momento
+                    </Text>
                   )}
-                </Card>
-              </Grid.Col>
-              {/* <Grid.Col span={{ base: 12, md: 6, lg: 6 }}>3</Grid.Col>
-              <Grid.Col span={{ base: 12, md: 6, lg: 6 }}>4</Grid.Col> */}
-            </Grid>
-          )}
-        </Box>
+                </>
+              )}
+            </Card>
+          </Stack>
+        )}
+
+        {activeTab === 'jobs' && (
+          <Card mx={{ base: 0, sm: 'md' }}>
+            <Title order={5} fw={600}>
+              Vagas
+            </Title>
+            <Text span c="dimmed" size="sm">
+              Nenhuma vaga para este projeto no momento
+            </Text>
+          </Card>
+        )}
+
+        {activeTab === 'gigs' && (
+          <Card mx={{ base: 0, sm: 'md' }}>
+            <Title order={5} fw={600}>
+              Gigs
+            </Title>
+            <Text span c="dimmed" size="sm">
+              Nenhuma gig deste projeto cadastrada no momento
+            </Text>
+          </Card>
+        )}
+
+        {activeTab === 'social' && (
+          <Card mx={{ base: 0, sm: 'md' }}>
+            <Title order={5} fw={600} mb="md">
+              Redes
+            </Title>
+
+            <Stack gap="sm" w={180}>
+              {project?.instagram && (
+                <Button
+                  size="sm"
+                  color="pink.8"
+                  component="a"
+                  target="_blank"
+                  href={`https://instagram.com/${project.instagram}`}
+                  leftSection={<IconBrandInstagram size={22} />}
+                >
+                  Instagram
+                </Button>
+              )}
+              {project?.spotify_id && (
+                <Button
+                  size="sm"
+                  color="green"
+                  component="a"
+                  target="_blank"
+                  href={`https://open.spotify.com/artist/${project.spotify_id}`}
+                  leftSection={<IconBrandSpotify size={22} />}
+                >
+                  Spotify
+                </Button>
+              )}
+              {project?.soundcloud && (
+                <Button
+                  size="sm"
+                  color="orange"
+                  component="a"
+                  target="_blank"
+                  href={`https://soundcloud.com/${project.soundcloud}`}
+                  leftSection={<IconBrandSoundcloud size={22} />}
+                >
+                  SoundCloud
+                </Button>
+              )}
+            </Stack>
+
+            {!project?.instagram && !project?.spotify_id && !project?.soundcloud && (
+              <Text span c="dimmed" size="sm">
+                Não disponível
+              </Text>
+            )}
+          </Card>
+        )}
+
+        {activeTab === 'admin' && userIsAdmin && (
+          <Card mx={{ base: 0, sm: 'md' }}>
+            <Title order={5} fw={600} mb="md" c="dimmed">
+              Administrar projeto
+            </Title>
+            <Title order={5} fw={600} mb="xs">
+              Editar dados do projeto
+            </Title>
+            <Alert variant="light" color="red" p="xs" mb="xs">
+              A edição do projeto está em manutenção e não está disponível no momento.
+              Retorne em instantes
+            </Alert>
+            <Stack gap="xs">
+              <TextInput label="Nome do projeto" defaultValue={project?.name} disabled />
+              <Textarea
+                label="Descrição"
+                defaultValue={project?.description}
+                rows={3}
+                disabled
+              />
+              <Textarea
+                label="Propósito"
+                defaultValue={project?.purpose}
+                rows={3}
+                disabled
+              />
+              <Group justify="flex-end">
+                <Button disabled color="mublinColor" size="md" w={240}>
+                  Salvar
+                </Button>
+              </Group>
+            </Stack>
+            <Divider my="lg" />
+            <Title order={5} fw={600} mb="xs">
+              Gerenciar administração
+            </Title>
+            <Button variant="outline" color="red.9" size="xs" w={220}>
+              Deixar de ser administrador
+            </Button>
+          </Card>
+        )}
       </Container>
-      <JoinProjectModal
-        opened={modalJoinOpened}
-        onClose={handleCloseJoinModal}
-        project={project}
-        rolesProjectManagement={rolesProjectManagement}
-        rolesProjectMusicians={rolesProjectMusicians}
-        joinRole={joinRole}
-        setJoinRole={setJoinRole}
-        joinYear={joinYear}
-        setJoinYear={setJoinYear}
-        onConfirm={() => joinProject()}
-        loading={joiningProject}
-        currentYear={currentYear}
-      />
     </>
   )
 }

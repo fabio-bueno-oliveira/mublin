@@ -362,7 +362,7 @@ export default function AppNavbar({ children }) {
                   >
                     Salvos
                   </Menu.Item>
-                  {profile.is_admin && (
+                  {profile?.is_admin && (
                     <>
                       <Menu.Divider />
                       <Menu.Item

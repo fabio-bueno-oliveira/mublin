@@ -91,7 +91,6 @@ import {
   IconUserPlus,
   IconLink,
   IconEye,
-  IconHeartFilled,
   IconChevronLeft,
   IconChevronRight,
   IconSparkles2,
@@ -1082,6 +1081,9 @@ export default function Profile() {
                       const isArtist = !!item.artist?.name
                       const isProject = !!item.project?.name
                       const entity = isArtist ? item.artist : item.project
+                      const url = isArtist
+                        ? `/artist/${item.artist?.slug}`
+                        : `/project/${item.project?.slug}`
 
                       if (!entity) {
                         return null
@@ -1098,15 +1100,17 @@ export default function Profile() {
                       return (
                         <Box key={item.id}>
                           <Group gap="xs" align="flex-start" wrap="nowrap">
-                            <Avatar
-                              radius="md"
-                              size={48}
-                              src={
-                                isArtist
-                                  ? ARTISTS_PATH + entity.picture
-                                  : `https://ik.imagekit.io/mublin/projects/${entity.id}/tr:h-260,w-260,c-maintain_ratio/${entity.picture}`
-                              }
-                            />
+                            <Link to={url}>
+                              <Avatar
+                                radius="md"
+                                size={48}
+                                src={
+                                  isArtist
+                                    ? ARTISTS_PATH + entity.picture
+                                    : `https://ik.imagekit.io/mublin/projects/${entity.id}/tr:h-260,w-260,c-maintain_ratio/${entity.picture}`
+                                }
+                              />
+                            </Link>
                             <Stack gap={2} style={{ flex: 1, minWidth: 0 }}>
                               {roleNames.length > 0 && (
                                 <Text size="15px" fw={600} lh={1}>

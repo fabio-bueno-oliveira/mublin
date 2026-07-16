@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { supabase } from '../lib/supabaseClient'
 import { useQuery } from '@tanstack/react-query'
-import { fetchUserProjects } from '../queries/user'
+import { fetchUserAdminProjects } from '../queries/user'
 import {
   useComputedColorScheme,
   Skeleton,
@@ -54,28 +54,28 @@ export default function AppSidebar() {
 
   const { data: projects = [], isLoading: loadingProjects } = useQuery({
     queryKey: ['user-projects', user?.id],
-    queryFn: () => fetchUserProjects(user.id),
+    queryFn: () => fetchUserAdminProjects(user.id),
     enabled: !!user?.id,
     staleTime: 1000 * 60 * 4,
   })
 
   const userProjects = projects
-    .filter((x) => x.is_admim)
+    .filter((x) => x.is_admin)
     .map((p) => ({
-      id: p.projects.id,
-      name: p.projects.name,
-      slug: p.projects.slug,
-      end_year: p.projects.end_year,
+      id: p.project.id,
+      name: p.project.name,
+      slug: p.project.slug,
+      end_year: p.project.end_year,
       is_admin: p.is_admin,
       is_founder: p.is_founder,
-      picture: p.projects.picture,
+      picture: p.project.picture,
       request_status: p.status,
-      activity_status: p.projects.activity_status,
-      activity_status_name: p.projects.project_statuses?.description_ptbr,
-      activity_status_color: p.projects.project_statuses?.color,
-      genre: p.projects.genres?.name,
-      type: p.projects.project_types?.name_ptbr,
-      totalMembers: p.projects.project_members?.length || 0,
+      activity_status: p.project.activity_status,
+      activity_status_name: p.project.status?.description_ptbr,
+      activity_status_color: p.project.status?.color,
+      genre: p.project.genre?.name,
+      type: p.project.type?.name_ptbr,
+      totalMembers: p.project.members?.length || 0,
     }))
 
   const normalizedQuery = searchQuery.trim().toLowerCase()

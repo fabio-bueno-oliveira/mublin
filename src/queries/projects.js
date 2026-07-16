@@ -23,12 +23,7 @@ export async function fetchProjectProfile(slug) {
         id,
         is_founder,
         is_admin,
-        is_ex_member,
-        joined_at,
         status,
-        roles!project_members_role_id_fkey ( id, name_ptbr ),
-        role_2:roles!project_members_role_2_id_fkey ( id, name_ptbr ),
-        role_3:roles!project_members_role_3_id_fkey ( id, name_ptbr ),
         profiles (
           id,
           full_name,
@@ -40,7 +35,6 @@ export async function fetchProjectProfile(slug) {
     )
     .eq('slug', slug)
     // .eq('project_members.status', 2)
-    // .eq('project_members.is_ex_member', false)
     .single()
 
   if (error) {
@@ -70,6 +64,49 @@ export async function fetchProjectProfile(slug) {
   }
 }
 
+export async function fetchProjectAdmins(projectId) {
+  const { data, error } = await supabase
+    .from('project_members')
+    .select(
+      `
+      id,
+      is_founder,
+      status,
+      profile:profiles ( id, full_name, username, avatar )
+    `,
+    )
+    .eq('project_id', projectId)
+    .eq('status', 2)
+    .eq('is_admin', true)
+
+  if (error) {
+    throw new Error(error.message)
+  }
+  return data
+}
+
+export async function fetchProjectPeople(projectId) {
+  const { data, error } = await supabase
+    .from('portfolio')
+    .select(
+      `
+      year_start, year_end, is_sporadic, is_mublin_facilitated,
+      profile:profiles ( id, full_name, username, avatar ),
+      roles:portfolio_roles (
+        role:roles ( id, name_ptbr )
+      ),
+      engagement_types:portfolio_engagement_types (
+        engagement_type:project_engagement_types ( id, name_ptbr )
+      )
+    `,
+    )
+    .eq('project_id', projectId)
+  if (error) {
+    throw new Error(error.message)
+  }
+  return data
+}
+
 export async function searchProjectsByName(name) {
   const { data, error } = await supabase
     .from('projects')
@@ -83,7 +120,6 @@ export async function searchProjectsByName(name) {
       cities ( name, regions ( name, uf ), countries ( name, name_ptbr ) ),
       project_members (
         profile_id,
-        is_ex_member,
         is_founder,
         status,
         profiles ( id, full_name, username, avatar )
@@ -92,7 +128,6 @@ export async function searchProjectsByName(name) {
     )
     .ilike('name', `%${name}%`)
     .eq('project_members.status', 2)
-    .eq('project_members.is_ex_member', false)
     .limit(10)
 
   if (error) {
@@ -261,7 +296,6 @@ export async function fetchProjectForDashbar(slug) {
         id,
         is_founder,
         is_admin,
-        is_ex_member,
         joined_at,
         status,
         roles!project_members_role_id_fkey ( id, name_ptbr ),
@@ -278,7 +312,6 @@ export async function fetchProjectForDashbar(slug) {
     )
     .eq('slug', slug)
     .eq('project_members.status', 2)
-    // .eq('project_members.is_ex_member', false)
     .single()
 
   if (error) {
@@ -294,7 +327,6 @@ export async function fetchProjectForDashbar(slug) {
       id: m.id,
       is_founder: m.is_founder,
       is_admin: m.is_admin,
-      is_ex_member: m.is_ex_member,
       joined_at: m.joined_at,
       status: m.status,
       role: m.roles?.name_ptbr ?? null,
