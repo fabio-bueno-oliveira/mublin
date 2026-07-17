@@ -24,39 +24,22 @@ import {
 } from '../queries/profiles'
 import { useAuth } from '../hooks/useAuth'
 import { Helmet } from 'react-helmet-async'
+// prettier-ignore
 import {
   useMantineColorScheme,
-  Container,
-  Modal,
-  Drawer,
-  Grid,
-  Scroller,
-  Avatar,
-  Paper,
-  Box,
-  Card,
-  Button,
-  Title,
-  Text,
-  Group,
-  Flex,
-  Stack,
-  ActionIcon,
-  Skeleton,
-  ScrollArea,
-  Alert,
-  Anchor,
-  Image,
-  Tooltip,
-  Affix,
-  Transition,
-  Menu,
-  Badge,
-  Center,
-  Divider,
-  ThemeIcon,
-  em,
-  Spoiler,
+  Grid, Container, Center,
+  Modal, Drawer,
+  Scroller, Skeleton, Stack,
+  Box, Paper, Card,
+  Transition, ScrollArea,
+  Affix, Divider,
+  Avatar, Image,
+  Title, Text,
+  Flex, Group,
+  Button, Badge,
+  ActionIcon, ThemeIcon, 
+  Alert, Tooltip, Anchor,
+  Spoiler, Menu, em,
 } from '@mantine/core'
 import {
   useMediaQuery,
@@ -71,6 +54,7 @@ import VideoPlayerYoutube from '../components/feed/VideoPlayerYoutube'
 import SectionPanel from '../components/SectionPanel'
 import InviteToGigModal from '../components/gigs/InviteToGigModal'
 import RecognitionBadge from '../components/profile/RecognitionBadge'
+import { truncateString } from '../utils/formatter'
 import {
   IconMoodSad,
   IconWorld,
@@ -181,7 +165,7 @@ export default function Profile() {
       return data
     },
     enabled: isOwnProfile,
-    staleTime: 1000 * 60, // 1 min — o dado muda com frequência, não precisa cachear tanto quanto o resto do perfil
+    staleTime: 1000 * 60, // 1 min — o dado muda com frequência
   })
 
   const MENU_ITEMS = [
@@ -368,7 +352,7 @@ export default function Profile() {
     queryKeyHashFn: () => `profileFollowers-${profile?.id}`,
     queryFn: () => fetchProfileFollowers(profile?.id),
     enabled: !!profile?.id,
-    staleTime: 0,
+    staleTime: 1000 * 60 * 2,
   })
 
   const { data: followingList = [], isLoading: loadingFollowing } = useQuery({
@@ -376,7 +360,7 @@ export default function Profile() {
     queryKeyHashFn: () => `profileFollowingList-${profile?.id}`,
     queryFn: () => fetchProfileFollowingList(profile?.id),
     enabled: !!profile?.id,
-    staleTime: 0,
+    staleTime: 1000 * 60 * 2,
   })
 
   const { data: similarProfiles = [], isLoading: loadingSimilarProfiles } = useQuery({
@@ -972,17 +956,6 @@ export default function Profile() {
                     <SectionTitle text="Sobre" mb={12} />
                     {profile.is_fake_profile && (
                       <Group gap={4} mb={10} wrap="nowrap">
-                        {/* <Alert
-                        icon={<IconSparkles2 />}
-                        variant="light"
-                        color="gray"
-                        px={8}
-                        py={4}
-                        mb="xs"
-                      >
-                        Este perfil foi criado por IA para fins de teste e não representa
-                        uma pessoa real
-                      </Alert> */}
                         <IconSparkles2 size={20} />
                         <Text size="xs" lh={1} opacity={0.8}>
                           Este perfil foi criado por IA para fins de teste e não
@@ -990,15 +963,22 @@ export default function Profile() {
                         </Text>
                       </Group>
                     )}
-                    <Text
-                      fz="sm"
-                      lh={1.4}
-                      style={{ whiteSpace: 'pre-line', cursor: 'default' }}
-                      lineClamp={expandedBio ? undefined : 4}
-                      onClick={() => setExpandedBio(!expandedBio)}
-                    >
-                      {profile.bio}
-                    </Text>
+                    {profile.bio?.length > 150 && !expandedBio ? (
+                      <>
+                        <Text fz="sm" lh={1.4} style={{ whiteSpace: 'pre-line' }}>
+                          {truncateString(profile.bio, 150)}
+                        </Text>
+                        <Anchor onClick={() => setExpandedBio(true)}>
+                          <Text mt={4} size="sm">
+                            Ver mais
+                          </Text>
+                        </Anchor>
+                      </>
+                    ) : (
+                      <Text fz="sm" lh={1.4} style={{ whiteSpace: 'pre-line' }}>
+                        {profile.bio}
+                      </Text>
+                    )}
                   </>
                 )}
 
@@ -1006,7 +986,7 @@ export default function Profile() {
                   order={3}
                   fz="sm"
                   fw={300}
-                  mt={profile.bio ? 'lg' : 0}
+                  mt={profile.bio ? 'md' : 0}
                   mb="xs"
                   opacity={0.8}
                 >
@@ -1414,56 +1394,38 @@ export default function Profile() {
                 <>
                   {gear.length > 0 ? (
                     <>
-                      <Group justify="flex-start" align="center" gap="xs" mt={10}>
-                        <SectionTitle
-                          id="gear"
-                          text={`Equipamento (${gear.length})`}
-                          ml={{ base: 'sm', md: 0 }}
-                        />
+                      <Group justify="space-between" align="center" gap="xs" mt={10}>
+                        <Group gap={10}>
+                          <SectionTitle
+                            id="gear"
+                            text={`Equipamento (${gear.length})`}
+                            ml={{ base: 'sm', md: 0 }}
+                          />
+                          <Button
+                            size="compact-sm"
+                            leftSection={<IconArrowsMaximize size={14} />}
+                            variant="default"
+                            component={Link}
+                            to={`/${username}/gear`}
+                          >
+                            Ver tudo
+                          </Button>
+                        </Group>
 
                         {isOwnProfile && (
-                          <Menu shadow="md" width={200}>
-                            <Menu.Target>
-                              <ActionIcon
-                                variant="subtle"
-                                color="gray"
-                                size="lg"
-                                aria-label="Opções de equipamento"
-                              >
-                                <IconDotsVerticalFilled size={20} />
-                              </ActionIcon>
-                            </Menu.Target>
-
-                            <Menu.Dropdown>
-                              <Menu.Label>Meu equipamento</Menu.Label>
-                              <Menu.Item
-                                leftSection={<IconPlus size={14} />}
-                                component={Link}
-                                to="/new/gear"
-                              >
-                                Adicionar novo
-                              </Menu.Item>
-                              <Menu.Item
-                                leftSection={<IconSettings size={14} />}
-                                component={Link}
-                                to="/settings/gear"
-                              >
-                                Gerenciar
-                              </Menu.Item>
-                            </Menu.Dropdown>
-                          </Menu>
+                          <ActionIcon
+                            variant="subtle"
+                            color="gray"
+                            radius="xl"
+                            aria-label="Gerenciar meu equipamento"
+                            title="Gerenciar meu equipamento"
+                            component={Link}
+                            to="/settings/gear"
+                            mr={{ base: 'sm', md: 0 }}
+                          >
+                            <IconPencil style={{ width: '80%', height: '80%' }} />
+                          </ActionIcon>
                         )}
-                        <ActionIcon
-                          component={Link}
-                          to={`/${username}/gear`}
-                          size="lg"
-                          radius="xl"
-                          title="Maximizar equipamentos"
-                          variant="subtle"
-                          color="gray"
-                        >
-                          <IconArrowsMaximize size={18} />
-                        </ActionIcon>
                       </Group>
                       {/* <Group gap={10} mb={4} mx={{ base: 'sm', md: 0 }}>
                         {gearCategories.length > 1 && (
@@ -1531,7 +1493,7 @@ export default function Profile() {
                           ))}
                         </Scroller>
                         <Box ml={{ base: 'sm', md: 0 }}>
-                          <Text fw={600} size="15px" mt="md">
+                          <Text fw={600} size="15px" mt="md" c="dimmed">
                             Setups de {profile.full_name}{' '}
                             {!!gearSetups.length && `(${gearSetups.length})`}
                           </Text>

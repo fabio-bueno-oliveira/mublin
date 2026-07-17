@@ -127,7 +127,7 @@ export default function NewGear() {
       is_for_sale: false,
       price: '',
       owner_comments: '',
-      year: currentYear,
+      year: '',
     },
   })
 

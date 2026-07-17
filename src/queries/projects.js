@@ -340,3 +340,17 @@ export async function fetchProjectForDashbar(slug) {
     })),
   }
 }
+
+export async function updateProjectProfile(projectId, updates) {
+  const { data, error } = await supabase
+    .from('projects')
+    .update(updates)
+    .eq('id', projectId)
+    .select()
+    .single()
+
+  if (error) {
+    throw new Error(error.message)
+  }
+  return data
+}

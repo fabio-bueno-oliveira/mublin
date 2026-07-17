@@ -1,11 +1,13 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { supabase } from '../lib/supabaseClient'
 import {
   fetchProjectProfile,
   fetchProjectAdmins,
   fetchProjectPeople,
+  updateProjectProfile,
 } from '../queries/projects'
 import {
   useMantineColorScheme,
@@ -14,7 +16,6 @@ import {
   Affix,
   Flex,
   Box,
-  Alert,
   Avatar,
   Button,
   Image,
@@ -22,6 +23,7 @@ import {
   Text,
   TextInput,
   Textarea,
+  FileInput,
   Badge,
   Group,
   Stack,
@@ -34,23 +36,69 @@ import {
 } from '@mantine/core'
 import { useMediaQuery } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
+import { upload } from '@imagekit/react'
 import {
   IconBrandInstagram,
   IconBrandSpotify,
   IconBrandSoundcloud,
   IconSettings,
   IconRoad,
+  IconCamera,
+  IconTrash,
 } from '@tabler/icons-react'
 import AppNavbarMobile from '../components/AppNavbarMobile'
 import { MEMBER_REQUEST_STATUS } from '../constants/projects'
+
+// ── Helpers de upload (ImageKit) ──────────────────────────
+// Mesmo padrão usado em NewProject.jsx
+async function getIkAuthTokens() {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession()
+  const authRes = await fetch(import.meta.env.VITE_IMAGEKIT_AUTH_ENDPOINT, {
+    headers: { Authorization: `Bearer ${session?.access_token}` },
+  })
+  if (!authRes.ok) {
+    throw new Error('Falha na autenticação do ImageKit')
+  }
+  return { session, ...(await authRes.json()) }
+}
+
+async function uploadToImageKit({ file, fileName, folder, tags, onProgress }) {
+  const { token: ikToken, expire, signature } = await getIkAuthTokens()
+  return upload({
+    file,
+    fileName,
+    folder,
+    tags,
+    useUniqueFileName: true,
+    publicKey: import.meta.env.VITE_IMAGEKIT_PUBLIC_KEY,
+    urlEndpoint: import.meta.env.VITE_IMAGEKIT_URL_ENDPOINT,
+    token: ikToken,
+    expire,
+    signature,
+    onProgress: (e) => onProgress(Math.round((e.loaded / e.total) * 100)),
+  })
+}
 
 export default function Project() {
   const { user } = useAuth()
   const { slug } = useParams()
   const { colorScheme } = useMantineColorScheme()
   const isMobile = useMediaQuery(`(max-width: ${em(750)})`)
+  const queryClient = useQueryClient()
 
   const [activeTab, setActiveTab] = useState('about')
+
+  // ── Edição do projeto (aba Admin) ──
+  const [editForm, setEditForm] = useState({ name: '', description: '', purpose: '' })
+  const [pictureFile, setPictureFile] = useState(null)
+  const [picturePreview, setPicturePreview] = useState(null)
+  const [pictureUploadProgress, setPictureUploadProgress] = useState(0)
+  // Guarda o id do projeto cujo editForm está refletido atualmente, pra
+  // sabermos quando precisamos "ressincronizar" o formulário (troca de projeto
+  // ou primeira carga) sem depender de um useEffect
+  const [editFormProjectId, setEditFormProjectId] = useState(null)
 
   const {
     data: project,
@@ -77,6 +125,119 @@ export default function Project() {
     enabled: !!project?.id,
     staleTime: 1000 * 60 * 5,
   })
+
+  // Ajusta o editForm durante a própria renderização quando o projeto muda
+  // (em vez de um useEffect). React trata esse "setState durante a
+  // renderização" de forma especial: ele reinicia o render com o novo estado
+  // antes de pintar a tela, então não há commit intermediário nem cascata de
+  // renders extra como aconteceria com um useEffect.
+  // Ref: https://react.dev/learn/you-might-not-need-an-effect#adjusting-some-state-when-a-prop-changes
+  if (project && project.id !== editFormProjectId) {
+    setEditFormProjectId(project.id)
+    setEditForm({
+      name: project.name || '',
+      description: project.description || '',
+      purpose: project.purpose || '',
+    })
+  }
+
+  // Libera a URL de preview criada com createObjectURL ao trocar/desmontar
+  useEffect(() => {
+    return () => {
+      if (picturePreview) {
+        URL.revokeObjectURL(picturePreview)
+      }
+    }
+  }, [picturePreview])
+
+  const updateProjectMutation = useMutation({
+    mutationFn: async () => {
+      const updates = {
+        name: editForm.name.trim(),
+        description: editForm.description.trim() || null,
+        purpose: editForm.purpose.trim() || null,
+      }
+
+      if (pictureFile) {
+        setPictureUploadProgress(0)
+        const res = await uploadToImageKit({
+          file: pictureFile,
+          fileName: `${project.slug || 'project'}_.jpg`,
+          folder: `/projects/${project.id}/`,
+          tags: ['project', 'picture'],
+          onProgress: setPictureUploadProgress,
+        })
+        updates.picture = res.filePath.split('/').pop()
+      }
+
+      return updateProjectProfile(project.id, updates)
+    },
+    onSuccess: () => {
+      notifications.show({
+        title: 'Projeto atualizado',
+        message: 'As informações do projeto foram salvas com sucesso.',
+        color: 'green',
+        position: 'top-center',
+      })
+      queryClient.invalidateQueries({ queryKey: ['project', slug] })
+      if (picturePreview) {
+        URL.revokeObjectURL(picturePreview)
+      }
+      setPictureFile(null)
+      setPicturePreview(null)
+      setPictureUploadProgress(0)
+    },
+    onError: (error) => {
+      notifications.show({
+        title: 'Erro ao salvar',
+        message:
+          error?.message ||
+          'Não foi possível salvar as alterações do projeto. Tente novamente.',
+        color: 'red',
+        position: 'top-center',
+      })
+      setPictureUploadProgress(0)
+    },
+  })
+
+  const handleEditFormChange = (field) => (event) => {
+    // Importante: extraia o valor AQUI, de forma síncrona, e não dentro do
+    // callback de atualização do setState. O React zera event.currentTarget
+    // logo após o handler do evento terminar, então se a leitura for feita
+    // dentro da função de atualização (que pode rodar em um momento
+    // posterior), event.currentTarget já estará null.
+    const { value } = event.currentTarget
+    setEditForm((prev) => ({ ...prev, [field]: value }))
+  }
+
+  const handlePictureChange = (file) => {
+    if (picturePreview) {
+      URL.revokeObjectURL(picturePreview)
+    }
+    setPictureFile(file)
+    setPicturePreview(file ? URL.createObjectURL(file) : null)
+  }
+
+  const handleRemovePictureSelection = () => {
+    if (picturePreview) {
+      URL.revokeObjectURL(picturePreview)
+    }
+    setPictureFile(null)
+    setPicturePreview(null)
+  }
+
+  const handleSaveProject = () => {
+    if (!editForm.name.trim()) {
+      notifications.show({
+        title: 'Nome obrigatório',
+        message: 'O nome do projeto não pode ficar em branco.',
+        color: 'red',
+        position: 'top-center',
+      })
+      return
+    }
+    updateProjectMutation.mutate()
+  }
 
   const AVATAR_PATH =
     'https://ik.imagekit.io/mublin/tr:h-200,c-maintain_ratio/users/avatars/'
@@ -478,26 +639,70 @@ export default function Project() {
             <Title order={5} fw={600} mb="xs">
               Editar dados do projeto
             </Title>
-            <Alert variant="light" color="red" p="xs" mb="xs">
-              A edição do projeto está em manutenção e não está disponível no momento.
-              Retorne em instantes
-            </Alert>
             <Stack gap="xs">
-              <TextInput label="Nome do projeto" defaultValue={project?.name} disabled />
+              <Group align="flex-end" gap="md">
+                <Avatar
+                  src={picturePreview || PICTURE_AVATAR_PATH + project?.picture}
+                  size={80}
+                  radius={0}
+                />
+                <Stack gap={4} flex={1}>
+                  <FileInput
+                    label="Imagem do projeto"
+                    description="PNG, JPG ou GIF"
+                    placeholder="Selecionar arquivo"
+                    leftSection={<IconCamera size={18} />}
+                    leftSectionPointerEvents="none"
+                    accept="image/png,image/jpeg,image/gif"
+                    value={pictureFile}
+                    onChange={handlePictureChange}
+                  />
+                  {pictureFile && (
+                    <Group gap="xs">
+                      <Button
+                        size="xs"
+                        color="red"
+                        variant="subtle"
+                        leftSection={<IconTrash size={14} />}
+                        onClick={handleRemovePictureSelection}
+                      >
+                        Remover seleção
+                      </Button>
+                      {pictureUploadProgress > 0 && pictureUploadProgress < 100 && (
+                        <Text size="xs" c="dimmed">
+                          Enviando... {pictureUploadProgress}%
+                        </Text>
+                      )}
+                    </Group>
+                  )}
+                </Stack>
+              </Group>
+              <TextInput
+                label="Nome do projeto"
+                value={editForm.name}
+                onChange={handleEditFormChange('name')}
+                required
+              />
               <Textarea
                 label="Descrição"
-                defaultValue={project?.description}
+                value={editForm.description}
+                onChange={handleEditFormChange('description')}
                 rows={3}
-                disabled
               />
               <Textarea
                 label="Propósito"
-                defaultValue={project?.purpose}
+                value={editForm.purpose}
+                onChange={handleEditFormChange('purpose')}
                 rows={3}
-                disabled
               />
               <Group justify="flex-end">
-                <Button disabled color="mublinColor" size="md" w={240}>
+                <Button
+                  color="mublinColor"
+                  size="md"
+                  w={240}
+                  loading={updateProjectMutation.isPending}
+                  onClick={handleSaveProject}
+                >
                   Salvar
                 </Button>
               </Group>

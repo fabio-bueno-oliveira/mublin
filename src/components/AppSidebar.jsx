@@ -22,7 +22,12 @@ import {
   TextInput,
 } from '@mantine/core'
 // import ProPlanBadge from './ProPlanBadge'
-import { IconRosetteDiscountCheck, IconSearch, IconEye } from '@tabler/icons-react'
+import {
+  IconRosetteDiscountCheck,
+  IconSearch,
+  IconEye,
+  IconRocket,
+} from '@tabler/icons-react'
 
 const AVATAR_PATH =
   'https://ik.imagekit.io/mublin/tr:h-140,c-maintain_ratio/users/avatars/'
@@ -110,14 +115,12 @@ export default function AppSidebar() {
           <Skeleton width={136} height={12} radius="md" />
         </Card>
       ) : (
-        <>
+        <Stack gap="sm" mt={4}>
           <Card
             withBorder={false}
             shadow="xs"
             radius="md"
             p={0}
-            mt={4}
-            mb="md"
             style={{ overflow: 'hidden' }}
             pos="relative"
           >
@@ -186,24 +189,35 @@ export default function AppSidebar() {
             </Box>
           </Card>
 
-          <Card withBorder={false} shadow="xs" radius="md" p="xs" mb="md">
+          <Card withBorder={false} shadow="xs" radius="md" p="xs">
             <Group gap="xs" wrap="nowrap">
-              <IconEye color="gray" size={16} />
-              {loadingProfileViews ? (
-                <Text size="xs" c="dimmed">
-                  Carregando visualizações ao perfil...
-                </Text>
-              ) : (
-                <Text size="xs" c="dimmed">
-                  {profileViewCount === 0
-                    ? 'Ninguém visualizou seu perfil ainda'
-                    : profileViewCount === 1
-                      ? '1 pessoa visualizou seu perfil'
-                      : `${profileViewCount} pessoas visualizaram seu perfil`}
-                </Text>
-              )}
+              <IconRocket color="gray" size={16} />
+              <Text size="xs" c="dimmed">
+                Plano PRO
+              </Text>
             </Group>
           </Card>
+
+          {profile.plan === 'Pro' && (
+            <Card withBorder={false} shadow="xs" radius="md" p="xs">
+              <Group gap="xs" wrap="nowrap">
+                <IconEye color="gray" size={16} />
+                {loadingProfileViews ? (
+                  <Text size="xs" c="dimmed">
+                    Carregando visualizações ao perfil...
+                  </Text>
+                ) : (
+                  <Text size="xs" c="dimmed">
+                    {profileViewCount === 0
+                      ? 'Ninguém visualizou seu perfil ainda'
+                      : profileViewCount === 1
+                        ? '1 pessoa visualizou seu perfil'
+                        : `${profileViewCount} pessoas visualizaram seu perfil`}
+                  </Text>
+                )}
+              </Group>
+            </Card>
+          )}
 
           <Card withBorder={false} shadow="xs" radius="md" p="xs">
             <Group
@@ -249,7 +263,7 @@ export default function AppSidebar() {
             {loadingProjects ? (
               <Text>Carregando...</Text>
             ) : userProjects.length > 0 ? (
-              <ScrollArea h={192} scrollHideDelay={0}>
+              <ScrollArea h={158} scrollHideDelay={0}>
                 {filteredProjects.length > 0 ? (
                   <Stack gap="sm">
                     {filteredProjects.map((project) => (
@@ -308,7 +322,7 @@ export default function AppSidebar() {
               </Text>
             )}
           </Card>
-        </>
+        </Stack>
       )}
     </Box>
   )

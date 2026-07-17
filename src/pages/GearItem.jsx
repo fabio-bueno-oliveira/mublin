@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { useAuth } from '../hooks/useAuth'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Helmet } from 'react-helmet-async'
 import {
@@ -59,6 +59,7 @@ const PATH_COLOR_SAMPLE = 'https://ik.imagekit.io/mublin/products/colors/'
 export default function GearItem() {
   const { slug } = useParams()
   const { user } = useAuth()
+  const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [selectedColorId, setSelectedColorId] = useState(null)
   const isMobile = useMediaQuery(`(max-width: ${em(750)})`)
@@ -179,6 +180,57 @@ export default function GearItem() {
     },
   })
 
+  const { mutate: handleDeleteFromGear, isPending: deletingFromGear } = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from('profile_gear')
+        .delete()
+        .eq('id_user', user.id)
+        .eq('id_product', product.id)
+
+      if (error) {
+        throw new Error(error.message)
+      }
+    },
+
+    onMutate: async () => {
+      const queryKey = ['user-gear-item', user.id, product.id]
+
+      await queryClient.cancelQueries({ queryKey })
+
+      const previousUserGearItem = queryClient.getQueryData(queryKey)
+
+      queryClient.setQueryData(queryKey, null)
+
+      return { previousUserGearItem }
+    },
+
+    onError: (error, _variables, context) => {
+      queryClient.setQueryData(
+        ['user-gear-item', user.id, product.id],
+        context?.previousUserGearItem,
+      )
+      notifications.show({
+        title: 'Ops!',
+        message: error.message || 'Não foi possível remover o item do seu equipamento',
+        color: 'red',
+      })
+    },
+
+    onSuccess: () => {
+      notifications.show({
+        title: 'Removido',
+        message: 'Item removido do seu equipamento',
+        color: 'green',
+      })
+    },
+
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['user-gear-item', user.id, product.id] })
+      queryClient.invalidateQueries({ queryKey: ['productOwners', product.id] })
+    },
+  })
+
   if (isLoading) {
     return (
       <Container size="lg" mt={16}>
@@ -260,11 +312,11 @@ export default function GearItem() {
 
               {product?.product_series?.name}
             </Text>
-            <Title order={1} fz="h3" fw={600} lh={1.1}>
+            <Title order={1} fz="h3" fw={600} lh={1.2}>
               {product?.name}
             </Title>
             {product?.subtitle && (
-              <Text size="sm" c="dimmed">
+              <Text size="sm" lh={1.2} opacity={0.8}>
                 {product?.subtitle}
               </Text>
             )}
@@ -309,10 +361,13 @@ export default function GearItem() {
             variant="default"
             size="xs"
             radius="md"
-            component={Link}
-            to={alreadyAdded ? '/settings/gear' : `/new/gear?id=${product?.id}`}
-            loading={isLoading || loadingUserGearItem}
-            disabled={isLoading || loadingUserGearItem}
+            onClick={
+              alreadyAdded
+                ? () => handleDeleteFromGear()
+                : () => navigate(`/new/gear?id=${product?.id}`)
+            }
+            loading={isLoading || loadingUserGearItem || deletingFromGear}
+            disabled={isLoading || loadingUserGearItem || deletingFromGear}
           >
             {alreadyAdded ? 'Remover do meu equipamento' : 'Adicionar ao meu equipamento'}
           </Button>

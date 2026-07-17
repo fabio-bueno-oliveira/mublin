@@ -183,7 +183,7 @@ export default function Brand() {
 
             {isLoadingArtists ? (
               <SimpleGrid cols={{ base: 2, sm: 3, md: 4 }} spacing="md">
-                {Array.from({ length: 8 }).map((_, i) => (
+                {Array.from({ length: 4 }).map((_, i) => (
                   <Skeleton key={i} height={64} radius="md" />
                 ))}
               </SimpleGrid>
@@ -218,7 +218,7 @@ export default function Brand() {
               </SimpleGrid>
             ) : (
               <Text size="sm" c="dimmed">
-                Nenhum artista cadastrado até o momento
+                Nenhum artista associado até o momento
               </Text>
             )}
           </Box>
@@ -231,7 +231,7 @@ export default function Brand() {
             <Center pt={30}>
               <Loader size="lg" color="primary" type="bars" opacity={0.5} />
             </Center>
-          ) : (
+          ) : products.length > 0 ? (
             <ResponsiveMasonry
               columnsCountBreakPoints={{ 350: 2, 750: 3, 900: 4 }}
               gutterBreakpoints={{ 350: '8px', 750: '8px', 900: '8px' }}
@@ -369,6 +369,10 @@ export default function Brand() {
                 ))}
               </Masonry>
             </ResponsiveMasonry>
+          ) : (
+            <Text size="sm" c="dimmed">
+              Nenhum item até o momento
+            </Text>
           )}
         </Stack>
       </Container>
