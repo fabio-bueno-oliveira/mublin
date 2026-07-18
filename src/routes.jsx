@@ -22,6 +22,7 @@ import Feed from './pages/Feed'
 import MySavedFavorites from './pages/Saved'
 // -- Search pages
 import Search from './pages/Search'
+import SearchPeople from './pages/search/People'
 // -- Profile pages
 import ProfileRouter from './components/ProfileRouter'
 import ProfileGear from './pages/ProfileGear'
@@ -104,6 +105,7 @@ export const router = createBrowserRouter([
       { path: 'home', element: <Home /> },
       { path: 'feed', element: <Feed /> },
       { path: 'search', element: <Search /> },
+      { path: 'search/people', element: <SearchPeople /> },
       { path: 'gigs', element: <Gigs /> },
       { path: 'gig/:id', element: <Gig /> },
       { path: 'gig-invitations', element: <GigInvitations /> },

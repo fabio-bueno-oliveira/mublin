@@ -5,17 +5,39 @@ import { fetchUserProfile } from '../../queries/user'
 import { fetchCityById } from '../../queries/locations'
 import { supabase } from '../../lib/supabaseClient'
 import {
-  Stack, Grid, TextInput, Textarea, NativeSelect,
-  Input, Select, Button, Group, Text, Anchor, Divider,
-  Modal, ScrollArea, Box, Loader, Alert, Switch
+  Stack,
+  Grid,
+  TextInput,
+  Textarea,
+  NativeSelect,
+  Input,
+  Select,
+  Button,
+  Group,
+  Text,
+  Anchor,
+  Divider,
+  Modal,
+  ScrollArea,
+  Box,
+  Loader,
+  Alert,
+  Switch,
 } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { useDebouncedCallback, useDisclosure } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
 import {
-  IconSearch, IconCheck, IconAlertCircle,
-  IconBrandInstagram, IconBrandTiktok, IconWorld,
-  IconBrandYoutube, IconBrandTwitch, IconVideo, IconPhone
+  IconSearch,
+  IconCheck,
+  IconAlertCircle,
+  IconBrandInstagram,
+  IconBrandTiktok,
+  IconWorld,
+  IconBrandYoutube,
+  IconBrandTwitch,
+  IconVideo,
+  IconPhone,
 } from '@tabler/icons-react'
 import { PhoneInput } from 'react-international-phone'
 import 'react-international-phone/style.css'
@@ -23,10 +45,10 @@ import 'react-international-phone/style.css'
 // ── Queries locais ────────────────────────────────────────
 
 async function fetchGenders() {
-  const { data, error } = await supabase
-    .from('genders')
-    .select('id, label')
-  if (error) throw new Error(error.message)
+  const { data, error } = await supabase.from('genders').select('id, label')
+  if (error) {
+    throw new Error(error.message)
+  }
   return data
 }
 
@@ -36,7 +58,9 @@ async function fetchRegions() {
     .select('id, name')
     .eq('country_id', 27)
     .order('name')
-  if (error) throw new Error(error.message)
+  if (error) {
+    throw new Error(error.message)
+  }
   return data
 }
 
@@ -48,7 +72,9 @@ async function searchCitiesByName(query, regionId) {
     .ilike('name', `%${query}%`)
     .order('name')
     .limit(20)
-  if (error) throw new Error(error.message)
+  if (error) {
+    throw new Error(error.message)
+  }
   return data
 }
 
@@ -57,7 +83,9 @@ async function fetchSocialLinks(profileId) {
     .from('profile_social_links')
     .select('platform, handle')
     .eq('profile_id', profileId)
-  if (error) throw new Error(error.message)
+  if (error) {
+    throw new Error(error.message)
+  }
   return data
 }
 
@@ -91,7 +119,8 @@ export default function EditMyProfile() {
   const [cityResults, setCityResults] = useState([])
   const [citySearchLoading, setCitySearchLoading] = useState(false)
   const [noCityResults, setNoCityResults] = useState(false)
-  const [modalCityOpened, { open: openCityModal, close: closeCityModal }] = useDisclosure(false)
+  const [modalCityOpened, { open: openCityModal, close: closeCityModal }] =
+    useDisclosure(false)
 
   // ── Live Streaming ────────────────────────────────────
   const [isLive, setIsLive] = useState(false)
@@ -119,15 +148,27 @@ export default function EditMyProfile() {
     validate: {
       full_name: (v) => (!v?.trim() ? 'Nome completo é obrigatório' : null),
       username: (v) => {
-        if (!v) return 'Username é obrigatório'
-        if (v.length < 3) return 'Mínimo 3 caracteres'
-        if (!/^[a-z0-9_]+$/.test(v)) return 'Apenas letras minúsculas, números e _'
+        if (!v) {
+          return 'Username é obrigatório'
+        }
+        if (v.length < 3) {
+          return 'Mínimo 3 caracteres'
+        }
+        if (!/^[a-z0-9_]+$/.test(v)) {
+          return 'Apenas letras minúsculas, números e _'
+        }
         return null
       },
       website: (v) => {
-        if (!v) return null
-        try { new URL(v); return null }
-        catch { return 'URL inválida. Ex: https://meusite.com' }
+        if (!v) {
+          return null
+        }
+        try {
+          new URL(v)
+          return null
+        } catch {
+          return 'URL inválida. Ex: https://meusite.com'
+        }
       },
     },
   })
@@ -141,7 +182,9 @@ export default function EditMyProfile() {
   })
 
   useEffect(() => {
-    if (!savedProfile) return
+    if (!savedProfile) {
+      return
+    }
     const expired = savedProfile.live_expires_at
       ? new Date(savedProfile.live_expires_at) < new Date()
       : false
@@ -152,33 +195,33 @@ export default function EditMyProfile() {
     setLivePlatform(savedProfile.live_platform ?? '')
     if (savedProfile.live_expires_at && !expired) {
       const remaining = Math.round(
-        (new Date(savedProfile.live_expires_at) - new Date()) / 60000
+        (new Date(savedProfile.live_expires_at) - new Date()) / 60000,
       )
       const closest = [15, 30, 60, 120, 180].reduce((a, b) =>
-        Math.abs(b - remaining) < Math.abs(a - remaining) ? b : a
+        Math.abs(b - remaining) < Math.abs(a - remaining) ? b : a,
       )
       setLiveDuration(String(closest))
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [savedProfile])
 
   const LIVE_PLATFORMS = [
-    { value: 'instagram', label: 'Instagram',  icon: <IconBrandInstagram size={14} /> },
-    { value: 'tiktok',    label: 'TikTok',     icon: <IconBrandTiktok size={14} /> },
-    { value: 'youtube',   label: 'YouTube',    icon: <IconBrandYoutube size={14} /> },
-    { value: 'twitch',    label: 'Twitch',     icon: <IconBrandTwitch size={14} /> },
+    { value: 'instagram', label: 'Instagram', icon: <IconBrandInstagram size={14} /> },
+    { value: 'tiktok', label: 'TikTok', icon: <IconBrandTiktok size={14} /> },
+    { value: 'youtube', label: 'YouTube', icon: <IconBrandYoutube size={14} /> },
+    { value: 'twitch', label: 'Twitch', icon: <IconBrandTwitch size={14} /> },
   ]
 
-  const savedHandles = new Set(socialLinks.map(l => l.platform))
+  const savedHandles = new Set(socialLinks.map((l) => l.platform))
 
-  const livePlatformOptions = LIVE_PLATFORMS
-    .filter(p => savedHandles.has(p.value))
-    .map(p => ({ value: p.value, label: p.label }))
+  const livePlatformOptions = LIVE_PLATFORMS.filter((p) => savedHandles.has(p.value)).map(
+    (p) => ({ value: p.value, label: p.label }),
+  )
 
   const liveDurationOptions = [
-    { value: '15',  label: '15 minutos' },
-    { value: '30',  label: '30 minutos' },
-    { value: '60',  label: '1 hora' },
+    { value: '15', label: '15 minutos' },
+    { value: '30', label: '30 minutos' },
+    { value: '60', label: '1 hora' },
     { value: '120', label: '2 horas' },
     { value: '180', label: '3 horas' },
   ]
@@ -187,7 +230,6 @@ export default function EditMyProfile() {
   return (
     <>
       <Stack gap="lg">
-
         {/* ── Live ─────────────────────────────────────── */}
         <Stack gap="sm">
           <Text fw={600} size="sm" c="dimmed" tt="uppercase" lts="0.05em">
@@ -197,7 +239,7 @@ export default function EditMyProfile() {
             label="Avisar que estou fazendo live agora"
             description="Seu perfil exibirá um indicador de live ativa"
             color="red"
-            style={{ width: "fit-content" }}
+            style={{ width: 'fit-content' }}
             checked={isLive}
             onChange={(e) => {
               setIsLive(e.currentTarget.checked)
@@ -256,7 +298,6 @@ export default function EditMyProfile() {
             Salvar alterações
           </Button>
         </Group>
-
       </Stack>
     </>
   )

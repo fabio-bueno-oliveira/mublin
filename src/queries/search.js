@@ -1,14 +1,22 @@
 import { supabase } from '../lib/supabaseClient'
 
-export async function searchProfiles(keyword, userCityId = null) {
+export async function searchProfiles(
+  keyword,
+  { userCityId = null, page = 1, pageSize = 15 } = {},
+) {
   const { data, error } = await supabase.rpc('search_profiles', {
     keyword,
     user_city_id: userCityId,
+    result_limit: pageSize,
+    result_offset: (page - 1) * pageSize,
   })
   if (error) {
     throw new Error(error.message)
   }
-  return data
+  return {
+    results: data,
+    total: data?.[0]?.total_count ?? 0,
+  }
 }
 
 export async function searchProjects(keyword, userCityId = null) {
@@ -119,15 +127,7 @@ export async function searchArtists(keyword) {
     return []
   }
 
-  const mainFilters = words
-    .flatMap((word) => [
-      `name.ilike.%${word}%`,
-      // `real_name.ilike.%${word}%`,
-      `slug.ilike.%${word}%`,
-    ])
-    .join(',')
-
-  const { data, error } = await supabase
+  let query = supabase
     .from('artists')
     .select(
       `
@@ -143,15 +143,17 @@ export async function searchArtists(keyword) {
       )
     `,
     )
-    .or(mainFilters)
     .eq('is_active', true)
-    .order('name', { ascending: true })
-    .limit(40)
+
+  words.forEach((word) => {
+    query = query.or(`name.ilike.%${word}%,slug.ilike.%${word}%`)
+  })
+
+  const { data, error } = await query.order('name', { ascending: true }).limit(40)
 
   if (error) {
     throw new Error(error.message)
   }
-
   return data
 }
 
@@ -206,29 +208,20 @@ export async function fetchRecentProfiles(limit = 10) {
       full_name,
       username,
       avatar,
-      cover_image,
       title,
       bio,
       city_id,
       region_id,
       is_verified,
-      is_legend,
       is_open_to_work,
       is_live,
       live_platform,
       live_expires_at,
-      phone_number_is_public,
-      phone_number_is_whatsapp,
       cities (
         name, countries ( name, name_ptbr )
       ),
       regions (
         name, uf
-      ),
-      profile_social_links (
-        id,
-        platform,
-        handle
       ),
       profile_roles (
         id,

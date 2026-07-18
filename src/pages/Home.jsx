@@ -21,9 +21,11 @@ import {
   Text, Title, 
   Image, Avatar,
   Select, ThemeIcon,
+  Badge,
 } from '@mantine/core'
 import { useMediaQuery, useScroller, useDisclosure } from '@mantine/hooks'
 import AppNavbarMobile from '../components/AppNavbarMobile'
+import { getAvatarUrl } from '../utils/profile'
 import dayjs from 'dayjs'
 import 'dayjs/locale/pt-br'
 import {
@@ -280,10 +282,23 @@ export default function Home() {
                               shadow="sm"
                               withBorder
                               style={{ flexShrink: 0 }}
+                              pos="relative"
                             >
+                              {p.is_live && (
+                                <Badge
+                                  size="xs"
+                                  color="red.9"
+                                  pos="absolute"
+                                  right={5}
+                                  top={5}
+                                >
+                                  Live
+                                </Badge>
+                              )}
                               <Stack align="center" gap={3}>
                                 <Avatar
-                                  src={p.avatar ? AVATAR_PATH + p.avatar : null}
+                                  // src={p.avatar ? AVATAR_PATH + p.avatar : null}
+                                  src={getAvatarUrl(p?.avatar, p.is_open_to_work, 64)}
                                   size={64}
                                   radius="xl"
                                 >
@@ -421,7 +436,7 @@ export default function Home() {
               </div>
             </Box> */}
 
-            <Group justify="space-between" align="center" mt="xl" mb="xs">
+            <Group justify="space-between" align="center" mt="lg" mb="xs">
               <Title order={3} fw={600} fz="lg">
                 Eventos
               </Title>

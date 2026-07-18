@@ -1,15 +1,4 @@
-import { Link } from 'react-router-dom'
-import {
-  Flex,
-  Box,
-  Title,
-  Text,
-  Button,
-  Indicator,
-  Avatar,
-  Group,
-  Anchor,
-} from '@mantine/core'
+import { Flex, Box, Title, Text, Indicator, Avatar, Group, Anchor } from '@mantine/core'
 import { IconRosetteDiscountCheck, IconLink } from '@tabler/icons-react'
 import { isProfileLive } from '../../utils/live'
 import { truncateString } from '../../utils/formatter'

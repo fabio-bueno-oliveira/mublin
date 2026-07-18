@@ -26,7 +26,6 @@ import {
   Group,
   Center,
   Scroller,
-  Card,
   Title,
   Text,
   Image,
@@ -68,7 +67,7 @@ function GearOwners({ productId, totalOwners }) {
     staleTime: 1000 * 60 * 10,
   })
 
-  if (!totalOwners || owners.length === 0) {
+  if (!totalOwners || owners?.length === 0) {
     return null
   }
 
@@ -77,7 +76,7 @@ function GearOwners({ productId, totalOwners }) {
 
   return (
     <Avatar.Group spacing="xs">
-      {visible.map((owner) => (
+      {visible?.map((owner) => (
         <Tooltip key={owner.id} label={owner.full_name} withArrow position="top">
           <Avatar
             size={25}
@@ -116,12 +115,15 @@ export default function Search() {
     staleTime: 1000 * 60 * 5,
   })
 
-  const { data: profileResults = [], isLoading: loadingProfiles } = useQuery({
+  const { data: profilesData, isLoading: loadingProfiles } = useQuery({
     queryKey: ['searched-profiles', q],
-    queryFn: () => searchProfiles(q),
+    queryFn: () => searchProfiles(q, { pageSize: 3 }),
     enabled: !!q,
     staleTime: 1000 * 60 * 5,
   })
+
+  const profileResults = profilesData?.results ?? []
+  const totalProfiles = profilesData?.total ?? 0
 
   const { data: projectResults = [], isLoading: loadingProjects } = useQuery({
     queryKey: ['searched-projects', q],
@@ -245,7 +247,7 @@ export default function Search() {
             />
           </Group>
           {/* Buscas recentes — só exibe quando campo vazio e sem query ativa */}
-          {!q && recentSearches.length > 0 && isMobileFocused && (
+          {!q && recentSearches?.length > 0 && isMobileFocused && (
             <Box mt="sm">
               <Group justify="space-between" mb="xs">
                 <Text size="xs" c="dimmed">
@@ -265,7 +267,7 @@ export default function Search() {
                 </Text>
               </Group>
               <Group gap="xs" wrap="wrap">
-                {recentSearches.map((s) => (
+                {recentSearches?.map((s) => (
                   <Button
                     key={s.id}
                     size="xs"
@@ -290,9 +292,7 @@ export default function Search() {
               <Grid.Col span={{ base: 12, md: 6, lg: 3 }} visibleFrom="sm">
                 <NavLink
                   href="#people"
-                  label={
-                    loadingProfiles ? 'Pessoas...' : `Pessoas (${profileResults.length})`
-                  }
+                  label={loadingProfiles ? 'Pessoas...' : `Pessoas (${totalProfiles})`}
                   color="gray"
                   variant="light"
                   px={{ base: 0, sm: 'xs' }}
@@ -303,7 +303,7 @@ export default function Search() {
                   label={
                     loadingProjects
                       ? 'Projetos...'
-                      : `Projetos (${projectResults.length})`
+                      : `Projetos (${projectResults?.length})`
                   }
                   color="gray"
                   variant="light"
@@ -312,7 +312,7 @@ export default function Search() {
                 />
                 <NavLink
                   href="#brands"
-                  label={loadingBrands ? 'Marcas...' : `Marcas (${brandResults.length})`}
+                  label={loadingBrands ? 'Marcas...' : `Marcas (${brandResults?.length})`}
                   color="gray"
                   variant="light"
                   px={{ base: 0, sm: 'xs' }}
@@ -321,7 +321,7 @@ export default function Search() {
                 <NavLink
                   href="#events"
                   label={
-                    loadingEvents ? 'Eventos...' : `Eventos (${eventsResults.length})`
+                    loadingEvents ? 'Eventos...' : `Eventos (${eventsResults?.length})`
                   }
                   color="gray"
                   variant="light"
@@ -333,7 +333,7 @@ export default function Search() {
                   label={
                     loadingGear
                       ? 'Equipamentos...'
-                      : `Equipamentos (${gearResults.length})`
+                      : `Equipamentos (${gearResults?.length})`
                   }
                   color="gray"
                   variant="light"
@@ -352,83 +352,91 @@ export default function Search() {
                       <Text size="sm" c="dimmed">
                         Buscando...
                       </Text>
-                    ) : profileResults.length === 0 ? (
+                    ) : profileResults?.length === 0 ? (
                       <Text size="sm" c="dimmed">
                         Nenhum resultado encontrado
                       </Text>
                     ) : (
-                      <Stack mt="xs">
-                        {profileResults.map((profile) => (
-                          <Flex gap="xs" align="center" key={profile.id}>
-                            <Box w={80}>
-                              <Link
-                                component={Link}
-                                to={`/${profile.username}`}
-                                style={{ textDecoration: 'none', color: 'inherit' }}
-                              >
-                                <Avatar
-                                  size={80}
-                                  src={
-                                    profile.avatar
-                                      ? getAvatarUrl(
-                                          profile.avatar,
-                                          profile.is_open_to_work,
-                                          80,
-                                        )
-                                      : undefined
-                                  }
-                                />
-                              </Link>
-                            </Box>
-                            <Box>
-                              <Flex
-                                component={Link}
-                                to={`/${profile.username}`}
-                                justify="flex-start"
-                                gap="md"
-                                style={{ textDecoration: 'none', color: 'inherit' }}
-                              >
-                                <Flex direction="column" gap={2} justify="center">
-                                  <Group gap={2}>
-                                    <Group gap={2} justify="center">
-                                      <Text size="md" fw={600} lh={1}>
-                                        {profile.full_name}
-                                      </Text>
-                                      {!!profile.is_verified && (
-                                        <IconRosetteDiscountCheck
-                                          className="iconVerified small"
-                                          title="Usuário verificado"
-                                        />
-                                      )}
+                      <>
+                        <Stack mt="xs">
+                          {profileResults?.map((profile) => (
+                            <Flex gap="xs" align="center" key={profile.id}>
+                              <Box w={80}>
+                                <Link
+                                  component={Link}
+                                  to={`/${profile.username}`}
+                                  style={{ textDecoration: 'none', color: 'inherit' }}
+                                >
+                                  <Avatar
+                                    size={80}
+                                    src={
+                                      profile.avatar
+                                        ? getAvatarUrl(
+                                            profile.avatar,
+                                            profile.is_open_to_work,
+                                            80,
+                                          )
+                                        : undefined
+                                    }
+                                  />
+                                </Link>
+                              </Box>
+                              <Box>
+                                <Flex
+                                  component={Link}
+                                  to={`/${profile.username}`}
+                                  justify="flex-start"
+                                  gap="md"
+                                  style={{ textDecoration: 'none', color: 'inherit' }}
+                                >
+                                  <Flex direction="column" gap={2} justify="center">
+                                    <Group gap={2}>
+                                      <Group gap={2} justify="center">
+                                        <Text size="md" fw={600} lh={1}>
+                                          {profile.full_name}
+                                        </Text>
+                                        {!!profile.is_verified && (
+                                          <IconRosetteDiscountCheck
+                                            className="iconVerified small"
+                                            title="Usuário verificado"
+                                          />
+                                        )}
+                                      </Group>
                                     </Group>
-                                    {/* <Text size="sm" fw={300} span c="dimmed" ml={2}>
-                                      @{profile.username}
-                                    </Text> */}
-                                  </Group>
-                                  {profile.title && (
-                                    <Text size="sm">{profile.title}</Text>
-                                  )}
-                                  {locationLabel(
-                                    profile.city_name,
-                                    profile.region_name,
-                                  ) && (
-                                    <Text size="13px" opacity={0.7}>
-                                      {locationLabel(
-                                        profile.city_name,
-                                        profile.region_name,
-                                      )}
-                                    </Text>
-                                  )}
-                                  {/* <Text size="13px" opacity={0.4} mt={6}>
-                                  Ativo em {profile.total_active_projects} projeto
-                                  {profile.total_active_projects !== 1 ? 's' : ''}
-                                </Text> */}
+                                    {profile.title && (
+                                      <Text size="sm">{profile.title}</Text>
+                                    )}
+                                    {locationLabel(
+                                      profile.city_name,
+                                      profile.region_name,
+                                    ) && (
+                                      <Text size="13px" opacity={0.7}>
+                                        {locationLabel(
+                                          profile.city_name,
+                                          profile.region_name,
+                                        )}
+                                      </Text>
+                                    )}
+                                  </Flex>
                                 </Flex>
-                              </Flex>
-                            </Box>
-                          </Flex>
-                        ))}
-                      </Stack>
+                              </Box>
+                            </Flex>
+                          ))}
+                        </Stack>
+
+                        {totalProfiles > profileResults.length && (
+                          <Text
+                            component={Link}
+                            to={`/search/people?q=${encodeURIComponent(q)}`}
+                            size="sm"
+                            fw={500}
+                            mt="sm"
+                            style={{ textDecoration: 'none', display: 'inline-block' }}
+                          >
+                            Ver todos os {totalProfiles} resultados
+                          </Text>
+                        )}
+                      </>
                     )}
                   </Box>
 
@@ -512,12 +520,12 @@ export default function Search() {
                       <Text size="sm" c="dimmed">
                         Buscando...
                       </Text>
-                    ) : projectResults.length === 0 ? (
+                    ) : projectResults?.length === 0 ? (
                       <Text size="sm" c="dimmed">
                         Nenhum resultado encontrado
                       </Text>
                     ) : (
-                      projectResults.map((project) => (
+                      projectResults?.map((project) => (
                         <Flex
                           mt="xs"
                           mb={4}
@@ -574,14 +582,14 @@ export default function Search() {
                       <Center mt="xl">
                         <Loader size="sm" />
                       </Center>
-                    ) : brandResults.length === 0 ? (
+                    ) : brandResults?.length === 0 ? (
                       <Text size="sm" c="dimmed">
                         Nenhum resultado encontrado
                       </Text>
                     ) : (
                       <Scroller pt={6}>
                         <Group gap="xs" wrap="nowrap">
-                          {brandResults.map((brand) => (
+                          {brandResults?.map((brand) => (
                             <Link key={brand.id} to={`/brand/${brand.slug}`}>
                               <Image
                                 src={
@@ -613,14 +621,14 @@ export default function Search() {
                       <Center mt="xl">
                         <Loader size="sm" />
                       </Center>
-                    ) : eventsResults.length === 0 ? (
+                    ) : eventsResults?.length === 0 ? (
                       <Text size="sm" c="dimmed">
                         Nenhum resultado encontrado
                       </Text>
                     ) : (
                       <Scroller pt={6}>
                         <Group gap="xs" wrap="nowrap">
-                          {eventsResults.map((event) => (
+                          {eventsResults?.map((event) => (
                             <Link key={event.id} to={`/event/${event.slug}`}>
                               <Image
                                 src={
@@ -652,13 +660,13 @@ export default function Search() {
                       <Center mt="xl">
                         <Loader size="sm" />
                       </Center>
-                    ) : gearResults.length === 0 ? (
+                    ) : gearResults?.length === 0 ? (
                       <Text c="dimmed" size="sm">
                         Nenhum item encontrado
                       </Text>
                     ) : (
                       <Stack mt="xs">
-                        {gearResults.map((gear) => (
+                        {gearResults?.map((gear) => (
                           <Flex key={gear.id} justify="flex-start" gap="md">
                             <Link to={`/gear/${gear.slug}`}>
                               <Avatar

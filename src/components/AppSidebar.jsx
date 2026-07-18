@@ -28,9 +28,8 @@ import {
   IconEye,
   IconRocket,
 } from '@tabler/icons-react'
+import { getAvatarUrl } from '../utils/profile'
 
-const AVATAR_PATH =
-  'https://ik.imagekit.io/mublin/tr:h-140,c-maintain_ratio/users/avatars/'
 const PROJECT_AVATAR_PATH = 'https://ik.imagekit.io/mublin/projects'
 
 export default function AppSidebar() {
@@ -144,7 +143,8 @@ export default function AppSidebar() {
                 <Avatar
                   size={70}
                   radius="xl"
-                  src={profile?.avatar ? AVATAR_PATH + profile?.avatar : undefined}
+                  src={getAvatarUrl(profile?.avatar, profile.is_open_to_work, 70)}
+                  // src={profile?.avatar ? AVATAR_PATH + profile?.avatar : undefined}
                   component={Link}
                   to={`/${profile?.username}`}
                   style={{

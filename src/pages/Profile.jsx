@@ -39,14 +39,10 @@ import {
   Button, Badge,
   ActionIcon, ThemeIcon, 
   Alert, Tooltip, Anchor,
-  Spoiler, Menu, em,
+  Spoiler, em,
 } from '@mantine/core'
-import {
-  useMediaQuery,
-  useDisclosure,
-  useWindowScroll,
-  useScroller,
-} from '@mantine/hooks'
+// prettier-ignore
+import { useMediaQuery, useDisclosure, useWindowScroll, useScroller } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
 import LoadingSkeleton from '../components/profile/LoadingSkeleton'
 import LinkedItem from '../components/feed/LinkedItem'
@@ -59,8 +55,6 @@ import {
   IconMoodSad,
   IconWorld,
   IconShieldCheckFilled,
-  IconPlus,
-  IconSettings,
   IconCircleArrowLeftFilled,
   IconCircleArrowRightFilled,
   IconCheck,
@@ -91,10 +85,10 @@ import { isProfileLive } from '../utils/live'
 import { isMublinOG } from '../utils/badges'
 import { AVAILABLE_FROM_LABELS } from '../constants/availability'
 import { SOCIAL_CONFIG } from '../constants/socialConfig'
-import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import { WorkAvailabilityItem } from '../components/profile/WorkAvailabilityItem'
 import MublinMLogo from '../assets/svg/mublin-m-logo-silver.svg'
+import dayjs from 'dayjs'
 dayjs.extend(relativeTime)
 dayjs.locale('pt-br')
 
@@ -618,8 +612,6 @@ export default function Profile() {
           content={profile.avatar ? AVATAR_PATH + profile.avatar : undefined}
         />
       </Helmet>
-
-      {/* <LoadingSkeleton /> */}
 
       {isMobile && (
         <Affix position={{ top: 0, left: 0 }} w="100%">
