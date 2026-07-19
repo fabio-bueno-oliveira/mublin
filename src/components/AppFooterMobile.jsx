@@ -12,6 +12,7 @@ import {
   IconPencilPlus,
   IconCalendar,
   IconMicrophone2,
+  IconMusic,
 } from '@tabler/icons-react'
 import './AppFooterMobile.css'
 
@@ -51,6 +52,17 @@ export default function AppFooterMobile() {
             <IconRss />
             <Text size="10px" lh={1.2}>
               Feed
+            </Text>
+          </UnstyledButton>
+
+          <UnstyledButton
+            className={navItemClass(isActive('/gigs'))}
+            onClick={() => navigate('/gigs')}
+            opacity={isActive('/gigs') && !drawerOpen ? 1 : 0.65}
+          >
+            <IconMusic />
+            <Text size="10px" lh={1.2}>
+              Gigs
             </Text>
           </UnstyledButton>
 

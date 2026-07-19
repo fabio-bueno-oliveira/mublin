@@ -11,7 +11,7 @@ import {
 
 export default function LoadingSkeleton() {
   return (
-    <Container size="xl" py="sm" mt={{ base: 62, sm: 14 }}>
+    <Container size="xl" py="sm" mt={{ base: 50, sm: 14 }}>
       <Grid>
         {/* Coluna Principal (Esquerda) */}
         <Grid.Col span={{ base: 12, md: 2 }} hiddenFrom="xs">
@@ -44,22 +44,19 @@ export default function LoadingSkeleton() {
           </Group>
         </Grid.Col>
 
-        {/* Sidebar (Direita) */}
         <Grid.Col span={{ base: 12, md: 7 }}>
           <Stack gap={8} flex={1} visibleFrom="sm">
             <Skeleton height={28} width={200} radius="xl" />
             <Skeleton height={14} width={300} radius="xl" />
-            <Skeleton height={14} width={270} radius="md" />
-            <Group gap={4} mt={4}>
-              <Skeleton height={20} width={80} radius="xl" />
-              <Skeleton height={20} width={80} radius="xl" />
+            <Group gap={4} mt={3}>
+              <Skeleton height={18} width={80} radius="xl" />
+              <Skeleton height={18} width={80} radius="xl" />
             </Group>
           </Stack>
           <Stack gap={12} mt="sm">
             <Paper p="md" radius="md" withBorder>
               <Skeleton height={20} width={100} mb="md" />
               <Skeleton height={14} width="80%" mb="sm" />
-              <Skeleton height={14} width="74%" mb="sm" />
               <Group gap={6}>
                 {[1, 2, 3, 4].map((i) => (
                   <Skeleton key={i} height={20} width={80} radius="xl" />

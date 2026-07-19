@@ -936,8 +936,8 @@ export default function Portfolio() {
             ))}
 
           <Switch
-            label="Colaboração esporádica"
-            description="Ex: uma ou mais participações pontuais em show ou gravação, sem período fixo"
+            label="Colaboro esporadicamente"
+            description="No caso de uma ou mais participações pontuais em show ou gravação, sem período fixo"
             checked={isSporadic}
             onChange={(e) => {
               const checked = e.currentTarget.checked
@@ -953,6 +953,7 @@ export default function Portfolio() {
             <Group grow gap="sm">
               <NumberInput
                 label="Ano de início"
+                description="Início do trabalho"
                 placeholder="Ex: 2019"
                 min={1900}
                 max={CURRENT_YEAR + 1}
@@ -962,7 +963,7 @@ export default function Portfolio() {
               />
               <NumberInput
                 label="Ano de término"
-                placeholder="Deixe em branco se atual"
+                description="Deixe em branco se atual"
                 min={1900}
                 max={CURRENT_YEAR + 1}
                 value={yearEnd}

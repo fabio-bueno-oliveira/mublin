@@ -127,30 +127,7 @@ export async function searchArtists(keyword) {
     return []
   }
 
-  let query = supabase
-    .from('artists')
-    .select(
-      `
-      id, 
-      name, 
-      real_name, 
-      slug, 
-      picture, 
-      is_band, 
-      is_verified,
-      artist_roles:artist_roles (
-        roles ( id, name_ptbr, name_en )
-      )
-    `,
-    )
-    .eq('is_active', true)
-
-  words.forEach((word) => {
-    query = query.or(`name.ilike.%${word}%,slug.ilike.%${word}%`)
-  })
-
-  const { data, error } = await query.order('name', { ascending: true }).limit(40)
-
+  const { data, error } = await supabase.rpc('search_artists', { keywords: words })
   if (error) {
     throw new Error(error.message)
   }

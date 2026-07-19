@@ -490,6 +490,17 @@ export default function Search() {
                                   >
                                     {artist.name}
                                   </Text>
+                                  {artist.genre_name && (
+                                    <Text
+                                      size="10px"
+                                      c="dimmed"
+                                      ta="center"
+                                      truncate="end"
+                                      w="100%"
+                                    >
+                                      {artist.genre_name}
+                                    </Text>
+                                  )}
                                   {/* <Text
                                     size="xs"
                                     ta="center"

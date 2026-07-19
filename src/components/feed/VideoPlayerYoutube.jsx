@@ -1,6 +1,11 @@
 import { useState } from 'react'
 import { Box, Flex } from '@mantine/core'
 
+// FLAG TEMPORÁRIA: true = o clique abre o vídeo em uma nova aba do YouTube (sem iframe).
+// false = comportamento original, reproduzindo o vídeo internamente via iframe.
+// Para reverter ao player embutido, basta trocar para false.
+const LINK_MODE = true
+
 function getYouTubeId(url) {
   const match = url.match(
     /(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/,
@@ -14,6 +19,8 @@ export default function VideoPlayerYoutube({ url, title, thumbnailOnly = false }
   if (!ytId) {
     return null
   }
+
+  const watchUrl = `https://www.youtube.com/watch?v=${ytId}`
 
   const thumbnail = (
     <img
@@ -30,6 +37,63 @@ export default function VideoPlayerYoutube({ url, title, thumbnailOnly = false }
     />
   )
 
+  const playOverlay = (
+    <Flex
+      align="center"
+      justify="center"
+      style={{
+        position: 'absolute',
+        inset: 0,
+        background: 'rgba(0,0,0,0.25)',
+        transition: 'background 0.2s',
+      }}
+    >
+      <Box
+        style={{
+          width: 52,
+          height: 52,
+          borderRadius: '50%',
+          background: 'rgba(255,255,255,0.92)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="#000000">
+          <path d="M8 5v14l11-7z" />
+        </svg>
+      </Box>
+    </Flex>
+  )
+
+  // Modo "link": não renderiza iframe, o clique leva ao vídeo no YouTube em nova aba.
+  if (LINK_MODE) {
+    return (
+      <Box
+        mt={4}
+        className="video-player-box"
+        component={thumbnailOnly ? 'div' : 'a'}
+        href={thumbnailOnly ? undefined : watchUrl}
+        target={thumbnailOnly ? undefined : '_blank'}
+        rel={thumbnailOnly ? undefined : 'noopener noreferrer'}
+        title={thumbnailOnly ? undefined : (title ?? 'Assistir no YouTube')}
+        style={{
+          position: 'relative',
+          display: 'block',
+          paddingTop: '56.25%',
+          borderRadius: 'var(--mantine-radius-md)',
+          overflow: 'hidden',
+          cursor: thumbnailOnly ? 'default' : 'pointer',
+          textDecoration: 'none',
+        }}
+      >
+        {thumbnail}
+        {!thumbnailOnly && playOverlay}
+      </Box>
+    )
+  }
+
+  // Modo "iframe" (comportamento original): reproduz o vídeo embutido ao clicar.
   return (
     <Box
       mt={4}
@@ -58,32 +122,7 @@ export default function VideoPlayerYoutube({ url, title, thumbnailOnly = false }
       ) : (
         <>
           {thumbnail}
-          <Flex
-            align="center"
-            justify="center"
-            style={{
-              position: 'absolute',
-              inset: 0,
-              background: 'rgba(0,0,0,0.25)',
-              transition: 'background 0.2s',
-            }}
-          >
-            <Box
-              style={{
-                width: 52,
-                height: 52,
-                borderRadius: '50%',
-                background: 'rgba(255,255,255,0.92)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <svg width="30" height="30" viewBox="0 0 24 24" fill="#000000">
-                <path d="M8 5v14l11-7z" />
-              </svg>
-            </Box>
-          </Flex>
+          {playOverlay}
         </>
       )}
     </Box>

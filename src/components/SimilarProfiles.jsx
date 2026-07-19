@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { Skeleton, Flex, Group, Stack, Box, Avatar, Text } from '@mantine/core'
 // import ProPlanBadge from './ProPlanBadge'
-import { IconRosetteDiscountCheck } from '@tabler/icons-react'
+import { IconRosetteDiscountCheckFilled } from '@tabler/icons-react'
 
 const AVATAR_PATH =
   'https://ik.imagekit.io/mublin/tr:h-200,c-maintain_ratio/users/avatars/'
@@ -49,13 +49,13 @@ export default function SimilarProfiles({ profiles = [], loading }) {
                 />
               </Box>
               <Stack gap={0} style={{ flexGrow: 1 }} maw="80%">
-                <Group gap={3} align="center" wrap="nowrap">
+                <Group gap={2} align="center" wrap="nowrap">
                   <Text size="14px" fw={500} lineClamp={1} truncate="end">
                     {p.full_name}
                   </Text>
                   {!!p.is_verified && (
-                    <IconRosetteDiscountCheck
-                      className="iconVerified"
+                    <IconRosetteDiscountCheckFilled
+                      className="iconVerified small"
                       size={14}
                       title="Perfil verificado"
                     />

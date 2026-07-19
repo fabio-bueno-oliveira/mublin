@@ -48,11 +48,10 @@ import {
   IconArrowLeft,
   IconMessageCircle,
   IconTrash,
-  IconArrowRightDashed,
-  IconBrandInstagram,
   IconUser,
 } from '@tabler/icons-react'
 import { truncateString } from '../utils/formatter'
+import { getAvatarUrl } from '../utils/profile'
 import parse from 'html-react-parser'
 import linkifyStr from 'linkify-string'
 import dayjs from 'dayjs'
@@ -295,7 +294,7 @@ export default function Post() {
               <Avatar
                 size={40}
                 radius="xl"
-                src={post.author_avatar ? AVATAR_PATH + post.author_avatar : undefined}
+                src={getAvatarUrl(post.author_avatar, post.author_is_open_to_work, 64)}
                 component={Link}
                 to={`/${post.author_username}`}
               />
@@ -340,17 +339,6 @@ export default function Post() {
                   <Text size="sm" lh="1" opacity={0.7}>
                     {post.author_title}
                   </Text>
-                )}
-                {post.author_is_open_to_work && (
-                  <Badge
-                    variant={isDark ? 'outline' : 'light'}
-                    color="green"
-                    mt={3}
-                    style={{ flexShrink: 0 }}
-                    size="xs"
-                  >
-                    Disponível para gigs!
-                  </Badge>
                 )}
               </Stack>
             </Group>

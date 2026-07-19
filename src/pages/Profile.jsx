@@ -8,7 +8,6 @@ import {
   fetchProfileFollowers,
   fetchProfileFollowingList,
   fetchSimilarProfiles,
-  fetchProfileProjects,
   fetchProfileFeed,
   fetchProfileGear,
   fetchProfileGearCategories,
@@ -36,7 +35,7 @@ import {
   Avatar, Image,
   Title, Text,
   Flex, Group,
-  Button, Badge,
+  Button,
   ActionIcon, ThemeIcon, 
   Alert, Tooltip, Anchor,
   Spoiler, em,
@@ -51,36 +50,29 @@ import SectionPanel from '../components/SectionPanel'
 import InviteToGigModal from '../components/gigs/InviteToGigModal'
 import RecognitionBadge from '../components/profile/RecognitionBadge'
 import { truncateString } from '../utils/formatter'
+// prettier-ignore
 import {
-  IconMoodSad,
-  IconWorld,
+  IconMoodSad, IconWorld, IconCheck,
   IconShieldCheckFilled,
   IconCircleArrowLeftFilled,
   IconCircleArrowRightFilled,
-  IconCheck,
   IconBrandWhatsapp,
-  IconTrophy,
   IconDotsVerticalFilled,
-  IconArrowsMaximize,
-  IconGuitarPick,
-  IconRosetteDiscountCheck,
-  IconSend,
-  IconHeart,
-  IconUserPlus,
-  IconLink,
-  IconEye,
-  IconChevronLeft,
-  IconChevronRight,
-  IconSparkles2,
-  IconPencil,
+  IconBrain,
+  IconTrophy, IconGuitarPick,
+  IconSend, IconHeart, IconEye,
+  IconUserPlus, IconLink,
+  IconChevronLeft, IconChevronRight,
+  IconSparkles2, IconPencil,
   IconBookmark,
-  IconBookFilled,
+  IconBookmarkFilled,
+  IconRosetteDiscountCheckFilled,
 } from '@tabler/icons-react'
 import ProfileHeaderMobile from '../components/profile/ProfileHeaderMobile'
 import AppNavbarMobile from '../components/AppNavbarMobile'
 import ProPlanBadge from '../components/ProPlanBadge'
 import SimilarProfiles from '../components/SimilarProfiles'
-import { getAvatarUrl } from '../utils/profile'
+import { formatPortfolioPeriod, getAvatarUrl } from '../utils/profile'
 import { isProfileLive } from '../utils/live'
 import { isMublinOG } from '../utils/badges'
 import { AVAILABLE_FROM_LABELS } from '../constants/availability'
@@ -117,6 +109,7 @@ export default function Profile() {
 
   const isMobile = useMediaQuery(`(max-width: ${em(750)})`)
   const [scroll, scrollTo] = useWindowScroll()
+  const postsScroller = useScroller()
   const inspirationsScroller = useScroller()
   const partnersScroller = useScroller()
   const menuItemRefs = useRef({})
@@ -159,13 +152,12 @@ export default function Profile() {
       return data
     },
     enabled: isOwnProfile,
-    staleTime: 1000 * 60, // 1 min — o dado muda com frequência
+    staleTime: 1000 * 60, // 1 min
   })
 
   const MENU_ITEMS = [
     { id: 'about', label: 'Sobre', active: true },
     { id: 'portfolio', label: 'Portfólio', active: true },
-    // { id: 'projects', label: 'Projetos', active: true },
     { id: 'posts', label: 'Postagens', active: true },
     { id: 'gear', label: 'Equipamento', active: true },
     {
@@ -364,13 +356,6 @@ export default function Profile() {
     staleTime: 1000 * 60 * 10,
   })
 
-  const { data: projects = [], isLoading: loadingProjects } = useQuery({
-    queryKey: ['profile-projects', profile?.id],
-    queryFn: () => fetchProfileProjects(profile.id),
-    enabled: !!profile?.id,
-    staleTime: 1000 * 60 * 4,
-  })
-
   const { data: profilePosts = [], isLoading: loadingPosts } = useQuery({
     queryKey: ['profile-feed', profile?.id],
     queryFn: () => fetchProfileFeed(profile.id),
@@ -407,14 +392,14 @@ export default function Profile() {
     staleTime: 1000 * 60 * 5,
   })
 
-  const { data: workAvailability = [], isLoading: loadingWorkAvailability } = useQuery({
+  const { data: workAvailability = [] } = useQuery({
     queryKey: ['user-work-availability', profile?.id],
     queryFn: () => fetchProfileWorkAvailability(profile.id),
     enabled: !!profile?.id,
     staleTime: 1000 * 60 * 5,
   })
 
-  const { data: workFocus = [], isLoading: loadingWorkFocus } = useQuery({
+  const { data: workFocus = [] } = useQuery({
     queryKey: ['user-work-focus', profile?.id],
     queryFn: () => fetchProfileWorkFocuses(profile.id),
     enabled: !!profile?.id,
@@ -449,23 +434,17 @@ export default function Profile() {
     staleTime: 1000 * 60 * 10,
   })
 
-  const profileProjects =
-    projects?.map((r) => ({
-      id: r.projects?.id,
-      name: r.projects?.name,
-      slug: r.projects?.slug,
-      picture: r.projects?.picture,
-      status: r.status,
-      type: r.projects?.project_types?.name_ptbr ?? 'Outro',
-    })) || []
-
   const rolesOrdered = profile?.profile_roles
     ?.slice()
     ?.sort(
       (a, b) =>
         b.main_activity - a.main_activity ||
-        Number(b.instrumentalist) - Number(a.instrumentalist),
+        Number(b.roles?.instrumentalist) - Number(a.roles?.instrumentalist),
     )
+
+  const instrumentRolesCount =
+    rolesOrdered?.filter((role) => role.roles?.instrumentalist).length ?? 0
+
   const genres = profile?.profile_genres.sort((a, b) => b.main_genre - a.main_genre)
   const city = profile?.cities?.name
   const region = profile?.regions?.name
@@ -484,7 +463,7 @@ export default function Profile() {
     )
   }
 
-  if (isLoadingProfileInfo || loadingProjects) {
+  if (isLoadingProfileInfo) {
     return <LoadingSkeleton />
   }
 
@@ -760,7 +739,7 @@ export default function Profile() {
                       variant="filled"
                       leftSection={
                         favoriteInfo?.id ? (
-                          <IconBookFilled size={16} color="red" />
+                          <IconBookmarkFilled size={16} />
                         ) : (
                           <IconBookmark size={16} />
                         )
@@ -831,8 +810,8 @@ export default function Profile() {
                   {profile.full_name}
                 </Title>
                 {!!profile.is_verified && (
-                  <IconRosetteDiscountCheck
-                    className="iconVerified large"
+                  <IconRosetteDiscountCheckFilled
+                    className="iconVerified"
                     title="Perfil verificado"
                   />
                 )}
@@ -875,12 +854,28 @@ export default function Profile() {
               justify={isMobile ? 'center' : 'flex-start'}
               mt={{ base: 'sm', md: 0 }}
             >
-              <Anchor underline="never" onClick={openFollowers}>
+              <Anchor
+                underline="never"
+                onClick={openFollowers}
+                style={{
+                  display: 'inline',
+                  hover: { textDecoration: 'underline' },
+                  color: 'inherit',
+                }}
+              >
                 <Text size="sm" fw={600}>
                   {followersList.length} seguidores
                 </Text>
               </Anchor>
-              <Anchor underline="never" onClick={openFollowing}>
+              <Anchor
+                underline="never"
+                onClick={openFollowing}
+                style={{
+                  display: 'inline',
+                  hover: { textDecoration: 'underline' },
+                  color: 'inherit',
+                }}
+              >
                 <Text size="sm" fw={600}>
                   {followingList.length} seguindo
                 </Text>
@@ -928,7 +923,7 @@ export default function Profile() {
 
             <Stack gap={12} mt={{ base: 'md', md: 'sm' }}>
               {isOwnProfile && typeof profileViewCount === 'number' && (
-                <SectionPanel id="visitors">
+                <SectionPanel id="visitors" py="xs">
                   <Group gap="xs">
                     <IconEye color="gray" size={16} />
                     <Text size="sm" c="dimmed">
@@ -945,7 +940,25 @@ export default function Profile() {
               <SectionPanel id="about">
                 {profile.bio && (
                   <>
-                    <SectionTitle text="Sobre" mb={12} />
+                    <Group justify="space-between" mb={12}>
+                      <SectionTitle text="Sobre" />
+                      {isOwnProfile && (
+                        <ActionIcon
+                          variant="subtle"
+                          color="gray"
+                          radius="xl"
+                          size="sm"
+                          p={0}
+                          aria-label="Editar meus dados"
+                          title="Editar meus dados"
+                          component={Link}
+                          to="/settings/profile"
+                        >
+                          <IconPencil style={{ width: '94%', height: '94%' }} />
+                        </ActionIcon>
+                      )}
+                    </Group>
+
                     {profile.is_fake_profile && (
                       <Group gap={4} mb={10} wrap="nowrap">
                         <IconSparkles2 size={20} />
@@ -974,53 +987,66 @@ export default function Profile() {
                   </>
                 )}
 
-                <Title
-                  order={3}
-                  fz="sm"
-                  fw={300}
-                  mt={profile.bio ? 'md' : 0}
-                  mb="xs"
-                  opacity={0.8}
-                >
-                  Principais atividades
-                </Title>
+                <Group gap={4} align="center" mt={profile.bio ? 'md' : 0} mb={2}>
+                  <Title order={3} fz="sm" fw={300} opacity={0.8}>
+                    Principais atividades
+                  </Title>
+                  {isOwnProfile && (
+                    <ActionIcon
+                      variant="subtle"
+                      color="gray"
+                      radius="xl"
+                      size="xs"
+                      p={0}
+                      aria-label="Editar minhas atividades"
+                      title="Editar minhas atividades"
+                      component={Link}
+                      to="/settings/musical-preferences"
+                    >
+                      <IconPencil style={{ width: '92%', height: '92%' }} />
+                    </ActionIcon>
+                  )}
+                </Group>
                 {rolesOrdered && rolesOrdered.length > 0 && (
-                  <Group gap={4}>
-                    {rolesOrdered.map((role) => (
-                      <Badge
-                        radius="xl"
-                        size="md"
-                        variant="light"
-                        color="var(--mantine-color-text)"
-                        key={role.id}
-                      >
-                        {role?.roles?.description_ptbr}
-                      </Badge>
-                    ))}
-                  </Group>
+                  <Text size="sm">
+                    {rolesOrdered
+                      .map((role) => role?.roles?.description_ptbr)
+                      .filter(Boolean)
+                      .join(', ')}
+                  </Text>
                 )}
 
                 {genres && genres.length > 0 && (
                   <>
-                    <Title order={3} fz="sm" fw={300} mt="xs" mb={4} opacity={0.8}>
-                      Gêneros musicais de atuação
-                    </Title>
+                    <Group gap={4} align="center" mt="xs" mb={2}>
+                      <Title order={3} fz="sm" fw={300} opacity={0.8}>
+                        Gêneros musicais de atuação
+                      </Title>
+                      {isOwnProfile && (
+                        <ActionIcon
+                          variant="subtle"
+                          color="gray"
+                          radius="xl"
+                          size="xs"
+                          p={0}
+                          aria-label="Editar meus gêneros musicais"
+                          title="Editar meus gêneros musicais"
+                          component={Link}
+                          to="/settings/musical-preferences"
+                        >
+                          <IconPencil style={{ width: '92%', height: '92%' }} />
+                        </ActionIcon>
+                      )}
+                    </Group>
                     {genres && genres.length > 0 ? (
-                      <Group gap={4} mt="xs">
-                        {genres.map(({ id, genres: genre }) => (
-                          <Badge
-                            radius="xl"
-                            size="md"
-                            variant="light"
-                            color="var(--mantine-color-text)"
-                            key={id}
-                          >
-                            {genre?.name}
-                          </Badge>
-                        ))}
-                      </Group>
+                      <Text size="sm">
+                        {genres
+                          .map(({ genres: genre }) => genre?.name)
+                          .filter(Boolean)
+                          .join(', ')}
+                      </Text>
                     ) : (
-                      <Text size="xs" c="dimmed">
+                      <Text size="sm" c="dimmed">
                         Não informado
                       </Text>
                     )}
@@ -1036,12 +1062,14 @@ export default function Profile() {
                       variant="subtle"
                       color="gray"
                       radius="xl"
+                      size="sm"
+                      p={0}
                       aria-label="Editar meu portfólio"
                       title="Editar meu portfólio"
                       component={Link}
                       to="/settings/portfolio"
                     >
-                      <IconPencil style={{ width: '80%', height: '80%' }} />
+                      <IconPencil style={{ width: '94%', height: '94%' }} />
                     </ActionIcon>
                   )}
                 </Group>
@@ -1064,10 +1092,14 @@ export default function Profile() {
                       const roleNames =
                         item.roles?.map((r) => r.role?.name_ptbr).filter(Boolean) ?? []
 
+                      const genre = item.project?.genre?.name_ptbr
+
                       const engagementNames =
                         item.engagement_types
                           ?.map((e) => e.engagement_type?.name_ptbr)
                           .filter(Boolean) ?? []
+
+                      const period = formatPortfolioPeriod(item.year_start, item.year_end)
 
                       return (
                         <Box key={item.id}>
@@ -1085,21 +1117,36 @@ export default function Profile() {
                             </Link>
                             <Stack gap={2} style={{ flex: 1, minWidth: 0 }}>
                               {roleNames.length > 0 && (
-                                <Text size="15px" fw={600} lh={1}>
+                                <Text size="15px" fw={600}>
                                   {roleNames.join(', ')}
                                 </Text>
                               )}
-                              <Group gap={6} align="center" wrap="wrap" mt={2}>
+                              <Group gap={6} align="center" wrap="wrap">
                                 <Text size="sm" opacity={0.9}>
-                                  {entity.name}{' '}
-                                  {isProject
-                                    ? ` · ${item.project?.type?.name_ptbr}`
-                                    : ` · ${item.artist?.genre?.name_ptbr}`}
+                                  <Text
+                                    span
+                                    component={Link}
+                                    to={url}
+                                    style={{
+                                      display: 'inline',
+                                      hover: { textDecoration: 'underline' },
+                                      color: 'inherit',
+                                    }}
+                                  >
+                                    {entity.name}
+                                  </Text>{' '}
+                                  <Text span>
+                                    (
+                                    {isProject
+                                      ? item.project?.type?.name_ptbr
+                                      : item.artist?.genre?.name_ptbr}
+                                    {genre && ` · ${genre}`})
+                                  </Text>
                                 </Text>
                               </Group>
 
                               {engagementNames.length > 0 && (
-                                <Text size="sm" opacity={0.7}>
+                                <Text size="sm" opacity={0.9} mt={6} mb={6} lh={1}>
                                   {engagementNames.length === 1
                                     ? 'Vínculo:'
                                     : 'Vínculos:'}{' '}
@@ -1112,12 +1159,9 @@ export default function Profile() {
                                   Colaboração esporádica
                                 </Text>
                               ) : (
-                                (item.year_start || item.year_end) && (
+                                period && (
                                   <Text size="xs" opacity={0.7}>
-                                    {item.year_start}
-                                    {item.year_end && item.year_end !== item.year_start
-                                      ? ` – ${item.year_end}`
-                                      : ''}
+                                    {period}
                                   </Text>
                                 )
                               )}
@@ -1161,107 +1205,6 @@ export default function Profile() {
                 )}
               </SectionPanel>
 
-              {/* {profileProjects.length > 0 && (
-                <>
-                  <ScrollArea
-                    id="projects"
-                    mt="xs"
-                    mb="xs"
-                    pb="xs"
-                    w="100%"
-                    type={isMobile ? 'never' : 'auto'}
-                    offsetScrollbars={isMobile ? false : 'present'}
-                    scrollbarSize={8}
-                  >
-                    <Flex gap={12}>
-                      {isMobile && <Box style={{ flexShrink: 10, width: '5px' }} />}
-                      {!loadingProjects &&
-                        profileProjects?.map((item) => (
-                          <Flex
-                            key={item.id}
-                            direction="column"
-                            align="flex-start"
-                            gap={2}
-                            component={Link}
-                            to={`/project/${item.slug ?? item.id}`}
-                            style={{
-                              cursor: 'pointer',
-                              textDecoration: 'none',
-                              color: 'inherit',
-                            }}
-                          >
-                            <Box
-                              pos="relative"
-                              width={180}
-                              height={180}
-                              style={{ borderRadius: 12, overflow: 'hidden' }}
-                            >
-                              <Image
-                                w={130}
-                                h={130}
-                                fit="cover"
-                                src={
-                                  item.picture
-                                    ? `https://ik.imagekit.io/mublin/projects/${item.id}/tr:h-260,w-260,c-maintain_ratio/${item.picture}`
-                                    : undefined
-                                }
-                                fallbackSrc="https://placehold.co/130x130?text=Sem+foto"
-                                opacity={item.status === 1 ? 0.4 : 1}
-                                style={{ transition: 'opacity 0.2s' }}
-                              />
-
-                              <Box
-                                style={{
-                                  position: 'absolute',
-                                  bottom: 0,
-                                  left: 0,
-                                  right: 0,
-                                  height: '65%',
-                                  background:
-                                    'linear-gradient(to top, rgba(0,0,0,0.82) 10%, transparent 100%)',
-                                }}
-                              />
-                              <Flex
-                                align="flex-start"
-                                justify="flex-end"
-                                pos="absolute"
-                                direction="column"
-                                gap={0}
-                                inset={10}
-                              >
-                                <Text
-                                  size="lg"
-                                  w={140}
-                                  fw={700}
-                                  lh={1.4}
-                                  c="white"
-                                  style={{
-                                    textShadow: '0 1px 2px rgba(0,0,0,0.4)',
-                                  }}
-                                  truncate="end"
-                                >
-                                  {item.name}
-                                </Text>
-                                <Text
-                                  c="white"
-                                  truncate="end"
-                                  lh={1}
-                                  size="xs"
-                                  fw={300}
-                                  opacity={0.7}
-                                >
-                                  {item.type}
-                                </Text>
-                              </Flex>
-                            </Box>
-                          </Flex>
-                        ))}
-                      <Box style={{ flexShrink: 0 }} w={4} />
-                    </Flex>
-                  </ScrollArea>
-                </>
-              )} */}
-
               {loadingPosts ? (
                 <Box mx="xs">
                   <SectionTitle text="Postagens" mb="md" />
@@ -1274,25 +1217,49 @@ export default function Profile() {
               ) : (
                 <>
                   {profilePosts.length > 0 ? (
-                    <>
-                      {/* <SectionTitle
-                        text="Postagens"
-                        mt="sm"
-                        mx={{ base: 'sm', md: 0 }}
-                        id="posts"
-                      /> */}
-                      <Scroller
-                        // mt="xs"
-                        id="posts"
-                        key={profilePosts.length}
-                        draggable
-                        controlSize="xl"
-                        showEndControl={profilePosts.length > 2}
-                        startControlIcon={<IconCircleArrowLeftFilled size={36} />}
-                        endControlIcon={<IconCircleArrowRightFilled size={36} />}
+                    <Box mt="sm" mx={{ base: 'sm', md: 0 }}>
+                      <Group justify="space-between" align="center" mb={4}>
+                        <SectionTitle text="Postagens" id="posts" />
+                        {profilePosts.length > 2 && (
+                          <Group>
+                            <ThemeIcon
+                              variant="default"
+                              style={{
+                                cursor: postsScroller.canScrollStart
+                                  ? 'pointer'
+                                  : 'default',
+                              }}
+                              onClick={postsScroller.scrollStart}
+                              opacity={postsScroller.canScrollStart ? 1 : 0.5}
+                            >
+                              <IconChevronLeft style={{ width: '70%', height: '70%' }} />
+                            </ThemeIcon>
+                            <ThemeIcon
+                              variant="default"
+                              style={{
+                                cursor: postsScroller.canScrollEnd
+                                  ? 'pointer'
+                                  : 'default',
+                              }}
+                              onClick={postsScroller.scrollEnd}
+                              opacity={postsScroller.canScrollEnd ? 1 : 0.5}
+                            >
+                              <IconChevronRight style={{ width: '70%', height: '70%' }} />
+                            </ThemeIcon>
+                          </Group>
+                        )}
+                      </Group>
+                      <div
+                        ref={postsScroller.ref}
+                        {...postsScroller.dragHandlers}
+                        className="scrollerHidden"
+                        style={{
+                          overflow: 'auto',
+                          cursor: postsScroller.isDragging ? 'grabbing' : 'default',
+                        }}
                       >
                         <Group gap="xs" wrap="nowrap">
-                          {isMobile && <Box style={{ flexShrink: 10, width: '5px' }} />}
+                          {isMobile && <Box style={{ flexShrink: 10, width: '2px' }} />}
                           {loadingPosts
                             ? [1, 2, 3].map((i) => (
                                 <Group key={i} gap="sm">
@@ -1304,7 +1271,7 @@ export default function Profile() {
                                 </Group>
                               ))
                             : profilePosts.map((post) => (
-                                <Paper key={post.id} p="xs" withBorder h="100%" w="260px">
+                                <Paper key={post.id} p="xs" withBorder h={220} miw={280}>
                                   <Text size="xs" c="dimmed" mt={4}>
                                     {dayjs(post.created_at).fromNow()}
                                   </Text>
@@ -1360,11 +1327,11 @@ export default function Profile() {
                                 </Paper>
                               ))}
                         </Group>
-                      </Scroller>
-                    </>
+                      </div>
+                    </Box>
                   ) : (
                     <SectionPanel>
-                      <SectionTitle text="Postagens" mb="sm" />
+                      <SectionTitle text="Postagens" id="posts" mb="sm" />
                       <Text size="sm" c="dimmed">
                         Nenhuma postagem até o momento
                       </Text>
@@ -1395,7 +1362,6 @@ export default function Profile() {
                           />
                           <Button
                             size="compact-sm"
-                            leftSection={<IconArrowsMaximize size={14} />}
                             variant="default"
                             component={Link}
                             to={`/${username}/gear`}
@@ -1409,13 +1375,15 @@ export default function Profile() {
                             variant="subtle"
                             color="gray"
                             radius="xl"
+                            size="sm"
+                            p={0}
                             aria-label="Gerenciar meu equipamento"
                             title="Gerenciar meu equipamento"
                             component={Link}
                             to="/settings/gear"
-                            mr={{ base: 'sm', md: 0 }}
+                            mr="sm"
                           >
-                            <IconPencil style={{ width: '80%', height: '80%' }} />
+                            <IconPencil style={{ width: '94%', height: '94%' }} />
                           </ActionIcon>
                         )}
                       </Group>
@@ -1484,8 +1452,8 @@ export default function Profile() {
                             </Flex>
                           ))}
                         </Scroller>
-                        <Box ml={{ base: 'sm', md: 0 }}>
-                          <Text fw={600} size="15px" mt="md" c="dimmed">
+                        <Box ml={{ base: 'sm', md: 0 }} mt="lg">
+                          <Text fw={600} size="15px" c="dimmed">
                             Setups de {profile.full_name}{' '}
                             {!!gearSetups.length && `(${gearSetups.length})`}
                           </Text>
@@ -1543,7 +1511,7 @@ export default function Profile() {
                         profile.available_from}
                     </Text>
                   ) : (
-                    <Text size="sm" c="dimmed">
+                    <Text size="md" c="dimmed">
                       Não informado
                     </Text>
                   )}
@@ -1633,6 +1601,14 @@ export default function Profile() {
                         color="dark"
                       />
                     )}
+                    {instrumentRolesCount >= 3 && (
+                      <RecognitionBadge
+                        icon={IconBrain}
+                        label="Multi-instrumentista"
+                        description="Toca 3 ou mais instrumentos"
+                        color="coral"
+                      />
+                    )}
                     {isLegend && (
                       <RecognitionBadge
                         icon={IconShieldCheckFilled}
@@ -1720,14 +1696,6 @@ export default function Profile() {
                       cursor: inspirationsScroller.isDragging ? 'grabbing' : 'default',
                     }}
                   >
-                    {/* <Scroller
-                    key={inspirations.length}
-                    draggable={isMobile}
-                    controlSize="xl"
-                    startControlIcon={<IconCircleArrowLeftFilled size={24} />}
-                    endControlIcon={<IconCircleArrowRightFilled size={24} />}
-                    edgeGradientColor="transparent"
-                  > */}
                     <Group gap="xs" wrap="nowrap">
                       {inspirations.map(({ id, artists: artist }) => (
                         <Flex
@@ -1767,7 +1735,6 @@ export default function Profile() {
                         </Flex>
                       ))}
                     </Group>
-                    {/* </Scroller> */}
                   </div>
                 ) : (
                   <Text size="sm" c="dimmed">

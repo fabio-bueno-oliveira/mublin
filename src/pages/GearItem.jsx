@@ -299,9 +299,9 @@ export default function GearItem() {
                 <Text
                   component={Link}
                   to={`/brand/${product?.brands?.slug}`}
+                  style={{ display: 'inline', hover: { textDecoration: 'underline' } }}
                   c="dimmed"
                   inherit
-                  style={{ display: 'inline', hover: { textDecoration: 'underline' } }}
                   className="brand-link"
                 >
                   {product?.brands?.name}
