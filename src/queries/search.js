@@ -220,6 +220,7 @@ export async function fetchRecentProfiles(limit = 10) {
       )
     `,
     )
+    .neq('username', 'mublin')
     .order('created_at', { ascending: false })
     .limit(limit)
 

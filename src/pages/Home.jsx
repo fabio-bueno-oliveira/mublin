@@ -5,7 +5,6 @@ import { useAuth } from '../hooks/useAuth'
 import { useQuery } from '@tanstack/react-query'
 import { fetchUserRoles } from '../queries/user'
 import { fetchRecentProfiles } from '../queries/search'
-// import { fetchFeaturedProducts } from '../queries/gear'
 import { fetchEvents } from '../queries/events'
 import { fetchNewsFeed } from '../queries/feed'
 import NewsCard from '../components/feed/NewsCard'
@@ -37,7 +36,6 @@ import {
 
 const CDN_PREFIX = 'https://ik.imagekit.io/mublin'
 const EVENTS_IMG_PATH = `${CDN_PREFIX}/tr:h-320,c-maintain_ratio/events/`
-const GEAR_IMG_PATH = `${CDN_PREFIX}/products/tr:w-160,h-160,cm-pad_resize,bg-FFFFFF,fo-x/`
 const AVATAR_PATH = `${CDN_PREFIX}/tr:h-80,c-maintain_ratio/users/avatars/`
 
 export default function Home() {
@@ -46,7 +44,6 @@ export default function Home() {
   const isMobile = useMediaQuery('(max-width: 48em)')
   const isDesktop = useMediaQuery('(min-width: 48em)')
   const peopleScroller = useScroller()
-  // const gearScroller = useScroller()
   const eventsScroller = useScroller()
   const newsScroller = useScroller()
 
@@ -81,12 +78,6 @@ export default function Home() {
     staleTime: 1000 * 60 * 5,
   })
 
-  // const { data: featuredProducts = [], isLoading: loadingFeaturedProducts } = useQuery({
-  //   queryKey: ['featured-gear'],
-  //   queryFn: () => fetchFeaturedProducts(),
-  //   staleTime: 1000 * 60 * 5,
-  // })
-
   const { data: globalEvents = [], isLoading: loadingGlobalEvents } = useQuery({
     queryKey: ['events'],
     queryFn: () => fetchEvents(10),
@@ -114,7 +105,7 @@ export default function Home() {
     return null
   }
 
-  // Saudação dinâmica
+  // Dynamic greeting
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite'
 
@@ -325,116 +316,6 @@ export default function Home() {
                 </Group>
               </div>
             </Box>
-
-            {/* <Group justify="space-between" align="center" mt="xl" mb="xs">
-              <Title order={3} fw={600} fz="lg">
-                Equipamentos
-              </Title>
-              {featuredProducts.length > 4 && (
-                <Group>
-                  <ThemeIcon
-                    variant="default"
-                    style={{
-                      cursor: gearScroller.canScrollStart ? 'pointer' : 'default',
-                    }}
-                    onClick={gearScroller.scrollStart}
-                    opacity={gearScroller.canScrollStart ? 1 : 0.5}
-                  >
-                    <IconChevronLeft style={{ width: '70%', height: '70%' }} />
-                  </ThemeIcon>
-                  <ThemeIcon
-                    variant="default"
-                    style={{
-                      cursor: gearScroller.canScrollEnd ? 'pointer' : 'default',
-                    }}
-                    onClick={gearScroller.scrollEnd}
-                    opacity={gearScroller.canScrollEnd ? 1 : 0.5}
-                  >
-                    <IconChevronRight style={{ width: '70%', height: '70%' }} />
-                  </ThemeIcon>
-                </Group>
-              )}
-            </Group> */}
-
-            {/* <Box>
-              <div
-                ref={gearScroller.ref}
-                {...gearScroller.dragHandlers}
-                className="scrollerHidden"
-                style={{
-                  overflow: 'auto',
-                  cursor: gearScroller.isDragging ? 'grabbing' : 'default',
-                }}
-              >
-                <Group wrap="nowrap" gap="md">
-                  {loadingFeaturedProducts
-                    ? [1, 2, 3, 4, 5].map((i) => (
-                        <Skeleton
-                          key={i}
-                          width={150}
-                          height={200}
-                          radius="md"
-                          style={{ flexShrink: 0 }}
-                        />
-                      ))
-                    : featuredProducts.map((gear) => (
-                        <Link
-                          key={gear.id}
-                          to={`/gear/${gear.slug}`}
-                          style={{ textDecoration: 'none', color: 'inherit' }}
-                        >
-                          <Card
-                            p="xs"
-                            w={150}
-                            shadow="sm"
-                            withBorder
-                            style={{ flexShrink: 0 }}
-                            pos="relative"
-                          >
-                            <Card.Section>
-                              <Image
-                                src={
-                                  gear.picture
-                                    ? `${GEAR_IMG_PATH}${gear.picture}`
-                                    : undefined
-                                }
-                                height={130}
-                                fit="contain"
-                                fallbackSrc="https://placehold.co/130x130?text=?"
-                                alt={gear.name}
-                              />
-                            </Card.Section>
-                            {gear.brand_name && (
-                              <Text size="10px" c="dimmed" mt="xs" lineClamp={1}>
-                                {gear.brand_name}
-                              </Text>
-                            )}
-                            <Text size="sm" fw={600} lineClamp={1}>
-                              {gear.name}
-                            </Text>
-                            {gear.subtitle && (
-                              <Text size="xs" c="dimmed" lineClamp={1}>
-                                {gear.subtitle}
-                              </Text>
-                            )}
-                            {gear.is_rare && (
-                              <Badge
-                                size="xs"
-                                variant="light"
-                                color="yellow"
-                                pos="absolute"
-                                top={6}
-                                right={14}
-                              >
-                                Raro
-                              </Badge>
-                            )}
-                          </Card>
-                        </Link>
-                      ))}
-                </Group>
-              </div>
-            </Box> */}
 
             <Group justify="space-between" align="center" mt="lg" mb="xs">
               <Title order={3} fw={600} fz="lg">

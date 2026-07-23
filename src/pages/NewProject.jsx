@@ -38,7 +38,7 @@ import { useForm, isNotEmpty, isInRange } from '@mantine/form'
 import { useDebouncedCallback, useDisclosure } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
 import { upload } from '@imagekit/react'
-import { IconTrash, IconCheck, IconSearch, IconCamera } from '@tabler/icons-react'
+import { IconTrash, IconSearch, IconCamera } from '@tabler/icons-react'
 
 // ── Helpers ──────────────────────────────────────────────
 function generateSlug(name) {
@@ -526,7 +526,7 @@ export default function NewProject({ onSuccess, isModal = false }) {
         </Title>
       )}
       <form onSubmit={form.onSubmit(handleSubmit)}>
-        <Stack gap="md">
+        <Stack gap="sm">
           <Grid>
             <Grid.Col span={{ base: 12, md: 6 }}>
               <TextInput
@@ -551,10 +551,10 @@ export default function NewProject({ onSuccess, isModal = false }) {
                 description={`mublin.com/project/${slugValue}`}
                 maxLength={70}
                 rightSection={slugChecking ? <Loader size={16} /> : undefined}
-                leftSection={
-                  slugValue.length >= 2 && !slugChecking && slugAvailable === true ? (
-                    <IconCheck size={18} color="green" />
-                  ) : undefined
+                success={
+                  slugValue.length >= 2 && !slugChecking && slugAvailable === true
+                    ? 'Username disponível'
+                    : undefined
                 }
                 error={
                   slugValue.length >= 2 && !slugChecking && slugAvailable === false
@@ -607,8 +607,7 @@ export default function NewProject({ onSuccess, isModal = false }) {
             </Paper>
           )}
 
-          {/* ── Imagens ── */}
-          <Divider label="Imagens do projeto" labelPosition="center" />
+          {/* ── Imagem ── */}
 
           {!projectImage ? (
             <>

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { useParams, Link } from 'react-router-dom'
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query'
@@ -20,6 +20,8 @@ import {
   fetchProfilePortfolio,
   fetchCheckFavorite,
   toggleFavorite,
+  fetchPortfolioUpvotes,
+  togglePortfolioUpvote,
 } from '../queries/profiles'
 import { useAuth } from '../hooks/useAuth'
 import { Helmet } from 'react-helmet-async'
@@ -49,6 +51,7 @@ import VideoPlayerYoutube from '../components/feed/VideoPlayerYoutube'
 import SectionPanel from '../components/SectionPanel'
 import InviteToGigModal from '../components/gigs/InviteToGigModal'
 import RecognitionBadge from '../components/profile/RecognitionBadge'
+import PortfolioUpvote from '../components/profile/PortfolioUpvote'
 import { truncateString } from '../utils/formatter'
 // prettier-ignore
 import {
@@ -432,6 +435,72 @@ export default function Profile() {
     queryFn: () => fetchProfilePortfolio(profile.id),
     enabled: !!profile?.id,
     staleTime: 1000 * 60 * 10,
+  })
+
+  const { data: portfolioUpvotes = [] } = useQuery({
+    queryKey: ['portfolio-upvotes', profile?.id, user?.id],
+    queryFn: () => fetchPortfolioUpvotes(profile.id, user?.id),
+    enabled: !!profile?.id && portfolio.length > 0,
+    staleTime: 1000 * 60 * 2,
+  })
+
+  const upvotesByPortfolioId = useMemo(
+    () => Object.fromEntries(portfolioUpvotes.map((u) => [u.portfolio_id, u])),
+    [portfolioUpvotes],
+  )
+
+  const { mutate: handleToggleUpvote } = useMutation({
+    mutationFn: ({ portfolioId, currentlyUpvoted }) =>
+      togglePortfolioUpvote(portfolioId, user.id, currentlyUpvoted),
+
+    onMutate: async ({ portfolioId, currentlyUpvoted }) => {
+      const queryKey = ['portfolio-upvotes', profile.id, user?.id]
+      await queryClient.cancelQueries({ queryKey })
+
+      const previousUpvotes = queryClient.getQueryData(queryKey)
+
+      queryClient.setQueryData(queryKey, (old = []) => {
+        const exists = old.some((u) => u.portfolio_id === portfolioId)
+        if (!exists) {
+          return [
+            ...old,
+            { portfolio_id: portfolioId, upvote_count: 1, has_upvoted: true },
+          ]
+        }
+        return old.map((u) =>
+          u.portfolio_id === portfolioId
+            ? {
+                ...u,
+                upvote_count: currentlyUpvoted
+                  ? Number(u.upvote_count) - 1
+                  : Number(u.upvote_count) + 1,
+                has_upvoted: !currentlyUpvoted,
+              }
+            : u,
+        )
+      })
+
+      return { previousUpvotes }
+    },
+
+    onError: (error, _vars, context) => {
+      queryClient.setQueryData(
+        ['portfolio-upvotes', profile.id, user?.id],
+        context?.previousUpvotes,
+      )
+      notifications.show({
+        title: 'Ops!',
+        message: error.message || 'Não conseguimos registrar seu voto neste momento',
+        color: 'red',
+        position: 'top-center',
+      })
+    },
+
+    onSettled: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['portfolio-upvotes', profile.id, user?.id],
+      })
+    },
   })
 
   const rolesOrdered = profile?.profile_roles
@@ -1101,20 +1170,38 @@ export default function Profile() {
 
                       const period = formatPortfolioPeriod(item.year_start, item.year_end)
 
+                      const upvoteInfo = upvotesByPortfolioId[item.id]
+                      const upvoteCount = upvoteInfo?.upvote_count ?? 0
+                      const hasUpvoted = upvoteInfo?.has_upvoted ?? false
+                      const isOwnPortfolio = user?.id === profile.id
+
                       return (
                         <Box key={item.id}>
                           <Group gap="xs" align="flex-start" wrap="nowrap">
-                            <Link to={url}>
-                              <Avatar
-                                radius="md"
-                                size={48}
-                                src={
-                                  isArtist
-                                    ? ARTISTS_PATH + entity.picture
-                                    : `https://ik.imagekit.io/mublin/projects/${entity.id}/tr:h-260,w-260,c-maintain_ratio/${entity.picture}`
+                            <Flex direction="column">
+                              <Link to={url}>
+                                <Avatar
+                                  radius="md"
+                                  size={48}
+                                  src={
+                                    isArtist
+                                      ? ARTISTS_PATH + entity.picture
+                                      : `https://ik.imagekit.io/mublin/projects/${entity.id}/tr:h-260,w-260,c-maintain_ratio/${entity.picture}`
+                                  }
+                                />
+                              </Link>
+                              <PortfolioUpvote
+                                count={upvoteCount}
+                                hasUpvoted={hasUpvoted}
+                                disabled={isOwnPortfolio || !user?.id}
+                                onToggle={() =>
+                                  handleToggleUpvote({
+                                    portfolioId: item.id,
+                                    currentlyUpvoted: hasUpvoted,
+                                  })
                                 }
                               />
-                            </Link>
+                            </Flex>
                             <Stack gap={2} style={{ flex: 1, minWidth: 0 }}>
                               {roleNames.length > 0 && (
                                 <Text size="15px" fw={600}>

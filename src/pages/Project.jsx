@@ -30,11 +30,13 @@ import {
   Tabs,
   Card,
   Scroller,
-  em,
   Divider,
   Center,
+  Tooltip,
+  Modal,
+  em,
 } from '@mantine/core'
-import { useMediaQuery } from '@mantine/hooks'
+import { useMediaQuery, useDisclosure } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
 import { upload } from '@imagekit/react'
 import {
@@ -50,7 +52,6 @@ import AppNavbarMobile from '../components/AppNavbarMobile'
 import { MEMBER_REQUEST_STATUS } from '../constants/projects'
 
 // ── Helpers de upload (ImageKit) ──────────────────────────
-// Mesmo padrão usado em NewProject.jsx
 async function getIkAuthTokens() {
   const {
     data: { session },
@@ -89,15 +90,13 @@ export default function Project() {
   const queryClient = useQueryClient()
 
   const [activeTab, setActiveTab] = useState('about')
+  const [opened, { open: openModal, close: closeModal }] = useDisclosure(false)
 
   // ── Edição do projeto (aba Admin) ──
   const [editForm, setEditForm] = useState({ name: '', description: '', purpose: '' })
   const [pictureFile, setPictureFile] = useState(null)
   const [picturePreview, setPicturePreview] = useState(null)
   const [pictureUploadProgress, setPictureUploadProgress] = useState(0)
-  // Guarda o id do projeto cujo editForm está refletido atualmente, pra
-  // sabermos quando precisamos "ressincronizar" o formulário (troca de projeto
-  // ou primeira carga) sem depender de um useEffect
   const [editFormProjectId, setEditFormProjectId] = useState(null)
 
   const {
@@ -347,6 +346,7 @@ export default function Project() {
                   src={PICTURE_AVATAR_PATH + project?.picture}
                   size={100}
                   radius={0}
+                  onClick={openModal}
                   style={
                     colorScheme === 'light'
                       ? { border: '3px solid white' }
@@ -393,7 +393,18 @@ export default function Project() {
               )}
             </Stack>
           </Flex>
-          <Tabs ml="md" variant="pills" mt="md" value={activeTab} onChange={setActiveTab}>
+          {projectPeople.length > 0 && (
+            <Avatar.Group px="xl" mt="xs">
+              {projectPeople.map((person) => (
+                <Link to={`/${person.profile.username}`} key={person.id}>
+                  <Tooltip label={person.profile.username} withArrow>
+                    <Avatar size={40} src={`${AVATAR_PATH}${person.profile.avatar}`} />
+                  </Tooltip>
+                </Link>
+              ))}
+            </Avatar.Group>
+          )}
+          <Tabs ml="md" variant="pills" mt="sm" value={activeTab} onChange={setActiveTab}>
             <Tabs.List grow>
               <Scroller>
                 <Tabs.Tab value="about" mr="xs">
@@ -717,6 +728,28 @@ export default function Project() {
           </Card>
         )}
       </Container>
+      <Modal.Root opened={opened} onClose={closeModal} size="auto" centered>
+        <Modal.Overlay />
+        <Modal.Content>
+          <Modal.Body p={0}>
+            <img
+              src={PICTURE_AVATAR_PATH + project?.picture}
+              alt=""
+              style={{ display: 'block', width: '100%' }}
+            />
+            <Modal.CloseButton
+              style={{
+                position: 'fixed',
+                top: 8,
+                right: 8,
+                zIndex: 1000,
+                color: 'white',
+                backgroundColor: 'rgba(0, 0, 0, 0.5)',
+              }}
+            />
+          </Modal.Body>
+        </Modal.Content>
+      </Modal.Root>
     </>
   )
 }

@@ -527,3 +527,45 @@ export async function fetchCheckFavorite(profileId, userId) {
   }
   return data
 }
+
+export async function fetchPortfolioUpvotes(profileId, viewerId = null) {
+  const { data, error } = await supabase.rpc('get_portfolio_upvotes', {
+    p_profile_id: profileId,
+    p_viewer_id: viewerId,
+  })
+  if (error) {
+    throw new Error(error.message)
+  }
+  return data
+}
+
+export async function togglePortfolioUpvote(portfolioId, voterId, currentlyUpvoted) {
+  if (currentlyUpvoted) {
+    const { error } = await supabase
+      .from('portfolio_upvotes')
+      .delete()
+      .eq('portfolio_id', portfolioId)
+      .eq('voter_profile_id', voterId)
+
+    if (error) {
+      throw new Error(error.message)
+    }
+    return { success: true, action: 'removed' }
+  }
+
+  const { data, error } = await supabase
+    .from('portfolio_upvotes')
+    .insert({ portfolio_id: portfolioId, voter_profile_id: voterId })
+    .select()
+    .single()
+
+  if (error) {
+    if (error.code === '23505') {
+      // Corrida entre cliques: já existia, tratamos como sucesso (mesmo padrão do toggleFavorite)
+      return { success: true, action: 'added', alreadyExisted: true }
+    }
+    throw new Error(error.message)
+  }
+
+  return { success: true, action: 'added', data }
+}
