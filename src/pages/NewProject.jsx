@@ -463,10 +463,18 @@ export default function NewProject({ onSuccess, isModal = false }) {
     if (finalPicture) {
       const { error: updateError } = await supabase
         .from('projects')
-        .update({
-          ...(finalPicture && { picture: finalPicture }),
-        })
+        .update({ picture: finalPicture })
         .eq('id', projectId)
+
+      if (updateError) {
+        console.error('Erro ao atualizar imagem do projeto:', updateError)
+        notifications.show({
+          color: 'yellow',
+          title: 'Aviso',
+          message:
+            'Projeto criado, mas a imagem não pôde ser salva. Tente atualizá-la depois.',
+        })
+      }
     }
 
     // Adiciona membro fundador
