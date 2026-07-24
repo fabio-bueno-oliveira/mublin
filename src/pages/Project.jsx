@@ -23,6 +23,7 @@ import {
   Text,
   TextInput,
   Textarea,
+  Checkbox,
   FileInput,
   Badge,
   Group,
@@ -93,7 +94,12 @@ export default function Project() {
   const [opened, { open: openModal, close: closeModal }] = useDisclosure(false)
 
   // ── Edição do projeto (aba Admin) ──
-  const [editForm, setEditForm] = useState({ name: '', description: '', purpose: '' })
+  const [editForm, setEditForm] = useState({
+    name: '',
+    description: '',
+    purpose: '',
+    on_tour: false,
+  })
   const [pictureFile, setPictureFile] = useState(null)
   const [picturePreview, setPicturePreview] = useState(null)
   const [pictureUploadProgress, setPictureUploadProgress] = useState(0)
@@ -137,6 +143,7 @@ export default function Project() {
       name: project.name || '',
       description: project.description || '',
       purpose: project.purpose || '',
+      on_tour: !!project.on_tour,
     })
   }
 
@@ -155,6 +162,7 @@ export default function Project() {
         name: editForm.name.trim(),
         description: editForm.description.trim() || null,
         purpose: editForm.purpose.trim() || null,
+        on_tour: editForm.on_tour,
       }
 
       if (pictureFile) {
@@ -209,6 +217,12 @@ export default function Project() {
     setEditForm((prev) => ({ ...prev, [field]: value }))
   }
 
+  const handleOnTourChange = (event) => {
+    // Checkbox usa .checked, não .value — mesmo cuidado de extrair antes do setState
+    const { checked } = event.currentTarget
+    setEditForm((prev) => ({ ...prev, on_tour: checked }))
+  }
+
   const handlePictureChange = (file) => {
     if (picturePreview) {
       URL.revokeObjectURL(picturePreview)
@@ -246,7 +260,6 @@ export default function Project() {
     'https://ik.imagekit.io/mublin/bg/tr:fo-bottom,bl-8/project-cover-default-b.png'
 
   const userMembership = project?.members?.find((m) => m.profile_id === user.id)
-
   const userIsAdmin =
     userMembership?.is_admin === true &&
     userMembership?.status === MEMBER_REQUEST_STATUS.ACCEPTED
@@ -404,40 +417,42 @@ export default function Project() {
               ))}
             </Avatar.Group>
           )}
-          <Tabs ml="md" variant="pills" mt="sm" value={activeTab} onChange={setActiveTab}>
-            <Tabs.List grow>
-              <Scroller>
-                <Tabs.Tab value="about" mr="xs">
-                  Sobre
-                </Tabs.Tab>
-                <Tabs.Tab value="people" mr="xs">
-                  Pessoas
-                </Tabs.Tab>
-                <Tabs.Tab value="jobs" mr="xs">
-                  Vagas
-                </Tabs.Tab>
-                <Tabs.Tab value="gigs" mr="xs">
-                  Gigs
-                </Tabs.Tab>
-                <Tabs.Tab value="social" mr="xs">
-                  Redes
-                </Tabs.Tab>
-                {userIsAdmin && (
-                  <Tabs.Tab
-                    value="admin"
-                    leftSection={<IconSettings size={16} />}
-                    mr="xs"
-                  >
-                    Admin
-                  </Tabs.Tab>
-                )}
-              </Scroller>
-            </Tabs.List>
-          </Tabs>
         </Card>
+
+        <Tabs mx="md" variant="pills" mb="md" value={activeTab} onChange={setActiveTab}>
+          <Tabs.List grow>
+            <Scroller>
+              <Tabs.Tab value="about" mr="xs">
+                Sobre
+              </Tabs.Tab>
+              <Tabs.Tab value="people" mr="xs">
+                Pessoas
+              </Tabs.Tab>
+              <Tabs.Tab value="jobs" mr="xs">
+                Vagas
+              </Tabs.Tab>
+              <Tabs.Tab value="gigs" mr="xs">
+                Gigs
+              </Tabs.Tab>
+              <Tabs.Tab value="social" mr="xs">
+                Redes
+              </Tabs.Tab>
+              {userIsAdmin && (
+                <Tabs.Tab value="admin" leftSection={<IconSettings size={16} />} mr="xs">
+                  Admin
+                </Tabs.Tab>
+              )}
+            </Scroller>
+          </Tabs.List>
+        </Tabs>
 
         {activeTab === 'about' && (
           <Card mx={{ base: 0, sm: 'md' }}>
+            {project?.status?.description_ptbr && (
+              <Badge color={project?.status?.color} variant="light" size="xs" mb="sm">
+                {project?.status?.description_ptbr}
+              </Badge>
+            )}
             <Title order={5} fw={600}>
               Visão geral
             </Title>
@@ -468,11 +483,68 @@ export default function Project() {
         {activeTab === 'people' && (
           <Stack gap="xs">
             <Card mx={{ base: 0, sm: 'md' }}>
+              <Title order={5} fw={600}>
+                Pessoas associadas ({projectPeople.length})
+              </Title>
+              {loadingProjectPeople ? (
+                <Text size="sm">Carregando...</Text>
+              ) : (
+                <>
+                  {projectPeople.length > 0 ? (
+                    <Group mt="xs">
+                      {projectPeople.map((person) => (
+                        <Flex
+                          key={person.id}
+                          gap={4}
+                          direction="column"
+                          w={100}
+                          justify="center"
+                          align="center"
+                        >
+                          <Center>
+                            <Link to={`/${person.profile.username}`}>
+                              <Avatar
+                                size={50}
+                                src={`${AVATAR_PATH}${person.profile.avatar}`}
+                              />
+                            </Link>
+                          </Center>
+                          <Text fz="12px" ta="center" truncate="end">
+                            {person.profile.full_name}
+                          </Text>
+                          <Badge size="xs" fw={300}>
+                            {person.engagement_types
+                              .map((e) => e.engagement_type.name_ptbr)
+                              .join(', ')}
+                          </Badge>
+                          <Text fz="11px" ta="center" c="dimmed" lh={1.2}>
+                            {person.roles.map((r) => r.role.name_ptbr).join(', ')}
+                          </Text>
+                          <Text fz="11px" ta="center" opacity={0.7}>
+                            {person.year_start} ›{' '}
+                            {person.year_end ? person.year_end : 'Atualmente'}
+                          </Text>
+                        </Flex>
+                      ))}
+                    </Group>
+                  ) : (
+                    <Text span c="dimmed" size="sm">
+                      Nenhum perfil associado a este projeto até o momento
+                    </Text>
+                  )}
+                </>
+              )}
+            </Card>
+            <Card mx={{ base: 0, sm: 'md' }}>
               <Group justify="space-between">
                 <Title order={5} fw={600}>
                   Administradores ({projectAdmins.length})
                 </Title>
-                <Button size="xs" onClick={() => handleRequestAdminStatus()}>
+                <Button
+                  variant="outline"
+                  size="xs"
+                  onClick={() => handleRequestAdminStatus()}
+                >
                   Solicitar acesso admin
                 </Button>
               </Group>
@@ -507,58 +579,6 @@ export default function Project() {
                   ) : (
                     <Text span c="dimmed" size="sm">
                       Nenhum administrador neste projeto. <b>Quero ser administrador</b>
-                    </Text>
-                  )}
-                </>
-              )}
-            </Card>
-            <Card mx={{ base: 0, sm: 'md' }}>
-              <Title order={5} fw={600}>
-                Pessoas associadas ({projectPeople.length})
-              </Title>
-              {loadingProjectPeople ? (
-                <Text size="sm">Carregando...</Text>
-              ) : (
-                <>
-                  {projectPeople.length > 0 ? (
-                    <Group mt="xs">
-                      {projectPeople.map((person) => (
-                        <Flex
-                          key={person.id}
-                          gap={2}
-                          direction="column"
-                          w={85}
-                          justify="center"
-                        >
-                          <Center>
-                            <Link to={`/${person.profile.username}`}>
-                              <Avatar
-                                size={50}
-                                src={`${AVATAR_PATH}${person.profile.avatar}`}
-                              />
-                            </Link>
-                          </Center>
-                          <Text fz="12px" ta="center" truncate="end">
-                            {person.profile.full_name}
-                          </Text>
-                          <Text fz="11px" ta="center" c="dimmed" lh={1.2}>
-                            {person.roles.map((r) => r.role.name_ptbr).join(', ')}
-                          </Text>
-                          <Badge size="xs" fw={300}>
-                            {person.engagement_types
-                              .map((e) => e.engagement_type.name_ptbr)
-                              .join(', ')}
-                          </Badge>
-                          <Text fz="11px" ta="center" opacity={0.7}>
-                            {person.year_start} ›{' '}
-                            {person.year_end ? person.year_end : 'Atualmente'}
-                          </Text>
-                        </Flex>
-                      ))}
-                    </Group>
-                  ) : (
-                    <Text span c="dimmed" size="sm">
-                      Nenhum perfil associado a este projeto até o momento
                     </Text>
                   )}
                 </>
@@ -650,7 +670,7 @@ export default function Project() {
             <Title order={5} fw={600} mb="xs">
               Editar dados do projeto
             </Title>
-            <Stack gap="xs">
+            <Stack gap="sm">
               <Group align="flex-end" gap="md">
                 <Avatar
                   src={picturePreview || PICTURE_AVATAR_PATH + project?.picture}
@@ -688,6 +708,11 @@ export default function Project() {
                   )}
                 </Stack>
               </Group>
+              <Checkbox
+                label="Em turnê atualmente"
+                checked={editForm.on_tour}
+                onChange={handleOnTourChange}
+              />
               <TextInput
                 label="Nome do projeto"
                 value={editForm.name}
@@ -722,7 +747,7 @@ export default function Project() {
             <Title order={5} fw={600} mb="xs">
               Gerenciar administração
             </Title>
-            <Button variant="outline" color="red.9" size="xs" w={220}>
+            <Button variant="filled" color="red.9" size="xs" w={220}>
               Deixar de ser administrador
             </Button>
           </Card>

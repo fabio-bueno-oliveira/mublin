@@ -248,7 +248,7 @@ export async function fetchProfileGearExpanded(profileId) {
       id_tuning,
       tunings ( name_ptbr, description ),
       products (
-        id, name, slug, picture,
+        id, id_category, name, slug, picture,
         brands ( name, slug, logo ),
         product_categories ( name_ptbr )
       )
@@ -561,11 +561,38 @@ export async function togglePortfolioUpvote(portfolioId, voterId, currentlyUpvot
 
   if (error) {
     if (error.code === '23505') {
-      // Corrida entre cliques: já existia, tratamos como sucesso (mesmo padrão do toggleFavorite)
       return { success: true, action: 'added', alreadyExisted: true }
     }
     throw new Error(error.message)
   }
 
   return { success: true, action: 'added', data }
+}
+
+export async function fetchProfileGearItemById(gearId) {
+  const { data, error } = await supabase
+    .from('profile_gear')
+    .select(
+      `
+      id,
+      id_product,
+      is_featured,
+      is_for_sale,
+      is_currently_using,
+      price,
+      owner_comments,
+      id_tuning,
+      tunings ( name_ptbr, description ),
+      products (
+        id, id_category, name, slug, picture,
+        brands ( name, slug, logo ),
+        product_categories ( name_ptbr )
+      )
+    `,
+    )
+    .eq('id', gearId)
+    .single()
+
+  if (error) throw new Error(error.message)
+  return data
 }

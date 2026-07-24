@@ -19,6 +19,7 @@ export async function fetchProjectProfile(slug) {
       soundcloud,
       genres ( id, name_ptbr ),
       project_types ( id, name_ptbr ),
+      status:project_statuses ( description_ptbr, color ),
       project_members (
         id,
         is_founder,

@@ -26,6 +26,7 @@ import SearchPeople from './pages/search/People'
 // -- Profile pages
 import ProfileRouter from './components/ProfileRouter'
 import ProfileGear from './pages/ProfileGear'
+import ProfileGearItem from './pages/ProfileGearItem'
 import Artist from './pages/Artist'
 // -- Project pages
 import ProjectRouter from './components/ProjectRouter'
@@ -131,7 +132,10 @@ export const router = createBrowserRouter([
   // ── Subpáginas de perfil ──────────────
   {
     element: <AppProfileLayout />,
-    children: [{ path: '/:username/gear', element: <ProfileGear /> }],
+    children: [
+      { path: '/:username/gear', element: <ProfileGear /> },
+      { path: '/:username/gear/:profileGearItemId', element: <ProfileGearItem /> }, // adicionando agora este aqui
+    ],
   },
   // ── Backstage ──────────────────────────
   {

@@ -373,20 +373,7 @@ export default function Profile() {
     staleTime: 1000 * 60 * 5,
   })
 
-  const [gearCategorySelected, setGearCategorySelected] = useState('')
-
-  const gear = gearList.filter((x) =>
-    gearCategorySelected
-      ? x.products?.id_category === Number(gearCategorySelected)
-      : true,
-  )
-
-  const { data: gearCategories = [] } = useQuery({
-    queryKey: ['user-gear-categories', profile?.id],
-    queryFn: () => fetchProfileGearCategories(profile.id),
-    enabled: !!profile?.id && gear.length > 0,
-    staleTime: 1000 * 60 * 5,
-  })
+  const gear = gearList
 
   const { data: gearSetups = [] } = useQuery({
     queryKey: ['user-gear-setups', profile?.id],
@@ -1193,6 +1180,7 @@ export default function Profile() {
                               <PortfolioUpvote
                                 count={upvoteCount}
                                 hasUpvoted={hasUpvoted}
+                                isOwnPortfolio={isOwnPortfolio}
                                 disabled={isOwnPortfolio || !user?.id}
                                 onToggle={() =>
                                   handleToggleUpvote({
@@ -1474,27 +1462,6 @@ export default function Profile() {
                           </ActionIcon>
                         )}
                       </Group>
-                      {/* <Group gap={10} mb={4} mx={{ base: 'sm', md: 0 }}>
-                        {gearCategories.length > 1 && (
-                          <Select
-                            size="md"
-                            variant="unstyled"
-                            w={190}
-                            value={gearCategorySelected || ''}
-                            onChange={(value) => setGearCategorySelected(value || '')}
-                            data={[
-                              { value: '', label: 'Todos' },
-                              ...gearCategories.map((cat) => ({
-                                value: String(cat.category_id),
-                                label: truncateString(
-                                  `${cat.category} (${cat.total})`,
-                                  28,
-                                ),
-                              })),
-                            ]}
-                          />
-                        )}
-                      </Group> */}
                       <Box h="100%">
                         <Scroller
                           key={gear.length}
