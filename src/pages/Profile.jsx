@@ -10,7 +10,6 @@ import {
   fetchSimilarProfiles,
   fetchProfileFeed,
   fetchProfileGear,
-  fetchProfileGearCategories,
   fetchProfileGearSetups,
   fetchProfileWorkAvailability,
   fetchProfileWorkFocuses,
@@ -90,7 +89,7 @@ dayjs.locale('pt-br')
 const AVATAR_PATH =
   'https://ik.imagekit.io/mublin/tr:h-200,c-maintain_ratio/users/avatars/'
 const ARTISTS_PATH =
-  'https://ik.imagekit.io/mublin/artists/tr:h-96,w-96,c-maintain_ratio/'
+  'https://ik.imagekit.io/mublin/artists/tr:h-120,w-120,c-maintain_ratio/'
 const COMPANY_PATH =
   'https://ik.imagekit.io/mublin/products/brands/tr:h-96,w-96,cm-pad_resize,bg-FFFFFF,fo-x/'
 
@@ -1169,11 +1168,11 @@ export default function Profile() {
                               <Link to={url}>
                                 <Avatar
                                   radius="md"
-                                  size={48}
+                                  size={60}
                                   src={
                                     isArtist
                                       ? ARTISTS_PATH + entity.picture
-                                      : `https://ik.imagekit.io/mublin/projects/${entity.id}/tr:h-260,w-260,c-maintain_ratio/${entity.picture}`
+                                      : `https://ik.imagekit.io/mublin/projects/${entity.id}/tr:h-120,w-120,c-maintain_ratio/${entity.picture}`
                                   }
                                 />
                               </Link>
@@ -1436,8 +1435,9 @@ export default function Profile() {
                             ml={{ base: 'sm', md: 0 }}
                           />
                           <Button
-                            size="compact-sm"
-                            variant="default"
+                            size="xs"
+                            variant="outline"
+                            color="var(--mantine-color-text)"
                             component={Link}
                             to={`/${username}/gear`}
                           >
@@ -1480,7 +1480,7 @@ export default function Profile() {
                               align="center"
                               w={140}
                             >
-                              <Link to={`/gear/${item.products?.slug}`}>
+                              <Link to={`/${username}/gear/${item.id}`}>
                                 <Image
                                   src={`https://ik.imagekit.io/mublin/products/tr:w-240,h-240,cm-pad_resize,bg-FFFFFF,fo-x/${item.products?.picture}`}
                                   h={120}
@@ -1512,21 +1512,20 @@ export default function Profile() {
                             {!!gearSetups.length && `(${gearSetups.length})`}
                           </Text>
                           {gearSetups.length > 0 && (
-                            <Flex gap={16} mt={18}>
+                            <Flex gap={12} mt={18}>
                               {gearSetups.map((setup) => (
                                 <Box key={setup.id}>
-                                  <Flex w={60} direction="column" justify="center">
-                                    <Link to={`/${username}/setup/${setup.id}`}>
-                                      <Image
-                                        src={`https://ik.imagekit.io/mublin/users/gear-setups/tr:w-120,h-120/${setup.image}`}
-                                        h={60}
-                                        mah={60}
-                                        w="auto"
-                                        fit="contain"
-                                        radius="md"
-                                        mb={4}
-                                      />
-                                    </Link>
+                                  <Flex w={80} direction="column" justify="center">
+                                    {/* <Link to={`/${username}/setup/${setup.id}`}> */}
+                                    {/* </Link> */}
+                                    <Image
+                                      src={`https://ik.imagekit.io/mublin/users/gear-setups/tr:w-140,h-140/${setup.image}`}
+                                      h={70}
+                                      w={70}
+                                      fit="contain"
+                                      radius="md"
+                                      mb={4}
+                                    />
                                     <Text ta="center" fw={550} size="xs" truncate="end">
                                       {setup.name}
                                     </Text>
@@ -1763,7 +1762,7 @@ export default function Profile() {
                           style={{ textDecoration: 'none', color: 'inherit' }}
                         >
                           <Avatar
-                            size={56}
+                            size={60}
                             radius="xl"
                             src={
                               artist?.picture ? ARTISTS_PATH + artist.picture : undefined

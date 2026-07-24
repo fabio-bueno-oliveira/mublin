@@ -200,6 +200,7 @@ export async function fetchProfileGear(profileId) {
     .from('profile_gear')
     .select(
       `
+      id,
       id_product,
       is_featured,
       is_for_sale,

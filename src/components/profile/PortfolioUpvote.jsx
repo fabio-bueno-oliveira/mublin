@@ -53,8 +53,9 @@ export default function PortfolioUpvote({
         style={{
           display: 'inline-flex',
           alignItems: 'center',
+          justifyContent: 'center',
           gap: 4,
-          padding: '2px 8px 2px 6px',
+          padding: '2px 5px 2px 5px',
           borderRadius: 999,
           cursor: disabled ? 'not-allowed' : 'pointer',
           opacity: disabled ? 0.7 : 1,
@@ -81,11 +82,11 @@ export default function PortfolioUpvote({
         }}
       >
         {hasUpvoted ? (
-          <IconArrowBigUpLineFilled size={18} />
+          <IconArrowBigUpLineFilled size={14} />
         ) : (
-          <IconArrowBigUpLine size={18} />
+          <IconArrowBigUpLine size={14} />
         )}
-        <Text size="xs" fw={700} lh={1}>
+        <Text size="11px" fw={700} lh={1}>
           {count}
         </Text>
       </Box>

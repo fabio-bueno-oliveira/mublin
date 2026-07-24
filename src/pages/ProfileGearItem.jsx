@@ -211,99 +211,118 @@ export default function ProfileGearItem() {
         </Grid.Col>
 
         {/* Conteúdo principal */}
-        <Grid.Col span={{ base: 12, md: 10 }} mt="lg" px={{ base: 'md', md: 0 }}>
-          <Group gap="xs">
+        <Grid.Col
+          span={{ base: 12, md: 10 }}
+          mt={{ base: 'sm', md: 'lg' }}
+          px={{ base: 'md', md: 0 }}
+        >
+          <Group gap="xs" visibleFrom="sm">
             <Button
               variant="filled"
               size="sm"
               leftSection={<IconArrowLeft size={16} />}
-              onClick={() => navigate(-1) || navigate(`/${username}/gear`)}
+              // onClick={() => navigate(-1) || navigate(`/${username}/gear`)}
+              onClick={() => navigate(`/${username}/gear`)}
               mb="md"
             >
               Voltar
             </Button>
             <Button
-              variant="outline"
+              variant="light"
               size="sm"
               rightSection={<IconArrowRight size={16} />}
               component={Link}
               to={`/gear/${selectedItem.products?.slug}`}
               mb="md"
             >
-              Ir para a página deste item
+              Ver perfil completo deste item
             </Button>
           </Group>
 
           {selectedItem ? (
-            <Paper withBorder radius="md" p="md">
-              {/* Header igual ao title do Modal */}
-              <Stack gap={8} mb="lg">
-                <Flex gap={5} align="center">
-                  <Avatar
-                    size={30}
-                    src={profile.avatar ? AVATAR_PATH + profile.avatar : undefined}
-                    component={Link}
-                    to={`/${username}`}
-                    style={{ cursor: 'pointer' }}
-                  />
-                  <Box>
-                    <Flex align="center" gap={4}>
-                      <Text size="sm">
-                        Item do equipamento de <strong>{profile.username}</strong>
-                      </Text>
-                    </Flex>
-                  </Box>
-                </Flex>
-                <Title order={1} fz="h2" fw={600}>
-                  {selectedItem.products?.brands?.name} {selectedItem.products?.name}
-                </Title>
-              </Stack>
-
-              <Grid mt={10}>
-                <Grid.Col span={{ base: 12, md: 6 }}>
-                  <Center>
-                    <Image
-                      src={
-                        selectedItem.products?.picture
-                          ? PRODUCT_IMG_LG + selectedItem.products.picture
-                          : undefined
-                      }
-                      w={320}
-                      fit="contain"
-                      mb={12}
-                      radius="md"
-                      fallbackSrc="https://ik.imagekit.io/mublin/products/tr:w-400,cm-pad_resize,bg-FFFFFF/no-picture.png"
+            <>
+              <Paper withBorder radius="md" p="md">
+                {/* Header igual ao title do Modal */}
+                <Stack gap={8} mb="lg" justify="flex-start" align="flex-start">
+                  <Flex gap={5} align="center">
+                    <Avatar
+                      size={30}
+                      src={profile.avatar ? AVATAR_PATH + profile.avatar : undefined}
+                      component={Link}
+                      to={`/${username}`}
+                      style={{ cursor: 'pointer' }}
                     />
-                  </Center>
-                </Grid.Col>
-                <Grid.Col span={{ base: 12, md: 6 }}>
-                  <DataList orientation="horizontal">
-                    {data.map((item) =>
-                      item.active ? (
-                        <DataList.Item key={item.label}>
-                          <DataList.ItemLabel>{item.label}</DataList.ItemLabel>
-                          <DataList.ItemValue>{item.value}</DataList.ItemValue>
-                        </DataList.Item>
-                      ) : null,
-                    )}
-                  </DataList>
-                  {selectedItem.owner_comments && (
-                    <Box mt="md">
-                      <Text size="sm" c="dimmed">
-                        Comentários de {profile.full_name}:
-                      </Text>
-                      <Text size="sm">
-                        {parse(
-                          linkifyStr(selectedItem.owner_comments, {
-                            target: '_blank',
-                          }),
-                        )}
-                      </Text>
+                    <Box>
+                      <Flex align="center" gap={4}>
+                        <Text size="sm">
+                          Item do equipamento de <strong>{profile.username}</strong>
+                        </Text>
+                      </Flex>
                     </Box>
-                  )}
-                </Grid.Col>
-              </Grid>
-            </Paper>
+                  </Flex>
+                  <Title order={1} fz="h3" fw={600}>
+                    {selectedItem.products?.brands?.name} {selectedItem.products?.name}
+                  </Title>
+                </Stack>
+
+                <Grid mt={10}>
+                  <Grid.Col span={{ base: 12, md: 6 }}>
+                    <Center>
+                      <Image
+                        src={
+                          selectedItem.products?.picture
+                            ? PRODUCT_IMG_LG + selectedItem.products.picture
+                            : undefined
+                        }
+                        w={320}
+                        fit="contain"
+                        mb={12}
+                        radius="md"
+                        fallbackSrc="https://ik.imagekit.io/mublin/products/tr:w-400,cm-pad_resize,bg-FFFFFF/no-picture.png"
+                      />
+                    </Center>
+                  </Grid.Col>
+                  <Grid.Col span={{ base: 12, md: 6 }}>
+                    <DataList orientation="horizontal">
+                      {data.map((item) =>
+                        item.active ? (
+                          <DataList.Item key={item.label}>
+                            <DataList.ItemLabel>{item.label}</DataList.ItemLabel>
+                            <DataList.ItemValue>{item.value}</DataList.ItemValue>
+                          </DataList.Item>
+                        ) : null,
+                      )}
+                    </DataList>
+                    {selectedItem.owner_comments && (
+                      <Box mt="md">
+                        <Text size="sm" c="dimmed">
+                          Comentários de {profile.full_name}:
+                        </Text>
+                        <Text size="sm">
+                          {parse(
+                            linkifyStr(selectedItem.owner_comments, {
+                              target: '_blank',
+                            }),
+                          )}
+                        </Text>
+                      </Box>
+                    )}
+                  </Grid.Col>
+                </Grid>
+              </Paper>
+              <Button
+                hiddenFrom="sm"
+                variant="light"
+                size="sm"
+                mt="lg"
+                fullWidth
+                rightSection={<IconArrowRight size={16} />}
+                component={Link}
+                to={`/gear/${selectedItem.products?.slug}`}
+              >
+                Ver perfil completo deste item
+              </Button>
+            </>
           ) : (
             <Center mih={200}>
               <Loader size="sm" />

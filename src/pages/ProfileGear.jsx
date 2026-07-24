@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import {
   fetchProfileBasicDetails,
   fetchProfileGearExpanded,
+  fetchProfileGearSetups,
   fetchProfileGearSetupNames,
   fetchProfileGearCategories,
 } from '../queries/profiles'
@@ -29,6 +30,7 @@ import {
   Loader,
   em,
 } from '@mantine/core'
+import { notifications } from '@mantine/notifications'
 import { useMediaQuery } from '@mantine/hooks'
 import Masonry, { ResponsiveMasonry } from 'react-responsive-masonry'
 import {
@@ -83,6 +85,13 @@ export default function ProfileGear() {
     queryKey: ['profile-gear-categories', profile?.id],
     queryFn: () => fetchProfileGearCategories(profile.id),
     enabled: !!profile?.id && gearAll.length > 0,
+    staleTime: 1000 * 60 * 5,
+  })
+
+  const { data: gearSetups = [] } = useQuery({
+    queryKey: ['user-gear-setups', profile?.id],
+    queryFn: () => fetchProfileGearSetups(profile.id),
+    enabled: !!profile?.id,
     staleTime: 1000 * 60 * 5,
   })
 
@@ -162,17 +171,39 @@ export default function ProfileGear() {
           ) : (
             <>
               {gearCategories.length > 1 && (
-                <Group gap={10} mb={12} mx={{ base: 'sm', md: 0 }}>
+                <Group gap={10} mb={12}>
                   <Select
                     size="sm"
-                    w={220}
+                    w={182}
                     value={gearCategorySelected || ''}
                     onChange={(value) => setGearCategorySelected(value || '')}
                     data={[
                       { value: '', label: 'Todas as categorias' },
                       ...gearCategories.map((cat) => ({
                         value: String(cat.category_id),
-                        label: truncateString(`${cat.category} (${cat.total})`, 28),
+                        label: truncateString(`${cat.category} (${cat.total})`, 20),
+                      })),
+                    ]}
+                  />
+                  <Select
+                    size="sm"
+                    w={148}
+                    value=""
+                    // onChange={(value) => setGearCategorySelected(value || '')}
+                    onChange={() =>
+                      notifications.show({
+                        title: 'Ops!',
+                        message:
+                          'Não foi possível filtrar os itens do setup. Tente novamente em instantes',
+                        color: 'red',
+                        position: 'top-center',
+                      })
+                    }
+                    data={[
+                      { value: '', label: 'Setups' },
+                      ...gearSetups.map((setup) => ({
+                        value: String(setup.id),
+                        label: truncateString(`${setup.name} (${setup.total_items})`, 14),
                       })),
                     ]}
                   />
