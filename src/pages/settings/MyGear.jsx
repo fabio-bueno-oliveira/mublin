@@ -28,6 +28,7 @@ import {
   Paper,
   Card,
   ThemeIcon,
+  Tooltip,
 } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
@@ -42,6 +43,9 @@ import {
   IconX,
   IconMinus,
   IconPhoto,
+  IconWorld,
+  IconUsers,
+  IconUserPlus,
 } from '@tabler/icons-react'
 
 const PRODUCT_IMG =
@@ -77,9 +81,38 @@ async function fetchUserGear(userId) {
 async function fetchUserSetups(userId) {
   const { data, error } = await supabase
     .from('gear_setups')
-    .select('id, name, image, description')
+    .select('id, name, image, description, visibility, collab_mode')
     .eq('id_user', userId)
     .order('created_at', { ascending: false })
+  if (error) {
+    throw new Error(error.message)
+  }
+  return data
+}
+
+async function fetchSetupCollaborators(setupId) {
+  const { data, error } = await supabase
+    .from('gear_setup_collaborators')
+    .select(
+      `
+      id, created_at,
+      profiles!gear_setup_collaborators_id_user_fkey ( id, username, full_name, avatar )
+    `,
+    )
+    .eq('id_setup', setupId)
+    .order('created_at', { ascending: true })
+  if (error) {
+    throw new Error(error.message)
+  }
+  return data
+}
+
+async function findProfileByUsername(username) {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('id, username, full_name, avatar')
+    .ilike('username', username.trim())
+    .maybeSingle()
   if (error) {
     throw new Error(error.message)
   }
@@ -141,14 +174,30 @@ export default function MyGear() {
   const [isDeletingSetupItem, setIsDeletingSetupItem] = useState(null)
   const [editingSetupItem, setEditingSetupItem] = useState(null)
   const [isSavingSetupItem, setIsSavingSetupItem] = useState(false)
-  const [editingSetup, setEditingSetup] = useState({ name: '', description: '' })
+  const [editingSetup, setEditingSetup] = useState({
+    name: '',
+    description: '',
+    visibility: 'private',
+    collab_mode: 'owner_only',
+  })
   const [isSavingSetup, setIsSavingSetup] = useState(false)
 
   // ── Estado: novo setup ────────────────────────────────
-  const [newSetup, setNewSetup] = useState({ name: '', description: '', image: '' })
+  const [newSetup, setNewSetup] = useState({
+    name: '',
+    description: '',
+    image: '',
+    visibility: 'private',
+    collab_mode: 'owner_only',
+  })
   const [isCreatingSetup, setIsCreatingSetup] = useState(false)
   const [isUploadingSetupImg, setIsUploadingSetupImg] = useState(false)
   const [setupImgFileId, setSetupImgFileId] = useState('')
+
+  // ── Estado: colaboradores do setup ativo ──────────────
+  const [collabUsernameInput, setCollabUsernameInput] = useState('')
+  const [isAddingCollaborator, setIsAddingCollaborator] = useState(false)
+  const [isRemovingCollaboratorId, setIsRemovingCollaboratorId] = useState(null)
 
   // ── Estado: remover setup ─────────────────────────────
   const [setupToDelete, setSetupToDelete] = useState(null)
@@ -173,6 +222,16 @@ export default function MyGear() {
     queryFn: () => fetchSetupItems(activeSetup.id),
     enabled: !!activeSetup?.id,
     staleTime: 0,
+  })
+
+  const isCollabEligible =
+    editingSetup.visibility === 'public' && editingSetup.collab_mode === 'invite_only'
+
+  const { data: collaborators = [], isLoading: loadingCollaborators } = useQuery({
+    queryKey: ['setup-collaborators', activeSetup?.id],
+    queryFn: () => fetchSetupCollaborators(activeSetup.id),
+    enabled: !!activeSetup?.id && isCollabEligible,
+    staleTime: 1000 * 30,
   })
 
   // ── Gear separado: principal vs sub ──────────────────
@@ -262,9 +321,15 @@ export default function MyGear() {
   // ── Handlers: setup drawer ────────────────────────────
   function handleOpenSetupDrawer(setup) {
     setActiveSetup(setup)
-    setEditingSetup({ name: setup.name, description: setup.description ?? '' })
+    setEditingSetup({
+      name: setup.name,
+      description: setup.description ?? '',
+      visibility: setup.visibility ?? 'private',
+      collab_mode: setup.collab_mode ?? 'owner_only',
+    })
     setShowAddToSetup(false)
     setEditingSetupItem(null)
+    setCollabUsernameInput('')
     openSetupDrawer()
   }
 
@@ -273,6 +338,99 @@ export default function MyGear() {
     setActiveSetup(null)
     setShowAddToSetup(false)
     setEditingSetupItem(null)
+    setCollabUsernameInput('')
+  }
+
+  // ── Handlers: visibilidade e colaboração ──────────────
+  function handleChangeNewSetupVisibility(nextVisibility) {
+    setNewSetup((prev) => ({
+      ...prev,
+      visibility: nextVisibility,
+      collab_mode: nextVisibility === 'public' ? prev.collab_mode : 'owner_only',
+    }))
+  }
+
+  function handleChangeVisibility(nextVisibility) {
+    setEditingSetup((prev) => ({
+      ...prev,
+      visibility: nextVisibility,
+      // Setup privado nunca tem colaboração ativa (mesma regra do banco)
+      collab_mode: nextVisibility === 'public' ? prev.collab_mode : 'owner_only',
+    }))
+  }
+
+  async function handleAddCollaborator() {
+    if (!collabUsernameInput.trim() || !activeSetup) {
+      return
+    }
+    setIsAddingCollaborator(true)
+    try {
+      const foundProfile = await findProfileByUsername(collabUsernameInput)
+      if (!foundProfile) {
+        notifications.show({
+          color: 'red',
+          position: 'top-center',
+          message: 'Usuário não encontrado.',
+        })
+        return
+      }
+      if (foundProfile.id === user.id) {
+        notifications.show({
+          color: 'red',
+          position: 'top-center',
+          message: 'Você já é o dono deste setup.',
+        })
+        return
+      }
+      const { error } = await supabase.from('gear_setup_collaborators').insert({
+        id_setup: activeSetup.id,
+        id_user: foundProfile.id,
+        invited_by: user.id,
+      })
+      if (error) {
+        // unique constraint violation = já é colaborador
+        notifications.show({
+          color: 'red',
+          position: 'top-center',
+          message:
+            error.code === '23505'
+              ? 'Este usuário já é colaborador deste setup.'
+              : 'Erro ao adicionar colaborador.',
+        })
+      } else {
+        await queryClient.refetchQueries({
+          queryKey: ['setup-collaborators', activeSetup.id],
+        })
+        notifications.show({
+          color: 'green',
+          position: 'top-center',
+          message: `${foundProfile.full_name || foundProfile.username} adicionado como colaborador!`,
+        })
+        setCollabUsernameInput('')
+      }
+    } finally {
+      setIsAddingCollaborator(false)
+    }
+  }
+
+  async function handleRemoveCollaborator(collaboratorRowId) {
+    setIsRemovingCollaboratorId(collaboratorRowId)
+    const { error } = await supabase
+      .from('gear_setup_collaborators')
+      .delete()
+      .eq('id', collaboratorRowId)
+    if (!error) {
+      await queryClient.refetchQueries({
+        queryKey: ['setup-collaborators', activeSetup.id],
+      })
+    } else {
+      notifications.show({
+        color: 'red',
+        position: 'top-center',
+        message: 'Erro ao remover colaborador.',
+      })
+    }
+    setIsRemovingCollaboratorId(null)
   }
 
   async function handleAddToSetup(productId) {
@@ -345,6 +503,8 @@ export default function MyGear() {
       .update({
         name: editingSetup.name.trim(),
         description: editingSetup.description.trim() || null,
+        visibility: editingSetup.visibility,
+        collab_mode: editingSetup.collab_mode,
         updated_at: new Date().toISOString(),
       })
       .eq('id', activeSetup.id)
@@ -360,6 +520,8 @@ export default function MyGear() {
         ...prev,
         name: editingSetup.name,
         description: editingSetup.description,
+        visibility: editingSetup.visibility,
+        collab_mode: editingSetup.collab_mode,
       }))
       notifications.show({
         color: 'green',
@@ -416,12 +578,18 @@ export default function MyGear() {
       return
     }
     setIsCreatingSetup(true)
-    const { error } = await supabase.from('gear_setups').insert({
-      id_user: user.id,
-      name: newSetup.name.trim(),
-      description: newSetup.description.trim() || null,
-      image: newSetup.image || null,
-    })
+    const { data: createdSetup, error } = await supabase
+      .from('gear_setups')
+      .insert({
+        id_user: user.id,
+        name: newSetup.name.trim(),
+        description: newSetup.description.trim() || null,
+        image: newSetup.image || null,
+        visibility: newSetup.visibility,
+        collab_mode: newSetup.collab_mode,
+      })
+      .select('id, name, image, description, visibility, collab_mode')
+      .single()
     if (error) {
       notifications.show({
         color: 'red',
@@ -435,9 +603,20 @@ export default function MyGear() {
         position: 'top-center',
         message: 'Setup criado!',
       })
-      setNewSetup({ name: '', description: '', image: '' })
+      setNewSetup({
+        name: '',
+        description: '',
+        image: '',
+        visibility: 'private',
+        collab_mode: 'owner_only',
+      })
       setSetupImgFileId('')
       closeNewSetup()
+      // Convidar colaboradores exige um id_setup existente, então só é possível
+      // depois de criado — abrimos o drawer de edição automaticamente nesse caso.
+      if (createdSetup.collab_mode === 'invite_only') {
+        handleOpenSetupDrawer(createdSetup)
+      }
     }
     setIsCreatingSetup(false)
   }
@@ -539,7 +718,7 @@ export default function MyGear() {
 
           {loadingSetups ? (
             <Flex gap="md">
-              {[1, 2, 3].map((i) => (
+              {[1, 2].map((i) => (
                 <Skeleton key={i} width={80} height={90} radius="md" />
               ))}
             </Flex>
@@ -551,16 +730,45 @@ export default function MyGear() {
             <Flex gap="md" wrap="wrap">
               {userSetups.map((setup) => (
                 <Flex key={setup.id} direction="column" align="center" gap={4} w={80}>
-                  <Image
-                    src={setup.image ? SETUP_IMG + setup.image : SETUP_IMG_FALLBACK}
-                    h={70}
-                    w={70}
-                    mb={4}
-                    radius="md"
-                    fit="cover"
-                    style={{ cursor: 'pointer', opacity: setup.image ? 1 : 0.5 }}
-                    onClick={() => handleOpenSetupDrawer(setup)}
-                  />
+                  <Box pos="relative">
+                    <Image
+                      src={setup.image ? SETUP_IMG + setup.image : SETUP_IMG_FALLBACK}
+                      h={70}
+                      w={70}
+                      mb={4}
+                      radius="md"
+                      fit="cover"
+                      style={{ cursor: 'pointer', opacity: setup.image ? 1 : 0.5 }}
+                      onClick={() => handleOpenSetupDrawer(setup)}
+                    />
+                    {setup.visibility === 'public' && (
+                      <Tooltip
+                        label={
+                          setup.collab_mode === 'open'
+                            ? 'Público · qualquer um edita'
+                            : setup.collab_mode === 'invite_only'
+                              ? 'Público · colaboradores convidados'
+                              : 'Público · somente leitura'
+                        }
+                      >
+                        <ThemeIcon
+                          size={20}
+                          radius="xl"
+                          color="indigo"
+                          pos="absolute"
+                          top={-4}
+                          right={-4}
+                          style={{ pointerEvents: 'auto' }}
+                        >
+                          {setup.collab_mode === 'owner_only' ? (
+                            <IconWorld size={12} />
+                          ) : (
+                            <IconUsers size={12} />
+                          )}
+                        </ThemeIcon>
+                      </Tooltip>
+                    )}
+                  </Box>
                   <Text
                     size="xs"
                     fw={550}
@@ -977,6 +1185,49 @@ export default function MyGear() {
             />
           </Box>
 
+          <Divider label="Visibilidade" labelPosition="left" />
+
+          <Switch
+            label="Tornar este setup público"
+            description="Aparece na comunidade e pode ganhar um link próprio pra compartilhar. Por padrão, continua editável só por você"
+            checked={newSetup.visibility === 'public'}
+            onChange={(e) =>
+              handleChangeNewSetupVisibility(
+                e.currentTarget.checked ? 'public' : 'private',
+              )
+            }
+          />
+
+          {newSetup.visibility === 'public' && (
+            <NativeSelect
+              size="sm"
+              label="Quem pode editar (além de você)"
+              value={newSetup.collab_mode}
+              onChange={(e) => {
+                const value = e.currentTarget.value
+                setNewSetup((prev) => ({ ...prev, collab_mode: value }))
+              }}
+              data={[
+                { value: 'owner_only', label: 'Ninguém — só eu edito' },
+                { value: 'invite_only', label: 'Colaboradores que eu convidar' },
+                { value: 'open', label: 'Qualquer usuário da comunidade' },
+              ]}
+            />
+          )}
+
+          {newSetup.visibility === 'public' && newSetup.collab_mode === 'owner_only' && (
+            <Text size="xs" c="dimmed">
+              Este setup fica visível e compartilhável, mas só você poderá editá-lo.
+            </Text>
+          )}
+
+          {newSetup.visibility === 'public' && newSetup.collab_mode === 'invite_only' && (
+            <Text size="xs" c="dimmed">
+              Você poderá convidar colaboradores pelo username assim que o setup for
+              criado.
+            </Text>
+          )}
+
           <Group justify="flex-end" gap={8}>
             <Button variant="default" radius="xl" onClick={closeNewSetup}>
               Cancelar
@@ -1052,6 +1303,39 @@ export default function MyGear() {
                 setEditingSetup((prev) => ({ ...prev, description: value }))
               }}
             />
+            <Switch
+              label="Setup público"
+              description="Aparece na comunidade e pode ganhar um link próprio pra compartilhar. Por padrão, continua editável só por você"
+              checked={editingSetup.visibility === 'public'}
+              onChange={(e) =>
+                handleChangeVisibility(e.currentTarget.checked ? 'public' : 'private')
+              }
+            />
+
+            {editingSetup.visibility === 'public' && (
+              <NativeSelect
+                size="sm"
+                label="Quem pode editar (além de você)"
+                value={editingSetup.collab_mode}
+                onChange={(e) => {
+                  const value = e.currentTarget.value
+                  setEditingSetup((prev) => ({ ...prev, collab_mode: value }))
+                }}
+                data={[
+                  { value: 'owner_only', label: 'Ninguém — só eu edito' },
+                  { value: 'invite_only', label: 'Colaboradores que eu convidar' },
+                  { value: 'open', label: 'Qualquer usuário da comunidade' },
+                ]}
+              />
+            )}
+
+            {editingSetup.visibility === 'public' &&
+              editingSetup.collab_mode === 'owner_only' && (
+                <Text size="xs" c="dimmed">
+                  Este setup fica visível e compartilhável, mas só você poderá editá-lo.
+                </Text>
+              )}
+
             <Group justify="flex-end">
               <Button
                 size="sm"
@@ -1064,6 +1348,84 @@ export default function MyGear() {
               </Button>
             </Group>
           </Stack>
+
+          {/* ── Colaboradores (só quando público + invite_only) ── */}
+          {isCollabEligible && (
+            <>
+              <Divider label="Colaboradores" labelPosition="left" />
+              <Stack gap="sm">
+                <Group gap={6} align="flex-end">
+                  <TextInput
+                    size="sm"
+                    style={{ flex: 1 }}
+                    label="Convidar por @username"
+                    placeholder="username"
+                    value={collabUsernameInput}
+                    onChange={(e) => setCollabUsernameInput(e.currentTarget.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && collabUsernameInput.trim()) {
+                        handleAddCollaborator()
+                      }
+                    }}
+                  />
+                  <ActionIcon
+                    variant="default"
+                    size="lg"
+                    loading={isAddingCollaborator}
+                    disabled={!collabUsernameInput.trim()}
+                    onClick={handleAddCollaborator}
+                  >
+                    <IconUserPlus size={16} />
+                  </ActionIcon>
+                </Group>
+
+                {loadingCollaborators ? (
+                  <Skeleton height={40} radius="md" />
+                ) : collaborators.length === 0 ? (
+                  <Text size="xs" c="dimmed">
+                    Nenhum colaborador convidado ainda.
+                  </Text>
+                ) : (
+                  <Stack gap={6}>
+                    {collaborators.map((c) => (
+                      <Paper key={c.id} withBorder radius="md" p="xs">
+                        <Flex justify="space-between" align="center">
+                          <Group gap="xs">
+                            <Avatar
+                              src={
+                                c.profiles?.avatar
+                                  ? `https://ik.imagekit.io/mublin/tr:h-60,c-maintain_ratio/users/avatars/${c.profiles.avatar}`
+                                  : undefined
+                              }
+                              radius="xl"
+                              size={28}
+                            />
+                            <Stack gap={0}>
+                              <Text size="xs" fw={600}>
+                                {c.profiles?.full_name}
+                              </Text>
+                              <Text size="10px" c="dimmed">
+                                @{c.profiles?.username}
+                              </Text>
+                            </Stack>
+                          </Group>
+                          <ActionIcon
+                            variant="subtle"
+                            color="red"
+                            size="sm"
+                            loading={isRemovingCollaboratorId === c.id}
+                            onClick={() => handleRemoveCollaborator(c.id)}
+                          >
+                            <IconX size={13} />
+                          </ActionIcon>
+                        </Flex>
+                      </Paper>
+                    ))}
+                  </Stack>
+                )}
+              </Stack>
+            </>
+          )}
 
           <Divider label="Itens do setup" labelPosition="left" />
 

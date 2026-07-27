@@ -27,6 +27,7 @@ import SearchPeople from './pages/search/People'
 import ProfileRouter from './components/ProfileRouter'
 import ProfileGear from './pages/ProfileGear'
 import ProfileGearItem from './pages/ProfileGearItem'
+import Setup from './pages/Setup'
 import Artist from './pages/Artist'
 // -- Project pages
 import ProjectRouter from './components/ProjectRouter'
@@ -121,6 +122,7 @@ export const router = createBrowserRouter([
       { path: 'gear/:slug/zoom', element: <GearItemZoom /> },
       { path: 'gear/category/:slug', element: <GearCategory /> },
       { path: 'new/gear', element: <NewGear /> },
+      { path: 'setup/:id', element: <Setup /> },
       { path: 'artist/:slug', element: <Artist /> },
       { path: 'new/event', element: <NewEvent /> },
       { path: 'event/:slug', element: <Event /> },

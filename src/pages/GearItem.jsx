@@ -42,8 +42,8 @@ import {
   IconDiamond,
   IconChevronUp,
   IconMessage,
-  IconHeart,
-  IconHeartFilled,
+  IconBookmark,
+  IconBookmarkFilled,
   IconPlus,
 } from '@tabler/icons-react'
 import AppNavbarMobile from '../components/AppNavbarMobile'
@@ -336,30 +336,26 @@ export default function GearItem() {
           </Box>
         </Flex>
 
-        <Group gap="xs">
-          <Button
-            mb={14}
+        <Group gap="xs" mb={14}>
+          <ActionIcon
+            size="md"
+            variant="default"
+            radius="md"
             onClick={() => handleToggleFavorite(!!favoriteInfo?.id)}
             loading={togglingFavorite}
-            disabled={loadingFavoriteInfo || togglingFavorite}
-            leftSection={
-              favoriteInfo?.id ? (
-                <IconHeartFilled size={16} color="red" />
-              ) : (
-                <IconHeart size={16} />
-              )
-            }
-            variant="default"
-            size="xs"
-            radius="md"
+            disabled={loadingFavoriteInfo}
+            title={favoriteInfo?.id ? 'Remover dos salvos' : 'Salvar'}
           >
-            {favoriteInfo?.id ? 'Salvo' : 'Salvar'}
-          </Button>
+            {favoriteInfo?.id ? (
+              <IconBookmarkFilled size={20} color="var(--mantine-color-red-6)" />
+            ) : (
+              <IconBookmark size={20} />
+            )}
+          </ActionIcon>
           <Button
-            mb={14}
             leftSection={alreadyAdded ? <IconX size={16} /> : <IconPlus size={16} />}
             variant="default"
-            size="xs"
+            size="sm"
             radius="md"
             onClick={
               alreadyAdded
@@ -554,7 +550,7 @@ export default function GearItem() {
                           {/* Badges */}
                           <Group gap={6} mt={6}>
                             {owner.is_currently_using && (
-                              <Badge size="sm" color="green" variant="light">
+                              <Badge size="sm" color="lime" variant="filled">
                                 Em uso
                               </Badge>
                             )}

@@ -22,7 +22,7 @@ import {
   Avatar,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { IconBookmark, IconBookmarks } from '@tabler/icons-react'
+import { IconBookmarks } from '@tabler/icons-react'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import 'dayjs/locale/pt-br'

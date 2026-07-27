@@ -7,6 +7,7 @@ import {
   fetchProfileGearSetups,
   fetchProfileGearSetupNames,
   fetchProfileGearCategories,
+  fetchGearSetupProductIds,
 } from '../queries/profiles'
 import { useAuth } from '../hooks/useAuth'
 import {
@@ -30,7 +31,6 @@ import {
   Loader,
   em,
 } from '@mantine/core'
-import { notifications } from '@mantine/notifications'
 import { useMediaQuery } from '@mantine/hooks'
 import Masonry, { ResponsiveMasonry } from 'react-responsive-masonry'
 import {
@@ -38,6 +38,7 @@ import {
   IconArrowLeft,
   IconZoom,
   IconRosetteDiscountCheck,
+  IconStack2,
 } from '@tabler/icons-react'
 import AppNavbarMobile from '../components/AppNavbarMobile'
 import { getAvatarUrl } from '../utils/profile'
@@ -54,6 +55,9 @@ export default function ProfileGear() {
 
   // ── Filtro por categoria ──────────────────────────────
   const [gearCategorySelected, setGearCategorySelected] = useState('')
+
+  // ── Filtro por setup ───────────────────────────────────
+  const [selectedSetupId, setSelectedSetupId] = useState('')
 
   // ── Queries ───────────────────────────────────────────
   const {
@@ -75,11 +79,20 @@ export default function ProfileGear() {
     staleTime: 1000 * 60 * 5,
   })
 
-  const gear = gearAll.filter((x) =>
-    gearCategorySelected
+  const { data: setupProductIds = null } = useQuery({
+    queryKey: ['gear-setup-product-ids', selectedSetupId],
+    queryFn: () => fetchGearSetupProductIds(selectedSetupId),
+    enabled: !!selectedSetupId,
+    staleTime: 1000 * 60,
+  })
+
+  const gear = gearAll.filter((x) => {
+    const matchesCategory = gearCategorySelected
       ? x.products?.id_category === Number(gearCategorySelected)
-      : true,
-  )
+      : true
+    const matchesSetup = setupProductIds ? setupProductIds.includes(x.id_product) : true
+    return matchesCategory && matchesSetup
+  })
 
   const { data: gearCategories = [] } = useQuery({
     queryKey: ['profile-gear-categories', profile?.id],
@@ -170,43 +183,52 @@ export default function ProfileGear() {
             </Center>
           ) : (
             <>
-              {gearCategories.length > 1 && (
+              {(gearCategories.length > 1 || gearSetups.length > 0) && (
                 <Group gap={10} mb={12}>
-                  <Select
-                    size="sm"
-                    w={182}
-                    value={gearCategorySelected || ''}
-                    onChange={(value) => setGearCategorySelected(value || '')}
-                    data={[
-                      { value: '', label: 'Todas as categorias' },
-                      ...gearCategories.map((cat) => ({
-                        value: String(cat.category_id),
-                        label: truncateString(`${cat.category} (${cat.total})`, 20),
-                      })),
-                    ]}
-                  />
-                  <Select
-                    size="sm"
-                    w={148}
-                    value=""
-                    // onChange={(value) => setGearCategorySelected(value || '')}
-                    onChange={() =>
-                      notifications.show({
-                        title: 'Ops!',
-                        message:
-                          'Não foi possível filtrar os itens do setup. Tente novamente em instantes',
-                        color: 'red',
-                        position: 'top-center',
-                      })
-                    }
-                    data={[
-                      { value: '', label: 'Setups' },
-                      ...gearSetups.map((setup) => ({
-                        value: String(setup.id),
-                        label: truncateString(`${setup.name} (${setup.total_items})`, 14),
-                      })),
-                    ]}
-                  />
+                  {gearCategories.length > 1 && (
+                    <Select
+                      size="sm"
+                      w={182}
+                      value={gearCategorySelected || ''}
+                      onChange={(value) => setGearCategorySelected(value || '')}
+                      data={[
+                        { value: '', label: 'Todas as categorias' },
+                        ...gearCategories.map((cat) => ({
+                          value: String(cat.category_id),
+                          label: truncateString(`${cat.category} (${cat.total})`, 20),
+                        })),
+                      ]}
+                    />
+                  )}
+                  {/* {gearSetups.length > 0 && (
+                    <Select
+                      size="sm"
+                      w={148}
+                      value={selectedSetupId || ''}
+                      onChange={(value) => setSelectedSetupId(value || '')}
+                      data={[
+                        { value: '', label: 'Todos os setups' },
+                        ...gearSetups.map((setup) => ({
+                          value: String(setup.id),
+                          label: truncateString(
+                            `${setup.name} (${setup.total_items})`,
+                            14,
+                          ),
+                        })),
+                      ]}
+                    />
+                  )} */}
+                  {selectedSetupId && (
+                    <Button
+                      component={Link}
+                      to={`/setup/${selectedSetupId}`}
+                      size="sm"
+                      variant="subtle"
+                      leftSection={<IconStack2 size={16} />}
+                    >
+                      Ver setup completo
+                    </Button>
+                  )}
                 </Group>
               )}
               {gear.length === 0 ? (
@@ -216,17 +238,20 @@ export default function ProfileGear() {
                   </EmptyState.Indicator>
                   <EmptyState.Title>Nada por aqui :(</EmptyState.Title>
                   <EmptyState.Description>
-                    {gearCategorySelected
-                      ? 'Nenhum item encontrado nesta categoria.'
+                    {gearCategorySelected || selectedSetupId
+                      ? 'Nenhum item encontrado com esse filtro.'
                       : `${profile.full_name} ainda não adicionou nenhum equipamento até o momento.`}
                   </EmptyState.Description>
                   <EmptyState.Actions>
-                    {gearCategorySelected ? (
+                    {gearCategorySelected || selectedSetupId ? (
                       <Button
                         variant="default"
-                        onClick={() => setGearCategorySelected('')}
+                        onClick={() => {
+                          setGearCategorySelected('')
+                          setSelectedSetupId('')
+                        }}
                       >
-                        Ver todas as categorias
+                        Limpar filtros
                       </Button>
                     ) : (
                       <Button

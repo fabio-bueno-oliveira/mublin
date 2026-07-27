@@ -36,8 +36,7 @@ import {
   Avatar, Image,
   Title, Text,
   Flex, Group,
-  Button,
-  ActionIcon, ThemeIcon, 
+  Button, ActionIcon, ThemeIcon, 
   Alert, Tooltip, Anchor,
   Spoiler, em,
 } from '@mantine/core'
@@ -59,15 +58,13 @@ import {
   IconCircleArrowLeftFilled,
   IconCircleArrowRightFilled,
   IconBrandWhatsapp,
-  IconDotsVerticalFilled,
-  IconBrain,
+  IconDotsVerticalFilled, IconBrain,
   IconTrophy, IconGuitarPick,
-  IconSend, IconHeart, IconEye,
-  IconUserPlus, IconLink,
+  IconSend, IconEye, IconLink,
+  IconUserPlus, IconUserX,
   IconChevronLeft, IconChevronRight,
-  IconSparkles2, IconPencil,
-  IconBookmark,
-  IconBookmarkFilled,
+  IconPencil, IconSparkles,
+  IconBookmark, IconBookmarkFilled,
   IconRosetteDiscountCheckFilled,
 } from '@tabler/icons-react'
 import ProfileHeaderMobile from '../components/profile/ProfileHeaderMobile'
@@ -114,6 +111,7 @@ export default function Profile() {
   const postsScroller = useScroller()
   const inspirationsScroller = useScroller()
   const partnersScroller = useScroller()
+  const gearScroller = useScroller()
   const menuItemRefs = useRef({})
 
   const [activeSection, setActiveSection] = useState('')
@@ -657,425 +655,407 @@ export default function Profile() {
         </Affix>
       )}
 
-      {profile.cover_image && (
-        <Card
-          mt={{ base: 51, sm: 0 }}
-          shadow={false}
-          padding={0}
-          radius={isMobile ? 0 : 'md'}
-          mb={4}
-        >
-          <Card.Section>
-            <Box
-              style={{
-                position: 'relative',
-                width: '100%',
-                height: 90,
-                overflow: 'hidden',
-              }}
-            >
-              <Image
-                src={
-                  profile.cover_image
-                    ? `https://ik.imagekit.io/mublin/tr:w-870,h-90,fo-center,c-maintain_ratio/users/avatars/${profile.cover_image}`
-                    : 'https://ik.imagekit.io/mublin/bg/tr:w-870,h-90,bg-F3F3F3,fo-bottom/open-air-concert.jpg'
-                }
-                mih={100}
-                w="100%"
-                fit="cover"
-                alt={`Imagem de capa de ${profile.name}`}
-              />
-              <Flex
-                align="flex-end"
-                justify="flex-start"
-                pos="absolute"
-                direction="column"
-                p="md"
-                inset={0}
-                style={{
-                  background:
-                    'linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(33, 18, 18, 0.4) 100%)',
-                }}
-              />
-            </Box>
-          </Card.Section>
-        </Card>
-      )}
-
       <Container
         size="xl"
         py="sm"
         px={0}
         mt={!profile.cover_image ? { base: 51, sm: 0 } : 0}
       >
-        {isMobile && (
-          <ProfileHeaderMobile
-            profile={profile}
-            city={city}
-            region={region}
-            country={country}
-            user={user}
-            profileViewCount={profileViewCount}
-          />
-        )}
         <Grid>
-          <Grid.Col span={{ base: 12, md: 2 }} visibleFrom="sm" pos="relative">
-            <Box
-              top={profile.cover_image ? -36 : 0}
-              left={0}
-              pos={profile.cover_image ? 'absolute' : 'inherit'}
-            >
-              <Center mb="sm">
-                <Avatar
-                  size={140}
-                  src={getAvatarUrl(profile.avatar, profile.is_open_to_work, 140)}
-                />
-              </Center>
-
-              <Stack w="174" gap={10} className="buttonContentToLeft">
-                {isOwnProfile ? (
-                  <Button
-                    component={Link}
-                    to="/settings/profile"
-                    fullWidth
-                    size="sm"
-                    radius="md"
-                    variant="filled"
-                    className="defaultMublinButton"
-                    leftSection={<IconPencil size={16} />}
+          <Grid.Col span={{ base: 12, md: 9 }} pos="relative">
+            {profile.cover_image && (
+              <Card
+                mt={{ base: 46, sm: 0 }}
+                shadow={false}
+                padding={0}
+                radius={isMobile ? 0 : 'md'}
+                mb={4}
+              >
+                <Card.Section>
+                  <Box
+                    style={{
+                      position: 'relative',
+                      width: '100%',
+                      height: 90,
+                      overflow: 'hidden',
+                    }}
                   >
-                    Editar meu perfil
-                  </Button>
-                ) : (
-                  <>
+                    <Image
+                      src={
+                        profile.cover_image
+                          ? `https://ik.imagekit.io/mublin/tr:w-870,h-90,fo-center,c-maintain_ratio/users/avatars/${profile.cover_image}`
+                          : 'https://ik.imagekit.io/mublin/bg/tr:w-870,h-90,bg-F3F3F3,fo-bottom/open-air-concert.jpg'
+                      }
+                      mih={100}
+                      w="100%"
+                      fit="cover"
+                      alt={`Imagem de capa de ${profile.name}`}
+                    />
+                    <Flex
+                      align="flex-end"
+                      justify="flex-start"
+                      pos="absolute"
+                      direction="column"
+                      p="md"
+                      inset={0}
+                      style={{
+                        background:
+                          'linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(33, 18, 18, 0.4) 100%)',
+                      }}
+                    />
+                  </Box>
+                </Card.Section>
+              </Card>
+            )}
+            {isMobile && (
+              <ProfileHeaderMobile
+                mt={profile.cover_image ? 14 : 0}
+                profile={profile}
+                city={city}
+                region={region}
+                country={country}
+                profileViewCount={profileViewCount}
+              />
+            )}
+            <Grid>
+              <Grid.Col span={{ base: 12, md: 2.7 }} visibleFrom="sm" pos="relative">
+                <Box
+                  top={profile.cover_image ? -22 : 0}
+                  left={0}
+                  pos={profile.cover_image ? 'absolute' : 'inherit'}
+                >
+                  <Center mb="sm">
+                    <Avatar
+                      size={140}
+                      src={getAvatarUrl(profile.avatar, profile.is_open_to_work, 140)}
+                    />
+                  </Center>
+
+                  <SectionPanel p={0} className="buttonContentToLeft">
+                    <Button.Group orientation="vertical">
+                      {isOwnProfile ? (
+                        <Button
+                          component={Link}
+                          to="/settings/profile"
+                          size="sm"
+                          radius="md"
+                          variant="subtle"
+                          color="gray"
+                          leftSection={<IconPencil size={16} />}
+                        >
+                          Editar meu perfil
+                        </Button>
+                      ) : (
+                        <>
+                          {followingInfo?.id ? (
+                            <Button
+                              size="sm"
+                              variant="subtle"
+                              color="gray"
+                              radius="md"
+                              onClick={() => unfollowProfile(user.id, profile.id)}
+                              disabled={loadingFollowingInfo}
+                            >
+                              Deixar de seguir
+                            </Button>
+                          ) : (
+                            <Button
+                              size="sm"
+                              radius="md"
+                              variant="gradient"
+                              gradient={{
+                                from: 'grape.8',
+                                to: 'mublinColor.8',
+                                deg: 55,
+                              }}
+                              onClick={() => followProfile(user.id, profile.id)}
+                              disabled={loadingFollowingInfo}
+                              loading={loadingFollowingInfo}
+                              leftSection={<IconUserPlus size={16} />}
+                            >
+                              Seguir
+                            </Button>
+                          )}
+                          <Button
+                            size="sm"
+                            variant="subtle"
+                            color="gray"
+                            radius="md"
+                            onClick={openInvite}
+                          >
+                            Convidar para gig
+                          </Button>
+                          <Button
+                            size="sm"
+                            radius="md"
+                            variant="subtle"
+                            color="gray"
+                            leftSection={
+                              favoriteInfo?.id ? (
+                                <IconBookmarkFilled size={16} />
+                              ) : (
+                                <IconBookmark size={16} />
+                              )
+                            }
+                            onClick={() => handleToggleFavorite(!!favoriteInfo?.id)}
+                            disabled={loadingFavoriteInfo || togglingFavorite}
+                          >
+                            {favoriteInfo?.id ? 'Salvo' : 'Salvar'}
+                          </Button>
+                        </>
+                      )}
+                    </Button.Group>
+                  </SectionPanel>
+                </Box>
+              </Grid.Col>
+              <Grid.Col span={{ base: 12, md: 9.3 }}>
+                {isMobile && (
+                  <Affix position={{ top: 50, left: 0 }} w="100%">
+                    <Transition transition="slide-down" mounted={scroll.y > 120}>
+                      {(transitionStyles) => (
+                        <Scroller>
+                          <Group
+                            bg={isDark ? 'black' : 'white'}
+                            h={50}
+                            gap="xl"
+                            px="md"
+                            wrap="nowrap"
+                            style={{
+                              ...transitionStyles,
+                              width: '100%',
+                            }}
+                          >
+                            {MENU_ITEMS.filter((x) => x.active).map((item) => {
+                              const isActive = activeSection === item.id
+                              return (
+                                <Text
+                                  key={item.id}
+                                  ref={(el) => {
+                                    menuItemRefs.current[item.id] = el
+                                  }}
+                                  onClick={() => scrollToSection(item.id)}
+                                  style={{
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s ease',
+                                  }}
+                                  fw={isActive ? 700 : 400}
+                                  opacity={isActive ? 1 : 0.8}
+                                  fz="sm"
+                                >
+                                  {item.label}
+                                </Text>
+                              )
+                            })}
+                          </Group>
+                        </Scroller>
+                      )}
+                    </Transition>
+                  </Affix>
+                )}
+
+                <Stack
+                  gap={0}
+                  flex={1}
+                  mb="xs"
+                  visibleFrom="sm"
+                  mt={profile.cover_image ? { base: 0, sm: 14 } : 0}
+                >
+                  <Flex align="center" gap={4} wrap="wrap">
+                    <Title
+                      order={1}
+                      fw={600}
+                      size="26px"
+                      // lh="1"
+                      component={Text}
+                      lineClamp={2}
+                    >
+                      {profile.full_name}
+                    </Title>
+                    {!!profile.is_verified && (
+                      <IconRosetteDiscountCheckFilled
+                        className="iconVerified"
+                        title="Perfil verificado"
+                      />
+                    )}
+                  </Flex>
+                  {profile.title && (
+                    <Text size="sm" fw={400} maw={420} lh={1.2} my={3}>
+                      {profile.title}
+                    </Text>
+                  )}
+                  <Flex align="center" gap={4} opacity={0.8}>
+                    {/* <Text span size="sm">
+                        @{profile.username}
+                      </Text> */}
+                    {(city || region) && (
+                      <Text size="xs" fw={300}>
+                        {[city, region, country].filter(Boolean).join(', ')}
+                      </Text>
+                    )}
+                    <Text size="xs">·</Text>
+                    <Anchor
+                      size="xs"
+                      onClick={openContactInfo}
+                      c="var(--mantine-color-text)"
+                    >
+                      Dados de contato
+                    </Anchor>
+                    {isProfileLive(profile) && (
+                      <Group gap={6} ml={10} align="center" wrap="nowrap">
+                        <Box
+                          component="span"
+                          className="live-dot"
+                          style={{ flexShrink: 0 }}
+                        />
+                        <Text size="11px" fw={600} c="red.7" tt="uppercase" lts="0.02em">
+                          Ao vivo em {profile.live_platform}
+                        </Text>
+                      </Group>
+                    )}
+                  </Flex>
+                </Stack>
+
+                <Group
+                  gap="md"
+                  justify={isMobile ? 'center' : 'flex-start'}
+                  mt={{ base: 'xs', md: 0 }}
+                >
+                  <Anchor
+                    underline="never"
+                    onClick={openFollowers}
+                    style={{
+                      display: 'inline',
+                      hover: { textDecoration: 'underline' },
+                      color: 'inherit',
+                    }}
+                  >
+                    <Text size="sm" fw={600}>
+                      {followersList.length} seguidores
+                    </Text>
+                  </Anchor>
+                  <Anchor
+                    underline="never"
+                    onClick={openFollowing}
+                    style={{
+                      display: 'inline',
+                      hover: { textDecoration: 'underline' },
+                      color: 'inherit',
+                    }}
+                  >
+                    <Text size="sm" fw={600}>
+                      {followingList.length} seguindo
+                    </Text>
+                  </Anchor>
+                </Group>
+
+                {!isOwnProfile && (
+                  <Group justify="space-around" hiddenFrom="sm" px="sm" mt="sm">
                     {followingInfo?.id ? (
                       <Button
-                        fullWidth
+                        flex={1}
                         size="sm"
                         radius="md"
                         variant="filled"
                         className="defaultMublinButton"
-                        onClick={() => unfollowProfile(user.id, profile.id)}
-                        disabled={loadingFollowingInfo}
+                        onClick={openInvite}
+                        leftSection={<IconSend size={16} />}
                       >
-                        Deixar de seguir
+                        Convidar para gig
                       </Button>
                     ) : (
                       <Button
-                        fullWidth
+                        flex={1}
                         size="sm"
                         radius="md"
                         variant="gradient"
                         gradient={{ from: 'grape.8', to: 'mublinColor.8', deg: 55 }}
                         onClick={() => followProfile(user.id, profile.id)}
                         disabled={loadingFollowingInfo}
-                        leftSection={<IconUserPlus size={16} />}
                       >
                         Seguir
                       </Button>
                     )}
-                    {profile.available_from !== 'not_available' && (
-                      <Button
-                        fullWidth
-                        size="sm"
-                        radius="md"
-                        variant="filled"
-                        className="defaultMublinButton"
-                        onClick={openInvite}
-                        // leftSection={<IconSend size={12} />}
-                      >
-                        Convidar para gig
-                      </Button>
-                    )}
-                    <Button
-                      fullWidth
-                      size="sm"
-                      radius="md"
-                      variant="filled"
-                      leftSection={
-                        favoriteInfo?.id ? (
-                          <IconBookmarkFilled size={16} />
-                        ) : (
-                          <IconBookmark size={16} />
-                        )
-                      }
-                      className="defaultMublinButton"
-                      onClick={() => handleToggleFavorite(!!favoriteInfo?.id)}
-                      disabled={loadingFavoriteInfo || togglingFavorite}
-                    >
-                      {favoriteInfo?.id ? 'Salvo' : 'Salvar'}
-                    </Button>
-                  </>
-                )}
-              </Stack>
-            </Box>
-          </Grid.Col>
-          <Grid.Col span={{ base: 12, md: 7 }}>
-            {isMobile && (
-              <Affix position={{ top: 50, left: 0 }} w="100%">
-                <Transition transition="slide-down" mounted={scroll.y > 120}>
-                  {(transitionStyles) => (
-                    <Scroller>
-                      <Group
-                        bg={isDark ? 'black' : 'white'}
-                        h={50}
-                        gap="xl"
-                        px="md"
-                        wrap="nowrap"
-                        style={{
-                          ...transitionStyles,
-                          width: '100%',
-                        }}
-                      >
-                        {MENU_ITEMS.filter((x) => x.active).map((item) => {
-                          const isActive = activeSection === item.id
-                          return (
-                            <Text
-                              key={item.id}
-                              ref={(el) => {
-                                menuItemRefs.current[item.id] = el
-                              }}
-                              onClick={() => scrollToSection(item.id)}
-                              style={{ cursor: 'pointer', transition: 'all 0.2s ease' }}
-                              fw={isActive ? 700 : 400}
-                              opacity={isActive ? 1 : 0.8}
-                              fz="sm"
-                            >
-                              {item.label}
-                            </Text>
-                          )
-                        })}
-                      </Group>
-                    </Scroller>
-                  )}
-                </Transition>
-              </Affix>
-            )}
-
-            <Stack gap={0} flex={1} mb="xs" visibleFrom="sm">
-              <Flex align="center" gap={4} wrap="wrap">
-                <Title
-                  order={1}
-                  fw={600}
-                  size="26px"
-                  // lh="1"
-                  component={Text}
-                  lineClamp={2}
-                >
-                  {profile.full_name}
-                </Title>
-                {!!profile.is_verified && (
-                  <IconRosetteDiscountCheckFilled
-                    className="iconVerified"
-                    title="Perfil verificado"
-                  />
-                )}
-              </Flex>
-              {profile.title && (
-                <Text size="sm" fw={400} maw={420} lh={1.2} my={3}>
-                  {profile.title}
-                </Text>
-              )}
-              <Flex align="center" gap={4} opacity={0.8}>
-                {/* <Text span size="sm">
-                    @{profile.username}
-                  </Text> */}
-                {(city || region) && (
-                  <Text size="xs" fw={300}>
-                    {[city, region, country].filter(Boolean).join(', ')}
-                  </Text>
-                )}
-                <Text size="xs">·</Text>
-                <Anchor size="xs" onClick={openContactInfo} c="var(--mantine-color-text)">
-                  Dados de contato
-                </Anchor>
-                {isProfileLive(profile) && (
-                  <Group gap={6} ml={10} align="center" wrap="nowrap">
-                    <Box
-                      component="span"
-                      className="live-dot"
-                      style={{ flexShrink: 0 }}
-                    />
-                    <Text size="11px" fw={600} c="red.7" tt="uppercase" lts="0.02em">
-                      Ao vivo em {profile.live_platform}
-                    </Text>
-                  </Group>
-                )}
-              </Flex>
-            </Stack>
-
-            <Group
-              gap="md"
-              justify={isMobile ? 'center' : 'flex-start'}
-              mt={{ base: 'sm', md: 0 }}
-            >
-              <Anchor
-                underline="never"
-                onClick={openFollowers}
-                style={{
-                  display: 'inline',
-                  hover: { textDecoration: 'underline' },
-                  color: 'inherit',
-                }}
-              >
-                <Text size="sm" fw={600}>
-                  {followersList.length} seguidores
-                </Text>
-              </Anchor>
-              <Anchor
-                underline="never"
-                onClick={openFollowing}
-                style={{
-                  display: 'inline',
-                  hover: { textDecoration: 'underline' },
-                  color: 'inherit',
-                }}
-              >
-                <Text size="sm" fw={600}>
-                  {followingList.length} seguindo
-                </Text>
-              </Anchor>
-            </Group>
-
-            {!isOwnProfile && (
-              <Group justify="space-around" hiddenFrom="sm" px="sm" mt="sm">
-                {followingInfo?.id ? (
-                  <Button
-                    flex={1}
-                    size="sm"
-                    radius="md"
-                    variant="filled"
-                    className="defaultMublinButton"
-                    onClick={openInvite}
-                    leftSection={<IconSend size={16} />}
-                  >
-                    Convidar para gig
-                  </Button>
-                ) : (
-                  <Button
-                    flex={1}
-                    size="sm"
-                    radius="md"
-                    variant="gradient"
-                    gradient={{ from: 'grape.8', to: 'mublinColor.8', deg: 55 }}
-                    onClick={() => followProfile(user.id, profile.id)}
-                    disabled={loadingFollowingInfo}
-                  >
-                    Seguir
-                  </Button>
-                )}
-                <ActionIcon
-                  variant="subtle"
-                  color="gray"
-                  size="lg"
-                  aria-label="Opções de equipamento"
-                  onClick={openActions}
-                >
-                  <IconDotsVerticalFilled size={20} />
-                </ActionIcon>
-              </Group>
-            )}
-
-            <Stack gap={12} mt={{ base: 'md', md: 'sm' }}>
-              {isOwnProfile && typeof profileViewCount === 'number' && (
-                <SectionPanel id="visitors" py="xs">
-                  <Group gap="xs">
-                    <IconEye color="gray" size={16} />
-                    <Text size="sm" c="dimmed">
-                      {profileViewCount === 0
-                        ? 'Ninguém visualizou seu perfil ainda'
-                        : profileViewCount === 1
-                          ? '1 pessoa visualizou seu perfil'
-                          : `${profileViewCount} pessoas visualizaram seu perfil`}
-                    </Text>
-                  </Group>
-                </SectionPanel>
-              )}
-
-              <SectionPanel id="about">
-                {profile.bio && (
-                  <>
-                    <Group justify="space-between" mb={12}>
-                      <SectionTitle text="Sobre" />
-                      {isOwnProfile && (
-                        <ActionIcon
-                          variant="subtle"
-                          color="gray"
-                          radius="xl"
-                          size="sm"
-                          p={0}
-                          aria-label="Editar meus dados"
-                          title="Editar meus dados"
-                          component={Link}
-                          to="/settings/profile"
-                        >
-                          <IconPencil style={{ width: '94%', height: '94%' }} />
-                        </ActionIcon>
-                      )}
-                    </Group>
-
-                    {profile.is_fake_profile && (
-                      <Group gap={4} mb={10} wrap="nowrap">
-                        <IconSparkles2 size={20} />
-                        <Text size="xs" lh={1} opacity={0.8}>
-                          Este perfil foi criado por IA para fins de teste e não
-                          representa uma pessoa real
-                        </Text>
-                      </Group>
-                    )}
-                    {profile.bio?.length > 150 && !expandedBio ? (
-                      <>
-                        <Text fz="sm" lh={1.4} style={{ whiteSpace: 'pre-line' }}>
-                          {truncateString(profile.bio, 150)}
-                        </Text>
-                        <Anchor onClick={() => setExpandedBio(true)}>
-                          <Text mt={4} size="sm">
-                            Ver mais
-                          </Text>
-                        </Anchor>
-                      </>
-                    ) : (
-                      <Text fz="sm" lh={1.4} style={{ whiteSpace: 'pre-line' }}>
-                        {profile.bio}
-                      </Text>
-                    )}
-                  </>
-                )}
-
-                <Group gap={4} align="center" mt={profile.bio ? 'md' : 0} mb={2}>
-                  <Title order={3} fz="sm" fw={300} opacity={0.8}>
-                    Principais atividades
-                  </Title>
-                  {isOwnProfile && (
                     <ActionIcon
                       variant="subtle"
                       color="gray"
-                      radius="xl"
-                      size="xs"
-                      p={0}
-                      aria-label="Editar minhas atividades"
-                      title="Editar minhas atividades"
-                      component={Link}
-                      to="/settings/musical-preferences"
+                      size="lg"
+                      aria-label="Opções de equipamento"
+                      onClick={openActions}
                     >
-                      <IconPencil style={{ width: '92%', height: '92%' }} />
+                      <IconDotsVerticalFilled size={20} />
                     </ActionIcon>
-                  )}
-                </Group>
-                {rolesOrdered && rolesOrdered.length > 0 && (
-                  <Text size="sm">
-                    {rolesOrdered
-                      .map((role) => role?.roles?.description_ptbr)
-                      .filter(Boolean)
-                      .join(', ')}
-                  </Text>
+                  </Group>
                 )}
 
-                {genres && genres.length > 0 && (
-                  <>
-                    <Group gap={4} align="center" mt="xs" mb={2}>
+                <Stack gap={12} mt={{ base: 'md', md: 'sm' }}>
+                  {isOwnProfile && typeof profileViewCount === 'number' && (
+                    <SectionPanel id="visitors" py="xs">
+                      <Group gap="xs">
+                        <IconEye color="gray" size={16} />
+                        <Text size="sm" c="dimmed">
+                          {profileViewCount === 0
+                            ? 'Ninguém visualizou seu perfil ainda'
+                            : profileViewCount === 1
+                              ? '1 pessoa visualizou seu perfil'
+                              : `${profileViewCount} pessoas visualizaram seu perfil`}
+                        </Text>
+                      </Group>
+                    </SectionPanel>
+                  )}
+
+                  <SectionPanel id="about">
+                    {profile.bio && (
+                      <>
+                        <Group justify="space-between" mb={12}>
+                          <SectionTitle text="Sobre" />
+                          {isOwnProfile && (
+                            <ActionIcon
+                              variant="subtle"
+                              color="gray"
+                              radius="xl"
+                              size="sm"
+                              p={0}
+                              aria-label="Editar meus dados"
+                              title="Editar meus dados"
+                              component={Link}
+                              to="/settings/profile"
+                            >
+                              <IconPencil style={{ width: '94%', height: '94%' }} />
+                            </ActionIcon>
+                          )}
+                        </Group>
+
+                        {profile.is_fake_profile && (
+                          <Group gap={4} mb={10} wrap="nowrap">
+                            <IconSparkles size={20} />
+                            <Text size="xs" lh={1} opacity={0.8}>
+                              Este perfil foi criado por IA para fins de teste e não
+                              representa uma pessoa real
+                            </Text>
+                          </Group>
+                        )}
+                        {profile.bio?.length > 150 && !expandedBio ? (
+                          <>
+                            <Text fz="sm" lh={1.4} style={{ whiteSpace: 'pre-line' }}>
+                              {truncateString(profile.bio, 150)}
+                            </Text>
+                            <Anchor onClick={() => setExpandedBio(true)}>
+                              <Text mt={4} size="sm">
+                                Ver mais
+                              </Text>
+                            </Anchor>
+                          </>
+                        ) : (
+                          <Text fz="sm" lh={1.4} style={{ whiteSpace: 'pre-line' }}>
+                            {profile.bio}
+                          </Text>
+                        )}
+                      </>
+                    )}
+
+                    <Group gap={4} align="center" mt={profile.bio ? 'md' : 0} mb={2}>
                       <Title order={3} fz="sm" fw={300} opacity={0.8}>
-                        Gêneros musicais de atuação
+                        Principais atividades
                       </Title>
                       {isOwnProfile && (
                         <ActionIcon
@@ -1084,8 +1064,8 @@ export default function Profile() {
                           radius="xl"
                           size="xs"
                           p={0}
-                          aria-label="Editar meus gêneros musicais"
-                          title="Editar meus gêneros musicais"
+                          aria-label="Editar minhas atividades"
+                          title="Editar minhas atividades"
                           component={Link}
                           to="/settings/musical-preferences"
                         >
@@ -1093,464 +1073,556 @@ export default function Profile() {
                         </ActionIcon>
                       )}
                     </Group>
-                    {genres && genres.length > 0 ? (
-                      <Text size="sm">
-                        {genres
-                          .map(({ genres: genre }) => genre?.name)
+                    {rolesOrdered && rolesOrdered.length > 0 && (
+                      <Text size="sm" fw={500}>
+                        {rolesOrdered
+                          .map((role) => role?.roles?.description_ptbr)
                           .filter(Boolean)
                           .join(', ')}
                       </Text>
+                    )}
+
+                    {genres && genres.length > 0 && (
+                      <>
+                        <Group gap={4} align="center" mt="xs" mb={2}>
+                          <Title order={3} fz="sm" fw={300} opacity={0.8}>
+                            Gêneros musicais de atuação
+                          </Title>
+                          {isOwnProfile && (
+                            <ActionIcon
+                              variant="subtle"
+                              color="gray"
+                              radius="xl"
+                              size="xs"
+                              p={0}
+                              aria-label="Editar meus gêneros musicais"
+                              title="Editar meus gêneros musicais"
+                              component={Link}
+                              to="/settings/musical-preferences"
+                            >
+                              <IconPencil style={{ width: '92%', height: '92%' }} />
+                            </ActionIcon>
+                          )}
+                        </Group>
+                        {genres && genres.length > 0 ? (
+                          <Text size="sm" fw={500}>
+                            {genres
+                              .map(({ genres: genre }) => genre?.name)
+                              .filter(Boolean)
+                              .join(', ')}
+                          </Text>
+                        ) : (
+                          <Text size="sm" c="dimmed">
+                            Não informado
+                          </Text>
+                        )}
+                      </>
+                    )}
+                  </SectionPanel>
+
+                  <SectionPanel id="portfolio">
+                    <Group justify="space-between">
+                      <SectionTitle text="Portfólio" />
+                      {isOwnProfile && (
+                        <ActionIcon
+                          variant="subtle"
+                          color="gray"
+                          radius="xl"
+                          size="sm"
+                          p={0}
+                          aria-label="Editar meu portfólio"
+                          title="Editar meu portfólio"
+                          component={Link}
+                          to="/settings/portfolio"
+                        >
+                          <IconPencil style={{ width: '94%', height: '94%' }} />
+                        </ActionIcon>
+                      )}
+                    </Group>
+                    {loadingPortfolio ? (
+                      <Text mt="md">Carregando...</Text>
+                    ) : portfolio.length > 0 ? (
+                      <Stack mt="md" gap="lg">
+                        {portfolio.map((item) => {
+                          const isArtist = !!item.artist?.name
+                          const isProject = !!item.project?.name
+                          const entity = isArtist ? item.artist : item.project
+                          const url = isArtist
+                            ? `/artist/${item.artist?.slug}`
+                            : `/project/${item.project?.slug}`
+
+                          if (!entity) {
+                            return null
+                          }
+
+                          const roleNames =
+                            item.roles?.map((r) => r.role?.name_ptbr).filter(Boolean) ??
+                            []
+
+                          const genre = item.project?.genre?.name_ptbr
+
+                          const engagementNames =
+                            item.engagement_types
+                              ?.map((e) => e.engagement_type?.name_ptbr)
+                              .filter(Boolean) ?? []
+
+                          const period = formatPortfolioPeriod(
+                            item.year_start,
+                            item.year_end,
+                          )
+
+                          const upvoteInfo = upvotesByPortfolioId[item.id]
+                          const upvoteCount = upvoteInfo?.upvote_count ?? 0
+                          const hasUpvoted = upvoteInfo?.has_upvoted ?? false
+                          const isOwnPortfolio = user?.id === profile.id
+
+                          return (
+                            <Box key={item.id}>
+                              <Group gap="xs" align="flex-start" wrap="nowrap">
+                                <Flex direction="column">
+                                  <Link to={url}>
+                                    <Avatar
+                                      radius="md"
+                                      size={60}
+                                      src={
+                                        isArtist
+                                          ? ARTISTS_PATH + entity.picture
+                                          : `https://ik.imagekit.io/mublin/projects/${entity.id}/tr:h-120,w-120,c-maintain_ratio/${entity.picture}`
+                                      }
+                                    />
+                                  </Link>
+                                  <PortfolioUpvote
+                                    count={upvoteCount}
+                                    hasUpvoted={hasUpvoted}
+                                    isOwnPortfolio={isOwnPortfolio}
+                                    disabled={isOwnPortfolio || !user?.id}
+                                    onToggle={() =>
+                                      handleToggleUpvote({
+                                        portfolioId: item.id,
+                                        currentlyUpvoted: hasUpvoted,
+                                      })
+                                    }
+                                  />
+                                </Flex>
+                                <Stack gap={2} style={{ flex: 1, minWidth: 0 }}>
+                                  {roleNames.length > 0 && (
+                                    <Text size="15px" fw={600}>
+                                      {roleNames.join(', ')}
+                                    </Text>
+                                  )}
+                                  <Group gap={6} align="center" wrap="wrap">
+                                    <Text size="sm" opacity={0.9}>
+                                      <Text
+                                        span
+                                        component={Link}
+                                        to={url}
+                                        style={{
+                                          display: 'inline',
+                                          hover: { textDecoration: 'underline' },
+                                          color: 'inherit',
+                                        }}
+                                      >
+                                        {entity.name}
+                                      </Text>{' '}
+                                      <Text span>
+                                        (
+                                        {isProject
+                                          ? item.project?.type?.name_ptbr
+                                          : item.artist?.genre?.name_ptbr}
+                                        {genre && ` · ${genre}`})
+                                      </Text>
+                                    </Text>
+                                  </Group>
+
+                                  {engagementNames.length > 0 && (
+                                    <Text size="sm" opacity={0.9} mt={6} mb={6} lh={1}>
+                                      {engagementNames.length === 1
+                                        ? 'Vínculo:'
+                                        : 'Vínculos:'}{' '}
+                                      {engagementNames.join(', ')}
+                                    </Text>
+                                  )}
+
+                                  {item.is_sporadic ? (
+                                    <Text size="xs" opacity={0.7}>
+                                      Colaboração esporádica
+                                    </Text>
+                                  ) : (
+                                    period && (
+                                      <Text size="xs" opacity={0.7}>
+                                        {period}
+                                      </Text>
+                                    )
+                                  )}
+
+                                  {item.is_mublin_facilitated && (
+                                    <Flex gap={4} align="center" mt={4} mb={4}>
+                                      <Image
+                                        src={MublinMLogo}
+                                        h={14}
+                                        w="auto"
+                                        fit="contain"
+                                        mb={2}
+                                      />
+                                      <Text size="xs" lh={1}>
+                                        Mublin ajudou a conseguir esta gig
+                                      </Text>
+                                    </Flex>
+                                  )}
+
+                                  {item.notes && (
+                                    <Spoiler
+                                      maxHeight={42}
+                                      showLabel={<Text size="sm">Ver mais</Text>}
+                                      hideLabel={<Text size="sm">Ver menos</Text>}
+                                    >
+                                      <Text size="sm" style={{ whiteSpace: 'pre-line' }}>
+                                        {item.notes}
+                                      </Text>
+                                    </Spoiler>
+                                  )}
+                                </Stack>
+                              </Group>
+                            </Box>
+                          )
+                        })}
+                      </Stack>
                     ) : (
-                      <Text size="sm" c="dimmed">
-                        Não informado
+                      <Text size="sm" c="dimmed" mt="sm">
+                        Nenhum item informado até o momento
                       </Text>
                     )}
-                  </>
-                )}
-              </SectionPanel>
+                  </SectionPanel>
 
-              <SectionPanel id="portfolio">
-                <Group justify="space-between">
-                  <SectionTitle text="Portfólio" />
-                  {isOwnProfile && (
-                    <ActionIcon
-                      variant="subtle"
-                      color="gray"
-                      radius="xl"
-                      size="sm"
-                      p={0}
-                      aria-label="Editar meu portfólio"
-                      title="Editar meu portfólio"
-                      component={Link}
-                      to="/settings/portfolio"
-                    >
-                      <IconPencil style={{ width: '94%', height: '94%' }} />
-                    </ActionIcon>
-                  )}
-                </Group>
-                {loadingPortfolio ? (
-                  <Text mt="md">Carregando...</Text>
-                ) : portfolio.length > 0 ? (
-                  <Stack mt="md" gap="lg">
-                    {portfolio.map((item) => {
-                      const isArtist = !!item.artist?.name
-                      const isProject = !!item.project?.name
-                      const entity = isArtist ? item.artist : item.project
-                      const url = isArtist
-                        ? `/artist/${item.artist?.slug}`
-                        : `/project/${item.project?.slug}`
-
-                      if (!entity) {
-                        return null
-                      }
-
-                      const roleNames =
-                        item.roles?.map((r) => r.role?.name_ptbr).filter(Boolean) ?? []
-
-                      const genre = item.project?.genre?.name_ptbr
-
-                      const engagementNames =
-                        item.engagement_types
-                          ?.map((e) => e.engagement_type?.name_ptbr)
-                          .filter(Boolean) ?? []
-
-                      const period = formatPortfolioPeriod(item.year_start, item.year_end)
-
-                      const upvoteInfo = upvotesByPortfolioId[item.id]
-                      const upvoteCount = upvoteInfo?.upvote_count ?? 0
-                      const hasUpvoted = upvoteInfo?.has_upvoted ?? false
-                      const isOwnPortfolio = user?.id === profile.id
-
-                      return (
-                        <Box key={item.id}>
-                          <Group gap="xs" align="flex-start" wrap="nowrap">
-                            <Flex direction="column">
-                              <Link to={url}>
-                                <Avatar
-                                  radius="md"
-                                  size={60}
-                                  src={
-                                    isArtist
-                                      ? ARTISTS_PATH + entity.picture
-                                      : `https://ik.imagekit.io/mublin/projects/${entity.id}/tr:h-120,w-120,c-maintain_ratio/${entity.picture}`
-                                  }
-                                />
-                              </Link>
-                              <PortfolioUpvote
-                                count={upvoteCount}
-                                hasUpvoted={hasUpvoted}
-                                isOwnPortfolio={isOwnPortfolio}
-                                disabled={isOwnPortfolio || !user?.id}
-                                onToggle={() =>
-                                  handleToggleUpvote({
-                                    portfolioId: item.id,
-                                    currentlyUpvoted: hasUpvoted,
-                                  })
-                                }
-                              />
-                            </Flex>
-                            <Stack gap={2} style={{ flex: 1, minWidth: 0 }}>
-                              {roleNames.length > 0 && (
-                                <Text size="15px" fw={600}>
-                                  {roleNames.join(', ')}
-                                </Text>
-                              )}
-                              <Group gap={6} align="center" wrap="wrap">
-                                <Text size="sm" opacity={0.9}>
-                                  <Text
-                                    span
-                                    component={Link}
-                                    to={url}
-                                    style={{
-                                      display: 'inline',
-                                      hover: { textDecoration: 'underline' },
-                                      color: 'inherit',
-                                    }}
-                                  >
-                                    {entity.name}
-                                  </Text>{' '}
-                                  <Text span>
-                                    (
-                                    {isProject
-                                      ? item.project?.type?.name_ptbr
-                                      : item.artist?.genre?.name_ptbr}
-                                    {genre && ` · ${genre}`})
-                                  </Text>
-                                </Text>
-                              </Group>
-
-                              {engagementNames.length > 0 && (
-                                <Text size="sm" opacity={0.9} mt={6} mb={6} lh={1}>
-                                  {engagementNames.length === 1
-                                    ? 'Vínculo:'
-                                    : 'Vínculos:'}{' '}
-                                  {engagementNames.join(', ')}
-                                </Text>
-                              )}
-
-                              {item.is_sporadic ? (
-                                <Text size="xs" opacity={0.7}>
-                                  Colaboração esporádica
-                                </Text>
-                              ) : (
-                                period && (
-                                  <Text size="xs" opacity={0.7}>
-                                    {period}
-                                  </Text>
-                                )
-                              )}
-
-                              {item.is_mublin_facilitated && (
-                                <Flex gap={4} align="center" mt={4} mb={4}>
-                                  <Image
-                                    src={MublinMLogo}
-                                    h={14}
-                                    w="auto"
-                                    fit="contain"
-                                    mb={2}
-                                  />
-                                  <Text size="xs" lh={1}>
-                                    Mublin ajudou a conseguir esta gig
-                                  </Text>
-                                </Flex>
-                              )}
-
-                              {item.notes && (
-                                <Spoiler
-                                  maxHeight={42}
-                                  showLabel={<Text size="sm">Ver mais</Text>}
-                                  hideLabel={<Text size="sm">Ver menos</Text>}
-                                >
-                                  <Text size="sm" style={{ whiteSpace: 'pre-line' }}>
-                                    {item.notes}
-                                  </Text>
-                                </Spoiler>
-                              )}
-                            </Stack>
-                          </Group>
-                        </Box>
-                      )
-                    })}
-                  </Stack>
-                ) : (
-                  <Text size="sm" c="dimmed" mt="sm">
-                    Nenhum item informado até o momento
-                  </Text>
-                )}
-              </SectionPanel>
-
-              {loadingPosts ? (
-                <Box mx="xs">
-                  <SectionTitle text="Postagens" mb="md" />
-                  <Group gap="xs" wrap="nowrap">
-                    {[1, 2].map((i) => (
-                      <Skeleton key={i} width="100%" height={90} />
-                    ))}
-                  </Group>
-                </Box>
-              ) : (
-                <>
-                  {profilePosts.length > 0 ? (
-                    <Box mt="sm" mx={{ base: 'sm', md: 0 }}>
-                      <Group justify="space-between" align="center" mb={4}>
-                        <SectionTitle text="Postagens" id="posts" />
-                        {profilePosts.length > 2 && (
-                          <Group>
-                            <ThemeIcon
-                              variant="default"
-                              style={{
-                                cursor: postsScroller.canScrollStart
-                                  ? 'pointer'
-                                  : 'default',
-                              }}
-                              onClick={postsScroller.scrollStart}
-                              opacity={postsScroller.canScrollStart ? 1 : 0.5}
-                            >
-                              <IconChevronLeft style={{ width: '70%', height: '70%' }} />
-                            </ThemeIcon>
-                            <ThemeIcon
-                              variant="default"
-                              style={{
-                                cursor: postsScroller.canScrollEnd
-                                  ? 'pointer'
-                                  : 'default',
-                              }}
-                              onClick={postsScroller.scrollEnd}
-                              opacity={postsScroller.canScrollEnd ? 1 : 0.5}
-                            >
-                              <IconChevronRight style={{ width: '70%', height: '70%' }} />
-                            </ThemeIcon>
-                          </Group>
-                        )}
+                  {loadingPosts ? (
+                    <Box mx="xs">
+                      <SectionTitle text="Postagens" mb="md" />
+                      <Group gap="xs" wrap="nowrap">
+                        {[1, 2].map((i) => (
+                          <Skeleton key={i} width="100%" height={90} />
+                        ))}
                       </Group>
-                      <div
-                        ref={postsScroller.ref}
-                        {...postsScroller.dragHandlers}
-                        className="scrollerHidden"
-                        style={{
-                          overflow: 'auto',
-                          cursor: postsScroller.isDragging ? 'grabbing' : 'default',
-                        }}
-                      >
-                        <Group gap="xs" wrap="nowrap">
-                          {isMobile && <Box style={{ flexShrink: 10, width: '2px' }} />}
-                          {loadingPosts
-                            ? [1, 2, 3].map((i) => (
-                                <Group key={i} gap="sm">
-                                  <Skeleton circle height={36} />
-                                  <Stack gap={4} style={{ flex: 1 }}>
-                                    <Skeleton height={12} width="60%" radius="xl" />
-                                    <Skeleton height={10} width="80%" radius="xl" />
-                                  </Stack>
-                                </Group>
-                              ))
-                            : profilePosts.map((post) => (
-                                <Paper key={post.id} p="xs" withBorder h={220} miw={280}>
-                                  <Text size="xs" c="dimmed" mt={4}>
-                                    {dayjs(post.created_at).fromNow()}
-                                  </Text>
-                                  <Link
-                                    to={`/post/${post.id}`}
-                                    style={{ whiteSpace: 'pre-wrap', display: 'block' }}
-                                    className="noDecoration"
-                                  >
-                                    <Text
-                                      size="sm"
-                                      maw="100%"
-                                      my={6}
-                                      lh={1.3}
-                                      lineClamp={1}
-                                      truncate="end"
-                                      c="var(--mantine-color-text)"
-                                    >
-                                      {post.body}
-                                    </Text>
-                                  </Link>
-                                  {post.image && (
-                                    <Link to={`/post/${post.id}`}>
-                                      <Image
-                                        src={`https://ik.imagekit.io/mublin/posts/tr:w-700/${post.image}`}
-                                        radius={false}
-                                      />
-                                    </Link>
-                                  )}
-                                  {post.video_url && (
-                                    <Link to={`/post/${post.id}`}>
-                                      <VideoPlayerYoutube
-                                        url={post.video_url}
-                                        thumbnailOnly
-                                      />
-                                    </Link>
-                                  )}
-                                  {(post.linked_gig_id || post.linked_product_id) && (
-                                    <LinkedItem
-                                      post={{
-                                        ...post,
-                                        linked_product_slug: post.products?.slug,
-                                        linked_product_name: post.products?.name,
-                                        linked_product_picture: post.products?.picture,
-                                        linked_product_brand_name:
-                                          post.products?.brands?.name,
-                                        linked_gig_slug: post.gigs?.slug,
-                                        linked_gig_title: post.gigs?.title,
-                                        linked_gig_has_remuneration:
-                                          post.gigs?.has_remuneration,
-                                      }}
-                                    />
-                                  )}
-                                </Paper>
-                              ))}
-                        </Group>
-                      </div>
                     </Box>
                   ) : (
-                    <SectionPanel>
-                      <SectionTitle text="Postagens" id="posts" mb="sm" />
-                      <Text size="sm" c="dimmed">
-                        Nenhuma postagem até o momento
-                      </Text>
-                    </SectionPanel>
-                  )}
-                </>
-              )}
-
-              {loadingGear ? (
-                <Box mx="xs">
-                  <SectionTitle text="Equipamento" mb="md" />
-                  <Group gap="xs" wrap="nowrap">
-                    {[1, 2].map((i) => (
-                      <Skeleton key={i} width="100%" height={90} />
-                    ))}
-                  </Group>
-                </Box>
-              ) : (
-                <>
-                  {gear.length > 0 ? (
                     <>
-                      <Group justify="space-between" align="center" gap="xs" mt={10}>
-                        <Group gap={10}>
-                          <SectionTitle
-                            id="gear"
-                            text={`Equipamento (${gear.length})`}
-                            ml={{ base: 'sm', md: 0 }}
-                          />
-                          <Button
-                            size="xs"
-                            variant="outline"
-                            color="var(--mantine-color-text)"
-                            component={Link}
-                            to={`/${username}/gear`}
+                      {profilePosts.length > 0 ? (
+                        <Box mt="sm" mx={{ base: 'sm', md: 0 }}>
+                          <Group justify="space-between" align="center" mb={4}>
+                            <SectionTitle text="Postagens" id="posts" />
+                            {profilePosts.length > 2 && (
+                              <Group>
+                                <ThemeIcon
+                                  variant="default"
+                                  style={{
+                                    cursor: postsScroller.canScrollStart
+                                      ? 'pointer'
+                                      : 'default',
+                                  }}
+                                  onClick={postsScroller.scrollStart}
+                                  opacity={postsScroller.canScrollStart ? 1 : 0.5}
+                                >
+                                  <IconChevronLeft
+                                    style={{ width: '70%', height: '70%' }}
+                                  />
+                                </ThemeIcon>
+                                <ThemeIcon
+                                  variant="default"
+                                  style={{
+                                    cursor: postsScroller.canScrollEnd
+                                      ? 'pointer'
+                                      : 'default',
+                                  }}
+                                  onClick={postsScroller.scrollEnd}
+                                  opacity={postsScroller.canScrollEnd ? 1 : 0.5}
+                                >
+                                  <IconChevronRight
+                                    style={{ width: '70%', height: '70%' }}
+                                  />
+                                </ThemeIcon>
+                              </Group>
+                            )}
+                          </Group>
+                          <div
+                            ref={postsScroller.ref}
+                            {...postsScroller.dragHandlers}
+                            className="scrollerHidden"
+                            style={{
+                              overflow: 'auto',
+                              cursor: postsScroller.isDragging ? 'grabbing' : 'default',
+                            }}
                           >
-                            Ver tudo
-                          </Button>
-                        </Group>
-
-                        {isOwnProfile && (
-                          <ActionIcon
-                            variant="subtle"
-                            color="gray"
-                            radius="xl"
-                            size="sm"
-                            p={0}
-                            aria-label="Gerenciar meu equipamento"
-                            title="Gerenciar meu equipamento"
-                            component={Link}
-                            to="/settings/gear"
-                            mr="sm"
-                          >
-                            <IconPencil style={{ width: '94%', height: '94%' }} />
-                          </ActionIcon>
-                        )}
-                      </Group>
-                      <Box h="100%">
-                        <Scroller
-                          key={gear.length}
-                          draggable
-                          controlSize="xl"
-                          showEndControl={gear.length > 4}
-                          startControlIcon={<IconCircleArrowLeftFilled size={36} />}
-                          endControlIcon={<IconCircleArrowRightFilled size={36} />}
-                        >
-                          {isMobile && <Box style={{ flexShrink: 10, width: '5px' }} />}
-                          {gear.map((item) => (
-                            <Flex
-                              key={item.id_product}
-                              direction="column"
-                              justify="flex-start"
-                              align="center"
-                              w={140}
-                            >
-                              <Link to={`/${username}/gear/${item.id}`}>
-                                <Image
-                                  src={`https://ik.imagekit.io/mublin/products/tr:w-240,h-240,cm-pad_resize,bg-FFFFFF,fo-x/${item.products?.picture}`}
-                                  h={120}
-                                  mah={120}
-                                  w="auto"
-                                  fit="contain"
-                                  mb={10}
-                                  radius="md"
-                                />
-                              </Link>
-                              <Text size="xs" c="dimmed" fw={500} lineClamp={2}>
-                                {item.products?.brands?.name}
-                              </Text>
-                              <Text
-                                size="xs"
-                                fw={500}
-                                ta="center"
-                                lineClamp={2}
-                                style={{ whiteSpace: 'pre-wrap' }}
-                              >
-                                {item.products?.name}
-                              </Text>
-                            </Flex>
-                          ))}
-                        </Scroller>
-                        <Box ml={{ base: 'sm', md: 0 }} mt="lg">
-                          <Text fw={600} size="15px" c="dimmed">
-                            Setups de {profile.full_name}{' '}
-                            {!!gearSetups.length && `(${gearSetups.length})`}
+                            <Group gap="xs" wrap="nowrap">
+                              {isMobile && (
+                                <Box style={{ flexShrink: 10, width: '2px' }} />
+                              )}
+                              {loadingPosts
+                                ? [1, 2, 3].map((i) => (
+                                    <Group key={i} gap="sm">
+                                      <Skeleton circle height={36} />
+                                      <Stack gap={4} style={{ flex: 1 }}>
+                                        <Skeleton height={12} width="60%" radius="xl" />
+                                        <Skeleton height={10} width="80%" radius="xl" />
+                                      </Stack>
+                                    </Group>
+                                  ))
+                                : profilePosts.map((post) => (
+                                    <Paper
+                                      key={post.id}
+                                      p="xs"
+                                      withBorder
+                                      h={220}
+                                      miw={280}
+                                    >
+                                      <Text size="xs" c="dimmed" mt={4}>
+                                        {dayjs(post.created_at).fromNow()}
+                                      </Text>
+                                      <Link
+                                        to={`/post/${post.id}`}
+                                        style={{
+                                          whiteSpace: 'pre-wrap',
+                                          display: 'block',
+                                        }}
+                                        className="noDecoration"
+                                      >
+                                        <Text
+                                          size="sm"
+                                          maw="100%"
+                                          my={6}
+                                          lh={1.3}
+                                          lineClamp={1}
+                                          truncate="end"
+                                          c="var(--mantine-color-text)"
+                                        >
+                                          {post.body}
+                                        </Text>
+                                      </Link>
+                                      {post.image && (
+                                        <Link to={`/post/${post.id}`}>
+                                          <Image
+                                            src={`https://ik.imagekit.io/mublin/posts/tr:w-700/${post.image}`}
+                                            radius={false}
+                                          />
+                                        </Link>
+                                      )}
+                                      {post.video_url && (
+                                        <Link to={`/post/${post.id}`}>
+                                          <VideoPlayerYoutube
+                                            url={post.video_url}
+                                            thumbnailOnly
+                                          />
+                                        </Link>
+                                      )}
+                                      {(post.linked_gig_id || post.linked_product_id) && (
+                                        <LinkedItem
+                                          post={{
+                                            ...post,
+                                            linked_product_slug: post.products?.slug,
+                                            linked_product_name: post.products?.name,
+                                            linked_product_picture:
+                                              post.products?.picture,
+                                            linked_product_brand_name:
+                                              post.products?.brands?.name,
+                                            linked_gig_slug: post.gigs?.slug,
+                                            linked_gig_title: post.gigs?.title,
+                                            linked_gig_has_remuneration:
+                                              post.gigs?.has_remuneration,
+                                          }}
+                                        />
+                                      )}
+                                    </Paper>
+                                  ))}
+                            </Group>
+                          </div>
+                        </Box>
+                      ) : (
+                        <SectionPanel>
+                          <SectionTitle text="Postagens" id="posts" mb="sm" />
+                          <Text size="sm" c="dimmed">
+                            Nenhuma postagem até o momento
                           </Text>
-                          {gearSetups.length > 0 && (
-                            <Flex gap={12} mt={18}>
-                              {gearSetups.map((setup) => (
-                                <Box key={setup.id}>
-                                  <Flex w={80} direction="column" justify="center">
-                                    {/* <Link to={`/${username}/setup/${setup.id}`}> */}
-                                    {/* </Link> */}
-                                    <Image
-                                      src={`https://ik.imagekit.io/mublin/users/gear-setups/tr:w-140,h-140/${setup.image}`}
-                                      h={70}
-                                      w={70}
-                                      fit="contain"
-                                      radius="md"
-                                      mb={4}
-                                    />
-                                    <Text ta="center" fw={550} size="xs" truncate="end">
-                                      {setup.name}
+                        </SectionPanel>
+                      )}
+                    </>
+                  )}
+
+                  {loadingGear ? (
+                    <Box mx="xs">
+                      <SectionTitle text="Equipamento" mb="md" />
+                      <Group gap="xs" wrap="nowrap">
+                        {[1, 2].map((i) => (
+                          <Skeleton key={i} width="100%" height={90} />
+                        ))}
+                      </Group>
+                    </Box>
+                  ) : (
+                    <>
+                      {gear.length > 0 ? (
+                        <>
+                          <Group justify="space-between" align="center" gap="xs" mt={10}>
+                            <Group gap={10}>
+                              <SectionTitle
+                                id="gear"
+                                text={`Equipamento (${gear.length})`}
+                                ml={{ base: 'sm', md: 0 }}
+                              />
+                              <Button
+                                size="xs"
+                                variant="outline"
+                                color="var(--mantine-color-text)"
+                                component={Link}
+                                to={`/${username}/gear`}
+                              >
+                                Ver tudo
+                              </Button>
+                              {isOwnProfile && (
+                                <ActionIcon
+                                  variant="outline"
+                                  color="gray"
+                                  radius="xl"
+                                  size="md"
+                                  aria-label="Gerenciar meu equipamento"
+                                  title="Gerenciar meu equipamento"
+                                  component={Link}
+                                  to="/settings/gear"
+                                  mr="sm"
+                                >
+                                  <IconPencil size={18} />
+                                </ActionIcon>
+                              )}
+                            </Group>
+
+                            <Group>
+                              <ThemeIcon
+                                variant="default"
+                                style={{
+                                  cursor: gearScroller.canScrollStart
+                                    ? 'pointer'
+                                    : 'default',
+                                }}
+                                onClick={gearScroller.scrollStart}
+                                opacity={gearScroller.canScrollStart ? 1 : 0.5}
+                              >
+                                <IconChevronLeft
+                                  style={{ width: '70%', height: '70%' }}
+                                />
+                              </ThemeIcon>
+                              <ThemeIcon
+                                variant="default"
+                                style={{
+                                  cursor: gearScroller.canScrollEnd
+                                    ? 'pointer'
+                                    : 'default',
+                                }}
+                                onClick={gearScroller.scrollEnd}
+                                opacity={gearScroller.canScrollEnd ? 1 : 0.5}
+                              >
+                                <IconChevronRight
+                                  style={{ width: '70%', height: '70%' }}
+                                />
+                              </ThemeIcon>
+                            </Group>
+                          </Group>
+                          <Box h="100%">
+                            <div
+                              ref={gearScroller.ref}
+                              {...gearScroller.dragHandlers}
+                              className="scrollerHidden"
+                              style={{
+                                overflow: 'auto',
+                                cursor: gearScroller.isDragging ? 'grabbing' : 'default',
+                              }}
+                            >
+                              <Group gap="xs" wrap="nowrap">
+                                {/* {isMobile && (
+                                  <Box style={{ flexShrink: 10, width: '5px' }} />
+                                )} */}
+                                {gear.map((item) => (
+                                  <Flex
+                                    key={item.id_product}
+                                    direction="column"
+                                    justify="flex-start"
+                                    align="center"
+                                    w={140}
+                                  >
+                                    <Link to={`/${username}/gear/${item.id}`}>
+                                      <Image
+                                        src={`https://ik.imagekit.io/mublin/products/tr:w-240,h-240,cm-pad_resize,bg-FFFFFF,fo-x/${item.products?.picture}`}
+                                        h={120}
+                                        mah={120}
+                                        w="auto"
+                                        fit="contain"
+                                        mb={10}
+                                        radius="md"
+                                      />
+                                    </Link>
+                                    <Text size="xs" c="dimmed" fw={500} lineClamp={1}>
+                                      {item.products?.brands?.name}
                                     </Text>
-                                    <Text ta="center" size="xs">
-                                      {setup.totalItems ?? 0} itens
+                                    <Text
+                                      size="xs"
+                                      fw={500}
+                                      ta="center"
+                                      lineClamp={1}
+                                      style={{ whiteSpace: 'pre-wrap' }}
+                                    >
+                                      {item.products?.name}
                                     </Text>
                                   </Flex>
-                                </Box>
-                              ))}
-                            </Flex>
-                          )}
-                        </Box>
-                      </Box>
+                                ))}
+                              </Group>
+                            </div>
+                            <Box ml={{ base: 'sm', md: 0 }} mt="lg">
+                              <Text fw={600} size="sm">
+                                Setups de {profile.full_name}{' '}
+                                {!!gearSetups.length && `(${gearSetups.length})`}
+                              </Text>
+                              {gearSetups.length > 0 && (
+                                <Flex gap={12} mt={18}>
+                                  {gearSetups.map((setup) => (
+                                    <Box key={setup.id}>
+                                      <Flex w={80} direction="column" justify="center">
+                                        {/* <Link to={`/setup/${setup.id}`}> */}
+                                        {/* </Link> */}
+                                        <Image
+                                          src={`https://ik.imagekit.io/mublin/users/gear-setups/tr:w-140,h-140/${setup.image}`}
+                                          h={70}
+                                          w={70}
+                                          fit="contain"
+                                          radius="md"
+                                          mb={4}
+                                        />
+                                        <Text
+                                          ta="center"
+                                          fw={550}
+                                          size="xs"
+                                          truncate="end"
+                                        >
+                                          {setup.name}
+                                        </Text>
+                                        <Text ta="center" size="xs">
+                                          {setup.totalItems ?? 0} itens
+                                        </Text>
+                                      </Flex>
+                                    </Box>
+                                  ))}
+                                </Flex>
+                              )}
+                            </Box>
+                          </Box>
+                        </>
+                      ) : (
+                        <SectionPanel>
+                          <SectionTitle text="Equipamento" mb="sm" />
+                          <Text size="sm" c="dimmed">
+                            Nenhum equipamento adicionado
+                          </Text>
+                        </SectionPanel>
+                      )}
                     </>
-                  ) : (
-                    <SectionPanel>
-                      <SectionTitle text="Equipamento" mb="sm" />
-                      <Text size="sm" c="dimmed">
-                        Nenhum equipamento adicionado
-                      </Text>
-                    </SectionPanel>
                   )}
-                </>
-              )}
-            </Stack>
+                </Stack>
+              </Grid.Col>
+            </Grid>
           </Grid.Col>
           <Grid.Col span={{ base: 12, md: 3 }}>
             <Stack gap={10}>
@@ -1703,34 +1775,31 @@ export default function Profile() {
                   mb={inspirations.length > 0 ? 4 : 'sm'}
                 >
                   <SectionTitle text="Inspirações" />
-                  {inspirations.length > 4 && (
-                    <Group>
-                      <ThemeIcon
-                        variant="default"
-                        style={{
-                          cursor: inspirationsScroller.canScrollStart
-                            ? 'pointer'
-                            : 'default',
-                        }}
-                        onClick={inspirationsScroller.scrollStart}
-                        opacity={inspirationsScroller.canScrollStart ? 1 : 0.5}
-                      >
-                        <IconChevronLeft style={{ width: '70%', height: '70%' }} />
-                      </ThemeIcon>
-                      <ThemeIcon
-                        variant="default"
-                        style={{
-                          cursor: inspirationsScroller.canScrollEnd
-                            ? 'pointer'
-                            : 'default',
-                        }}
-                        onClick={inspirationsScroller.scrollEnd}
-                        opacity={inspirationsScroller.canScrollEnd ? 1 : 0.5}
-                      >
-                        <IconChevronRight style={{ width: '70%', height: '70%' }} />
-                      </ThemeIcon>
-                    </Group>
-                  )}
+
+                  <Group>
+                    <ThemeIcon
+                      variant="default"
+                      style={{
+                        cursor: inspirationsScroller.canScrollStart
+                          ? 'pointer'
+                          : 'default',
+                      }}
+                      onClick={inspirationsScroller.scrollStart}
+                      opacity={inspirationsScroller.canScrollStart ? 1 : 0.5}
+                    >
+                      <IconChevronLeft style={{ width: '70%', height: '70%' }} />
+                    </ThemeIcon>
+                    <ThemeIcon
+                      variant="default"
+                      style={{
+                        cursor: inspirationsScroller.canScrollEnd ? 'pointer' : 'default',
+                      }}
+                      onClick={inspirationsScroller.scrollEnd}
+                      opacity={inspirationsScroller.canScrollEnd ? 1 : 0.5}
+                    >
+                      <IconChevronRight style={{ width: '70%', height: '70%' }} />
+                    </ThemeIcon>
+                  </Group>
                 </Group>
                 {inspirations.length > 0 && (
                   <Text size="xs" c="dimmed" mb="sm">
@@ -1780,9 +1849,15 @@ export default function Profile() {
                           >
                             {artist?.name}
                           </Text>
-                          {artist?.genre?.name_ptbr && (
-                            <Text size="10px" c="dimmed" ta="center" lineClamp={1}>
-                              {artist?.genre?.name_ptbr || artist?.genre?.name}
+                          {artist?.artist_roles[0]?.roles?.description_ptbr && (
+                            <Text
+                              size="10px"
+                              c="dimmed"
+                              ta="center"
+                              lineClamp={1}
+                              title={artist?.artist_roles[0]?.roles?.description_ptbr}
+                            >
+                              {artist?.artist_roles[0]?.roles?.description_ptbr}
                             </Text>
                           )}
                         </Flex>
@@ -2076,6 +2151,7 @@ export default function Profile() {
               variant="transparent"
               onClick={() => unfollowProfile(user.id, profile.id)}
               disabled={loadingFollowingInfo}
+              leftSection={<IconUserX size={16} />}
             >
               Deixar de seguir
             </Button>
@@ -2084,13 +2160,20 @@ export default function Profile() {
               variant="transparent"
               onClick={() => followProfile(user.id, profile.id)}
               disabled={loadingFollowingInfo}
+              leftSection={<IconUserPlus size={16} />}
             >
               Seguir
             </Button>
           )}
           <Button
             variant="transparent"
-            leftSection={<IconHeart size={16} />}
+            leftSection={
+              favoriteInfo?.id ? (
+                <IconBookmarkFilled size={16} />
+              ) : (
+                <IconBookmark size={16} />
+              )
+            }
             onClick={() => handleToggleFavorite(!!favoriteInfo?.id)}
             disabled={loadingFavoriteInfo || togglingFavorite}
           >

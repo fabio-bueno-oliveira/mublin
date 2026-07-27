@@ -1,13 +1,13 @@
-import { Flex, Box, Title, Text, Indicator, Avatar, Group, Anchor } from '@mantine/core'
+import { Flex, Box, Title, Text, Avatar, Group, Anchor } from '@mantine/core'
 import { IconRosetteDiscountCheck, IconLink } from '@tabler/icons-react'
 import { isProfileLive } from '../../utils/live'
 import { truncateString } from '../../utils/formatter'
 import { getAvatarUrl } from '../../utils/profile'
 // import ProPlanBadge from '../ProPlanBadge'
 
-export default function ProfileHeaderMobile({ profile, city, region, country, user }) {
+export default function ProfileHeaderMobile({ profile, city, region, country, mt = 0 }) {
   return (
-    <Box px="sm" py={0}>
+    <Box px="sm" py={0} mt={mt}>
       <Flex
         justify="flex-start"
         align="center"
@@ -15,20 +15,11 @@ export default function ProfileHeaderMobile({ profile, city, region, country, us
         wrap="nowrap"
         columnGap="xs"
       >
-        <Indicator
-          position="bottom-center"
-          inline
-          label={<Text size="0.7rem">Disponível</Text>}
-          color="green"
-          size={18}
-          withBorder
-          disabled
-        >
-          <Avatar
-            size="xl"
-            src={getAvatarUrl(profile.avatar, profile.is_open_to_work, 96)}
-          />
-        </Indicator>
+        <Avatar
+          mt={6}
+          size={84}
+          src={getAvatarUrl(profile.avatar, profile.is_open_to_work, 168)}
+        />
         <Box style={{ overflow: 'hidden' }}>
           <Flex align="center" gap={3} mb={2} wrap="wrap">
             <Title order={1} fw={600} size="21px" lh="1" component={Text} lineClamp={2}>
@@ -57,11 +48,6 @@ export default function ProfileHeaderMobile({ profile, city, region, country, us
               {[city, region, country].filter(Boolean).join(', ')}
             </Text>
           )}
-          {/* {profile.is_open_to_work && (
-            <Badge variant="light" color="teal" fz="10px" fw={400} mt={2}>
-              Disponível para trabalhos e gigs
-            </Badge>
-          )} */}
           {isProfileLive(profile) && (
             <Group gap={6} mt={3} align="center" wrap="nowrap">
               <Box component="span" className="live-dot" style={{ flexShrink: 0 }} />

@@ -247,6 +247,7 @@ export async function fetchProfileGearExpanded(profileId) {
       price,
       owner_comments,
       id_tuning,
+      year,
       tunings ( name_ptbr, description ),
       products (
         id, id_category, name, slug, picture,
@@ -369,7 +370,13 @@ export async function fetchProfileInspirations(profileId) {
         is_band,
         is_verified,
         genre:genres!artists_genre_id_fkey ( name, name_ptbr ),
-        countries ( name )
+        countries ( name ),
+        artist_roles (
+          id,
+          is_main_role,
+          order_show,
+          roles ( description_ptbr )
+        )
       )
     `,
     )
@@ -570,6 +577,17 @@ export async function togglePortfolioUpvote(portfolioId, voterId, currentlyUpvot
   return { success: true, action: 'added', data }
 }
 
+export async function fetchGearSetupProductIds(setupId) {
+  const { data, error } = await supabase
+    .from('gear_setup_items')
+    .select('id_product')
+    .eq('id_setup', setupId)
+  if (error) {
+    throw new Error(error.message)
+  }
+  return data.map((item) => item.id_product)
+}
+
 export async function fetchProfileGearItemById(gearId) {
   const { data, error } = await supabase
     .from('profile_gear')
@@ -582,7 +600,6 @@ export async function fetchProfileGearItemById(gearId) {
       is_currently_using,
       price,
       owner_comments,
-      id_tuning,
       tunings ( name_ptbr, description ),
       products (
         id, id_category, name, slug, picture,
@@ -594,6 +611,8 @@ export async function fetchProfileGearItemById(gearId) {
     .eq('id', gearId)
     .single()
 
-  if (error) throw new Error(error.message)
+  if (error) {
+    throw new Error(error.message)
+  }
   return data
 }

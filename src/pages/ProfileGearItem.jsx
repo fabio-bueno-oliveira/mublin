@@ -24,11 +24,13 @@ import {
   Center,
   Paper,
   Anchor,
+  Tooltip,
   Loader,
   em,
   Title,
 } from '@mantine/core'
 import { useMediaQuery } from '@mantine/hooks'
+import { motion } from 'motion/react'
 import {
   IconMoodSad,
   IconArrowLeft,
@@ -40,8 +42,6 @@ import parse from 'html-react-parser'
 import linkifyStr from 'linkify-string'
 import { getAvatarUrl } from '../utils/profile'
 
-const AVATAR_PATH =
-  'https://ik.imagekit.io/mublin/tr:h-60,c-maintain_ratio/users/avatars/'
 const PRODUCT_IMG_LG =
   'https://ik.imagekit.io/mublin/products/tr:w-600,cm-pad_resize,bg-FFFFFF/'
 
@@ -134,6 +134,7 @@ export default function ProfileGearItem() {
       value: selectedItem.products?.product_categories?.name_ptbr,
       active: true,
     },
+    { label: 'Ano', value: selectedItem.year ?? 'Não informado', active: true },
     {
       label: 'À venda',
       value: (
@@ -228,7 +229,7 @@ export default function ProfileGearItem() {
               Voltar
             </Button>
             <Button
-              variant="light"
+              variant="filled"
               size="sm"
               rightSection={<IconArrowRight size={16} />}
               component={Link}
@@ -242,24 +243,21 @@ export default function ProfileGearItem() {
           {selectedItem ? (
             <>
               <Paper withBorder radius="md" p="md">
-                {/* Header igual ao title do Modal */}
-                <Stack gap={8} mb="lg" justify="flex-start" align="flex-start">
-                  <Flex gap={5} align="center">
-                    <Avatar
-                      size={30}
-                      src={profile.avatar ? AVATAR_PATH + profile.avatar : undefined}
+                <Stack gap={4} mb="lg" justify="flex-start" align="flex-start">
+                  <Group gap={4}>
+                    <Text size="xs" c="dimmed" style={{ letterSpacing: 0.6 }}>
+                      Item do equipamento de
+                    </Text>
+                    <Anchor
                       component={Link}
                       to={`/${username}`}
-                      style={{ cursor: 'pointer' }}
-                    />
-                    <Box>
-                      <Flex align="center" gap={4}>
-                        <Text size="sm">
-                          Item do equipamento de <strong>{profile.username}</strong>
-                        </Text>
-                      </Flex>
-                    </Box>
-                  </Flex>
+                      size="xs"
+                      fw={500}
+                      style={{ letterSpacing: 0.6 }}
+                    >
+                      @{profile.username}
+                    </Anchor>
+                  </Group>
                   <Title order={1} fz="h3" fw={600}>
                     {selectedItem.products?.brands?.name} {selectedItem.products?.name}
                   </Title>
@@ -268,18 +266,59 @@ export default function ProfileGearItem() {
                 <Grid mt={10}>
                   <Grid.Col span={{ base: 12, md: 6 }}>
                     <Center>
-                      <Image
-                        src={
-                          selectedItem.products?.picture
-                            ? PRODUCT_IMG_LG + selectedItem.products.picture
-                            : undefined
-                        }
-                        w={320}
-                        fit="contain"
-                        mb={12}
-                        radius="md"
-                        fallbackSrc="https://ik.imagekit.io/mublin/products/tr:w-400,cm-pad_resize,bg-FFFFFF/no-picture.png"
-                      />
+                      <Box pos="relative" w="fit-content">
+                        <Link to={`/gear/${selectedItem.products?.slug}`}>
+                          <Image
+                            src={
+                              selectedItem.products?.picture
+                                ? PRODUCT_IMG_LG + selectedItem.products.picture
+                                : undefined
+                            }
+                            w={180}
+                            fit="contain"
+                            mb={12}
+                            radius="md"
+                            fallbackSrc="https://ik.imagekit.io/mublin/products/tr:w-400,cm-pad_resize,bg-FFFFFF/no-picture.png"
+                          />
+                        </Link>
+
+                        {/* Avatar flutuante: reforça que o item pertence a este perfil */}
+                        <motion.div
+                          style={{
+                            position: 'absolute',
+                            top: -10,
+                            right: -10,
+                            zIndex: 2,
+                          }}
+                          animate={{ y: [0, -8, 0] }}
+                          transition={{
+                            duration: 3.2,
+                            repeat: Infinity,
+                            ease: 'easeInOut',
+                          }}
+                        >
+                          <Tooltip
+                            label={`Equipamento de @${profile.username}`}
+                            position="left"
+                            withArrow
+                          >
+                            <Anchor component={Link} to={`/${username}`}>
+                              <Avatar
+                                size={60}
+                                src={getAvatarUrl(
+                                  profile.avatar,
+                                  profile.is_open_to_work,
+                                  120,
+                                )}
+                                style={{
+                                  border: '3px solid var(--mantine-color-body)',
+                                  boxShadow: '0 6px 14px rgba(0, 0, 0, 0.2)',
+                                }}
+                              />
+                            </Anchor>
+                          </Tooltip>
+                        </motion.div>
+                      </Box>
                     </Center>
                   </Grid.Col>
                   <Grid.Col span={{ base: 12, md: 6 }}>
@@ -312,8 +351,8 @@ export default function ProfileGearItem() {
               </Paper>
               <Button
                 hiddenFrom="sm"
-                variant="light"
-                size="sm"
+                variant="filled"
+                size="md"
                 mt="lg"
                 fullWidth
                 rightSection={<IconArrowRight size={16} />}
