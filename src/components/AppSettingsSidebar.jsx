@@ -8,6 +8,7 @@ import {
   IconHeartHandshake,
   IconRadar,
   IconBox,
+  IconSchool,
   IconCamera,
   IconListCheckFilled,
 } from '@tabler/icons-react'
@@ -37,6 +38,12 @@ const SETTINGS_TABS = [
     label: 'Preferências musicais',
     icon: IconMusic,
     path: '/settings/musical-preferences',
+  },
+  {
+    value: 'education',
+    label: 'Formação',
+    icon: IconSchool,
+    path: '/settings/education',
   },
   {
     value: 'portfolio',

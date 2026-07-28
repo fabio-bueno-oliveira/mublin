@@ -388,6 +388,52 @@ export async function fetchProfileInspirations(profileId) {
   return data
 }
 
+export async function fetchProfileEducation(profileId) {
+  const { data, error } = await supabase
+    .from('profile_education')
+    .select(
+      `
+      id,
+      institution_name,
+      course_name,
+      field_of_study,
+      start_year,
+      end_year,
+      is_current,
+      description,
+      order_index,
+      institutions ( id, name, logo ),
+      education_levels ( id, name_ptbr )
+    `,
+    )
+    .eq('id_profile', profileId)
+    .order('order_index', { ascending: true, nullsFirst: false })
+  if (error) {
+    throw new Error(error.message)
+  }
+  return data
+}
+
+export async function fetchProfileTeachers(profileId) {
+  const { data, error } = await supabase
+    .from('profile_teachers')
+    .select(
+      `
+      id,
+      notes,
+      teacher:profiles!profile_teachers_id_teacher_profile_fkey (
+        id, full_name, username, avatar
+      )
+    `,
+    )
+    .eq('id_profile', profileId)
+    .order('created_at', { ascending: false })
+  if (error) {
+    throw new Error(error.message)
+  }
+  return data
+}
+
 export async function fetchProfilePartners(profileId) {
   const { data, error } = await supabase
     .from('profile_partners')

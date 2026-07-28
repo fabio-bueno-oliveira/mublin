@@ -51,6 +51,8 @@ import NewEvent from './pages/NewEvent'
 import Event from './pages/Event'
 import NewVenue from './pages/NewVenue'
 import Venue from './pages/Venue'
+// -- School pages
+import Institution from './pages/Institution'
 // -- Feed pages
 import Post from './pages/Post'
 import NewPost from './pages/NewPost'
@@ -64,6 +66,7 @@ import MyGear from './pages/settings/MyGear'
 import Availability from './pages/settings/Availability'
 import Picture from './pages/settings/Picture'
 import Portfolio from './pages/settings/Portfolio'
+import Education from './pages/settings/Education'
 // -- Admin pages
 import AdminRoute from './pages/admin/AdminRoute'
 import AdminLayout from './pages/admin/AdminLayout'
@@ -128,6 +131,7 @@ export const router = createBrowserRouter([
       { path: 'event/:slug', element: <Event /> },
       { path: 'new/venue', element: <NewVenue /> },
       { path: 'venue/:slug', element: <Venue /> },
+      { path: 'school/:slug', element: <Institution /> },
       { path: 'saved', element: <MySavedFavorites /> },
     ],
   },
@@ -161,6 +165,7 @@ export const router = createBrowserRouter([
           { path: 'availability', element: <Availability /> },
           { path: 'picture', element: <Picture /> },
           { path: 'portfolio', element: <Portfolio /> },
+          { path: 'education', element: <Education /> },
         ],
       },
     ],

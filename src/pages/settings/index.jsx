@@ -10,6 +10,7 @@ import {
   IconBox,
   IconCamera,
   IconListCheckFilled,
+  IconSchool,
 } from '@tabler/icons-react'
 import classes from './settings.module.css'
 
@@ -37,6 +38,12 @@ const SETTINGS_TABS = [
     label: 'Preferências musicais',
     icon: IconMusic,
     path: '/settings/musical-preferences',
+  },
+  {
+    value: 'education',
+    label: 'Formação',
+    icon: IconSchool,
+    path: '/settings/education',
   },
   {
     value: 'portfolio',

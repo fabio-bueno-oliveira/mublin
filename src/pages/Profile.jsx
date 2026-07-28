@@ -17,6 +17,8 @@ import {
   fetchProfileInspirations,
   fetchProfilePartners,
   fetchProfilePortfolio,
+  fetchProfileEducation,
+  fetchProfileTeachers,
   fetchCheckFavorite,
   toggleFavorite,
   fetchPortfolioUpvotes,
@@ -66,6 +68,7 @@ import {
   IconPencil, IconSparkles,
   IconBookmark, IconBookmarkFilled,
   IconRosetteDiscountCheckFilled,
+  IconSchool, IconUserCircle,
 } from '@tabler/icons-react'
 import ProfileHeaderMobile from '../components/profile/ProfileHeaderMobile'
 import AppNavbarMobile from '../components/AppNavbarMobile'
@@ -158,6 +161,7 @@ export default function Profile() {
   const MENU_ITEMS = [
     { id: 'about', label: 'Sobre', active: true },
     { id: 'portfolio', label: 'Portfólio', active: true },
+    { id: 'education', label: 'Formação', active: true },
     { id: 'posts', label: 'Postagens', active: true },
     { id: 'gear', label: 'Equipamento', active: true },
     {
@@ -426,6 +430,20 @@ export default function Profile() {
     queryFn: () => fetchPortfolioUpvotes(profile.id, user?.id),
     enabled: !!profile?.id && portfolio.length > 0,
     staleTime: 1000 * 60 * 2,
+  })
+
+  const { data: education = [], isLoading: loadingEducation } = useQuery({
+    queryKey: ['profile-education', profile?.id],
+    queryFn: () => fetchProfileEducation(profile.id),
+    enabled: !!profile?.id,
+    staleTime: 1000 * 60 * 10,
+  })
+
+  const { data: teachers = [], isLoading: loadingTeachers } = useQuery({
+    queryKey: ['profile-teachers', profile?.id],
+    queryFn: () => fetchProfileTeachers(profile.id),
+    enabled: !!profile?.id,
+    staleTime: 1000 * 60 * 10,
   })
 
   const upvotesByPortfolioId = useMemo(
@@ -1294,6 +1312,141 @@ export default function Profile() {
                     )}
                   </SectionPanel>
 
+                  <SectionPanel id="education">
+                    <Group justify="space-between">
+                      <SectionTitle text="Formação" />
+                      {isOwnProfile && (
+                        <ActionIcon
+                          variant="subtle"
+                          color="gray"
+                          radius="xl"
+                          size="sm"
+                          p={0}
+                          aria-label="Editar minha formação"
+                          title="Editar minha formação"
+                          component={Link}
+                          to="/settings/education"
+                        >
+                          <IconPencil style={{ width: '94%', height: '94%' }} />
+                        </ActionIcon>
+                      )}
+                    </Group>
+
+                    {loadingEducation ? (
+                      <Text mt="md">Carregando...</Text>
+                    ) : education.length > 0 ? (
+                      <Stack mt="md" gap="lg">
+                        {education.map((item) => {
+                          const period = formatPortfolioPeriod(
+                            item.start_year,
+                            item.is_current ? null : item.end_year,
+                          )
+                          return (
+                            <Group
+                              key={item.id}
+                              gap="xs"
+                              align="flex-start"
+                              wrap="nowrap"
+                            >
+                              <Avatar
+                                radius="md"
+                                size={60}
+                                src={item.institutions?.logo || undefined}
+                              >
+                                <IconSchool size={24} />
+                              </Avatar>
+                              <Stack gap={2} style={{ flex: 1, minWidth: 0 }}>
+                                <Text size="15px" fw={600}>
+                                  {item.institution_name}
+                                </Text>
+                                {(item.course_name || item.field_of_study) && (
+                                  <Text size="sm" opacity={0.9}>
+                                    {[item.course_name, item.field_of_study]
+                                      .filter(Boolean)
+                                      .join(' — ')}
+                                  </Text>
+                                )}
+                                {(item.education_levels?.name_ptbr || period) && (
+                                  <Text size="xs" opacity={0.7}>
+                                    {[
+                                      item.education_levels?.name_ptbr,
+                                      item.is_current
+                                        ? `${item.start_year ?? ''} – atual`
+                                        : period,
+                                    ]
+                                      .filter(Boolean)
+                                      .join(' · ')}
+                                  </Text>
+                                )}
+                                {item.description && (
+                                  <Spoiler
+                                    maxHeight={42}
+                                    showLabel={<Text size="sm">Ver mais</Text>}
+                                    hideLabel={<Text size="sm">Ver menos</Text>}
+                                  >
+                                    <Text size="sm" style={{ whiteSpace: 'pre-line' }}>
+                                      {item.description}
+                                    </Text>
+                                  </Spoiler>
+                                )}
+                              </Stack>
+                            </Group>
+                          )
+                        })}
+                      </Stack>
+                    ) : (
+                      <Text size="sm" c="dimmed" mt="sm">
+                        Nenhuma formação informada até o momento
+                      </Text>
+                    )}
+
+                    {loadingTeachers
+                      ? null
+                      : teachers.length > 0 && (
+                          <>
+                            <Divider my="md" />
+                            <Text fw={600} size="sm" mb="xs">
+                              Professores
+                            </Text>
+                            <Stack gap="sm">
+                              {teachers.map((item) => (
+                                <Group key={item.id} gap="sm" wrap="nowrap">
+                                  <Link to={`/${item.teacher?.username}`}>
+                                    <Avatar
+                                      radius="xl"
+                                      size={40}
+                                      src={
+                                        item.teacher?.avatar
+                                          ? AVATAR_PATH + item.teacher.avatar
+                                          : undefined
+                                      }
+                                    >
+                                      <IconUserCircle size={20} />
+                                    </Avatar>
+                                  </Link>
+                                  <Stack gap={0} style={{ minWidth: 0 }}>
+                                    <Text
+                                      size="sm"
+                                      fw={600}
+                                      component={Link}
+                                      to={`/${item.teacher?.username}`}
+                                      style={{ color: 'inherit' }}
+                                    >
+                                      {item.teacher?.full_name}
+                                    </Text>
+                                    {item.notes && (
+                                      <Text size="xs" opacity={0.7}>
+                                        {item.notes}
+                                      </Text>
+                                    )}
+                                  </Stack>
+                                </Group>
+                              ))}
+                            </Stack>
+                          </>
+                        )}
+                  </SectionPanel>
+
                   {loadingPosts ? (
                     <Box mx="xs">
                       <SectionTitle text="Postagens" mb="md" />
@@ -1399,8 +1552,11 @@ export default function Profile() {
                                       {post.image && (
                                         <Link to={`/post/${post.id}`}>
                                           <Image
-                                            src={`https://ik.imagekit.io/mublin/posts/tr:w-700/${post.image}`}
+                                            src={`https://ik.imagekit.io/mublin/posts/tr:h-134/${post.image}`}
                                             radius={false}
+                                            h={134}
+                                            w="auto"
+                                            fit="contain"
                                           />
                                         </Link>
                                       )}

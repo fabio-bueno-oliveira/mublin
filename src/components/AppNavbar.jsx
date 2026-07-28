@@ -162,7 +162,7 @@ export default function AppNavbar({ children }) {
                 />
               </Link>
               {/* Nav items — apenas desktop */}
-              <Group gap="md" ml="lg" align="center" visibleFrom="sm">
+              <Group gap="lg" ml="lg" align="center" visibleFrom="sm">
                 {NAV_ITEMS.map((item) => {
                   const Icon = item.icon
                   return (
