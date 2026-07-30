@@ -1,7 +1,13 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../../hooks/useAuth'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { fetchUserProfile } from '../../queries/user'
+import {
+  fetchUserProfile,
+  fetchUserLinks,
+  addProfileLink,
+  updateProfileLink,
+  deleteProfileLink,
+} from '../../queries/user'
 import { fetchCityById } from '../../queries/locations'
 import { supabase } from '../../lib/supabaseClient'
 import {
@@ -23,6 +29,7 @@ import {
   Loader,
   Alert,
   Switch,
+  ActionIcon,
 } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { useDebouncedCallback, useDisclosure, useWindowScroll } from '@mantine/hooks'
@@ -37,6 +44,11 @@ import {
   IconBrandYoutube,
   IconBrandTwitch,
   IconVideo,
+  IconPlus,
+  IconTrash,
+  IconArrowUp,
+  IconArrowDown,
+  IconX,
 } from '@tabler/icons-react'
 import { PhoneInput } from 'react-international-phone'
 import 'react-international-phone/style.css'
@@ -127,6 +139,12 @@ export default function EditMyProfile() {
   const [livePlatform, setLivePlatform] = useState('')
   const [liveDuration, setLiveDuration] = useState('')
 
+  // ── Links (profile_links) ─────────────────────────────
+  const MAX_LINKS = 5 // manter em sincronia com a função check_profile_links_limit()
+  const [links, setLinks] = useState([])
+  const [linksInitialized, setLinksInitialized] = useState(false)
+  const [linksErrors, setLinksErrors] = useState({})
+
   // ── Form ──────────────────────────────────────────────
   const form = useForm({
     initialValues: {
@@ -136,7 +154,6 @@ export default function EditMyProfile() {
       bio: '',
       gender: '',
       region_id: '',
-      website: '',
       instagram: '',
       tiktok: '',
       youtube: '',
@@ -158,17 +175,6 @@ export default function EditMyProfile() {
           return 'Apenas letras minúsculas, números e _'
         }
         return null
-      },
-      website: (v) => {
-        if (!v) {
-          return null
-        }
-        try {
-          new URL(v)
-          return null
-        } catch {
-          return 'URL inválida. Ex: https://meusite.com'
-        }
       },
     },
   })
@@ -207,6 +213,13 @@ export default function EditMyProfile() {
     staleTime: 1000 * 60 * 5,
   })
 
+  const { data: savedLinks, isSuccess: linksLoaded } = useQuery({
+    queryKey: ['profile-links', user?.id],
+    queryFn: () => fetchUserLinks(user.id),
+    enabled: !!user?.id,
+    staleTime: 1000 * 60 * 5,
+  })
+
   // ── Popula form com dados salvos ──────────────────────
   useEffect(() => {
     if (!savedProfile || form.values.username) {
@@ -219,7 +232,6 @@ export default function EditMyProfile() {
       bio: savedProfile.bio ?? '',
       gender: savedProfile.gender ?? '',
       region_id: savedProfile.region_id ? String(savedProfile.region_id) : '',
-      website: savedProfile.website ?? '',
       phone_number: savedProfile.phone_number ?? '',
       phone_number_is_public: savedProfile.phone_number_is_public ?? false,
       phone_number_is_whatsapp: savedProfile.phone_number_is_whatsapp ?? false,
@@ -268,6 +280,13 @@ export default function EditMyProfile() {
       setSelectedCity({ id: savedCity.id, name: savedCity.name })
     }
   }, [savedCity])
+
+  useEffect(() => {
+    if (linksLoaded && !linksInitialized) {
+      setLinks((savedLinks ?? []).map((l) => ({ ...l })))
+      setLinksInitialized(true)
+    }
+  }, [linksLoaded, savedLinks, linksInitialized])
 
   // ── Username check ────────────────────────────────────
   const handleUsernameCheck = useDebouncedCallback(async (value) => {
@@ -319,6 +338,103 @@ export default function EditMyProfile() {
     setCitySearchLoading(false)
   }, 500)
 
+  // ── Manipulação local dos links (profile_links) ───────
+  function addLinkRow() {
+    if (links.length >= MAX_LINKS) {
+      return
+    }
+    setLinks((prev) => [
+      ...prev,
+      {
+        id: `new-${Date.now()}`,
+        label: '',
+        url: '',
+        position: prev.length,
+        _isNew: true,
+      },
+    ])
+  }
+
+  function updateLinkField(id, field, value) {
+    setLinks((prev) => prev.map((l) => (l.id === id ? { ...l, [field]: value } : l)))
+  }
+
+  function removeLinkRow(id) {
+    setLinks((prev) =>
+      prev.filter((l) => l.id !== id).map((l, idx) => ({ ...l, position: idx })),
+    )
+  }
+
+  function moveLinkRow(id, direction) {
+    setLinks((prev) => {
+      const index = prev.findIndex((l) => l.id === id)
+      const newIndex = index + direction
+      if (newIndex < 0 || newIndex >= prev.length) {
+        return prev
+      }
+      const updated = [...prev]
+      ;[updated[index], updated[newIndex]] = [updated[newIndex], updated[index]]
+      return updated.map((l, idx) => ({ ...l, position: idx }))
+    })
+  }
+
+  function validateLinks(currentLinks) {
+    const errors = {}
+    currentLinks.forEach((link) => {
+      const rowErrors = {}
+      if (!link.label?.trim()) {
+        rowErrors.label = 'Obrigatório'
+      } else if (link.label.trim().length > 60) {
+        rowErrors.label = 'Máximo de 60 caracteres'
+      }
+      if (!link.url?.trim()) {
+        rowErrors.url = 'Obrigatório'
+      } else if (!/^https?:\/\//i.test(link.url.trim())) {
+        rowErrors.url = 'URL inválida. Deve começar com http:// ou https://'
+      } else if (link.url.trim().length > 2048) {
+        rowErrors.url = 'URL muito longa'
+      }
+      if (Object.keys(rowErrors).length) {
+        errors[link.id] = rowErrors
+      }
+    })
+    return errors
+  }
+
+  // ── Salva links (insere, atualiza, remove e reordena) ─
+  async function saveProfileLinks(profileId) {
+    const originalIds = new Set((savedLinks ?? []).map((l) => l.id))
+    const currentIds = new Set(links.filter((l) => !l._isNew).map((l) => l.id))
+
+    // Remove links que existiam antes e não estão mais na lista atual
+    const deletedIds = [...originalIds].filter((id) => !currentIds.has(id))
+    for (const id of deletedIds) {
+      await deleteProfileLink(id)
+    }
+
+    // Insere novos e atualiza os que mudaram (label, url ou posição)
+    for (const [index, link] of links.entries()) {
+      const payload = {
+        label: link.label.trim(),
+        url: link.url.trim(),
+        position: index,
+      }
+      if (link._isNew) {
+        await addProfileLink(profileId, payload)
+      } else {
+        const original = (savedLinks ?? []).find((l) => l.id === link.id)
+        const changed =
+          !original ||
+          original.label !== payload.label ||
+          original.url !== payload.url ||
+          original.position !== payload.position
+        if (changed) {
+          await updateProfileLink(link.id, payload)
+        }
+      }
+    }
+  }
+
   // ── Salva links sociais (upsert por plataforma) ───────
   async function saveSocialLinks(profileId, values) {
     const platforms = [
@@ -364,6 +480,17 @@ export default function EditMyProfile() {
       return
     }
 
+    const linksValidationErrors = validateLinks(links)
+    setLinksErrors(linksValidationErrors)
+    if (Object.keys(linksValidationErrors).length > 0) {
+      notifications.show({
+        color: 'red',
+        position: 'top-center',
+        message: 'Verifique os links preenchidos antes de salvar.',
+      })
+      return
+    }
+
     setIsSubmitting(true)
     try {
       const { error } = await supabase
@@ -376,7 +503,6 @@ export default function EditMyProfile() {
           gender: values.gender || null,
           region_id: values.region_id ? Number(values.region_id) : null,
           city_id: selectedCity?.id ?? null,
-          website: values.website?.trim() || null,
           is_live: isLive,
           live_platform: isLive ? livePlatform || null : null,
           live_expires_at: liveExpiresAt,
@@ -391,10 +517,15 @@ export default function EditMyProfile() {
       }
 
       await saveSocialLinks(user.id, values)
+      await saveProfileLinks(user.id)
 
       // Invalida queries afetadas para refletir os dados novos
       queryClient.invalidateQueries({ queryKey: ['profile', user.id] })
       queryClient.invalidateQueries({ queryKey: ['social-links', user.id] })
+      queryClient.invalidateQueries({ queryKey: ['profile-links', user.id] })
+      // Força resync do estado local de links com os dados atualizados do servidor
+      // (novos links recebem seus ids reais gerados pelo banco)
+      setLinksInitialized(false)
 
       scrollTo({ y: 0 })
 
@@ -403,11 +534,11 @@ export default function EditMyProfile() {
         position: 'top-center',
         message: 'Perfil atualizado com sucesso!',
       })
-    } catch {
+    } catch (error) {
       notifications.show({
         color: 'red',
         position: 'top-center',
-        message: 'Erro ao salvar. Tente novamente.',
+        message: error?.message || 'Erro ao salvar. Tente novamente.',
       })
     } finally {
       setIsSubmitting(false)
@@ -684,18 +815,109 @@ export default function EditMyProfile() {
 
         <Divider />
 
-        {/* ── Web e redes sociais ──────────────────────── */}
+        {/* ── Links e redes sociais ────────────────────── */}
         <Stack gap="md">
           <Text fw={600} size="sm" c="dimmed" tt="uppercase" lts="0.05em">
-            Website e redes sociais
+            Links e redes sociais
           </Text>
 
-          <TextInput
-            label="Website"
-            placeholder="https://meusite.com"
-            leftSection={<IconWorld size={16} />}
-            {...form.getInputProps('website')}
-          />
+          <Stack gap="xs">
+            <div>
+              <Text size="sm" fw={500}>
+                Meus links
+              </Text>
+              <Text size="xs" c="dimmed">
+                Adicione até {MAX_LINKS} links (site pessoal, portfólio, curso, loja,
+                etc.)
+              </Text>
+            </div>
+
+            {links.map((link, index) => (
+              <Box
+                key={link.id}
+                p="sm"
+                style={{
+                  border: '1px solid var(--mantine-color-default-border)',
+                  borderRadius: 'var(--mantine-radius-sm)',
+                }}
+              >
+                <Stack gap="xs">
+                  <Group justify="space-between" wrap="nowrap">
+                    <Text size="xs" c="dimmed">
+                      Link {index + 1}
+                    </Text>
+                    <Group gap={4}>
+                      <ActionIcon
+                        variant="subtle"
+                        size="sm"
+                        disabled={index === 0}
+                        onClick={() => moveLinkRow(link.id, -1)}
+                        aria-label="Mover para cima"
+                      >
+                        <IconArrowUp size={14} />
+                      </ActionIcon>
+                      <ActionIcon
+                        variant="subtle"
+                        size="sm"
+                        disabled={index === links.length - 1}
+                        onClick={() => moveLinkRow(link.id, 1)}
+                        aria-label="Mover para baixo"
+                      >
+                        <IconArrowDown size={14} />
+                      </ActionIcon>
+                      <ActionIcon
+                        color="red"
+                        variant="subtle"
+                        size="sm"
+                        onClick={() => removeLinkRow(link.id)}
+                        aria-label="Remover link"
+                      >
+                        <IconTrash size={14} />
+                      </ActionIcon>
+                    </Group>
+                  </Group>
+                  <Grid>
+                    <Grid.Col span={{ base: 12, sm: 5 }}>
+                      <TextInput
+                        placeholder="Rótulo (ex: Meu site)"
+                        maxLength={60}
+                        value={link.label}
+                        error={linksErrors[link.id]?.label}
+                        onChange={(e) =>
+                          updateLinkField(link.id, 'label', e.target.value)
+                        }
+                      />
+                    </Grid.Col>
+                    <Grid.Col span={{ base: 12, sm: 7 }}>
+                      <TextInput
+                        placeholder="https://..."
+                        leftSection={<IconWorld size={16} />}
+                        value={link.url}
+                        error={linksErrors[link.id]?.url}
+                        onChange={(e) => updateLinkField(link.id, 'url', e.target.value)}
+                      />
+                    </Grid.Col>
+                  </Grid>
+                </Stack>
+              </Box>
+            ))}
+
+            <Button
+              variant="light"
+              size="xs"
+              leftSection={<IconPlus size={14} />}
+              onClick={addLinkRow}
+              disabled={links.length >= MAX_LINKS}
+              style={{ alignSelf: 'flex-start' }}
+            >
+              Adicionar link
+            </Button>
+            {links.length >= MAX_LINKS && (
+              <Text size="xs" c="dimmed">
+                Limite de {MAX_LINKS} links atingido.
+              </Text>
+            )}
+          </Stack>
 
           <Grid>
             <Grid.Col span={{ base: 12, sm: 6 }}>

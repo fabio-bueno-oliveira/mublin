@@ -13,7 +13,12 @@ function getYouTubeId(url) {
   return match ? match[1] : null
 }
 
-export default function VideoPlayerYoutube({ url, title, thumbnailOnly = false }) {
+export default function VideoPlayerYoutube({
+  url,
+  title,
+  thumbnailOnly = false,
+  height,
+}) {
   const [expanded, setExpanded] = useState(false)
   const ytId = getYouTubeId(url)
   if (!ytId) {
@@ -66,6 +71,28 @@ export default function VideoPlayerYoutube({ url, title, thumbnailOnly = false }
     </Flex>
   )
 
+  // Estilo base do container: por padrão, a proporção 16:9 é calculada a partir
+  // da LARGURA (paddingTop percentual). Quando `height` é informado, a proporção
+  // passa a ser calculada a partir da ALTURA fixa (aspect-ratio), garantindo que
+  // o vídeo fique com a mesma altura de outros elementos ao lado (ex.: imagens
+  // de posts com altura fixa), evitando desalinhamento vertical entre cards.
+  const containerStyle = height
+    ? {
+        position: 'relative',
+        display: 'block',
+        height,
+        aspectRatio: '16 / 9',
+        borderRadius: 'var(--mantine-radius-md)',
+        overflow: 'hidden',
+      }
+    : {
+        position: 'relative',
+        display: 'block',
+        paddingTop: '56.25%',
+        borderRadius: 'var(--mantine-radius-md)',
+        overflow: 'hidden',
+      }
+
   // Modo "link": não renderiza iframe, o clique leva ao vídeo no YouTube em nova aba.
   if (LINK_MODE) {
     return (
@@ -78,11 +105,7 @@ export default function VideoPlayerYoutube({ url, title, thumbnailOnly = false }
         rel={thumbnailOnly ? undefined : 'noopener noreferrer'}
         title={thumbnailOnly ? undefined : (title ?? 'Assistir no YouTube')}
         style={{
-          position: 'relative',
-          display: 'block',
-          paddingTop: '56.25%',
-          borderRadius: 'var(--mantine-radius-md)',
-          overflow: 'hidden',
+          ...containerStyle,
           cursor: thumbnailOnly ? 'default' : 'pointer',
           textDecoration: 'none',
         }}
@@ -99,10 +122,7 @@ export default function VideoPlayerYoutube({ url, title, thumbnailOnly = false }
       mt={4}
       className="video-player-box"
       style={{
-        position: 'relative',
-        paddingTop: '56.25%',
-        borderRadius: 'var(--mantine-radius-md)',
-        overflow: 'hidden',
+        ...containerStyle,
         cursor: thumbnailOnly ? 'default' : expanded ? 'default' : 'pointer',
       }}
       onClick={() => !thumbnailOnly && !expanded && setExpanded(true)}

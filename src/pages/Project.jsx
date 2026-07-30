@@ -428,6 +428,9 @@ export default function Project() {
               <Tabs.Tab value="people" mr="xs">
                 Pessoas
               </Tabs.Tab>
+              <Tabs.Tab value="discography" mr="xs">
+                Discografia
+              </Tabs.Tab>
               <Tabs.Tab value="jobs" mr="xs">
                 Vagas
               </Tabs.Tab>
@@ -541,9 +544,10 @@ export default function Project() {
                   Administradores ({projectAdmins.length})
                 </Title>
                 <Button
-                  variant="outline"
+                  variant="light"
                   size="xs"
                   onClick={() => handleRequestAdminStatus()}
+                  color="var(--mantine-color-text)"
                 >
                   Solicitar acesso admin
                 </Button>
@@ -585,6 +589,17 @@ export default function Project() {
               )}
             </Card>
           </Stack>
+        )}
+
+        {activeTab === 'discography' && (
+          <Card mx={{ base: 0, sm: 'md' }}>
+            <Title order={5} fw={600}>
+              Discografia
+            </Title>
+            <Text span c="dimmed" size="sm">
+              Nenhum álbum cadastrado para este projeto no momento
+            </Text>
+          </Card>
         )}
 
         {activeTab === 'jobs' && (

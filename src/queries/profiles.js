@@ -18,7 +18,6 @@ export async function fetchProfileDetails(profileUsername) {
       region_id,
       is_verified,
       is_legend,
-      website,
       is_open_to_work,
       plan,
       is_live,
@@ -657,6 +656,18 @@ export async function fetchProfileGearItemById(gearId) {
     .eq('id', gearId)
     .single()
 
+  if (error) {
+    throw new Error(error.message)
+  }
+  return data
+}
+
+export async function fetchProfileLinks(profileId) {
+  const { data, error } = await supabase
+    .from('profile_links')
+    .select('id, label, url, position')
+    .eq('profile_id', profileId)
+    .order('position', { ascending: true })
   if (error) {
     throw new Error(error.message)
   }

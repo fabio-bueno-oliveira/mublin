@@ -23,6 +23,7 @@ import {
   toggleFavorite,
   fetchPortfolioUpvotes,
   togglePortfolioUpvote,
+  fetchProfileLinks,
 } from '../queries/profiles'
 import { useAuth } from '../hooks/useAuth'
 import { Helmet } from 'react-helmet-async'
@@ -69,6 +70,7 @@ import {
   IconBookmark, IconBookmarkFilled,
   IconRosetteDiscountCheckFilled,
   IconSchool, IconUserCircle,
+  IconExternalLink,
 } from '@tabler/icons-react'
 import ProfileHeaderMobile from '../components/profile/ProfileHeaderMobile'
 import AppNavbarMobile from '../components/AppNavbarMobile'
@@ -125,6 +127,8 @@ export default function Profile() {
   const [followingOpened, { open: openFollowing, close: closeFollowing }] =
     useDisclosure(false)
   const [contactInfoOpened, { open: openContactInfo, close: closeContactInfo }] =
+    useDisclosure(false)
+  const [linksOpened, { open: openLinksModal, close: closeLinksModal }] =
     useDisclosure(false)
   const [inviteOpened, { open: openInvite, close: closeInvite }] = useDisclosure(false)
   const [actionsOpened, { open: openActions, close: closeActions }] = useDisclosure(false)
@@ -358,6 +362,13 @@ export default function Profile() {
     queryFn: () => fetchSimilarProfiles(profile.id, profile.region_id),
     enabled: !!profile?.id,
     staleTime: 1000 * 60 * 10,
+  })
+
+  const { data: profileLinks = [] } = useQuery({
+    queryKey: ['profile-links', profile?.id],
+    queryFn: () => fetchProfileLinks(profile.id),
+    enabled: !!profile?.id,
+    staleTime: 1000 * 60 * 5,
   })
 
   const { data: profilePosts = [], isLoading: loadingPosts } = useQuery({
@@ -727,12 +738,14 @@ export default function Profile() {
             )}
             {isMobile && (
               <ProfileHeaderMobile
-                mt={profile.cover_image ? 14 : 0}
+                mt={profile.cover_image ? -55 : 0}
                 profile={profile}
                 city={city}
                 region={region}
                 country={country}
                 profileViewCount={profileViewCount}
+                links={profileLinks}
+                onOpenLinks={openLinksModal}
               />
             )}
             <Grid>
@@ -897,7 +910,7 @@ export default function Profile() {
                     )}
                   </Flex>
                   {profile.title && (
-                    <Text size="sm" fw={400} maw={420} lh={1.2} my={3}>
+                    <Text size="15px" fw={400} maw={420} lh={1.2} my={3}>
                       {profile.title}
                     </Text>
                   )}
@@ -931,12 +944,28 @@ export default function Profile() {
                       </Group>
                     )}
                   </Flex>
+                  {profileLinks.length > 0 && (
+                    <Flex align="center" gap={4} opacity={0.8} mt={6}>
+                      <IconLink size={13} style={{ flexShrink: 0 }} />
+                      <Anchor
+                        size="xs"
+                        fw={300}
+                        onClick={openLinksModal}
+                        c="var(--mantine-color-text)"
+                        underline="never"
+                      >
+                        {profileLinks[0].label}
+                        {profileLinks.length > 1 && ` +${profileLinks.length - 1} links`}
+                      </Anchor>
+                    </Flex>
+                  )}
                 </Stack>
 
                 <Group
                   gap="md"
-                  justify={isMobile ? 'center' : 'flex-start'}
-                  mt={{ base: 'xs', md: 0 }}
+                  justify="flex-start"
+                  mt={{ base: 6, md: 0 }}
+                  px={{ base: 'sm', md: 0 }}
                 >
                   <Anchor
                     underline="never"
@@ -1058,7 +1087,7 @@ export default function Profile() {
                               {truncateString(profile.bio, 150)}
                             </Text>
                             <Anchor onClick={() => setExpandedBio(true)}>
-                              <Text mt={4} size="sm">
+                              <Text mt={4} size="sm" c="var(--mantine-color-text)">
                                 Ver mais
                               </Text>
                             </Anchor>
@@ -1291,8 +1320,16 @@ export default function Profile() {
                                   {item.notes && (
                                     <Spoiler
                                       maxHeight={42}
-                                      showLabel={<Text size="sm">Ver mais</Text>}
-                                      hideLabel={<Text size="sm">Ver menos</Text>}
+                                      showLabel={
+                                        <Text size="sm" c="var(--mantine-color-text)">
+                                          Ver mais
+                                        </Text>
+                                      }
+                                      hideLabel={
+                                        <Text size="sm" c="var(--mantine-color-text)">
+                                          Ver menos
+                                        </Text>
+                                      }
                                     >
                                       <Text size="sm" style={{ whiteSpace: 'pre-line' }}>
                                         {item.notes}
@@ -1459,41 +1496,52 @@ export default function Profile() {
                   ) : (
                     <>
                       {profilePosts.length > 0 ? (
-                        <Box mt="sm" mx={{ base: 'sm', md: 0 }}>
-                          <Group justify="space-between" align="center" mb={4}>
-                            <SectionTitle text="Postagens" id="posts" />
-                            {profilePosts.length > 2 && (
-                              <Group>
-                                <ThemeIcon
-                                  variant="default"
-                                  style={{
-                                    cursor: postsScroller.canScrollStart
-                                      ? 'pointer'
-                                      : 'default',
-                                  }}
-                                  onClick={postsScroller.scrollStart}
-                                  opacity={postsScroller.canScrollStart ? 1 : 0.5}
+                        <SectionPanel mt="sm">
+                          <Group justify="space-between" align="center" mb="sm">
+                            <Group gap={10}>
+                              <SectionTitle text="Postagens" id="posts" />
+                              {isOwnProfile && (
+                                <Button
+                                  size="xs"
+                                  variant="outline"
+                                  color="var(--mantine-color-text)"
+                                  component={Link}
+                                  to="/new/post"
                                 >
-                                  <IconChevronLeft
-                                    style={{ width: '70%', height: '70%' }}
-                                  />
-                                </ThemeIcon>
-                                <ThemeIcon
-                                  variant="default"
-                                  style={{
-                                    cursor: postsScroller.canScrollEnd
-                                      ? 'pointer'
-                                      : 'default',
-                                  }}
-                                  onClick={postsScroller.scrollEnd}
-                                  opacity={postsScroller.canScrollEnd ? 1 : 0.5}
-                                >
-                                  <IconChevronRight
-                                    style={{ width: '70%', height: '70%' }}
-                                  />
-                                </ThemeIcon>
-                              </Group>
-                            )}
+                                  Novo post
+                                </Button>
+                              )}
+                            </Group>
+                            <Group>
+                              <ThemeIcon
+                                variant="default"
+                                style={{
+                                  cursor: postsScroller.canScrollStart
+                                    ? 'pointer'
+                                    : 'default',
+                                }}
+                                onClick={postsScroller.scrollStart}
+                                opacity={postsScroller.canScrollStart ? 1 : 0.5}
+                              >
+                                <IconChevronLeft
+                                  style={{ width: '70%', height: '70%' }}
+                                />
+                              </ThemeIcon>
+                              <ThemeIcon
+                                variant="default"
+                                style={{
+                                  cursor: postsScroller.canScrollEnd
+                                    ? 'pointer'
+                                    : 'default',
+                                }}
+                                onClick={postsScroller.scrollEnd}
+                                opacity={postsScroller.canScrollEnd ? 1 : 0.5}
+                              >
+                                <IconChevronRight
+                                  style={{ width: '70%', height: '70%' }}
+                                />
+                              </ThemeIcon>
+                            </Group>
                           </Group>
                           <div
                             ref={postsScroller.ref}
@@ -1505,9 +1553,6 @@ export default function Profile() {
                             }}
                           >
                             <Group gap="xs" wrap="nowrap">
-                              {isMobile && (
-                                <Box style={{ flexShrink: 10, width: '2px' }} />
-                              )}
                               {loadingPosts
                                 ? [1, 2, 3].map((i) => (
                                     <Group key={i} gap="sm">
@@ -1519,13 +1564,7 @@ export default function Profile() {
                                     </Group>
                                   ))
                                 : profilePosts.map((post) => (
-                                    <Paper
-                                      key={post.id}
-                                      p="xs"
-                                      withBorder
-                                      h={220}
-                                      miw={280}
-                                    >
+                                    <Box key={post.id} h={200} miw={280}>
                                       <Text size="xs" c="dimmed" mt={4}>
                                         {dayjs(post.created_at).fromNow()}
                                       </Text>
@@ -1539,7 +1578,7 @@ export default function Profile() {
                                       >
                                         <Text
                                           size="sm"
-                                          maw="100%"
+                                          maw={240}
                                           my={6}
                                           lh={1.3}
                                           lineClamp={1}
@@ -1565,6 +1604,7 @@ export default function Profile() {
                                           <VideoPlayerYoutube
                                             url={post.video_url}
                                             thumbnailOnly
+                                            height={134}
                                           />
                                         </Link>
                                       )}
@@ -1585,11 +1625,11 @@ export default function Profile() {
                                           }}
                                         />
                                       )}
-                                    </Paper>
+                                    </Box>
                                   ))}
                             </Group>
                           </div>
-                        </Box>
+                        </SectionPanel>
                       ) : (
                         <SectionPanel>
                           <SectionTitle text="Postagens" id="posts" mb="sm" />
@@ -1632,7 +1672,7 @@ export default function Profile() {
                               </Button>
                               {isOwnProfile && (
                                 <ActionIcon
-                                  variant="outline"
+                                  variant="light"
                                   color="gray"
                                   radius="xl"
                                   size="md"
@@ -1787,12 +1827,12 @@ export default function Profile() {
                   <SectionTitle text="Disponibilidade" mb="sm" />
                   <Divider mt="sm" label="Disponível a partir de:" labelPosition="left" />
                   {profile.available_from ? (
-                    <Text size="sm">
+                    <Text size="15px">
                       {AVAILABLE_FROM_LABELS[profile.available_from] ||
                         profile.available_from}
                     </Text>
                   ) : (
-                    <Text size="md" c="dimmed">
+                    <Text size="15px" c="dimmed">
                       Não informado
                     </Text>
                   )}
@@ -1811,7 +1851,7 @@ export default function Profile() {
                       ))}
                     </Flex>
                   ) : (
-                    <Text size="sm" c="dimmed">
+                    <Text size="15px" c="dimmed">
                       Não informado
                     </Text>
                   )}
@@ -1824,14 +1864,14 @@ export default function Profile() {
                   {workFocus.length > 0 ? (
                     <Group gap={6} wrap="wrap">
                       {workFocus.map((item) => (
-                        <Text span size="sm" lh={1.2} fw={500} key={item.id}>
+                        <Text span size="15px" lh={1.2} fw={500} key={item.id}>
                           <IconCheck size={9} stroke={4} />{' '}
                           {item.work_focuses?.title_ptbr}
                         </Text>
                       ))}
                     </Group>
                   ) : (
-                    <Text size="sm" c="dimmed">
+                    <Text size="15px" c="dimmed">
                       Não informado
                     </Text>
                   )}
@@ -1841,17 +1881,17 @@ export default function Profile() {
                     labelPosition="left"
                   />
                   {loadingTravelPreference ? (
-                    <Text size="sm" c="dimmed">
+                    <Text size="15px" c="dimmed">
                       Carregando...
                     </Text>
                   ) : (
                     <>
                       {travelPreference?.id ? (
-                        <Text span size="sm" lh={1.2} fw={500}>
+                        <Text span size="15px" lh={1.2} fw={500}>
                           {travelPreference?.travel_preferences?.label}
                         </Text>
                       ) : (
-                        <Text size="sm" c="dimmed">
+                        <Text size="15px" c="dimmed">
                           Não informado
                         </Text>
                       )}
@@ -1974,12 +2014,13 @@ export default function Profile() {
                       cursor: inspirationsScroller.isDragging ? 'grabbing' : 'default',
                     }}
                   >
-                    <Group gap="xs" wrap="nowrap">
+                    <Group gap="xs" wrap="nowrap" align="flex-start">
                       {inspirations.map(({ id, artists: artist }) => (
                         <Flex
                           key={id}
                           direction="column"
                           align="center"
+                          justify="flex-start"
                           gap={4}
                           w={64}
                           component={Link}
@@ -2112,22 +2153,8 @@ export default function Profile() {
 
               <SectionPanel id="social">
                 <SectionTitle text="Redes sociais" mb="sm" />
-                {profile.profile_social_links.length > 0 || profile.website ? (
+                {profile.profile_social_links.length > 0 ? (
                   <Group gap={10} wrap="wrap">
-                    {profile.website && (
-                      <ActionIcon
-                        component="a"
-                        href={profile.website}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        variant="light"
-                        size="lg"
-                        radius="xl"
-                        title={profile.website}
-                      >
-                        <IconWorld size={18} />
-                      </ActionIcon>
-                    )}
                     {profile.profile_social_links.map((link) => {
                       const config = SOCIAL_CONFIG[link.platform]
                       if (!config) {
@@ -2147,7 +2174,7 @@ export default function Profile() {
                             href={href}
                             target="_blank"
                             rel="noopener noreferrer"
-                            variant="light"
+                            variant="subtle"
                             color="var(--mantine-color-text)"
                             size="xl"
                             radius="xl"
@@ -2285,6 +2312,38 @@ export default function Profile() {
               </Text>
             )}
           </Box>
+        </Stack>
+      </Modal>
+
+      <Modal
+        opened={linksOpened}
+        onClose={closeLinksModal}
+        title="Links"
+        centered
+        overlayProps={{
+          backgroundOpacity: 0.55,
+          blur: 3,
+        }}
+      >
+        <Stack mt="md" gap="xs">
+          {profileLinks.map((link) => (
+            <Anchor
+              key={link.id}
+              href={link.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              underline="never"
+              c="inherit"
+            >
+              <Group gap="xs" wrap="nowrap" justify="space-between" py={6}>
+                <Group gap="xs" wrap="nowrap">
+                  <IconWorld size={16} opacity={0.6} style={{ flexShrink: 0 }} />
+                  <Text size="sm">{link.label}</Text>
+                </Group>
+                <IconExternalLink size={16} opacity={0.5} style={{ flexShrink: 0 }} />
+              </Group>
+            </Anchor>
+          ))}
         </Stack>
       </Modal>
 

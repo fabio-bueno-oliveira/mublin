@@ -38,7 +38,7 @@ export default function AppLayout({ children }) {
         </AppShell.Header>
       )}
 
-      <AppShell.Main pb={{ base: 'calc(130px + var(--mantine-spacing-md))', sm: '60px' }}>
+      <AppShell.Main pb={{ base: 'calc(80px + var(--mantine-spacing-md))', sm: '30px' }}>
         <Container size="lg" px={0}>
           {children ?? <Outlet />}
         </Container>

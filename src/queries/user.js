@@ -7,7 +7,7 @@ export async function fetchUserProfile(userId) {
       `
       full_name, bio, username, title, 
       gender, region_id, city_id, 
-      website, is_live, live_platform, 
+      is_live, live_platform, 
       phone_number, phone_number_is_public, phone_number_is_whatsapp,
       live_expires_at
       `,
@@ -280,6 +280,51 @@ export async function removeFavoriteProduct(productId, userId) {
     action: 'unfavorited',
     removed: count > 0,
   }
+}
+
+export async function fetchUserLinks(userId) {
+  const { data, error } = await supabase
+    .from('profile_links')
+    .select('id, label, url, position')
+    .eq('profile_id', userId)
+    .order('position', { ascending: true })
+  if (error) {
+    throw new Error(error.message)
+  }
+  return data
+}
+
+export async function addProfileLink(profileId, { label, url, position }) {
+  const { data, error } = await supabase
+    .from('profile_links')
+    .insert({ profile_id: profileId, label, url, position })
+    .select('id, label, url, position')
+    .single()
+  if (error) {
+    throw new Error(error.message)
+  }
+  return data
+}
+
+export async function updateProfileLink(linkId, updates) {
+  const { data, error } = await supabase
+    .from('profile_links')
+    .update(updates)
+    .eq('id', linkId)
+    .select('id, label, url, position')
+    .single()
+  if (error) {
+    throw new Error(error.message)
+  }
+  return data
+}
+
+export async function deleteProfileLink(linkId) {
+  const { error } = await supabase.from('profile_links').delete().eq('id', linkId)
+  if (error) {
+    throw new Error(error.message)
+  }
+  return { success: true }
 }
 
 export async function fetchUserProfileOnboarding(userId) {

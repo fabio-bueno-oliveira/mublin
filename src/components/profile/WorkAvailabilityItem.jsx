@@ -16,7 +16,7 @@ export function WorkAvailabilityItem({ item }) {
 
   return (
     <Stack gap={1}>
-      <Text span size="sm" lh={1.2} fw={500}>
+      <Text span size="15px" lh={1.2} fw={500}>
         <IconCheck size={9} stroke={4} /> {work_types?.name_ptbr ?? '—'}
       </Text>
       <Group justify="space-between" wrap="nowrap">
