@@ -145,7 +145,7 @@ export async function fetchEventAttendees(eventId) {
     )
     .eq('event_id', eventId)
     .eq('is_interested', true)
-    .order('is_confirmed', { ascending: false }) // confirmados primeiro
+    .order('is_confirmed', { ascending: false })
     .order('created_at', { ascending: true })
 
   if (error) {

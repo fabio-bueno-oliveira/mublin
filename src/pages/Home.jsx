@@ -1,9 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { Helmet } from 'react-helmet-async'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useQuery } from '@tanstack/react-query'
-import { fetchUserRoles } from '../queries/user'
 import { fetchRecentProfiles } from '../queries/search'
 import { fetchEvents } from '../queries/events'
 import { fetchNewsFeed } from '../queries/feed'
@@ -12,17 +11,14 @@ import NewsCard from '../components/feed/NewsCard'
 import {
   Skeleton,
   Box, Card,
-  Container,
+  Container, Stack,
   Group, Flex,
-  ActionIcon,
-  Collapse,
-  Stack, Button,
   Text, Title, 
   Image, Avatar,
-  Select, ThemeIcon,
+  ThemeIcon,
   Badge,
 } from '@mantine/core'
-import { useMediaQuery, useScroller, useDisclosure } from '@mantine/hooks'
+import { useMediaQuery, useScroller } from '@mantine/hooks'
 import AppNavbarMobile from '../components/AppNavbarMobile'
 import { getAvatarUrl } from '../utils/profile'
 import dayjs from 'dayjs'
@@ -31,7 +27,8 @@ import {
   IconUser,
   IconChevronLeft,
   IconChevronRight,
-  IconZoom,
+  IconMusic,
+  IconSparkles,
 } from '@tabler/icons-react'
 
 const CDN_PREFIX = 'https://ik.imagekit.io/mublin'
@@ -47,13 +44,6 @@ export default function Home() {
   const eventsScroller = useScroller()
   const newsScroller = useScroller()
 
-  const [expanded, { toggle }] = useDisclosure(
-    typeof window !== 'undefined'
-      ? window.matchMedia('(min-width: 48em)').matches
-      : false,
-  )
-  const [defaultRole, setDefaultRole] = useState('')
-
   useEffect(() => {
     if (isDesktop && profile?.feed_as_home) {
       const redirected = sessionStorage.getItem('feed_redirected')
@@ -64,13 +54,6 @@ export default function Home() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile])
-
-  const { data: userRoles = [], isLoading: loadingUserRoles } = useQuery({
-    queryKey: ['profile-roles'],
-    queryFn: () => fetchUserRoles(user.id),
-    enabled: !!user?.id,
-    staleTime: 1000 * 60 * 5,
-  })
 
   const { data: recentProfiles = [], isLoading: loadingRecentProfiles } = useQuery({
     queryKey: ['recent-profiles'],
@@ -90,17 +73,6 @@ export default function Home() {
     staleTime: 1000 * 60 * 5,
   })
 
-  const userRolesOptions = userRoles.map((r) => ({
-    value: String(r.id_role),
-    label: r.roles?.description_ptbr ?? r.roles?.name_ptbr,
-  }))
-
-  useEffect(() => {
-    if (userRoles.length > 0) {
-      setDefaultRole(String(userRoles[0]?.id_role))
-    }
-  }, [userRoles])
-
   if (loading) {
     return null
   }
@@ -118,7 +90,7 @@ export default function Home() {
       </Helmet>
       {isMobile && <AppNavbarMobile fixed={false} />}
 
-      <Container size="xl" pt="xs" px={{ base: 'sm', sm: 0 }} mt={{ base: 16, sm: 0 }}>
+      <Container size="xl" px={{ base: 'sm', sm: 0 }} mt={{ base: 16, sm: 0 }}>
         {loading ? (
           <>
             <Title size="h2" fw={600} lh={1.2} mt={4} mb={4}>
@@ -128,77 +100,81 @@ export default function Home() {
           </>
         ) : (
           <>
-            <Title size="24px" fw={600} lh={1.2} ta="center" my="md">
+            <Title size="24px" fw={600} lh={1.2} ta="left" my="md">
               {greeting}, {profile?.username}
             </Title>
             {/* <Text size="sm" c="dimmed">
               {dayjs().format('dddd, D [de] MMMM [de] YYYY')}
             </Text> */}
 
-            <Box mx="auto">
-              <Group justify="center" mb="sm">
-                <Button
-                  variant="gradient"
-                  size="sm"
-                  gradient={{ from: 'grape.9', to: 'mublinColor.9', deg: 190 }}
-                  onClick={toggle}
-                  leftSection={<IconZoom size={14} />}
-                >
-                  Encontre gigs e projetos
-                </Button>
-              </Group>
+            <Card
+              radius="lg"
+              p={{ base: 'md', sm: 'xl' }}
+              mb="xl"
+              style={{
+                position: 'relative',
+                overflow: 'hidden',
+                background:
+                  'linear-gradient(135deg, var(--mantine-color-mublinColor-7) 0%, var(--mantine-color-blue-8) 100%)',
+              }}
+            >
+              <IconMusic
+                size={180}
+                stroke={1}
+                style={{
+                  position: 'absolute',
+                  right: -30,
+                  bottom: -40,
+                  opacity: 0.12,
+                  color: 'white',
+                  pointerEvents: 'none',
+                }}
+              />
 
-              <Collapse expanded={expanded}>
-                <Card shadow="sm" padding="md" withBorder>
-                  <Flex
-                    gap="sm"
-                    justify="space-between"
-                    align="flex-end"
-                    direction={isMobile ? 'column' : 'row'}
+              <Stack gap={6} maw={520} style={{ position: 'relative', zIndex: 1 }}>
+                <Group gap={6}>
+                  <IconSparkles size={16} color="white" style={{ opacity: 0.85 }} />
+                  <Text
+                    size="xs"
+                    fw={200}
+                    tt="uppercase"
+                    c="white"
+                    style={{ opacity: 0.85 }}
                   >
-                    <Select
-                      variant="default"
-                      size="md"
-                      w={isMobile ? '100%' : '33%'}
-                      placeholder="Sou..."
-                      disabled={loadingUserRoles}
-                      defaultValue={defaultRole}
-                      data={userRolesOptions}
-                    />
-                    <Select
-                      size="md"
-                      w={isMobile ? '100%' : '33%'}
-                      placeholder="Vínculo desejado"
-                      data={[
-                        { value: '1', label: 'Sideman' },
-                        { value: '2', label: 'Integrante' },
-                      ]}
-                    />
-                    <Select
-                      w={isMobile ? '100%' : '33%'}
-                      size="md"
-                      placeholder="Conteúdo principal"
-                      data={[
-                        { value: '1', label: 'Autoral' },
-                        { value: '2', label: 'Cover' },
-                        { value: '3', label: 'Autoral + Cover' },
-                      ]}
-                    />
-                    <ActionIcon
-                      variant="subtle"
-                      color="gray"
-                      size="lg"
-                      mb={2}
-                      aria-label="Settings"
-                      component={Link}
-                      to="/search"
-                    >
-                      <IconZoom style={{ width: '70%', height: '70%' }} />
-                    </ActionIcon>
-                  </Flex>
-                </Card>
-              </Collapse>
-            </Box>
+                    Bem-vindo ao Mublin!
+                  </Text>
+                </Group>
+
+                <Title
+                  order={2}
+                  c="white"
+                  fw={700}
+                  fz={{ base: '20px', sm: '26px' }}
+                  lh={1.25}
+                >
+                  Sua música, suas conexões, novas oportunidades
+                </Title>
+
+                <Text c="white" size="sm" style={{ opacity: 0.9 }}>
+                  Conecte-se com músicos e profissionais da música, mostre seu trabalho e
+                  fique por dentro de projetos, eventos e vagas.
+                </Text>
+
+                {/* <Group mt="sm">
+                  <Button
+                    component={Link}
+                    to="/search"
+                    size="xs"
+                    radius="md"
+                    variant="white"
+                    color="dark"
+                    leftSection={<IconZoom size={14} />}
+                  >
+                    Explorar oportunidades
+                  </Button>
+                </Group> */}
+              </Stack>
+            </Card>
 
             <Group justify="space-between" align="center" mt="xl" mb="xs">
               <Title order={3} fw={600} fz="lg">

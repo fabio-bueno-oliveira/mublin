@@ -1778,15 +1778,16 @@ export default function Profile() {
                                     <Box key={setup.id}>
                                       <Flex w={80} direction="column" justify="center">
                                         {/* <Link to={`/setup/${setup.id}`}> */}
-                                        {/* </Link> */}
-                                        <Image
-                                          src={`https://ik.imagekit.io/mublin/users/gear-setups/tr:w-140,h-140/${setup.image}`}
-                                          h={70}
-                                          w={70}
-                                          fit="contain"
-                                          radius="md"
-                                          mb={4}
-                                        />
+                                        <Link to={`/${username}/gear`}>
+                                          <Image
+                                            src={`https://ik.imagekit.io/mublin/users/gear-setups/tr:w-140,h-140/${setup.image}`}
+                                            h={70}
+                                            w={70}
+                                            fit="contain"
+                                            radius="md"
+                                            mb={4}
+                                          />
+                                        </Link>
                                         <Text
                                           ta="center"
                                           fw={550}
@@ -1796,7 +1797,7 @@ export default function Profile() {
                                           {setup.name}
                                         </Text>
                                         <Text ta="center" size="xs">
-                                          {setup.totalItems ?? 0} itens
+                                          {setup.total_items ?? 0} itens
                                         </Text>
                                       </Flex>
                                     </Box>

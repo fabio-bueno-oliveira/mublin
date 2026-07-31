@@ -200,7 +200,7 @@ export default function ProfileGear() {
                       ]}
                     />
                   )}
-                  {/* {gearSetups.length > 0 && (
+                  {gearSetups.length > 0 && (
                     <Select
                       size="sm"
                       w={148}
@@ -217,8 +217,8 @@ export default function ProfileGear() {
                         })),
                       ]}
                     />
-                  )} */}
-                  {selectedSetupId && (
+                  )}
+                  {/* {selectedSetupId && (
                     <Button
                       component={Link}
                       to={`/setup/${selectedSetupId}`}
@@ -228,7 +228,7 @@ export default function ProfileGear() {
                     >
                       Ver setup completo
                     </Button>
-                  )}
+                  )} */}
                 </Group>
               )}
               {gear.length === 0 ? (
@@ -335,7 +335,7 @@ export default function ProfileGear() {
                           <Text size="xs" c="dimmed" ta="center" mt={6}>
                             Incluído no{setupNames[item.id_product]?.length !== 1 && 's'}{' '}
                             setup
-                            {setupNames[item.id_product]?.length !== 1 && 's'} :{' '}
+                            {setupNames[item.id_product]?.length !== 1 && 's'}{' '}
                             <strong>{setupNames[item.id_product].join(', ')}</strong>
                           </Text>
                         )}

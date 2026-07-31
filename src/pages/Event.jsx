@@ -35,9 +35,8 @@ import {
   List,
   ThemeIcon,
   ScrollArea,
-  Tooltip,
+  Indicator,
   Spoiler,
-  Badge,
   Paper,
   Button,
   Divider,
@@ -346,7 +345,7 @@ export default function Event() {
                         <Flex justify="center" mt="sm">
                           <Button
                             size="sm"
-                            variant={myInterest?.is_interested ? 'light' : 'filled'}
+                            variant={myInterest?.is_interested ? 'light' : 'outline'}
                             leftSection={
                               myInterest?.is_interested ? (
                                 <IconHeartFilled size={18} />
@@ -354,7 +353,9 @@ export default function Event() {
                                 <IconHeart size={18} />
                               )
                             }
-                            color={myInterest?.is_interested ? 'pink' : 'mublinColor'}
+                            color={
+                              myInterest?.is_interested ? 'mublinColor' : 'mublinColor'
+                            }
                             onClick={open}
                           >
                             {myInterest?.is_interested
@@ -384,68 +385,57 @@ export default function Event() {
                         {attendees && attendees.length > 0 && (
                           <>
                             <Divider
-                              label={`Quem vai (${attendees.length})`}
+                              label={`Interessados neste evento (${attendees.length})`}
                               labelPosition="left"
                             />
 
                             <ScrollArea type="hover" offsetScrollbars>
-                              <Group gap="md" wrap="nowrap" py="xs">
+                              <Group gap="sm" wrap="nowrap" py="xs" align="flex-start">
                                 {attendees.map((person) => (
-                                  <Paper
-                                    key={person.id}
-                                    withBorder
-                                    p="xs"
-                                    radius="md"
-                                    w={140}
-                                    h={150}
-                                  >
-                                    <Stack align="center" gap={2}>
-                                      <Link to={`/${person.username}`}>
+                                  <Stack key={person.id} align="center" gap={4} w={88}>
+                                    <Link to={`/${person.username}`}>
+                                      <Indicator
+                                        disabled={!person.is_confirmed}
+                                        color="green"
+                                        size={14}
+                                        position="bottom-end"
+                                        withBorder
+                                        label={<IconCheck size={9} />}
+                                      >
                                         <Avatar
                                           src={AVATAR_PATH + person.avatar}
-                                          size={40}
+                                          size={44}
                                           radius="xl"
                                         >
                                           {person.full_name?.charAt(0)}
                                         </Avatar>
-                                      </Link>
-                                      <Group gap={4}>
-                                        <Text
-                                          ta="center"
-                                          size="sm"
-                                          fw={500}
-                                          lineClamp={1}
-                                        >
-                                          {person.full_name}
-                                        </Text>
-                                      </Group>
+                                      </Indicator>
+                                    </Link>
 
-                                      {person.is_confirmed && (
-                                        <Tooltip label="Presença confirmada">
-                                          <Badge
-                                            size="xs"
-                                            fz="8px"
-                                            variant="filled"
-                                            color="green"
-                                            leftSection={<IconCheck size={10} />}
-                                          >
-                                            Confirmou
-                                          </Badge>
-                                        </Tooltip>
-                                      )}
+                                    <Text
+                                      ta="center"
+                                      size="xs"
+                                      fw={500}
+                                      lineClamp={1}
+                                      w="100%"
+                                      title={person.full_name}
+                                    >
+                                      {person.full_name}
+                                    </Text>
 
-                                      {person.interests.length > 0 && (
-                                        <Text
-                                          fz="11px"
-                                          c="dimmed"
-                                          ta="center"
-                                          lineClamp={3}
-                                        >
-                                          Interesses: {person.interests.join(', ')}
-                                        </Text>
-                                      )}
-                                    </Stack>
-                                  </Paper>
+                                    {person.interests.length > 0 && (
+                                      <Text
+                                        fz="10px"
+                                        c="dimmed"
+                                        ta="center"
+                                        lineClamp={2}
+                                      >
+                                        {person.interests
+                                          .map((interest) => `✓ ${interest}`)
+                                          .join('  ')}
+                                      </Text>
+                                    )}
+                                  </Stack>
                                 ))}
                               </Group>
                             </ScrollArea>

@@ -190,7 +190,7 @@ export default function ProfileGearItem() {
     <>
       {isMobile && (
         <Affix position={{ top: 0, left: 0 }} w="100%">
-          <AppNavbarMobile pageName={profile.username} />
+          <AppNavbarMobile pageName={`Item de ${profile.username}`} />
         </Affix>
       )}
       <Grid gap="xl" mt={{ base: 51, sm: 0 }}>
@@ -245,16 +245,10 @@ export default function ProfileGearItem() {
               <Paper withBorder radius="md" p="md">
                 <Stack gap={4} mb="lg" justify="flex-start" align="flex-start">
                   <Group gap={4}>
-                    <Text size="xs" c="dimmed" style={{ letterSpacing: 0.6 }}>
+                    <Text size="sm" fw={200} c="dimmed">
                       Item do equipamento de
                     </Text>
-                    <Anchor
-                      component={Link}
-                      to={`/${username}`}
-                      size="xs"
-                      fw={500}
-                      style={{ letterSpacing: 0.6 }}
-                    >
+                    <Anchor component={Link} to={`/${username}`} size="xs" fw={500}>
                       @{profile.username}
                     </Anchor>
                   </Group>

@@ -221,9 +221,9 @@ export async function fetchRecentProfiles(limit = 10) {
     `,
     )
     .neq('username', 'mublin')
+    .eq('is_shadow_hidden', false)
     .order('created_at', { ascending: false })
     .limit(limit)
-
   if (error) {
     throw new Error(error.message)
   }

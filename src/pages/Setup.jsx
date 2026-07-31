@@ -368,7 +368,7 @@ export default function Setup() {
                 <Title order={3}>{setup.name}</Title>
                 {isOwner && (
                   <ActionIcon variant="subtle" size="sm" onClick={handleOpenEditMeta}>
-                    <IconPencil size={14} />
+                    <IconPencil size={16} />
                   </ActionIcon>
                 )}
               </Group>
@@ -379,7 +379,7 @@ export default function Setup() {
               )}
               <Group gap={6} mt={8}>
                 <Badge
-                  variant="light"
+                  variant="default"
                   color={setup.visibility === 'public' ? 'indigo' : 'gray'}
                   leftSection={visibilityIcon}
                 >
@@ -406,7 +406,12 @@ export default function Setup() {
                     component={Link}
                     to={`/${setup.owner.username}`}
                     size="xs"
-                    fw={600}
+                    fw={500}
+                    style={{
+                      display: 'inline',
+                      hover: { textDecoration: 'underline' },
+                      color: 'inherit',
+                    }}
                   >
                     {setup.owner.full_name}
                   </Text>
@@ -480,7 +485,7 @@ export default function Setup() {
           {/* ── Colaboradores ── */}
           {isCollabEligible && (
             <>
-              <Divider label="Colaboradores" labelPosition="left" />
+              {/* <Divider label="Colaboradores" labelPosition="left" /> */}
               <Stack gap="sm">
                 {isOwner && (
                   <Group gap={6} align="flex-end">
@@ -513,7 +518,7 @@ export default function Setup() {
                   <Skeleton height={40} radius="md" />
                 ) : collaborators.length === 0 ? (
                   <Text size="xs" c="dimmed">
-                    Nenhum colaborador convidado ainda.
+                    Nenhum colaborador adicional neste setup.
                   </Text>
                 ) : (
                   <Stack gap={6}>

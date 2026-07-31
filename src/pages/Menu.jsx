@@ -169,17 +169,7 @@ export default function Menu() {
             @{profile?.username}
           </Text>
           {profile?.plan === 'Pro' && (
-            <Badge
-              size="xs"
-              fw={600}
-              variant="gradient"
-              gradient={{
-                from: 'rgb(188, 157, 73)',
-                to: 'rgb(88, 60, 12)',
-                deg: 177,
-              }}
-              top={3}
-            >
+            <Badge size="xs" color="dark" fw={600} variant="light" top={3}>
               PRO
             </Badge>
           )}
@@ -190,9 +180,8 @@ export default function Menu() {
           <Button
             size="sm"
             fw={500}
-            variant="light"
+            variant="filled"
             radius="xl"
-            color="gray"
             leftSection={
               colorScheme === 'dark' ? (
                 <IconBrightnessUp size="1.5rem" stroke={1.5} />
@@ -202,9 +191,7 @@ export default function Menu() {
             }
             onClick={() => setColorScheme(colorScheme === 'dark' ? 'light' : 'dark')}
           >
-            {colorScheme === 'dark'
-              ? 'Mudar para o tema claro'
-              : 'Mudar para o tema escuro'}
+            {colorScheme === 'dark' ? 'Mudar para tema claro' : 'Mudar para tema escuro'}
           </Button>
         </Center>
 

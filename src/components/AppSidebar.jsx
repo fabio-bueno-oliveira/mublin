@@ -14,7 +14,6 @@ import {
   Card,
   Title,
   Text,
-  Badge,
   Avatar,
   Anchor,
   ActionIcon,
@@ -27,6 +26,7 @@ import {
   IconSearch,
   IconEye,
   IconRocket,
+  IconCaretDownFilled,
 } from '@tabler/icons-react'
 import { getAvatarUrl } from '../utils/profile'
 
@@ -285,24 +285,18 @@ export default function AppSidebar() {
                               title={project.name}
                             />
 
-                            <Stack gap={0}>
+                            <Stack gap={2}>
                               <Text size="sm">{project.name}</Text>
-                              <Text size="10px" c="dimmed">
+                              <Text size="10px" fw={200}>
                                 {project.type} {project.genre && ` · ${project.genre}`}
                               </Text>
                               {project.end_year && (
-                                <Badge
-                                  px={4}
-                                  pt={0}
-                                  fz="8px"
-                                  size="xs"
-                                  fw={200}
-                                  mt={2}
-                                  color="red"
-                                  variant="light"
-                                >
-                                  Encerrado em {project.end_year}
-                                </Badge>
+                                <Group gap={0}>
+                                  <IconCaretDownFilled color="#c82f2f" size={12} />
+                                  <Text fw={200} size="8px" c="dimmed">
+                                    Encerrado em {project.end_year}
+                                  </Text>
+                                </Group>
                               )}
                             </Stack>
                           </Group>
