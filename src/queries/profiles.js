@@ -17,7 +17,6 @@ export async function fetchProfileDetails(profileUsername) {
       city_id,
       region_id,
       is_verified,
-      is_legend,
       is_open_to_work,
       plan,
       is_live,
@@ -74,22 +73,21 @@ export async function fetchProfileBasicDetails(profileUsername) {
     .from('profiles')
     .select(
       `
-  id,
-  full_name,
-  username,
-  avatar,
-  title,
-  is_verified,
-  is_legend,
-  is_open_to_work,
-  plan,
-  is_live,
-  cities (
-    name, countries ( name, name_ptbr )
-  ),
-  regions (
-    name, uf
-  )
+      id,
+      full_name,
+      username,
+      avatar,
+      title,
+      is_verified,
+      is_open_to_work,
+      plan,
+      is_live,
+      cities (
+        name, countries ( name, name_ptbr )
+      ),
+      regions (
+        name, uf
+      )
   `,
     )
     .eq('username', profileUsername)
@@ -146,8 +144,7 @@ export async function fetchProfileFeed(profileId, limit = 10) {
         username,
         full_name,
         avatar,
-        is_verified,
-        is_legend
+        is_verified
       ),
       gigs (
         id,
@@ -660,6 +657,38 @@ export async function fetchProfileGearItemById(gearId) {
     throw new Error(error.message)
   }
   return data
+}
+
+// Busca eventos futuros nos quais o perfil demonstrou interesse
+export async function fetchProfileUpcomingEvents(profileId, limit = 12) {
+  const today = new Date().toISOString().split('T')[0]
+
+  const { data, error } = await supabase
+    .from('event_interest')
+    .select(
+      `
+      id,
+      is_confirmed,
+      event:events (
+        id, name, slug, picture_url,
+        date_start, date_end,
+        venue:venues ( name, city:cities ( name ) )
+      )
+    `,
+    )
+    .eq('user_id', profileId)
+    .eq('is_interested', true)
+    .limit(30)
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  return data
+    .map(({ event, is_confirmed }) => (event ? { ...event, is_confirmed } : null))
+    .filter((event) => event && event.date_start >= today)
+    .sort((a, b) => (a.date_start < b.date_start ? -1 : 1))
+    .slice(0, limit)
 }
 
 export async function fetchProfileLinks(profileId) {

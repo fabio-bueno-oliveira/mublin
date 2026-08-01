@@ -37,14 +37,6 @@ export default function ProfileHeaderMobile({
               title="Perfil verificado"
             />
           )}
-          {/* {!!profile.is_legend && (
-              <IconShieldCheckFilled
-                className="iconLegend"
-                title="Lenda da Música"
-                // color="var(--mantine-color-violet-4)"
-              />
-            )} */}
-          {/* {profile?.plan === 'Pro' && <ProPlanBadge />} */}
         </Flex>
         <Text fz="15px" lh={1.3} mt={2} lineClamp={2}>
           {profile.title}

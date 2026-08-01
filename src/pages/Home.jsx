@@ -141,7 +141,7 @@ export default function Home() {
                     c="white"
                     style={{ opacity: 0.85 }}
                   >
-                    Bem-vindo ao Mublin!
+                    Bem-vindo ao Mublin
                   </Text>
                 </Group>
 
@@ -265,7 +265,7 @@ export default function Home() {
                               <Stack align="center" gap={3}>
                                 <Avatar
                                   // src={p.avatar ? AVATAR_PATH + p.avatar : null}
-                                  src={getAvatarUrl(p?.avatar, p.is_open_to_work, 64)}
+                                  src={getAvatarUrl(p?.avatar, p?.is_open_to_work, 64)}
                                   size={64}
                                   radius="xl"
                                 >

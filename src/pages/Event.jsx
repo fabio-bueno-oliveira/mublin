@@ -41,6 +41,7 @@ import {
   Button,
   Divider,
   Popover,
+  Tooltip,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { useDisclosure } from '@mantine/hooks'
@@ -392,24 +393,37 @@ export default function Event() {
                             <ScrollArea type="hover" offsetScrollbars>
                               <Group gap="sm" wrap="nowrap" py="xs" align="flex-start">
                                 {attendees.map((person) => (
-                                  <Stack key={person.id} align="center" gap={4} w={88}>
+                                  <Stack
+                                    key={person.id}
+                                    align="center"
+                                    gap={4}
+                                    w={88}
+                                    style={{ minWidth: 0, flexShrink: 0 }}
+                                  >
                                     <Link to={`/${person.username}`}>
-                                      <Indicator
+                                      <Tooltip
+                                        label="Confirmou presença"
                                         disabled={!person.is_confirmed}
-                                        color="green"
-                                        size={14}
-                                        position="bottom-end"
-                                        withBorder
-                                        label={<IconCheck size={9} />}
+                                        withArrow
+                                        position="top"
                                       >
-                                        <Avatar
-                                          src={AVATAR_PATH + person.avatar}
-                                          size={44}
-                                          radius="xl"
+                                        <Indicator
+                                          disabled={!person.is_confirmed}
+                                          color="green"
+                                          size={14}
+                                          position="bottom-end"
+                                          withBorder
+                                          label={<IconCheck size={9} />}
                                         >
-                                          {person.full_name?.charAt(0)}
-                                        </Avatar>
-                                      </Indicator>
+                                          <Avatar
+                                            src={AVATAR_PATH + person.avatar}
+                                            size={44}
+                                            radius="xl"
+                                          >
+                                            {person.full_name?.charAt(0)}
+                                          </Avatar>
+                                        </Indicator>
+                                      </Tooltip>
                                     </Link>
 
                                     <Text
@@ -424,16 +438,20 @@ export default function Event() {
                                     </Text>
 
                                     {person.interests.length > 0 && (
-                                      <Text
-                                        fz="10px"
-                                        c="dimmed"
-                                        ta="center"
-                                        lineClamp={2}
-                                      >
-                                        {person.interests
-                                          .map((interest) => `✓ ${interest}`)
-                                          .join('  ')}
-                                      </Text>
+                                      <Stack gap={0}>
+                                        {person.interests.map((interest) => (
+                                          <Text
+                                            style={{ whiteSpace: 'nowrap' }}
+                                            key={interest}
+                                            fz="10px"
+                                            c="dimmed"
+                                            ta="center"
+                                            lineClamp={2}
+                                          >
+                                            ✓ {interest}
+                                          </Text>
+                                        ))}
+                                      </Stack>
                                     )}
                                   </Stack>
                                 ))}

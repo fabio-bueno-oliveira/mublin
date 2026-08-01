@@ -13,6 +13,7 @@ import {
   useMantineColorScheme,
   Skeleton,
   Container,
+  SimpleGrid,
   Affix,
   Flex,
   Box,
@@ -30,6 +31,7 @@ import {
   Stack,
   Tabs,
   Card,
+  Paper,
   Scroller,
   Divider,
   Center,
@@ -255,6 +257,7 @@ export default function Project() {
   const AVATAR_PATH =
     'https://ik.imagekit.io/mublin/tr:h-200,c-maintain_ratio/users/avatars/'
   const PICTURE_AVATAR_PATH = `https://ik.imagekit.io/mublin/projects/${project?.id}/tr:h-200,w-200,c-maintain_ratio/`
+  const PICTURE_AVATAR_LARGE_PATH = `https://ik.imagekit.io/mublin/projects/${project?.id}/tr:h-400,w-400,c-maintain_ratio/`
   const PICTURE_COVER_PATH = `https://ik.imagekit.io/mublin/projects/${project?.id}/tr:h-100,w-1042,fo-top,c-maintain_ratio/`
   const DEFAULT_COVER_PICTURE =
     'https://ik.imagekit.io/mublin/bg/tr:fo-bottom,bl-8/project-cover-default-b.png'
@@ -485,7 +488,7 @@ export default function Project() {
 
         {activeTab === 'people' && (
           <Stack gap="xs">
-            <Card mx={{ base: 0, sm: 'md' }}>
+            <Box mx={{ base: 0, sm: 'md' }}>
               <Title order={5} fw={600}>
                 Pessoas associadas ({projectPeople.length})
               </Title>
@@ -494,42 +497,51 @@ export default function Project() {
               ) : (
                 <>
                   {projectPeople.length > 0 ? (
-                    <Group mt="xs">
+                    <SimpleGrid
+                      cols={{ base: 2, sm: 3, md: 5 }}
+                      spacing="sm"
+                      verticalSpacing="sm"
+                      mt="xs"
+                    >
                       {projectPeople.map((person) => (
-                        <Flex
+                        <Paper
                           key={person.id}
-                          gap={4}
-                          direction="column"
-                          w={100}
-                          justify="center"
-                          align="center"
+                          withBorder
+                          radius="md"
+                          p="sm"
+                          component={Link}
+                          to={`/${person.profile.username}`}
+                          style={{
+                            textDecoration: 'none',
+                            color: 'inherit',
+                            transition: 'box-shadow 150ms ease, transform 150ms ease',
+                          }}
+                          className="person-card"
                         >
-                          <Center>
-                            <Link to={`/${person.profile.username}`}>
-                              <Avatar
-                                size={50}
-                                src={`${AVATAR_PATH}${person.profile.avatar}`}
-                              />
-                            </Link>
-                          </Center>
-                          <Text fz="12px" ta="center" truncate="end">
-                            {person.profile.full_name}
-                          </Text>
-                          <Badge size="xs" fw={300}>
-                            {person.engagement_types
-                              .map((e) => e.engagement_type.name_ptbr)
-                              .join(', ')}
-                          </Badge>
-                          <Text fz="11px" ta="center" c="dimmed" lh={1.2}>
-                            {person.roles.map((r) => r.role.name_ptbr).join(', ')}
-                          </Text>
-                          <Text fz="11px" ta="center" opacity={0.7}>
-                            {person.year_start} ›{' '}
-                            {person.year_end ? person.year_end : 'Atualmente'}
-                          </Text>
-                        </Flex>
+                          <Stack gap={4} align="center">
+                            <Avatar
+                              size={56}
+                              src={`${AVATAR_PATH}${person.profile.avatar}`}
+                            />
+                            <Text fz="13px" fw={500} ta="center" lineClamp={1}>
+                              {person.profile.full_name}
+                            </Text>
+                            <Badge size="xs" fw={300} variant="light">
+                              {person.engagement_types
+                                .map((e) => e.engagement_type.name_ptbr)
+                                .join(', ')}
+                            </Badge>
+                            <Text fz="11px" ta="center" c="dimmed" lh={1.2} lineClamp={2}>
+                              {person.roles.map((r) => r.role.name_ptbr).join(', ')}
+                            </Text>
+                            <Text fz="11px" ta="center" opacity={0.7}>
+                              {person.year_start} ›{' '}
+                              {person.year_end ? person.year_end : 'Atualmente'}
+                            </Text>
+                          </Stack>
+                        </Paper>
                       ))}
-                    </Group>
+                    </SimpleGrid>
                   ) : (
                     <Text span c="dimmed" size="sm">
                       Nenhum perfil associado a este projeto até o momento
@@ -537,7 +549,8 @@ export default function Project() {
                   )}
                 </>
               )}
-            </Card>
+            </Box>
+
             <Card mx={{ base: 0, sm: 'md' }}>
               <Group justify="space-between">
                 <Title order={5} fw={600}>
@@ -773,8 +786,8 @@ export default function Project() {
         <Modal.Content>
           <Modal.Body p={0}>
             <img
-              src={PICTURE_AVATAR_PATH + project?.picture}
-              alt=""
+              src={PICTURE_AVATAR_LARGE_PATH + project?.picture}
+              alt={project?.name}
               style={{ display: 'block', width: '100%' }}
             />
             <Modal.CloseButton

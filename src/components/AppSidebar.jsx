@@ -152,7 +152,7 @@ export default function AppSidebar() {
                   }}
                 />
               </Box>
-              <Stack gap={1}>
+              <Stack gap={2}>
                 <Group gap={4} align="center">
                   <Anchor
                     component={Link}
@@ -181,7 +181,7 @@ export default function AppSidebar() {
                   {/* {profile?.plan === 'Pro' && <ProPlanBadge small />} */}
                 </Group>
                 {profile?.title && (
-                  <Text size="13px" lh={1.3} mt={4} c="dimmed" lineClamp={2}>
+                  <Text size="12px" lh={1.3} mt={4} c="dimmed" lineClamp={3}>
                     {profile.title}
                   </Text>
                 )}
@@ -191,22 +191,29 @@ export default function AppSidebar() {
 
           <Card withBorder={false} shadow="xs" radius="md" p="xs">
             <Group gap="xs" wrap="nowrap">
-              <IconRocket color="gray" size={16} />
+              {/* <IconRocket color="gray" size={16} /> */}
               <Text size="xs" c="dimmed">
-                Plano PRO
+                Plano atual: {profile.plan === 'Pro' ? 'Mublin Pro' : 'Mublin Free'}
               </Text>
             </Group>
           </Card>
 
-          {profile.plan === 'Pro' && (
-            <Card withBorder={false} shadow="xs" radius="md" p="xs">
-              <Group gap="xs" wrap="nowrap">
-                <IconEye color="gray" size={16} />
-                {loadingProfileViews ? (
-                  <Text size="xs" c="dimmed">
-                    Carregando visualizações ao perfil...
-                  </Text>
-                ) : (
+          <Card withBorder={false} shadow="xs" radius="md" p="xs">
+            <Group gap="xs" wrap="nowrap">
+              <IconEye color="gray" size={16} />
+              {loadingProfileViews ? (
+                <Text size="xs" c="dimmed">
+                  Carregando visualizações ao perfil...
+                </Text>
+              ) : (
+                <Link
+                  to="/profile-visitors"
+                  style={{
+                    whiteSpace: 'pre-wrap',
+                    display: 'block',
+                  }}
+                  className="noDecoration"
+                >
                   <Text size="xs" c="dimmed">
                     {profileViewCount === 0
                       ? 'Ninguém visualizou seu perfil ainda'
@@ -214,10 +221,10 @@ export default function AppSidebar() {
                         ? '1 pessoa visualizou seu perfil'
                         : `${profileViewCount} pessoas visualizaram seu perfil`}
                   </Text>
-                )}
-              </Group>
-            </Card>
-          )}
+                </Link>
+              )}
+            </Group>
+          </Card>
 
           <Card withBorder={false} shadow="xs" radius="md" p="xs">
             <Group

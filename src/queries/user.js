@@ -204,8 +204,7 @@ export async function fetchUserFavoriteProfiles(userId) {
         full_name,
         title,
         avatar,
-        is_verified,
-        is_legend
+        is_verified
       )
     `,
     )
@@ -336,5 +335,17 @@ export async function fetchUserProfileOnboarding(userId) {
   if (error) {
     throw new Error(error.message)
   }
+  return data
+}
+
+export async function fetchUserProfileVisitors(userId) {
+  const { data, error } = await supabase.rpc('get_profile_visitors', {
+    p_profile_id: userId,
+  })
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
   return data
 }

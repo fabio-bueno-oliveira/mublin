@@ -24,6 +24,7 @@ import {
   fetchPortfolioUpvotes,
   togglePortfolioUpvote,
   fetchProfileLinks,
+  fetchProfileUpcomingEvents,
 } from '../queries/profiles'
 import { useAuth } from '../hooks/useAuth'
 import { Helmet } from 'react-helmet-async'
@@ -33,7 +34,7 @@ import {
   Grid, Container, Center,
   Modal, Drawer,
   Scroller, Skeleton, Stack,
-  Box, Paper, Card,
+  Box, Card,
   Transition, ScrollArea,
   Affix, Divider,
   Avatar, Image,
@@ -42,6 +43,7 @@ import {
   Button, ActionIcon, ThemeIcon, 
   Alert, Tooltip, Anchor,
   Spoiler, em,
+  Badge, Indicator,
 } from '@mantine/core'
 // prettier-ignore
 import { useMediaQuery, useDisclosure, useWindowScroll, useScroller } from '@mantine/hooks'
@@ -57,7 +59,7 @@ import { truncateString } from '../utils/formatter'
 // prettier-ignore
 import {
   IconMoodSad, IconWorld, IconCheck,
-  IconShieldCheckFilled,
+  IconShieldCheckFilled, IconPlus,
   IconCircleArrowLeftFilled,
   IconCircleArrowRightFilled,
   IconBrandWhatsapp,
@@ -71,6 +73,7 @@ import {
   IconRosetteDiscountCheckFilled,
   IconSchool, IconUserCircle,
   IconExternalLink,
+  IconSettings,
 } from '@tabler/icons-react'
 import ProfileHeaderMobile from '../components/profile/ProfileHeaderMobile'
 import AppNavbarMobile from '../components/AppNavbarMobile'
@@ -94,6 +97,8 @@ const ARTISTS_PATH =
   'https://ik.imagekit.io/mublin/artists/tr:h-120,w-120,c-maintain_ratio/'
 const COMPANY_PATH =
   'https://ik.imagekit.io/mublin/products/brands/tr:h-96,w-96,cm-pad_resize,bg-FFFFFF,fo-x/'
+const EVENTS_PATH =
+  'https://ik.imagekit.io/mublin/events/tr:h-140,w-140,c-maintain_ratio/'
 
 function SectionTitle({ text, mb, mt = 0, ...props }) {
   return (
@@ -117,6 +122,7 @@ export default function Profile() {
   const inspirationsScroller = useScroller()
   const partnersScroller = useScroller()
   const gearScroller = useScroller()
+  const upcomingEventsScroller = useScroller()
   const menuItemRefs = useRef({})
 
   const [activeSection, setActiveSection] = useState('')
@@ -147,6 +153,13 @@ export default function Profile() {
 
   const isOwnProfile = !!profile?.id && !!user?.id && profile.id === user.id
 
+  const { data: upcomingEvents = [], isLoading: loadingUpcomingEvents } = useQuery({
+    queryKey: ['profile-upcoming-events', profile?.id],
+    queryFn: () => fetchProfileUpcomingEvents(profile.id),
+    enabled: !!profile?.id,
+    staleTime: 1000 * 60 * 5,
+  })
+
   const { data: profileViewCount } = useQuery({
     queryKey: ['profile-view-count', profile?.id],
     queryFn: async () => {
@@ -176,7 +189,7 @@ export default function Profile() {
     { id: 'recognitions', label: 'Reconhecimentos', active: true },
     { id: 'inspirations', label: 'Inspirações', active: true },
     { id: 'partners', label: 'Parceiros', active: true },
-    { id: 'social', label: 'Redes', active: true },
+    { id: 'social', label: 'Redes sociais', active: true },
     { id: 'suggested-profiles', label: 'Perfis parecidos', active: true },
   ]
 
@@ -1039,13 +1052,22 @@ export default function Profile() {
                     <SectionPanel id="visitors" py="xs">
                       <Group gap="xs">
                         <IconEye color="gray" size={16} />
-                        <Text size="sm" c="dimmed">
-                          {profileViewCount === 0
-                            ? 'Ninguém visualizou seu perfil ainda'
-                            : profileViewCount === 1
-                              ? '1 pessoa visualizou seu perfil'
-                              : `${profileViewCount} pessoas visualizaram seu perfil`}
-                        </Text>
+                        <Link
+                          to="/profile-visitors"
+                          style={{
+                            whiteSpace: 'pre-wrap',
+                            display: 'block',
+                          }}
+                          className="noDecoration"
+                        >
+                          <Text size="sm" c="dimmed">
+                            {profileViewCount === 0
+                              ? 'Ninguém visualizou seu perfil ainda'
+                              : profileViewCount === 1
+                                ? '1 pessoa visualizou seu perfil'
+                                : `${profileViewCount} pessoas visualizaram seu perfil`}
+                          </Text>
+                        </Link>
                       </Group>
                     </SectionPanel>
                   )}
@@ -1165,6 +1187,116 @@ export default function Profile() {
                         )}
                       </>
                     )}
+
+                    {!loadingUpcomingEvents && upcomingEvents.length > 0 && (
+                      <>
+                        <Group justify="space-between" align="center" mt="md" mb={4}>
+                          <Title order={3} fz="sm" fw={300} opacity={0.8}>
+                            Demonstrou interesse nos eventos
+                          </Title>
+                          <Group gap={4}>
+                            <ThemeIcon
+                              variant="default"
+                              size="sm"
+                              style={{
+                                cursor: upcomingEventsScroller.canScrollStart
+                                  ? 'pointer'
+                                  : 'default',
+                              }}
+                              onClick={upcomingEventsScroller.scrollStart}
+                              opacity={upcomingEventsScroller.canScrollStart ? 1 : 0.5}
+                            >
+                              <IconChevronLeft style={{ width: '70%', height: '70%' }} />
+                            </ThemeIcon>
+                            <ThemeIcon
+                              variant="default"
+                              size="sm"
+                              style={{
+                                cursor: upcomingEventsScroller.canScrollEnd
+                                  ? 'pointer'
+                                  : 'default',
+                              }}
+                              onClick={upcomingEventsScroller.scrollEnd}
+                              opacity={upcomingEventsScroller.canScrollEnd ? 1 : 0.5}
+                            >
+                              <IconChevronRight style={{ width: '70%', height: '70%' }} />
+                            </ThemeIcon>
+                          </Group>
+                        </Group>
+                        <div
+                          ref={upcomingEventsScroller.ref}
+                          {...upcomingEventsScroller.dragHandlers}
+                          className="scrollerHidden"
+                          style={{
+                            overflow: 'auto',
+                            cursor: upcomingEventsScroller.isDragging
+                              ? 'grabbing'
+                              : 'default',
+                          }}
+                        >
+                          <Group gap="xs" wrap="nowrap" align="flex-start">
+                            {upcomingEvents.map((event) => {
+                              const cityName = event.venue?.city?.name
+
+                              return (
+                                <Flex
+                                  key={event.id}
+                                  direction="column"
+                                  align="center"
+                                  justify="flex-start"
+                                  gap={4}
+                                  w={92}
+                                  component={Link}
+                                  to={`/event/${event.slug}`}
+                                  style={{ textDecoration: 'none', color: 'inherit' }}
+                                >
+                                  <Indicator
+                                    disabled={!event.is_confirmed}
+                                    color="green"
+                                    size={14}
+                                    position="bottom-end"
+                                    withBorder
+                                    label={<IconCheck size={9} />}
+                                  >
+                                    <Avatar
+                                      size={70}
+                                      radius="md"
+                                      src={
+                                        event.picture_url
+                                          ? EVENTS_PATH + event.picture_url
+                                          : undefined
+                                      }
+                                      alt={event.name}
+                                    />
+                                  </Indicator>
+                                  <Text
+                                    size="xs"
+                                    fw={500}
+                                    ta="center"
+                                    lineClamp={2}
+                                    lh={1.2}
+                                    w={92}
+                                    title={event.name}
+                                  >
+                                    {event.name}
+                                  </Text>
+                                  <Text
+                                    size="10px"
+                                    c="dimmed"
+                                    ta="center"
+                                    lineClamp={1}
+                                    w={92}
+                                  >
+                                    {dayjs(event.date_start).format('DD MMM')}
+                                    {cityName ? ` · ${cityName}` : ''}
+                                  </Text>
+                                </Flex>
+                              )
+                            })}
+                          </Group>
+                        </div>
+                      </>
+                    )}
                   </SectionPanel>
 
                   <SectionPanel id="portfolio">
@@ -1282,7 +1414,7 @@ export default function Profile() {
                                   </Group>
 
                                   {engagementNames.length > 0 && (
-                                    <Text size="sm" opacity={0.9} mt={6} mb={6} lh={1}>
+                                    <Text size="xs" opacity={0.9} mt={6} mb={4} lh={1}>
                                       {engagementNames.length === 1
                                         ? 'Vínculo:'
                                         : 'Vínculos:'}{' '}
@@ -1503,10 +1635,11 @@ export default function Profile() {
                               {isOwnProfile && (
                                 <Button
                                   size="xs"
-                                  variant="outline"
+                                  variant="light"
                                   color="var(--mantine-color-text)"
                                   component={Link}
                                   to="/new/post"
+                                  leftSection={<IconPlus size={14} />}
                                 >
                                   Novo post
                                 </Button>
@@ -1658,13 +1791,23 @@ export default function Profile() {
                             <Group gap={10}>
                               <SectionTitle
                                 id="gear"
-                                text={`Equipamento (${gear.length})`}
+                                text="Equipamento"
                                 ml={{ base: 'sm', md: 0 }}
                               />
                               <Button
                                 size="xs"
-                                variant="outline"
+                                variant="light"
                                 color="var(--mantine-color-text)"
+                                rightSection={
+                                  <Badge
+                                    circle
+                                    size="sm"
+                                    color="mublinColor"
+                                    variant="filled"
+                                  >
+                                    {gear.length}
+                                  </Badge>
+                                }
                                 component={Link}
                                 to={`/${username}/gear`}
                               >
@@ -1682,7 +1825,7 @@ export default function Profile() {
                                   to="/settings/gear"
                                   mr="sm"
                                 >
-                                  <IconPencil size={18} />
+                                  <IconSettings size={18} />
                                 </ActionIcon>
                               )}
                             </Group>
@@ -2164,26 +2307,29 @@ export default function Profile() {
                       const Icon = config.icon
                       const href = `${config.base}${link.handle}`
                       return (
-                        <Tooltip
+                        <Group
                           key={link.platform}
-                          label={`${link.platform}: ${link.handle}`}
-                          position="bottom"
-                          withArrow
+                          gap="xs"
+                          component="a"
+                          href={href}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{ textDecoration: 'none', color: 'inherit' }}
                         >
-                          <ActionIcon
-                            component="a"
-                            href={href}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            variant="subtle"
+                          <Icon
                             color="var(--mantine-color-text)"
-                            size="xl"
-                            radius="xl"
-                            title={`${link.platform}: ${link.handle}`}
-                          >
-                            <Icon color="var(--mantine-color-text)" size={25} />
-                          </ActionIcon>
-                        </Tooltip>
+                            stroke={1.5}
+                            size={25}
+                          />
+                          <Stack gap={2} w={180}>
+                            <Text size="sm" fw={600} truncate="end">
+                              {link.platform}
+                            </Text>
+                            <Text size="xs" truncate="end" c="dimmed">
+                              {href.replace(/^https?:\/\//, '')}
+                            </Text>
+                          </Stack>
+                        </Group>
                       )
                     })}
                   </Group>

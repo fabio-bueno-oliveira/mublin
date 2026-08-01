@@ -48,9 +48,9 @@ export default function SimilarProfiles({ profiles = [], loading }) {
                   src={p.avatar ? AVATAR_PATH + p.avatar : undefined}
                 />
               </Box>
-              <Stack gap={0} style={{ flexGrow: 1 }} maw="80%">
-                <Group gap={2} align="center" wrap="nowrap">
-                  <Text size="14px" fw={500} lineClamp={1} truncate="end">
+              <Stack gap={0} style={{ flexGrow: 1 }} maw="78%">
+                <Group gap={0} align="center" wrap="nowrap">
+                  <Text size="sm" fw={500} lineClamp={1} truncate="end">
                     {p.full_name}
                   </Text>
                   {!!p.is_verified && (

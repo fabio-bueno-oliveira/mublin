@@ -29,6 +29,7 @@ import ProfileGear from './pages/ProfileGear'
 import ProfileGearItem from './pages/ProfileGearItem'
 import Setup from './pages/Setup'
 import Artist from './pages/Artist'
+import ProfileVisitors from './pages/ProfileVisitors'
 // -- Project pages
 import ProjectRouter from './components/ProjectRouter'
 import Projects from './pages/Projects'
@@ -133,6 +134,7 @@ export const router = createBrowserRouter([
       { path: 'venue/:slug', element: <Venue /> },
       { path: 'school/:slug', element: <Institution /> },
       { path: 'saved', element: <MySavedFavorites /> },
+      { path: 'profile-visitors', element: <ProfileVisitors /> },
     ],
   },
   // ── Subpáginas de perfil ──────────────
