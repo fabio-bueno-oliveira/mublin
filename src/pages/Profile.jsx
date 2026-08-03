@@ -1190,7 +1190,7 @@ export default function Profile() {
 
                     {!loadingUpcomingEvents && upcomingEvents.length > 0 && (
                       <>
-                        <Group justify="space-between" align="center" mt="md" mb={4}>
+                        <Group justify="space-between" align="center" mt="md" mb="xs">
                           <Title order={3} fz="sm" fw={300} opacity={0.8}>
                             Demonstrou interesse nos eventos
                           </Title>

@@ -148,7 +148,7 @@ export const router = createBrowserRouter([
   // ── Backstage ──────────────────────────
   {
     element: <BackstageLayout />,
-    children: [{ path: 'backstage/:slug', element: <Backstage /> }],
+    children: [{ path: 'backstage/:projectId', element: <Backstage /> }],
   },
   // ── Settings ──────────────────────────
   {

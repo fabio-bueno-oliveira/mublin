@@ -45,8 +45,8 @@ export async function fetchUserPortfolio(userId) {
       year_end,
       is_sporadic,
       is_mublin_facilitated,
-      projects ( id, name, picture ),
-      artists ( id, name, picture ),
+      projects ( id, name, picture, slug ),
+      artists ( id, name, picture, slug ),
       portfolio_roles ( role_id, roles ( id, name_ptbr ) ),
       portfolio_engagement_types (
         engagement_type_id,

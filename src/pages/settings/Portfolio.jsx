@@ -533,6 +533,17 @@ export default function Portfolio() {
           </Text>
         </div>
 
+        <Box>
+          <Button
+            size="xs"
+            variant="filled"
+            leftSection={<IconPlus size={14} />}
+            onClick={openModal}
+          >
+            Adicionar projeto ao portfólio
+          </Button>
+        </Box>
+
         {loadingPortfolio || isDeletingItem ? (
           <Stack gap="xs">
             {[1, 2, 3].map((i) => (
@@ -694,17 +705,6 @@ export default function Portfolio() {
             Nenhum item cadastrado no portfólio
           </Text>
         )}
-
-        <div>
-          <Button
-            size="sm"
-            variant="filled"
-            leftSection={<IconPlus size={14} />}
-            onClick={openModal}
-          >
-            Adicionar ao portfólio
-          </Button>
-        </div>
       </Stack>
 
       {/* ── Modal: adicionar ou editar item do portfólio ────────── */}

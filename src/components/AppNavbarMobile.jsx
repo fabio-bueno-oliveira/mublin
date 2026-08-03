@@ -49,6 +49,10 @@ export default function AppNavbarMobile({
     refetchOnWindowFocus: true,
   })
 
+  const showNotificationsIcon =
+    userProfile?.username === profile?.username || pathname === '/home'
+  const showMenuIcon = userProfile?.username === profile?.username || pathname === '/home'
+
   return (
     <>
       <Flex
@@ -115,48 +119,47 @@ export default function AppNavbarMobile({
               <IconXFilled size={32} />
             </ActionIcon>
           ) : (
-            <>
-              {userProfile?.username === profile?.username ||
-                (pathname === '/home' && (
-                  <Flex gap="xs">
-                    <ActionIcon
-                      variant="transparent"
-                      aria-label="Notificações"
-                      size="xl"
-                      radius={false}
-                      pt={5}
-                      onClick={() => navigate('/notifications')}
-                      c="var(--mantine-color-text)"
-                    >
-                      <Indicator
-                        inline
-                        label={
-                          <Text fw={500} fz="9px">
-                            {unreadCount}
-                          </Text>
-                        }
-                        maxValue={99}
-                        size={16}
-                        disabled={unreadCount === 0}
-                        color="red.8"
-                        offset={4}
-                      >
-                        <IconBell size={24} />
-                      </Indicator>
-                    </ActionIcon>
-                    <ActionIcon
-                      variant="transparent"
-                      aria-label="Menu"
-                      size="lg"
-                      pt={12}
-                      onClick={() => navigate('/menu')}
-                      c="var(--mantine-color-text)"
-                    >
-                      <IconMenu2Filled size={28} />
-                    </ActionIcon>
-                  </Flex>
-                ))}
-            </>
+            <Flex gap="xs">
+              {showNotificationsIcon && (
+                <ActionIcon
+                  variant="transparent"
+                  aria-label="Notificações"
+                  size="xl"
+                  radius={false}
+                  pt={5}
+                  onClick={() => navigate('/notifications')}
+                  c="var(--mantine-color-text)"
+                >
+                  <Indicator
+                    inline
+                    label={
+                      <Text fw={500} fz="9px">
+                        {unreadCount}
+                      </Text>
+                    }
+                    maxValue={99}
+                    size={16}
+                    disabled={unreadCount === 0}
+                    color="red.8"
+                    offset={4}
+                  >
+                    <IconBell size={24} />
+                  </Indicator>
+                </ActionIcon>
+              )}
+              {showMenuIcon && (
+                <ActionIcon
+                  variant="transparent"
+                  aria-label="Menu"
+                  size="lg"
+                  pt={12}
+                  onClick={() => navigate('/menu')}
+                  c="var(--mantine-color-text)"
+                >
+                  <IconMenu2Filled size={28} />
+                </ActionIcon>
+              )}
+            </Flex>
           )}
         </Box>
       </Flex>

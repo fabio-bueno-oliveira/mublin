@@ -110,7 +110,7 @@ export default function Home() {
             <Card
               radius="lg"
               p={{ base: 'md', sm: 'xl' }}
-              mb="xl"
+              mb="md"
               style={{
                 position: 'relative',
                 overflow: 'hidden',

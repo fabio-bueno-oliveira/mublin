@@ -87,8 +87,8 @@ export default function AppNavbar({ children }) {
     },
     enabled: !!user?.id,
     staleTime: 1000 * 60 * 6, // 6 min
-    refetchInterval: 1000 * 60 * 6, // polling a cada 6 min
-    refetchOnWindowFocus: true, // mas atualiza sempre que voltar à aba
+    refetchInterval: 1000 * 60 * 8, // polling a cada 8 min
+    refetchOnWindowFocus: true, // atualiza sempre que voltar à aba
   })
 
   const { data: recentSearches = [] } = useQuery({
