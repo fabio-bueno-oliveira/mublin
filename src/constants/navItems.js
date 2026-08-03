@@ -5,6 +5,7 @@ import {
   IconBulb,
   IconPencilPlus,
   IconCalendarPlus,
+  IconCalendar,
   IconMusicPlus,
   IconMicrophone2,
   IconMusic,
@@ -13,7 +14,8 @@ import {
 export const NAV_ITEMS = [
   { label: 'Home', icon: IconHome, path: '/home' },
   { label: 'Feed', icon: IconRss, path: '/feed' },
-  { label: 'Gigs', icon: IconMusic, path: '/gigs' },
+  { label: 'Projetos', icon: IconMusic, path: '/projects' },
+  { label: 'Gigs', icon: IconCalendar, path: '/gigs' },
 ]
 
 export const QUICK_ACTIONS = [

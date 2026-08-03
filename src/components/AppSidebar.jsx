@@ -1,49 +1,30 @@
-import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { supabase } from '../lib/supabaseClient'
 import { useQuery } from '@tanstack/react-query'
-import { fetchUserAdminProjects } from '../queries/user'
 import {
   useComputedColorScheme,
   Skeleton,
-  ScrollArea,
   Group,
   Stack,
   Box,
   Card,
-  Title,
   Text,
   Avatar,
   Anchor,
-  ActionIcon,
-  Collapse,
-  TextInput,
 } from '@mantine/core'
-// import ProPlanBadge from './ProPlanBadge'
-import {
-  IconRosetteDiscountCheck,
-  IconSearch,
-  IconEye,
-  IconCaretDownFilled,
-} from '@tabler/icons-react'
+import { IconRosetteDiscountCheck, IconEye, IconBookmark } from '@tabler/icons-react'
 import { getAvatarUrl } from '../utils/profile'
-
-const PROJECT_AVATAR_PATH = 'https://ik.imagekit.io/mublin/projects'
 
 export default function AppSidebar() {
   const { user, profile, loading } = useAuth()
   const computedColorScheme = useComputedColorScheme('light')
   const isDark = computedColorScheme === 'dark'
 
-  const [searchOpened, setSearchOpened] = useState(false)
-  const [searchQuery, setSearchQuery] = useState('')
-  const searchInputRef = useRef(null)
-
   const { data: profileViewCount, isLoading: loadingProfileViews } = useQuery({
-    queryKey: ['profile-view-count', profile?.id],
+    queryKey: ['profile-unique-visitor-count', profile?.id],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc('get_profile_view_count', {
+      const { data, error } = await supabase.rpc('get_profile_unique_visitor_count', {
         p_profile_id: profile?.id,
       })
       if (error) {
@@ -54,54 +35,6 @@ export default function AppSidebar() {
     enabled: !!user?.id,
     staleTime: 1000 * 60,
   })
-
-  const { data: projects = [], isLoading: loadingProjects } = useQuery({
-    queryKey: ['user-projects', user?.id],
-    queryFn: () => fetchUserAdminProjects(user.id),
-    enabled: !!user?.id,
-    staleTime: 1000 * 60 * 4,
-  })
-
-  const userProjects = projects
-    .filter((x) => x.is_admin)
-    .map((p) => ({
-      id: p.project.id,
-      name: p.project.name,
-      slug: p.project.slug,
-      end_year: p.project.end_year,
-      is_admin: p.is_admin,
-      is_founder: p.is_founder,
-      picture: p.project.picture,
-      request_status: p.status,
-      activity_status: p.project.activity_status,
-      activity_status_name: p.project.status?.description_ptbr,
-      activity_status_color: p.project.status?.color,
-      genre: p.project.genre?.name,
-      type: p.project.type?.name_ptbr,
-      totalMembers: p.project.members?.length || 0,
-    }))
-
-  const normalizedQuery = searchQuery.trim().toLowerCase()
-  const filteredProjects = normalizedQuery
-    ? userProjects.filter((project) =>
-        project.name?.toLowerCase().includes(normalizedQuery),
-      )
-    : userProjects
-
-  useEffect(() => {
-    if (searchOpened) {
-      searchInputRef.current?.focus()
-    }
-  }, [searchOpened])
-
-  function toggleSearch() {
-    setSearchOpened((opened) => {
-      if (opened) {
-        setSearchQuery('')
-      }
-      return !opened
-    })
-  }
 
   return (
     <Box px="sm" py="md" h="100%" component="aside">
@@ -189,17 +122,21 @@ export default function AppSidebar() {
           </Card>
 
           <Card withBorder={false} shadow="xs" radius="md" p="xs">
-            <Group gap="xs" wrap="nowrap">
-              {/* <IconRocket color="gray" size={16} /> */}
-              <Text size="xs" c="dimmed">
+            <Stack gap={4}>
+              <Text size="xs">
                 Plano atual: {profile.plan === 'Pro' ? 'Mublin Pro' : 'Mublin Free'}
               </Text>
-            </Group>
+              {profile.plan === 'Pro' && (
+                <Text c="dimmed" size="12px">
+                  Uma experiência otimizada
+                </Text>
+              )}
+            </Stack>
           </Card>
 
           <Card withBorder={false} shadow="xs" radius="md" p="xs">
             <Group gap="xs" wrap="nowrap">
-              <IconEye color="gray" size={16} />
+              <IconEye size={16} />
               {loadingProfileViews ? (
                 <Text size="xs" c="dimmed">
                   Carregando visualizações ao perfil...
@@ -210,10 +147,11 @@ export default function AppSidebar() {
                   style={{
                     whiteSpace: 'pre-wrap',
                     display: 'block',
+                    color: 'inherit',
                   }}
                   className="noDecoration"
                 >
-                  <Text size="xs" c="dimmed">
+                  <Text size="xs">
                     {profileViewCount === 0
                       ? 'Ninguém visualizou seu perfil ainda'
                       : profileViewCount === 1
@@ -226,101 +164,20 @@ export default function AppSidebar() {
           </Card>
 
           <Card withBorder={false} shadow="xs" radius="md" p="xs">
-            <Group
-              justify="flex-start"
-              align="center"
-              gap="xs"
-              mb={searchOpened ? 4 : 'xs'}
-              wrap="nowrap"
-            >
-              <Title order={3} fw={600} fz="sm">
-                Projetos que sou administrador
-              </Title>
-              {!loadingProjects && userProjects.length > 0 && (
-                <ActionIcon
-                  variant="subtle"
-                  color="gray"
-                  size="sm"
-                  onClick={toggleSearch}
-                  aria-label="Buscar projeto"
-                >
-                  <IconSearch
-                    size={16}
-                    color={searchOpened ? 'var(--mantine-color-text)' : 'gray'}
-                  />
-                </ActionIcon>
-              )}
+            <Group gap="xs" wrap="nowrap">
+              <IconBookmark size={16} />
+              <Link
+                to="/saved"
+                style={{
+                  whiteSpace: 'pre-wrap',
+                  display: 'block',
+                  color: 'inherit',
+                }}
+                className="noDecoration"
+              >
+                <Text size="xs">Itens salvos</Text>
+              </Link>
             </Group>
-
-            {!loadingProjects && userProjects.length > 0 && (
-              <Collapse expanded={searchOpened}>
-                <TextInput
-                  ref={searchInputRef}
-                  placeholder="Buscar por nome..."
-                  size="xs"
-                  mb="sm"
-                  variant="unstyled"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </Collapse>
-            )}
-
-            {loadingProjects ? (
-              <Text>Carregando...</Text>
-            ) : userProjects.length > 0 ? (
-              <ScrollArea h={158} scrollHideDelay={0}>
-                {filteredProjects.length > 0 ? (
-                  <Stack gap="sm">
-                    {filteredProjects.map((project) => (
-                      <Link
-                        key={project.id}
-                        to={`/project/${project?.slug}`}
-                        style={{ textDecoration: 'none', color: 'inherit' }}
-                      >
-                        <Box>
-                          <Group gap={10} align="flex-start">
-                            <Avatar
-                              size={40}
-                              radius="md"
-                              src={
-                                project?.picture
-                                  ? `${PROJECT_AVATAR_PATH}/${project?.id}/tr:h-80,w-80,c-maintain_ratio/${project?.picture}`
-                                  : undefined
-                              }
-                              title={project.name}
-                            />
-
-                            <Stack gap={2}>
-                              <Text size="sm">{project.name}</Text>
-                              <Text size="10px" fw={200}>
-                                {project.type} {project.genre && ` · ${project.genre}`}
-                              </Text>
-                              {project.end_year && (
-                                <Group gap={0}>
-                                  <IconCaretDownFilled color="#c82f2f" size={12} />
-                                  <Text fw={200} size="8px" c="dimmed">
-                                    Encerrado em {project.end_year}
-                                  </Text>
-                                </Group>
-                              )}
-                            </Stack>
-                          </Group>
-                        </Box>
-                      </Link>
-                    ))}
-                  </Stack>
-                ) : (
-                  <Text size="sm" c="dimmed">
-                    Nenhum projeto encontrado
-                  </Text>
-                )}
-              </ScrollArea>
-            ) : (
-              <Text size="xs" c="dimmed">
-                Você não gerencia nenhum projeto no momento
-              </Text>
-            )}
           </Card>
         </Stack>
       )}

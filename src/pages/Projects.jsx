@@ -127,7 +127,7 @@ export default function MyProjects() {
             Carregando seus projetos...
           </Text>
         ) : (
-          <Accordion order={1} variant="separated" radius="md" defaultValue="admin">
+          <Accordion order={1} variant="separated" radius="md">
             <Accordion.Item value="admin">
               <Accordion.Control icon={<IconSettings2 size={18} stroke={1.7} />}>
                 Projetos que sou administrador ({filteredProjects.length})
