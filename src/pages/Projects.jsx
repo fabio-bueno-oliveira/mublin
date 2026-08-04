@@ -8,8 +8,8 @@ import AppNavbarMobile from '../components/AppNavbarMobile'
 import {
   Affix,
   Container,
-  Accordion,
-  Box,
+  NavLink,
+  Tabs,
   Title,
   Text,
   Group,
@@ -17,20 +17,7 @@ import {
   TextInput,
   Avatar,
 } from '@mantine/core'
-import {
-  IconCaretDownFilled,
-  IconMusic,
-  IconDisc,
-  IconSettings2,
-  IconIdBadge,
-  IconDiamond,
-} from '@tabler/icons-react'
-import dayjs from 'dayjs'
-import relativeTime from 'dayjs/plugin/relativeTime'
-import 'dayjs/locale/pt-br'
-
-dayjs.extend(relativeTime)
-dayjs.locale('pt-br')
+import { IconMusic, IconDisc } from '@tabler/icons-react'
 
 const PROJECT_AVATAR_PATH = 'https://ik.imagekit.io/mublin/projects'
 const ARTISTS_PATH =
@@ -109,14 +96,11 @@ export default function MyProjects() {
             Meus projetos
           </Title>
         </Group>
-        <Text size="sm" c="dimmed" mb="md">
-          Projetos em que estou associado
-        </Text>
         <TextInput
           ref={searchInputRef}
           placeholder="Buscar por nome..."
           size="lg"
-          mb="sm"
+          mb="xs"
           variant="unstyled"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
@@ -127,137 +111,117 @@ export default function MyProjects() {
             Carregando seus projetos...
           </Text>
         ) : (
-          <Accordion order={1} variant="separated" radius="md">
-            <Accordion.Item value="admin">
-              <Accordion.Control icon={<IconSettings2 size={18} stroke={1.7} />}>
-                Projetos que sou administrador ({filteredProjects.length})
-              </Accordion.Control>
-              <Accordion.Panel px="lg">
-                {userProjects.length > 0 ? (
-                  <>
-                    {filteredProjects.length > 0 ? (
-                      <Stack gap="md">
-                        {filteredProjects.map((project) => (
-                          <Link
-                            key={project.id}
-                            to={`/project/${project?.slug}`}
-                            style={{ textDecoration: 'none', color: 'inherit' }}
-                          >
-                            <Box>
-                              <Group gap={10} align="flex-start">
-                                <Avatar
-                                  size={40}
-                                  radius="md"
-                                  src={
-                                    project?.picture
-                                      ? `${PROJECT_AVATAR_PATH}/${project?.id}/tr:h-80,w-80,c-maintain_ratio/${project?.picture}`
-                                      : undefined
-                                  }
-                                  title={project.name}
-                                />
+          <Tabs defaultValue="admin">
+            <Tabs.List>
+              <Tabs.Tab value="admin">
+                Sou administrador ({filteredProjects.length})
+              </Tabs.Tab>
+              <Tabs.Tab value="portfolio">
+                Portfolio ({filteredPortfolio.length})
+              </Tabs.Tab>
+            </Tabs.List>
 
-                                <Stack gap={2}>
-                                  <Text size="md" lh={1}>
-                                    {project.name}
-                                  </Text>
-                                  <Text size="xs" fw={200}>
-                                    {project.type}{' '}
-                                    {project.genre && ` · ${project.genre}`}
-                                  </Text>
-                                  {project.end_year && (
-                                    <Group gap={0}>
-                                      <IconCaretDownFilled color="#c82f2f" size={14} />
-                                      <Text fw={200} size="10px" c="dimmed" lh={1}>
-                                        Encerrado em {project.end_year}
-                                      </Text>
-                                    </Group>
-                                  )}
-                                </Stack>
-                              </Group>
-                            </Box>
-                          </Link>
-                        ))}
-                      </Stack>
-                    ) : (
-                      <Text size="sm" c="dimmed">
-                        Nenhum projeto encontrado
-                      </Text>
-                    )}
-                  </>
-                ) : (
-                  <Text size="xs" c="dimmed">
-                    Você não é administrador de nenhum projeto no momento
-                  </Text>
-                )}
-              </Accordion.Panel>
-            </Accordion.Item>
-            <Accordion.Item value="portfolio">
-              <Accordion.Control icon={<IconDiamond size={18} stroke={1.7} />}>
-                Projetos em meu portfolio ({filteredPortfolio.length})
-              </Accordion.Control>
-              <Accordion.Panel px="lg">
-                {userPortfolio.length > 0 ? (
-                  <>
-                    {filteredPortfolio.length > 0 ? (
-                      <Stack gap="md">
-                        {filteredPortfolio.map((item, index) => {
-                          const isProject = !!item.projects
-                          const entity = item.projects || item.artists
-                          const url = isProject
-                            ? `/project/${item.projects?.slug}`
-                            : `/artist/${item.artists?.slug}`
+            <Tabs.Panel value="admin" mt="sm">
+              {userProjects.length > 0 ? (
+                <>
+                  {filteredProjects.length > 0 ? (
+                    <Stack gap={0}>
+                      {filteredProjects.map((project) => (
+                        <NavLink
+                          key={project.id}
+                          // href={`#/project/${project?.slug}`}
+                          component={Link}
+                          to={`/project/${project?.slug}`}
+                          label={project.name}
+                          description={[
+                            project.type,
+                            project.genre,
+                            project.end_year && `Encerrado em ${project.end_year}`,
+                          ]
+                            .filter(Boolean)
+                            .join(' · ')}
+                          leftSection={
+                            <Avatar
+                              size={40}
+                              radius="md"
+                              src={
+                                project?.picture
+                                  ? `${PROJECT_AVATAR_PATH}/${project?.id}/tr:h-80,w-80,c-maintain_ratio/${project?.picture}`
+                                  : undefined
+                              }
+                              title={project.name}
+                            />
+                          }
+                        />
+                      ))}
+                    </Stack>
+                  ) : (
+                    <Text size="sm" c="dimmed">
+                      Nenhum projeto encontrado
+                    </Text>
+                  )}
+                </>
+              ) : (
+                <Text size="xs" c="dimmed">
+                  Você não é administrador de nenhum projeto no momento
+                </Text>
+              )}
+            </Tabs.Panel>
+            <Tabs.Panel value="portfolio" mt="sm">
+              {userPortfolio.length > 0 ? (
+                <>
+                  {filteredPortfolio.length > 0 ? (
+                    <Stack gap={0}>
+                      {filteredPortfolio.map((item, index) => {
+                        const isProject = !!item.projects
+                        const entity = item.projects || item.artists
+                        const url = isProject
+                          ? `/project/${item.projects?.slug}`
+                          : `/artist/${item.artists?.slug}`
 
-                          return (
-                            <Link
-                              key={index}
-                              to={url}
-                              style={{ textDecoration: 'none', color: 'inherit' }}
-                            >
-                              <Box>
-                                <Group gap={10} align="flex-start">
-                                  <Avatar
-                                    size={40}
-                                    radius="md"
-                                    src={
-                                      isProject
-                                        ? `https://ik.imagekit.io/mublin/projects/${entity.id}/tr:h-120,w-120,c-maintain_ratio/${entity.picture}`
-                                        : ARTISTS_PATH + entity.picture
-                                    }
-                                    title={entity?.name}
-                                  >
-                                    <IconDisc size={18} />
-                                  </Avatar>
-
-                                  <Stack gap={2}>
-                                    {item?.portfolio_roles?.[0]?.roles?.name_ptbr && (
-                                      <Text size="xs" fw={200}>
-                                        {item.portfolio_roles[0].roles.name_ptbr} em
-                                      </Text>
-                                    )}
-                                    <Text size="md" lh={1}>
-                                      {entity?.name || 'Sem título'}
-                                    </Text>
-                                  </Stack>
-                                </Group>
-                              </Box>
-                            </Link>
-                          )
-                        })}
-                      </Stack>
-                    ) : (
-                      <Text size="sm" c="dimmed">
-                        Nenhum projeto encontrado
-                      </Text>
-                    )}
-                  </>
-                ) : (
-                  <Text size="xs" c="dimmed">
-                    Você não é administrador de nenhum projeto no momento
-                  </Text>
-                )}
-              </Accordion.Panel>
-            </Accordion.Item>
-          </Accordion>
+                        return (
+                          <NavLink
+                            key={index}
+                            // href={url}
+                            component={Link}
+                            to={url}
+                            label={entity?.name || 'Sem título'}
+                            description={item.portfolio_roles
+                              ?.slice(0, 3)
+                              .map((pr) => pr.roles?.name_ptbr)
+                              .filter(Boolean)
+                              .join(', ')}
+                            leftSection={
+                              <Avatar
+                                size={40}
+                                radius="md"
+                                src={
+                                  isProject
+                                    ? `https://ik.imagekit.io/mublin/projects/${entity.id}/tr:h-120,w-120,c-maintain_ratio/${entity.picture}`
+                                    : ARTISTS_PATH + entity.picture
+                                }
+                                title={entity?.name}
+                              >
+                                <IconDisc size={18} />
+                              </Avatar>
+                            }
+                          />
+                        )
+                      })}
+                    </Stack>
+                  ) : (
+                    <Text size="sm" c="dimmed">
+                      Nenhum projeto encontrado
+                    </Text>
+                  )}
+                </>
+              ) : (
+                <Text size="xs" c="dimmed">
+                  Você ainda não possui projetos no seu portfólio
+                </Text>
+              )}
+            </Tabs.Panel>
+          </Tabs>
         )}
       </Container>
     </>

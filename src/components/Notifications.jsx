@@ -16,7 +16,12 @@ import {
   Indicator,
   Divider,
 } from '@mantine/core'
-import { IconBellOff, IconCalendar, IconUserPlus } from '@tabler/icons-react'
+import {
+  IconBellOff,
+  IconCalendar,
+  IconUserPlus,
+  IconSettings,
+} from '@tabler/icons-react'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import 'dayjs/locale/pt-br'
@@ -72,10 +77,12 @@ function NotificationIcon({ type }) {
   const icons = {
     new_follower: <IconUserPlus size={14} />,
     gig_invite: <IconCalendar size={14} />,
+    project_admin_request: <IconSettings size={14} />,
   }
   const colors = {
     new_follower: 'blue',
     gig_invite: 'violet',
+    project_admin_request: 'orange',
   }
 
   return (
@@ -148,6 +155,29 @@ function notificationContent(notification) {
                 como {metadata.role}
               </Text>
             )}
+          </>
+        ),
+      }
+
+    case 'project_admin_request':
+      return {
+        href: `/project/${metadata.project_slug}?tab=admin`, // ou onde você mostra as solicitações
+        avatarSrc: metadata.requester_avatar
+          ? AVATAR_PATH + metadata.requester_avatar
+          : undefined,
+        avatarAlt: metadata.requester_name,
+        text: (
+          <>
+            <Text span fw={600} size="xs">
+              {metadata.requester_name}
+            </Text>
+            <Text span size="xs" c="dimmed">
+              {' '}
+              solicitou acesso admin em{' '}
+            </Text>
+            <Text span fw={600} size="xs">
+              {metadata.project_name}
+            </Text>
           </>
         ),
       }

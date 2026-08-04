@@ -132,14 +132,7 @@ export default function Landing() {
       >
         <Container size="sm" py={50} w="100%">
           <Stack gap="lg" align="center">
-            <Badge
-              color="mublinColor"
-              c="blue.3"
-              radius="xl"
-              variant="light"
-              size="md"
-              fw={360}
-            >
+            <Badge color="mublinColor" radius="xl" variant="light" size="md" fw={360}>
               The professional network for musicians
             </Badge>
             <Title

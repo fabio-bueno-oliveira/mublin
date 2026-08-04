@@ -8,6 +8,10 @@ import {
   fetchProjectAdmins,
   fetchProjectPeople,
   updateProjectProfile,
+  fetchProjectAdminRequests,
+  fetchMyProjectAdminRequest,
+  requestProjectAdminAccess,
+  respondProjectAdminRequest,
 } from '../queries/projects'
 import {
   useMantineColorScheme,
@@ -33,7 +37,6 @@ import {
   Card,
   Paper,
   Scroller,
-  Divider,
   Center,
   Tooltip,
   Modal,
@@ -50,9 +53,20 @@ import {
   IconRoad,
   IconCamera,
   IconTrash,
+  IconCheck,
+  IconX,
+  IconClock,
 } from '@tabler/icons-react'
 import AppNavbarMobile from '../components/AppNavbarMobile'
 import { MEMBER_REQUEST_STATUS } from '../constants/projects'
+
+// TODO: mover para '../constants/projects', ao lado de MEMBER_REQUEST_STATUS,
+// já que reflete os mesmos IDs de applications_statuses (1 pendente, 2 aceito, 3 recusado)
+const ADMIN_REQUEST_STATUS = {
+  PENDING: 1,
+  ACCEPTED: 2,
+  DECLINED: 3,
+}
 
 // ── Helpers de upload (ImageKit) ──────────────────────────
 async function getIkAuthTokens() {
@@ -119,6 +133,11 @@ export default function Project() {
     retry: 1,
   })
 
+  const userMembership = project?.members?.find((m) => m.profile_id === user?.id)
+  const userIsAdmin =
+    userMembership?.is_admin === true &&
+    userMembership?.status === MEMBER_REQUEST_STATUS.ACCEPTED
+
   const { data: projectAdmins = [], isLoading: loadingProjectAdmins } = useQuery({
     queryKey: ['project-admins', project?.id],
     queryFn: () => fetchProjectAdmins(project?.id),
@@ -132,6 +151,22 @@ export default function Project() {
     enabled: !!project?.id,
     staleTime: 1000 * 60 * 5,
   })
+
+  // Solicitação de acesso admin do próprio usuário logado (se houver)
+  const { data: myAdminRequest, isLoading: loadingMyAdminRequest } = useQuery({
+    queryKey: ['project-admin-request', project?.id, user?.id],
+    queryFn: () => fetchMyProjectAdminRequest(project?.id, user?.id),
+    enabled: !!project?.id && !!user?.id,
+    staleTime: 1000 * 30,
+  })
+
+  const { data: pendingAdminRequests = [], isLoading: loadingPendingAdminRequests } =
+    useQuery({
+      queryKey: ['project-admin-requests', project?.id],
+      queryFn: () => fetchProjectAdminRequests(project?.id),
+      enabled: !!project?.id && userIsAdmin,
+      staleTime: 1000 * 30,
+    })
 
   // Ajusta o editForm durante a própria renderização quando o projeto muda
   // (em vez de um useEffect). React trata esse "setState durante a
@@ -209,6 +244,61 @@ export default function Project() {
     },
   })
 
+  const requestAdminMutation = useMutation({
+    mutationFn: () => requestProjectAdminAccess(project.id),
+    onSuccess: (data) => {
+      const autoApproved = data?.status === ADMIN_REQUEST_STATUS.ACCEPTED
+      notifications.show({
+        title: autoApproved ? 'Você agora é administrador' : 'Solicitação enviada',
+        message: autoApproved
+          ? 'Como o projeto ainda não tinha administrador, seu acesso foi aprovado automaticamente.'
+          : 'Assim que um administrador atual responder, você será avisado.',
+        color: 'green',
+        position: 'top-center',
+      })
+      queryClient.invalidateQueries({ queryKey: ['project', slug] })
+      queryClient.invalidateQueries({ queryKey: ['project-admins', project.id] })
+      queryClient.invalidateQueries({
+        queryKey: ['project-admin-request', project.id, user.id],
+      })
+    },
+    onError: (error) => {
+      notifications.show({
+        title: 'Ops!',
+        message:
+          error?.message ||
+          'Não conseguimos solicitar acesso de admin a este projeto neste momento. Tente novamente em instantes.',
+        color: 'red',
+        position: 'top-center',
+      })
+    },
+  })
+
+  const respondAdminRequestMutation = useMutation({
+    mutationFn: ({ requestId, accept }) => respondProjectAdminRequest(requestId, accept),
+    onSuccess: (_data, variables) => {
+      notifications.show({
+        title: variables.accept ? 'Solicitação aceita' : 'Solicitação recusada',
+        message: variables.accept
+          ? 'O usuário agora é administrador do projeto.'
+          : 'A solicitação foi recusada.',
+        color: variables.accept ? 'green' : 'gray',
+        position: 'top-center',
+      })
+      queryClient.invalidateQueries({ queryKey: ['project', slug] })
+      queryClient.invalidateQueries({ queryKey: ['project-admins', project.id] })
+      queryClient.invalidateQueries({ queryKey: ['project-admin-requests', project.id] })
+    },
+    onError: (error) => {
+      notifications.show({
+        title: 'Erro ao responder solicitação',
+        message: error?.message || 'Tente novamente em instantes.',
+        color: 'red',
+        position: 'top-center',
+      })
+    },
+  })
+
   const handleEditFormChange = (field) => (event) => {
     // Importante: extraia o valor AQUI, de forma síncrona, e não dentro do
     // callback de atualização do setState. O React zera event.currentTarget
@@ -262,11 +352,6 @@ export default function Project() {
   const DEFAULT_COVER_PICTURE =
     'https://ik.imagekit.io/mublin/bg/tr:fo-bottom,bl-8/project-cover-default-b.png'
 
-  const userMembership = project?.members?.find((m) => m.profile_id === user.id)
-  const userIsAdmin =
-    userMembership?.is_admin === true &&
-    userMembership?.status === MEMBER_REQUEST_STATUS.ACCEPTED
-
   if (isError) {
     return (
       <Container size="md" py="xl">
@@ -277,14 +362,24 @@ export default function Project() {
     )
   }
 
+  const myAdminRequestStatus = myAdminRequest?.status ?? null
+  const myAdminRequestIsPending = myAdminRequestStatus === ADMIN_REQUEST_STATUS.PENDING
+
   const handleRequestAdminStatus = () => {
-    notifications.show({
-      title: 'Ops!',
-      message:
-        'Não conseguimos solicitar acesso de admin a este projeto neste momento. Tente novamente em instantes.',
-      color: 'red',
-      position: 'top-center',
-    })
+    if (!user?.id) {
+      notifications.show({
+        title: 'Faça login',
+        message: 'Você precisa estar logado para solicitar acesso de admin.',
+        color: 'red',
+        position: 'top-center',
+      })
+      return
+    }
+    requestAdminMutation.mutate()
+  }
+
+  const handleRespondAdminRequest = (requestId, accept) => {
+    respondAdminRequestMutation.mutate({ requestId, accept })
   }
 
   return (
@@ -489,9 +584,14 @@ export default function Project() {
         {activeTab === 'people' && (
           <Stack gap="xs">
             <Box mx={{ base: 0, sm: 'md' }}>
-              <Title order={5} fw={600}>
-                Pessoas associadas ({projectPeople.length})
-              </Title>
+              <Group gap="xs">
+                <Title order={5} fw={600}>
+                  Pessoas associadas
+                </Title>
+                <Badge radius="xl" variant="light" color="gray">
+                  {projectPeople.length}
+                </Badge>
+              </Group>
               {loadingProjectPeople ? (
                 <Text size="sm">Carregando...</Text>
               ) : (
@@ -553,17 +653,29 @@ export default function Project() {
 
             <Card mx={{ base: 0, sm: 'md' }}>
               <Group justify="space-between">
-                <Title order={5} fw={600}>
-                  Administradores ({projectAdmins.length})
-                </Title>
-                <Button
-                  variant="light"
-                  size="xs"
-                  onClick={() => handleRequestAdminStatus()}
-                  color="var(--mantine-color-text)"
-                >
-                  Solicitar acesso admin
-                </Button>
+                <Group gap="xs">
+                  <Title order={5} fw={600}>
+                    Administradores
+                  </Title>
+                  <Badge radius="xl" variant="light" color="gray">
+                    {projectAdmins.length}
+                  </Badge>
+                </Group>
+                {!userIsAdmin && !loadingMyAdminRequest && (
+                  <Button
+                    variant="light"
+                    size="xs"
+                    onClick={handleRequestAdminStatus}
+                    color="var(--mantine-color-text)"
+                    disabled={myAdminRequestIsPending}
+                    loading={requestAdminMutation.isPending}
+                    leftSection={myAdminRequestIsPending ? <IconClock size={14} /> : null}
+                  >
+                    {myAdminRequestIsPending
+                      ? 'Solicitação pendente'
+                      : 'Solicitar acesso admin'}
+                  </Button>
+                )}
               </Group>
               {loadingProjectAdmins ? (
                 <Text size="sm">Carregando...</Text>
@@ -593,9 +705,22 @@ export default function Project() {
                         </Flex>
                       ))}
                     </Group>
+                  ) : userIsAdmin ? null : myAdminRequestIsPending ? (
+                    <Text span c="dimmed" size="sm">
+                      Nenhum administrador neste projeto. Sua solicitação está sendo
+                      processada.
+                    </Text>
                   ) : (
                     <Text span c="dimmed" size="sm">
-                      Nenhum administrador neste projeto. <b>Quero ser administrador</b>
+                      Nenhum administrador neste projeto.{' '}
+                      <Text
+                        span
+                        fw={700}
+                        style={{ cursor: 'pointer' }}
+                        onClick={handleRequestAdminStatus}
+                      >
+                        Quero ser administrador
+                      </Text>
                     </Text>
                   )}
                 </>
@@ -691,94 +816,304 @@ export default function Project() {
         )}
 
         {activeTab === 'admin' && userIsAdmin && (
-          <Card mx={{ base: 0, sm: 'md' }}>
-            <Title order={5} fw={600} mb="md" c="dimmed">
-              Administrar projeto
-            </Title>
-            <Title order={5} fw={600} mb="xs">
-              Editar dados do projeto
-            </Title>
-            <Stack gap="sm">
-              <Group align="flex-end" gap="md">
-                <Avatar
-                  src={picturePreview || PICTURE_AVATAR_PATH + project?.picture}
-                  size={80}
-                  radius={0}
-                />
-                <Stack gap={4} flex={1}>
-                  <FileInput
-                    label="Imagem do projeto"
-                    description="PNG, JPG ou GIF"
-                    placeholder="Selecionar arquivo"
-                    leftSection={<IconCamera size={18} />}
-                    leftSectionPointerEvents="none"
-                    accept="image/png,image/jpeg,image/gif"
-                    value={pictureFile}
-                    onChange={handlePictureChange}
-                  />
-                  {pictureFile && (
-                    <Group gap="xs">
-                      <Button
-                        size="xs"
-                        color="red"
-                        variant="subtle"
-                        leftSection={<IconTrash size={14} />}
-                        onClick={handleRemovePictureSelection}
-                      >
-                        Remover seleção
-                      </Button>
-                      {pictureUploadProgress > 0 && pictureUploadProgress < 100 && (
-                        <Text size="xs" c="dimmed">
-                          Enviando... {pictureUploadProgress}%
-                        </Text>
-                      )}
+          <Stack gap="md" mx={{ base: 0, sm: 'md' }}>
+            {/* Header admin */}
+            <Group gap="xs">
+              <IconSettings size={18} />
+              <Title order={4} fw={600}>
+                Administração
+              </Title>
+              <Badge variant="light" color="gray" size="sm">
+                {project?.name}
+              </Badge>
+            </Group>
+
+            <SimpleGrid
+              cols={{ base: 1, md: 2 }}
+              spacing="md"
+              style={{ alignItems: 'flex-start' }}
+            >
+              {/* COL ESQ - FORM */}
+              <Card withBorder radius="lg" p="lg">
+                <Stack gap="md">
+                  <Box>
+                    <Title order={5} fw={600}>
+                      Informações básicas
+                    </Title>
+                    <Text size="xs" c="dimmed">
+                      Atualize os dados públicos do projeto
+                    </Text>
+                  </Box>
+
+                  <Paper withBorder p="sm" radius="md">
+                    <Group align="flex-start" gap="md" wrap="nowrap">
+                      <Box pos="relative">
+                        <Avatar
+                          src={picturePreview || PICTURE_AVATAR_PATH + project?.picture}
+                          size={88}
+                          radius="md"
+                        />
+                        {pictureFile && (
+                          <Badge
+                            size="xs"
+                            color="blue"
+                            pos="absolute"
+                            top={-6}
+                            right={-6}
+                            style={{ textTransform: 'none' }}
+                          >
+                            Nova
+                          </Badge>
+                        )}
+                      </Box>
+                      <Stack gap={6} flex={1}>
+                        <FileInput
+                          label="Imagem do projeto"
+                          description="PNG, JPG até 4MB · quadrada funciona melhor"
+                          placeholder="Clique para selecionar"
+                          leftSection={<IconCamera size={16} />}
+                          accept="image/png,image/jpeg,image/gif"
+                          value={pictureFile}
+                          onChange={handlePictureChange}
+                          size="sm"
+                        />
+                        {pictureFile ? (
+                          <Group gap="xs">
+                            <Button
+                              size="xs"
+                              variant="subtle"
+                              color="gray"
+                              leftSection={<IconTrash size={14} />}
+                              onClick={handleRemovePictureSelection}
+                            >
+                              Descartar
+                            </Button>
+                            {pictureUploadProgress > 0 && (
+                              <Text size="xs" c="dimmed">
+                                {pictureUploadProgress}%
+                              </Text>
+                            )}
+                          </Group>
+                        ) : (
+                          <Text size="xs" c="dimmed">
+                            A imagem será recortada em 1:1
+                          </Text>
+                        )}
+                      </Stack>
                     </Group>
-                  )}
+                  </Paper>
+
+                  <TextInput
+                    label="Nome do projeto"
+                    placeholder="Ex: Os Mublins"
+                    value={editForm.name}
+                    onChange={handleEditFormChange('name')}
+                    required
+                    withAsterisk
+                    maxLength={60}
+                    rightSection={
+                      <Text size="xs" c="dimmed">
+                        {editForm.name.length}/60
+                      </Text>
+                    }
+                  />
+
+                  <Textarea
+                    label="Descrição"
+                    placeholder="Conte a história do projeto, estilo, influências..."
+                    value={editForm.description}
+                    onChange={handleEditFormChange('description')}
+                    rows={4}
+                    autosize
+                    minRows={3}
+                    maxRows={8}
+                  />
+
+                  <Textarea
+                    label="Propósito / Objetivo"
+                    description="O que o projeto busca atualmente"
+                    placeholder="Ex: Gravar EP, fazer turnê no Sudeste..."
+                    value={editForm.purpose}
+                    onChange={handleEditFormChange('purpose')}
+                    rows={3}
+                    autosize
+                  />
+
+                  <Checkbox
+                    label="Em turnê atualmente"
+                    description="Exibe o selo 'Em turnê' no perfil do projeto"
+                    checked={editForm.on_tour}
+                    onChange={handleOnTourChange}
+                  />
+
+                  <Group justify="space-between" mt="sm">
+                    <Button
+                      variant="default"
+                      disabled={updateProjectMutation.isPending}
+                      onClick={() => {
+                        setEditForm({
+                          name: project.name || '',
+                          description: project.description || '',
+                          purpose: project.purpose || '',
+                          on_tour: !!project.on_tour,
+                        })
+                        handleRemovePictureSelection()
+                      }}
+                    >
+                      Cancelar
+                    </Button>
+                    <Button
+                      color="mublinColor"
+                      size="sm"
+                      loading={updateProjectMutation.isPending}
+                      onClick={handleSaveProject}
+                      leftSection={
+                        !updateProjectMutation.isPending ? (
+                          <IconCheck size={16} />
+                        ) : undefined
+                      }
+                    >
+                      Salvar
+                    </Button>
+                  </Group>
                 </Stack>
-              </Group>
-              <Checkbox
-                label="Em turnê atualmente"
-                checked={editForm.on_tour}
-                onChange={handleOnTourChange}
-              />
-              <TextInput
-                label="Nome do projeto"
-                value={editForm.name}
-                onChange={handleEditFormChange('name')}
-                required
-              />
-              <Textarea
-                label="Descrição"
-                value={editForm.description}
-                onChange={handleEditFormChange('description')}
-                rows={3}
-              />
-              <Textarea
-                label="Propósito"
-                value={editForm.purpose}
-                onChange={handleEditFormChange('purpose')}
-                rows={3}
-              />
-              <Group justify="flex-end">
-                <Button
-                  color="mublinColor"
-                  size="md"
-                  w={240}
-                  loading={updateProjectMutation.isPending}
-                  onClick={handleSaveProject}
+              </Card>
+
+              {/* COL DIR - SOLICITAÇÕES + DANGER */}
+              <Stack gap="md">
+                <Card withBorder radius="lg" p="lg">
+                  <Group justify="space-between" mb="md">
+                    <Box>
+                      <Title order={5} fw={600}>
+                        Solicitações de acesso
+                      </Title>
+                      <Text size="xs" c="dimmed">
+                        Pessoas que querem administrar o projeto
+                      </Text>
+                    </Box>
+                    {pendingAdminRequests.length > 0 && (
+                      <Badge size="lg" variant="filled" color="mublinColor" circle>
+                        {pendingAdminRequests.length}
+                      </Badge>
+                    )}
+                  </Group>
+
+                  {loadingPendingAdminRequests ? (
+                    <Stack gap="xs">
+                      {[1, 2].map((i) => (
+                        <Skeleton key={i} h={54} radius="md" />
+                      ))}
+                    </Stack>
+                  ) : pendingAdminRequests.length > 0 ? (
+                    <Stack gap="sm">
+                      {pendingAdminRequests.map((request) => (
+                        <Paper key={request.id} withBorder radius="md" p="sm">
+                          <Group justify="space-between" wrap="nowrap">
+                            <Group gap="sm" wrap="nowrap" style={{ minWidth: 0 }}>
+                              <Avatar
+                                component={Link}
+                                to={`/${request.profile.username}`}
+                                size={38}
+                                src={`${AVATAR_PATH}${request.profile.avatar}`}
+                              />
+                              <Box style={{ minWidth: 0 }}>
+                                <Text size="sm" fw={600} lineClamp={1}>
+                                  {request.profile.full_name}
+                                </Text>
+                                <Text size="xs" c="dimmed" lineClamp={1}>
+                                  @{request.profile.username}
+                                </Text>
+                              </Box>
+                            </Group>
+                            <Group gap={6} wrap="nowrap">
+                              <Tooltip label="Recusar">
+                                <Button
+                                  size="xs"
+                                  variant="light"
+                                  color="gray"
+                                  px={8}
+                                  loading={
+                                    respondAdminRequestMutation.isPending &&
+                                    respondAdminRequestMutation.variables?.requestId ===
+                                      request.id &&
+                                    respondAdminRequestMutation.variables?.accept ===
+                                      false
+                                  }
+                                  onClick={() =>
+                                    handleRespondAdminRequest(request.id, false)
+                                  }
+                                >
+                                  <IconX size={14} />
+                                </Button>
+                              </Tooltip>
+                              <Button
+                                size="xs"
+                                color="green"
+                                leftSection={<IconCheck size={14} />}
+                                loading={
+                                  respondAdminRequestMutation.isPending &&
+                                  respondAdminRequestMutation.variables?.requestId ===
+                                    request.id &&
+                                  respondAdminRequestMutation.variables?.accept === true
+                                }
+                                onClick={() =>
+                                  handleRespondAdminRequest(request.id, true)
+                                }
+                              >
+                                Aceitar
+                              </Button>
+                            </Group>
+                          </Group>
+                        </Paper>
+                      ))}
+                    </Stack>
+                  ) : (
+                    <Paper p="md" radius="md" withBorder={false}>
+                      <Center>
+                        <Stack gap={4} align="center">
+                          <Text size="sm" c="dimmed">
+                            Nenhuma solicitação pendente
+                          </Text>
+                          <Text size="xs" c="dimmed">
+                            Tudo em dia por aqui
+                          </Text>
+                        </Stack>
+                      </Center>
+                    </Paper>
+                  )}
+                </Card>
+
+                <Card
+                  withBorder
+                  radius="lg"
+                  p="lg"
+                  style={{ borderColor: 'var(--mantine-color-red-2)' }}
                 >
-                  Salvar
-                </Button>
-              </Group>
-            </Stack>
-            <Divider my="lg" />
-            <Title order={5} fw={600} mb="xs">
-              Gerenciar administração
-            </Title>
-            <Button variant="filled" color="red.9" size="xs" w={220}>
-              Deixar de ser administrador
-            </Button>
-          </Card>
+                  <Title order={5} fw={600} c="red.8" mb={4}>
+                    Zona de perigo
+                  </Title>
+                  <Text size="xs" c="dimmed" mb="md">
+                    Ações irreversíveis para sua participação como admin
+                  </Text>
+                  <Stack gap="xs">
+                    <Group justify="space-between" wrap="nowrap">
+                      <Box>
+                        <Text size="sm" fw={500}>
+                          Deixar administração
+                        </Text>
+                        <Text size="xs" c="dimmed">
+                          Você perderá acesso às configurações
+                        </Text>
+                      </Box>
+                      <Button variant="outline" color="red" size="xs" w={120}>
+                        Sair do admin
+                      </Button>
+                    </Group>
+                  </Stack>
+                </Card>
+              </Stack>
+            </SimpleGrid>
+          </Stack>
         )}
       </Container>
       <Modal.Root opened={opened} onClose={closeModal} size="auto" centered>

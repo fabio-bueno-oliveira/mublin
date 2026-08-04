@@ -100,12 +100,9 @@ export default function Home() {
           </>
         ) : (
           <>
-            <Title size="24px" fw={600} lh={1.2} ta="left" my="md">
+            <Title size="22px" fw={600} lh={1.2} ta="left" my="md">
               {greeting}, {profile?.username}
             </Title>
-            {/* <Text size="sm" c="dimmed">
-              {dayjs().format('dddd, D [de] MMMM [de] YYYY')}
-            </Text> */}
 
             <Card
               radius="lg"
@@ -246,6 +243,7 @@ export default function Home() {
                             <Card
                               p="xs"
                               w={140}
+                              h={142}
                               shadow="sm"
                               withBorder
                               style={{ flexShrink: 0 }}

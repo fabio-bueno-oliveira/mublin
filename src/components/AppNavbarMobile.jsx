@@ -34,7 +34,7 @@ export default function AppNavbarMobile({
   const isDark = computedColorScheme === 'dark'
 
   const { data: unreadCount = 0 } = useQuery({
-    queryKey: ['notifications-unread-count'],
+    queryKey: ['notifications-unread-count', user?.id],
     queryFn: async () => {
       const { count } = await supabase
         .from('notifications')
@@ -45,7 +45,6 @@ export default function AppNavbarMobile({
     },
     enabled: !!user?.id,
     staleTime: 1000 * 30,
-    refetchInterval: 1000 * 60, // polling a cada 1 min
     refetchOnWindowFocus: true,
   })
 
@@ -104,7 +103,7 @@ export default function AppNavbarMobile({
           </Box>
         )}
 
-        {/* Elemento da Direita (Menu/Ações) - mantém o flexShrink para não ser esmagado pelo texto */}
+        {/* Elemento da Direita (Menu/Ações) */}
         <Box p={4} style={{ flexShrink: 0 }}>
           {pathname === '/menu' ? (
             <ActionIcon
@@ -132,11 +131,7 @@ export default function AppNavbarMobile({
                 >
                   <Indicator
                     inline
-                    label={
-                      <Text fw={500} fz="9px">
-                        {unreadCount}
-                      </Text>
-                    }
+                    label={unreadCount}
                     maxValue={99}
                     size={16}
                     disabled={unreadCount === 0}

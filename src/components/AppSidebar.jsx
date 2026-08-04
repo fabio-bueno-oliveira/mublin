@@ -124,11 +124,11 @@ export default function AppSidebar() {
           <Card withBorder={false} shadow="xs" radius="md" p="xs">
             <Stack gap={4}>
               <Text size="xs">
-                Plano atual: {profile.plan === 'Pro' ? 'Mublin Pro' : 'Mublin Free'}
+                Plano atual: {profile?.plan === 'Pro' ? 'Mublin Pro' : 'Mublin Free'}
               </Text>
-              {profile.plan === 'Pro' && (
-                <Text c="dimmed" size="12px">
-                  Uma experiência otimizada
+              {profile?.plan === 'Pro' && (
+                <Text c="dimmed" size="11px">
+                  Experiência otimizada
                 </Text>
               )}
             </Stack>

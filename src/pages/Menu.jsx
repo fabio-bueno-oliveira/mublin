@@ -9,8 +9,6 @@ import {
   Center,
   Stack,
   Group,
-  Flex,
-  Badge,
   Text,
   Avatar,
   ActionIcon,
@@ -125,28 +123,18 @@ export default function Menu() {
     { icon: IconUser, label: 'Ir para meu perfil', to: `/${profile?.username}` },
     { icon: IconMusic, label: 'Meus projetos de música', to: `/projects` },
     { icon: IconCalendar, label: 'Minhas gigs', to: `/gigs` },
-    { icon: IconBookmark, label: 'Salvos', to: `/saved` },
+    { icon: IconBookmark, label: 'Meus itens salvos', to: `/saved` },
     { icon: IconSettings, label: 'Configurações', to: `/settings` },
-    // { icon: IconCalendarEvent,          label: 'Gigs',                          to: '/gigs' },
-    // { icon: IconCalendarMonth,          label: 'Disponibilidade para gigs',     to: '/settings/availability' },
-    // { icon: IconMusic,                  label: 'Projetos musicais',             to: '/projects' },
-    // { icon: IconPackages,               label: 'Equipamentos',                  to: '/gearr' },
-    // { icon: IconHeartHandshake,         label: 'Parceiros e Endorsements',      to: '/settings/endorsements' },
-    // { icon: IconEdit,                   label: 'Editar meus dados',             to: '/settings' },
-    // { icon: IconAdjustmentsHorizontal,  label: 'Preferências musicais',         to: '/settings/preferences' },
-    // { icon: IconStar,                   label: 'Minha assinatura',              to: '/settings/plan' },
-    // { icon: IconLock,                   label: 'Senha',                         to: '/settings/password' },
-    // { icon: IconEye,                    label: 'Privacidade da conta',          to: '/settings/privacy' },
   ]
 
   return (
     <>
       <AppNavbarMobile />
 
-      <Container size="xs" mb={20} mt={80}>
+      <Container size="xs" mt={74}>
         {/* ── Avatar + câmera ── */}
         <Center>
-          <Avatar radius="lg" size={82} src={avatarSrc} alt="Foto de perfil" />
+          <Avatar radius="xl" size={80} src={avatarSrc} alt="Foto de perfil" />
         </Center>
         <Center style={{ position: 'relative', marginTop: -24, marginLeft: 80 }}>
           <ActionIcon
@@ -160,33 +148,34 @@ export default function Menu() {
           </ActionIcon>
         </Center>
 
-        {/* ── Saudação ── */}
+        {/* ── Greetings ── */}
         <Text ta="center" size="xl" fw={600} mt="lg">
           {profile?.full_name}
         </Text>
-        <Flex gap={4} align="center" justify="center">
-          <Text ta="center" size="sm">
+        <Text ta="center" size="sm">
+          <Text span c="dimmed">
             @{profile?.username}
           </Text>
           {profile?.plan === 'Pro' && (
-            <Badge size="xs" color="dark" fw={600} variant="light" top={3}>
-              PRO
-            </Badge>
+            <Text span c="dimmed">
+              {' '}
+              · Plano Pro
+            </Text>
           )}
-        </Flex>
+        </Text>
 
         {/* ── Tema ── */}
         <Center my="md">
           <Button
-            size="sm"
+            size="xs"
             fw={500}
             variant="filled"
             radius="xl"
             leftSection={
               colorScheme === 'dark' ? (
-                <IconBrightnessUp size="1.5rem" stroke={1.5} />
+                <IconBrightnessUp size="1.2rem" stroke={1.5} />
               ) : (
-                <IconMoon size="1.5rem" stroke={1.5} />
+                <IconMoon size="1.2rem" stroke={1.5} />
               )
             }
             onClick={() => setColorScheme(colorScheme === 'dark' ? 'light' : 'dark')}
@@ -196,7 +185,7 @@ export default function Menu() {
         </Center>
 
         {/* ── Menu items ── */}
-        <Stack gap={3}>
+        <Stack gap={3} pt="xs">
           {menuItems.map(({ icon: Icon, label, to }) => (
             <Button
               key={to}
@@ -216,12 +205,13 @@ export default function Menu() {
 
           {/* Logout — separado pois é action, não rota */}
           <Button
-            variant="transparent"
-            color="red"
+            mt="sm"
+            variant="light"
+            color="var(--mantine-color-text)"
             size="md"
-            justify="space-between"
+            justify="center"
             leftSection={<IconLogout style={iconStyle} />}
-            rightSection={<IconChevronRight />}
+            // rightSection={<IconChevronRight />}
             fw={550}
             onClick={handleLogout}
           >
@@ -243,7 +233,7 @@ export default function Menu() {
         size="xs"
         radius="md"
       >
-        <Stack align="center" gap="md">
+        <Stack align="center" gap="md" mt="lg">
           <LoadingOverlay
             visible={uploading}
             zIndex={1000}
@@ -255,10 +245,10 @@ export default function Menu() {
               previewSrc ??
               (profile?.avatar
                 ? AVATAR_BASE + profile.avatar
-                : 'https://ik.imagekit.io/mublin/tr:h-140,w-140,r-max/sample-folder/avatar-undefined_Kblh5CBKPp.jpg')
+                : 'https://ik.imagekit.io/mublin/tr:h-100,w-100,r-max/sample-folder/avatar-undefined_Kblh5CBKPp.jpg')
             }
-            w={140}
-            h={140}
+            w={100}
+            h={100}
             fit="cover"
           />
           <Group gap="sm">

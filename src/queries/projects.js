@@ -342,6 +342,67 @@ export async function fetchProjectForDashbar(slug) {
   }
 }
 
+// ── Solicitação de acesso admin ──────────────────────────
+
+export async function fetchProjectAdminRequests(projectId) {
+  const { data, error } = await supabase
+    .from('project_admin_requests')
+    .select(
+      `
+      id,
+      status,
+      created_at,
+      profile:profiles!project_admin_requests_profile_id_fkey ( id, full_name, username, avatar ),
+      responder:profiles!project_admin_requests_responded_by_fkey ( id, full_name, username )
+    `,
+    )
+    .eq('project_id', projectId)
+    .eq('status', 1)
+    .order('created_at')
+
+  if (error) {
+    throw new Error(error.message)
+  }
+  return data
+}
+
+export async function fetchMyProjectAdminRequest(projectId, profileId) {
+  const { data, error } = await supabase
+    .from('project_admin_requests')
+    .select('id, status, created_at')
+    .eq('project_id', projectId)
+    .eq('profile_id', profileId)
+    .maybeSingle()
+
+  if (error) {
+    throw new Error(error.message)
+  }
+  return data
+}
+
+export async function requestProjectAdminAccess(projectId) {
+  const { data, error } = await supabase.rpc('request_project_admin_access', {
+    p_project_id: projectId,
+  })
+
+  if (error) {
+    throw new Error(error.message)
+  }
+  return data
+}
+
+export async function respondProjectAdminRequest(requestId, accept) {
+  const { data, error } = await supabase.rpc('respond_project_admin_request', {
+    p_request_id: requestId,
+    p_accept: accept,
+  })
+
+  if (error) {
+    throw new Error(error.message)
+  }
+  return data
+}
+
 export async function updateProjectProfile(projectId, updates) {
   const { data, error } = await supabase
     .from('projects')

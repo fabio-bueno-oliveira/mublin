@@ -1,5 +1,5 @@
 import { useAuth } from '../hooks/useAuth'
-import { useState } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom'
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query'
@@ -47,14 +47,17 @@ import {
   IconKey,
 } from '@tabler/icons-react'
 import { NAV_ITEMS, QUICK_ACTIONS } from '../constants/navItems'
+import { truncateString } from '../utils/formatter'
 
 const AVATAR_PATH =
-  'https://ik.imagekit.io/mublin/tr:h-200,c-maintain_ratio/users/avatars/'
+  'https://ik.imagekit.io/mublin/tr:h-64,c-maintain_ratio/users/avatars/'
+
+const NAV_LINK_STYLE = { textDecoration: 'none', color: 'inherit' }
 
 export default function AppNavbar({ children }) {
   const navigate = useNavigate()
-  const isActive = (path) => pathname === path
   const { pathname } = useLocation()
+  const isActive = (path) => pathname === path
   const { colorScheme } = useMantineColorScheme()
   const { profile, user, signOut } = useAuth()
   const { setColorScheme } = useMantineColorScheme()
@@ -87,8 +90,7 @@ export default function AppNavbar({ children }) {
     },
     enabled: !!user?.id,
     staleTime: 1000 * 60 * 6, // 6 min
-    refetchInterval: 1000 * 60 * 8, // polling a cada 8 min
-    refetchOnWindowFocus: true, // atualiza sempre que voltar à aba
+    refetchOnWindowFocus: true, // rede de segurança caso o WebSocket caia
   })
 
   const { data: recentSearches = [] } = useQuery({
@@ -105,6 +107,34 @@ export default function AppNavbar({ children }) {
   })
 
   const queryClient = useQueryClient()
+
+  useEffect(() => {
+    if (!user?.id) {
+      return
+    }
+
+    const channel = supabase
+      .channel(`notifications-${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // INSERT, UPDATE ou DELETE
+          schema: 'public',
+          table: 'notifications',
+          filter: `recipient_id=eq.${user.id}`,
+        },
+        () => {
+          queryClient.invalidateQueries({
+            queryKey: ['notifications-unread-count', user.id],
+          })
+        },
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [user?.id, queryClient])
 
   const { mutate: clearHistory } = useMutation({
     mutationFn: () => clearSearchHistory(user.id),
@@ -135,10 +165,14 @@ export default function AppNavbar({ children }) {
     navigate('/')
   }
 
-  const suggestions = recentSearches.filter(
-    (s) =>
-      searchQuery.trim() === '' ||
-      s.query.toLowerCase().includes(searchQuery.toLowerCase()),
+  const suggestions = useMemo(
+    () =>
+      recentSearches.filter(
+        (s) =>
+          searchQuery.trim() === '' ||
+          s.query.toLowerCase().includes(searchQuery.toLowerCase()),
+      ),
+    [recentSearches, searchQuery],
   )
 
   return (
@@ -174,7 +208,7 @@ export default function AppNavbar({ children }) {
                       component={Link}
                       to={item.path}
                       opacity={isActive(item.path) ? 1 : 0.8}
-                      style={{ textDecoration: 'none', color: 'inherit' }}
+                      style={NAV_LINK_STYLE}
                     >
                       <Icon size={20} stroke={1.7} />
                       <Text size="xs">{item.label}</Text>
@@ -187,8 +221,15 @@ export default function AppNavbar({ children }) {
                   align="center"
                   gap={1}
                   opacity={isActive('/create') ? 1 : 0.8}
-                  onClick={() => openActionsMenu()}
-                  style={{ cursor: 'pointer', textDecoration: 'none', color: 'inherit' }}
+                  onClick={openActionsMenu}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      openActionsMenu()
+                    }
+                  }}
+                  style={{ ...NAV_LINK_STYLE, cursor: 'pointer' }}
                 >
                   <IconPlus size={20} stroke={1.7} />
                   <Text size="xs">Criar</Text>
@@ -223,6 +264,7 @@ export default function AppNavbar({ children }) {
                       color="gray"
                       radius="xl"
                       size="md"
+                      aria-label="Buscar"
                       onClick={() => doSearch(searchQuery)}
                     >
                       <IconArrowRight size={16} />
@@ -284,6 +326,8 @@ export default function AppNavbar({ children }) {
                 radius="xl"
                 size="lg"
                 hiddenFrom="sm"
+                aria-label="Buscar"
+                onClick={() => navigate('/search')}
               >
                 <IconSearch size={18} />
               </ActionIcon>
@@ -296,14 +340,16 @@ export default function AppNavbar({ children }) {
                 closeOnItemClick={false}
               >
                 <Menu.Target>
-                  <ActionIcon variant="default" color="gray" size="lg" radius="xl">
+                  <ActionIcon
+                    variant="default"
+                    color="gray"
+                    size="lg"
+                    radius="xl"
+                    aria-label="Notificações"
+                  >
                     <Indicator
                       inline
-                      label={
-                        <Text fw={400} fz="9px">
-                          {unreadNotifications}
-                        </Text>
-                      }
+                      label={unreadNotifications}
                       maxValue={99}
                       color="red.8"
                       size={14}
@@ -330,7 +376,7 @@ export default function AppNavbar({ children }) {
                       radius="xl"
                     />
                     <Text size="sm" fw={600} visibleFrom="sm">
-                      {profile?.username}
+                      {truncateString(profile?.username, 10)}
                     </Text>
                     <IconChevronDown
                       size={14}
@@ -386,39 +432,37 @@ export default function AppNavbar({ children }) {
           </Group>
         </Container>
       </Box>
-      {actionsMenuOpened && (
-        <Modal
-          centered
-          opened={openActionsMenu}
-          onClose={closeActionsMenu}
-          title="Criar"
-          overlayProps={{
-            backgroundOpacity: 0.55,
-            blur: 3,
-          }}
-        >
-          <Stack mt="lg">
-            {QUICK_ACTIONS.map((item) => {
-              const Icon = item.icon
-              return (
-                <Button
-                  key={item.path}
-                  component={Link}
-                  to={item.path}
-                  onClick={() => closeActionsMenu()}
-                  leftSection={<Icon size={20} />}
-                  variant="subtle"
-                  justify="flex-start"
-                  color="gray"
-                  size="sm"
-                >
-                  {item.label}
-                </Button>
-              )
-            })}
-          </Stack>
-        </Modal>
-      )}
+      <Modal
+        centered
+        opened={actionsMenuOpened}
+        onClose={closeActionsMenu}
+        title="Criar"
+        overlayProps={{
+          backgroundOpacity: 0.55,
+          blur: 3,
+        }}
+      >
+        <Stack mt="lg">
+          {QUICK_ACTIONS.map((item) => {
+            const Icon = item.icon
+            return (
+              <Button
+                key={item.path}
+                component={Link}
+                to={item.path}
+                onClick={closeActionsMenu}
+                leftSection={<Icon size={20} />}
+                variant="subtle"
+                justify="flex-start"
+                color="gray"
+                size="sm"
+              >
+                {item.label}
+              </Button>
+            )
+          })}
+        </Stack>
+      </Modal>
     </>
   )
 }
