@@ -14,6 +14,7 @@ import {
 } from '@mantine/core'
 import { DatesProvider } from '@mantine/dates'
 import { Notifications } from '@mantine/notifications'
+import { ModalsProvider } from '@mantine/modals'
 import { AuthProvider } from './contexts/AuthContext'
 import { UIProvider } from './contexts/UIContext'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -164,20 +165,22 @@ function App() {
     <>
       <MantineProvider
         theme={theme}
-        defaultColorScheme="light"
+        defaultColorScheme="dark"
         colorSchemeManager={colorSchemeManager}
         cssVariablesResolver={resolver}
       >
-        <Notifications autoClose={1400} position="top-center" />
-        <QueryClientProvider client={queryClient}>
-          <AuthProvider>
-            <UIProvider>
-              <DatesProvider settings={{ locale: 'pt-br', firstDayOfWeek: 0 }}>
-                <RouterProvider router={router} />
-              </DatesProvider>
-            </UIProvider>
-          </AuthProvider>
-        </QueryClientProvider>
+        <ModalsProvider>
+          <Notifications autoClose={1400} position="top-center" />
+          <QueryClientProvider client={queryClient}>
+            <AuthProvider>
+              <UIProvider>
+                <DatesProvider settings={{ locale: 'pt-br', firstDayOfWeek: 0 }}>
+                  <RouterProvider router={router} />
+                </DatesProvider>
+              </UIProvider>
+            </AuthProvider>
+          </QueryClientProvider>
+        </ModalsProvider>
       </MantineProvider>
     </>
   )

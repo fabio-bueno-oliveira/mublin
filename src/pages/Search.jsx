@@ -15,6 +15,8 @@ import {
   searchArtists,
   searchEvents,
 } from '../queries/search'
+import { fetchGenreCategories } from '../queries/genres'
+import { fetchRandomProjectOpening } from '../queries/projects'
 import { useAuth } from '../hooks/useAuth'
 import {
   Grid,
@@ -36,6 +38,9 @@ import {
   Button,
   Stack,
   EmptyState,
+  SimpleGrid,
+  UnstyledButton,
+  Paper,
 } from '@mantine/core'
 import { useDebouncedCallback } from '@mantine/hooks'
 import {
@@ -47,6 +52,7 @@ import {
   IconZoom,
   IconCircleArrowLeftFilled,
   IconCircleArrowRightFilled,
+  IconBriefcase,
 } from '@tabler/icons-react'
 import { getAvatarUrl } from '../utils/profile'
 
@@ -165,6 +171,23 @@ export default function Search() {
     queryFn: () => searchEvents(q),
     enabled: q.trim().length > 1,
     staleTime: 1000 * 60 * 3,
+  })
+
+  // Categorias de gênero — exibidas apenas na tela inicial da busca (sem "q")
+  const { data: genreCategories = [] } = useQuery({
+    queryKey: ['genre-categories'],
+    queryFn: fetchGenreCategories,
+    enabled: !q,
+    staleTime: 1000 * 60 * 60, // muda raramente
+  })
+
+  // Vaga aleatória — uma nova a cada vez que a tela de busca é aberta sem "q"
+  const { data: randomOpening } = useQuery({
+    queryKey: ['random-project-opening'],
+    queryFn: fetchRandomProjectOpening,
+    enabled: !q,
+    staleTime: 0,
+    refetchOnWindowFocus: false,
   })
 
   async function doMobileSearch(keyword) {
@@ -760,15 +783,166 @@ export default function Search() {
           </>
         ) : (
           !isMobileFocused && (
-            <EmptyState mt={100}>
-              <EmptyState.Indicator>
-                <IconZoom />
-              </EmptyState.Indicator>
-              <EmptyState.Title>Use o campo acima para procurar</EmptyState.Title>
-              <EmptyState.Description>
-                Busque por pessoas, projetos, equipamentos, marcas, eventos...
-              </EmptyState.Description>
-            </EmptyState>
+            <Stack gap="xl" mt={{ base: 'md', sm: 60 }}>
+              <EmptyState>
+                <EmptyState.Indicator>
+                  <IconZoom />
+                </EmptyState.Indicator>
+                <EmptyState.Title>Use o campo acima para procurar</EmptyState.Title>
+                <EmptyState.Description>
+                  Busque por pessoas, projetos, equipamentos, marcas, eventos...
+                </EmptyState.Description>
+              </EmptyState>
+
+              {randomOpening && (
+                <Paper
+                  component={Link}
+                  to={`/project/${randomOpening.project_slug}`}
+                  withBorder
+                  radius="lg"
+                  p="md"
+                  style={{ textDecoration: 'none', color: 'inherit' }}
+                >
+                  <Group justify="space-between" wrap="nowrap" gap="md">
+                    <Group gap="md" wrap="nowrap" style={{ minWidth: 0 }}>
+                      <Avatar
+                        size={52}
+                        radius="md"
+                        src={
+                          randomOpening.project_picture
+                            ? PATH_PROJECT_AVATAR + randomOpening.project_picture
+                            : undefined
+                        }
+                      >
+                        <IconBriefcase size={22} />
+                      </Avatar>
+                      <Box style={{ minWidth: 0 }}>
+                        <Text size="xs" c="dimmed" tt="uppercase" fw={600} lts="0.03em">
+                          Vaga em destaque
+                        </Text>
+                        <Text fw={600} truncate="end">
+                          {randomOpening.project_name}
+                          {randomOpening.genre_name_ptbr &&
+                            `, ${randomOpening.genre_name_ptbr}`}
+                          {`, busca ${randomOpening.role_name_ptbr}`}
+                        </Text>
+                      </Box>
+                    </Group>
+                    <Button size="xs" variant="light" component="span" flex="0 0 auto">
+                      Ver vaga
+                    </Button>
+                  </Group>
+                </Paper>
+              )}
+
+              {!!genreCategories?.length && (
+                <Box>
+                  <Title order={4} fw={600} mb="sm">
+                    Explore por gênero
+                  </Title>
+                  <SimpleGrid cols={{ base: 2, xs: 3, sm: 4, md: 5, lg: 6 }} spacing="sm">
+                    {genreCategories.map((genre) => {
+                      const color = genre.color || 'indigo'
+                      return (
+                        <UnstyledButton
+                          key={genre.id}
+                          component={Link}
+                          to={`/genre/${genre.id}`}
+                          style={{
+                            position: 'relative',
+                            overflow: 'hidden',
+                            borderRadius: 16,
+                            height: 92,
+                            border: '1px solid var(--mantine-color-default-border)',
+                            background: 'var(--mantine-color-body)',
+                            padding: 0,
+                            transition:
+                              'transform 120ms ease, box-shadow 120ms ease, border-color 120ms ease',
+                          }}
+                          onMouseEnter={(e) => {
+                            // e.currentTarget.style.transform = 'translateY(-2px)'
+                            // e.currentTarget.style.boxShadow = 'var(--mantine-shadow-sm)'
+                            e.currentTarget.style.borderColor = `var(--mantine-color-${color}-3)`
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.transform = 'translateY(0)'
+                            e.currentTarget.style.boxShadow = 'none'
+                            e.currentTarget.style.borderColor =
+                              'var(--mantine-color-default-border)'
+                          }}
+                        >
+                          {/* barra lateral com a cor do gênero */}
+                          <Box
+                            aria-hidden
+                            style={{
+                              position: 'absolute',
+                              left: 0,
+                              top: 0,
+                              bottom: 0,
+                              width: 4,
+                              background: `var(--mantine-color-${color}-6)`,
+                            }}
+                          />
+                          {/* bolha grande suave */}
+                          <Box
+                            aria-hidden
+                            style={{
+                              position: 'absolute',
+                              right: -18,
+                              bottom: -18,
+                              width: 68,
+                              height: 68,
+                              borderRadius: '50%',
+                              background: `var(--mantine-color-${color}-light)`,
+                              opacity: 0.4,
+                            }}
+                          />
+                          {/* letra inicial gigante fantasma */}
+                          <Text
+                            aria-hidden
+                            fw={700}
+                            fz={46}
+                            lh={1}
+                            style={{
+                              position: 'absolute',
+                              right: 8,
+                              bottom: -4,
+                              color: `var(--mantine-color-${color}-6)`,
+                              opacity: 0.09,
+                              pointerEvents: 'none',
+                              userSelect: 'none',
+                            }}
+                          >
+                            {genre.name_ptbr?.charAt(0)?.toUpperCase()}
+                          </Text>
+
+                          <Flex
+                            h="100%"
+                            align="flex-start"
+                            direction="column"
+                            justify="center"
+                            pl={18}
+                            pr={44}
+                            gap={2}
+                            style={{ position: 'relative', zIndex: 1 }}
+                          >
+                            <Text
+                              fw={700}
+                              size="sm"
+                              lh={1.15}
+                              lineClamp={2}
+                              style={{ letterSpacing: '-0.01em' }}
+                            >
+                              {genre.name_ptbr}
+                            </Text>
+                          </Flex>
+                        </UnstyledButton>
+                      )
+                    })}
+                  </SimpleGrid>
+                </Box>
+              )}
+            </Stack>
           )
         )}
       </Container>

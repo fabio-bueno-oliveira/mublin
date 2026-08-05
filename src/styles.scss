@@ -24,6 +24,16 @@
 
 // Mantine styles
 
+.mantine-Tabs-list::before {
+  display: none !important;
+}
+
+.mantine-Tabs-tab {
+  &:hover {
+    background-color: transparent;
+  }
+}
+
 [data-mantine-color-scheme='light'] {
   .mantine-Divider-root {
     opacity: 1 !important;

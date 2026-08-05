@@ -79,6 +79,7 @@ import AdminVenues from './pages/admin/AdminVenues'
 import AdminPlans from './pages/admin/AdminPlans'
 import AdminColors from './pages/admin/AdminColors'
 import AdminArtists from './pages/admin/AdminArtists'
+import SearchGenre from './pages/search/Genre'
 
 export const router = createBrowserRouter([
   // ── Rotas públicas ──────────────────────────────
@@ -112,6 +113,7 @@ export const router = createBrowserRouter([
       { path: 'feed', element: <Feed /> },
       { path: 'search', element: <Search /> },
       { path: 'search/people', element: <SearchPeople /> },
+      { path: 'genre/:genreId', element: <SearchGenre /> },
       { path: 'gigs', element: <Gigs /> },
       { path: 'gig/:id', element: <Gig /> },
       { path: 'gig-invitations', element: <GigInvitations /> },

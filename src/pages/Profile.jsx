@@ -701,7 +701,7 @@ export default function Profile() {
         size="xl"
         py="sm"
         px={0}
-        mt={!profile.cover_image ? { base: 51, sm: 0 } : 0}
+        mt={!profile.cover_image ? { base: 51, sm: 10 } : 0}
       >
         <Grid>
           <Grid.Col span={{ base: 12, md: 9 }} pos="relative">
@@ -749,6 +749,7 @@ export default function Profile() {
                 </Card.Section>
               </Card>
             )}
+
             {isMobile && (
               <ProfileHeaderMobile
                 mt={profile.cover_image ? -55 : 0}
@@ -761,10 +762,11 @@ export default function Profile() {
                 onOpenLinks={openLinksModal}
               />
             )}
+
             <Grid>
               <Grid.Col span={{ base: 12, md: 2.7 }} visibleFrom="sm" pos="relative">
                 <Box
-                  top={profile.cover_image ? -22 : 0}
+                  top={profile.cover_image ? -22 : 6}
                   left={0}
                   pos={profile.cover_image ? 'absolute' : 'inherit'}
                 >

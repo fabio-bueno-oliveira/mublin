@@ -175,59 +175,77 @@ export async function searchGearCategories(keyword) {
   return data
 }
 
-export async function fetchRecentProfiles(limit = 10) {
-  const { data, error } = await supabase
-    .from('profiles')
-    .select(
-      `
+const FOUNDER_PROFILE_ID = 'f68e4f07-0084-4439-b8cf-dd9e19d04f39'
+
+const PROFILE_SELECT = `
+  id,
+  created_at,
+  full_name,
+  username,
+  title,
+  avatar,
+  city_id,
+  region_id,
+  is_verified,
+  is_open_to_work,
+  is_live,
+  cities (
+    name, countries ( name, name_ptbr )
+  ),
+  regions (
+    name, uf
+  ),
+  profile_roles (
+    id,
+    main_activity,
+    roles (
       id,
-      created_at,
-      full_name,
-      username,
-      avatar,
-      title,
-      bio,
-      city_id,
-      region_id,
-      is_verified,
-      is_open_to_work,
-      is_live,
-      live_platform,
-      live_expires_at,
-      cities (
-        name, countries ( name, name_ptbr )
-      ),
-      regions (
-        name, uf
-      ),
-      profile_roles (
-        id,
-        main_activity,
-        roles (
-          id,
-          name_ptbr,
-          name_en,
-          description_ptbr,
-          instrumentalist
-        )
-      ),
-      profile_genres (
-        id,
-        main_genre,
-        genres (
-          id, name
-        )
-      )
-    `,
+      name_ptbr,
+      name_en,
+      description_ptbr,
+      instrumentalist
     )
+  ),
+  profile_genres (
+    id,
+    main_genre,
+    genres (
+      id, name
+    )
+  )
+`
+
+export async function fetchRecentProfiles(limit = 10) {
+  // 1. Busca o perfil do founder separadamente
+  const { data: myProfile, error: myError } = await supabase
+    .from('profiles')
+    .select(PROFILE_SELECT)
+    .eq('id', FOUNDER_PROFILE_ID)
+    .eq('is_shadow_hidden', false)
+    .maybeSingle()
+
+  if (myError) {
+    throw new Error(myError.message)
+  }
+
+  // 2. Busca os demais perfis recentes, excluindo o founder, respeitando o limit
+  const remainingLimit = myProfile ? limit - 1 : limit
+
+  const { data: otherProfiles, error } = await supabase
+    .from('profiles')
+    .select(PROFILE_SELECT)
     .neq('username', 'mublin')
+    .neq('id', FOUNDER_PROFILE_ID)
     .eq('is_shadow_hidden', false)
     .order('created_at', { ascending: false })
-    .limit(limit)
+    .limit(remainingLimit)
+
   if (error) {
     throw new Error(error.message)
   }
-  return data
+
+  // 3. Concatena, com o perfil do founder sempre em primeiro
+  return myProfile ? [myProfile, ...otherProfiles] : otherProfiles
 }
 
 export async function searchEvents(keyword) {
@@ -265,5 +283,15 @@ export async function searchEvents(keyword) {
   if (error) {
     throw new Error(error.message)
   }
+  return data
+}
+
+export async function fetchGenreCategories() {
+  const { data, error } = await supabase
+    .from('genre_categories')
+    .select('id, name, name_ptbr, color, color_hex')
+    .order('name_ptbr', { ascending: true })
+
+  if (error) throw error
   return data
 }

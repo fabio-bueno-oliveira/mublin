@@ -19,6 +19,7 @@ export async function fetchProjectProfile(slug) {
       soundcloud,
       genres ( id, name_ptbr ),
       project_types ( id, name_ptbr ),
+      activity_status,
       status:project_statuses ( description_ptbr, color ),
       project_members (
         id,
@@ -415,4 +416,14 @@ export async function updateProjectProfile(projectId, updates) {
     throw new Error(error.message)
   }
   return data
+}
+
+export async function fetchRandomProjectOpening() {
+  const { data, error } = await supabase.rpc('get_random_project_opening')
+
+  if (error) {
+    throw error
+  }
+
+  return data?.[0] ?? null
 }

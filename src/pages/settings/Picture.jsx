@@ -3,6 +3,7 @@ import { useAuth } from '../../hooks/useAuth'
 import { useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabaseClient'
 import { upload } from '@imagekit/react'
+import { modals } from '@mantine/modals'
 import {
   Stack,
   Button,
@@ -97,6 +98,7 @@ export default function Picture() {
   const [coverProgress, setCoverProgress] = useState(0)
   const [uploadingCover, setUploadingCover] = useState(false)
   const [savingCover, setSavingCover] = useState(false)
+  const [removingCover, setRemovingCover] = useState(false)
   const coverInputRef = useRef(null)
 
   // ── Handlers: Avatar ──────────────────────────────────
@@ -266,6 +268,50 @@ export default function Picture() {
     }
   }
 
+  // Remove a capa já salva (não é a mesma coisa que "cancelar" um upload
+  // em andamento — aqui o usuário já tem uma cover_image persistida no banco).
+  function handleRemoveCover() {
+    modals.openConfirmModal({
+      title: 'Remover foto de capa',
+      centered: true,
+      children: (
+        <Text size="sm">
+          Tem certeza que deseja remover sua foto de capa? Essa ação não pode ser
+          desfeita.
+        </Text>
+      ),
+      labels: { confirm: 'Remover', cancel: 'Cancelar' },
+      confirmProps: { color: 'red' },
+      onConfirm: async () => {
+        setRemovingCover(true)
+        try {
+          const { error } = await supabase
+            .from('profiles')
+            .update({ cover_image: null })
+            .eq('id', user.id)
+          if (error) {
+            throw error
+          }
+          await refreshProfile()
+          queryClient.invalidateQueries({ queryKey: ['profile', user.id] })
+          notifications.show({
+            color: 'green',
+            position: 'top-center',
+            message: 'Foto de capa removida.',
+          })
+        } catch {
+          notifications.show({
+            color: 'red',
+            position: 'top-center',
+            message: 'Erro ao remover a foto de capa. Tente novamente.',
+          })
+        } finally {
+          setRemovingCover(false)
+        }
+      },
+    })
+  }
+
   // ── Render ────────────────────────────────────────────
 
   return (
@@ -394,7 +440,7 @@ export default function Picture() {
                 fit="cover"
               />
             )}
-            {uploadingCover && (
+            {(uploadingCover || removingCover) && (
               <Box
                 style={{
                   position: 'absolute',
@@ -422,10 +468,22 @@ export default function Picture() {
                 leftSection={<IconPhoto size={14} />}
                 component="label"
                 htmlFor="cover-input"
-                disabled={uploadingCover}
+                disabled={uploadingCover || removingCover}
               >
                 Escolher foto de capa
               </Button>
+              {profile?.cover_image && (
+                <Button
+                  size="xs"
+                  variant="subtle"
+                  color="red"
+                  leftSection={<IconTrash size={14} />}
+                  disabled={uploadingCover || removingCover}
+                  onClick={handleRemoveCover}
+                >
+                  {removingCover ? 'Removendo...' : 'Remover capa'}
+                </Button>
+              )}
             </Group>
           ) : (
             <Group gap="xs">

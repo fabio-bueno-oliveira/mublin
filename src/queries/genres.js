@@ -15,8 +15,21 @@ export async function fetchAllGenres() {
 export async function fetchGenreCategories() {
   const { data, error } = await supabase
     .from('genre_categories')
-    .select('id, name_ptbr')
-    .order('name_ptbr')
+    .select('id, name, name_ptbr, color, color_hex')
+    .order('name_ptbr', { ascending: true })
+
+  if (error) {
+    throw error
+  }
+  return data
+}
+
+export async function fetchGenreCategoryDetails(genreId) {
+  const { data, error } = await supabase
+    .from('genre_categories')
+    .select('id, name, name_ptbr, color, color_hex')
+    .eq('id', genreId)
+    .single()
   if (error) {
     throw new Error(error.message)
   }

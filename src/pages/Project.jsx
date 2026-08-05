@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Helmet } from 'react-helmet-async'
 import { Link, useParams } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
@@ -28,6 +29,7 @@ import {
   Text,
   TextInput,
   Textarea,
+  Select,
   Checkbox,
   FileInput,
   Badge,
@@ -41,6 +43,7 @@ import {
   Tooltip,
   Modal,
   em,
+  Divider,
 } from '@mantine/core'
 import { useMediaQuery, useDisclosure } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
@@ -99,6 +102,22 @@ async function uploadToImageKit({ file, fileName, folder, tags, onProgress }) {
   })
 }
 
+// ── Fetch: opções de status de atividade do projeto ──────
+// TODO: mover para '../queries/projects', ao lado das demais funções de
+// fetch/mutation do projeto, para manter o padrão do restante do arquivo.
+async function fetchProjectStatuses() {
+  const { data, error } = await supabase
+    .from('project_statuses')
+    .select('id, description_ptbr, color')
+    .order('id', { ascending: true })
+
+  if (error) {
+    throw error
+  }
+
+  return data
+}
+
 export default function Project() {
   const { user } = useAuth()
   const { slug } = useParams()
@@ -115,6 +134,7 @@ export default function Project() {
     description: '',
     purpose: '',
     on_tour: false,
+    activity_status: null,
   })
   const [pictureFile, setPictureFile] = useState(null)
   const [picturePreview, setPicturePreview] = useState(null)
@@ -152,6 +172,18 @@ export default function Project() {
     staleTime: 1000 * 60 * 5,
   })
 
+  // Opções de status de atividade do projeto (lookup table, muda raramente)
+  const { data: projectStatuses = [], isLoading: loadingProjectStatuses } = useQuery({
+    queryKey: ['project-statuses'],
+    queryFn: fetchProjectStatuses,
+    staleTime: 1000 * 60 * 60,
+  })
+
+  const projectStatusOptions = projectStatuses.map((status) => ({
+    value: String(status.id),
+    label: status.description_ptbr,
+  }))
+
   // Solicitação de acesso admin do próprio usuário logado (se houver)
   const { data: myAdminRequest, isLoading: loadingMyAdminRequest } = useQuery({
     queryKey: ['project-admin-request', project?.id, user?.id],
@@ -181,6 +213,8 @@ export default function Project() {
       description: project.description || '',
       purpose: project.purpose || '',
       on_tour: !!project.on_tour,
+      activity_status:
+        project.activity_status != null ? String(project.activity_status) : null,
     })
   }
 
@@ -200,6 +234,9 @@ export default function Project() {
         description: editForm.description.trim() || null,
         purpose: editForm.purpose.trim() || null,
         on_tour: editForm.on_tour,
+        activity_status: editForm.activity_status
+          ? Number(editForm.activity_status)
+          : null,
       }
 
       if (pictureFile) {
@@ -315,6 +352,12 @@ export default function Project() {
     setEditForm((prev) => ({ ...prev, on_tour: checked }))
   }
 
+  const handleActivityStatusChange = (value) => {
+    // Select do Mantine chama onChange já com o valor (string) ou null,
+    // diferente de TextInput/Textarea, que disparam um evento nativo
+    setEditForm((prev) => ({ ...prev, activity_status: value }))
+  }
+
   const handlePictureChange = (file) => {
     if (picturePreview) {
       URL.revokeObjectURL(picturePreview)
@@ -346,6 +389,8 @@ export default function Project() {
 
   const AVATAR_PATH =
     'https://ik.imagekit.io/mublin/tr:h-200,c-maintain_ratio/users/avatars/'
+  const AVATAR_MINI_PATH =
+    'https://ik.imagekit.io/mublin/tr:h-35,c-maintain_ratio/users/avatars/'
   const PICTURE_AVATAR_PATH = `https://ik.imagekit.io/mublin/projects/${project?.id}/tr:h-200,w-200,c-maintain_ratio/`
   const PICTURE_AVATAR_LARGE_PATH = `https://ik.imagekit.io/mublin/projects/${project?.id}/tr:h-400,w-400,c-maintain_ratio/`
   const PICTURE_COVER_PATH = `https://ik.imagekit.io/mublin/projects/${project?.id}/tr:h-100,w-1042,fo-top,c-maintain_ratio/`
@@ -384,6 +429,21 @@ export default function Project() {
 
   return (
     <>
+      <Helmet>
+        <meta charSet="utf-8" />
+        <title>{`${project?.name} ·${project?.project_type} · Mublin`}</title>
+        <link rel="canonical" href={`https://mublin.com/project/${project?.name}`} />
+        <meta name="description" content={`${project?.name} no Mublin`} />
+        <meta
+          property="og:image"
+          content={
+            project?.cover_picture
+              ? PICTURE_COVER_PATH + project?.cover_picture
+              : undefined
+          }
+        />
+      </Helmet>
+
       {isMobile && (
         <Affix position={{ top: 0, left: 0 }} w="100%">
           <AppNavbarMobile
@@ -393,15 +453,15 @@ export default function Project() {
           />
         </Affix>
       )}
+
       <Container fluid pb="lg" px={0} mt={{ base: 51, sm: 0 }}>
         <Card
           mx={{ base: 0, sm: 'md' }}
           mt={{ base: 0, sm: 'xs' }}
-          mb="md"
+          mb="xs"
           px={0}
           pt={0}
           pb="md"
-          shadow="xs"
           radius={{ base: false, sm: 'lg' }}
         >
           {/* ── Cabeçalho / Cover ── */}
@@ -470,7 +530,7 @@ export default function Project() {
 
           {/* ── Identidade ── */}
           <Flex justify="space-between" align="flex-start" wrap="wrap" gap="sm" px="lg">
-            <Stack gap={2} w="100%">
+            <Stack gap={0} w="100%">
               {isLoading ? (
                 <>
                   <Skeleton height={28} width={200} />
@@ -479,28 +539,33 @@ export default function Project() {
               ) : (
                 <>
                   <Group>
-                    <Title order={1} fz="h3" fw={600} lts="-0.01em">
+                    <Title order={1} fz="h2" fw={600} lts="-0.01em">
                       {project?.name}
                     </Title>
                   </Group>
                   <Group w="100%" gap={8} align="center">
                     {project?.project_type && (
-                      <Text size="md" c="dimmed">
+                      <Text size="sm" c="dimmed">
                         {project.project_type}
                       </Text>
                     )}
                     {project?.genre && (
                       <>
-                        <Text size="md" opacity={0.4} style={{ cursor: 'default' }}>
+                        <Text size="sm" opacity={0.4} style={{ cursor: 'default' }}>
                           ·
                         </Text>
-                        <Text size="md" c="dimmed">
+                        <Text size="sm" c="dimmed">
                           {project.genre}
                         </Text>
                       </>
                     )}
                   </Group>
                 </>
+              )}
+              {project?.status?.description_ptbr && (
+                <Badge color={project?.status?.color} variant="filled" size="xs" mt={8}>
+                  {project?.status?.description_ptbr}
+                </Badge>
               )}
             </Stack>
           </Flex>
@@ -517,29 +582,23 @@ export default function Project() {
           )}
         </Card>
 
-        <Tabs mx="md" variant="pills" mb="md" value={activeTab} onChange={setActiveTab}>
-          <Tabs.List grow>
+        <Tabs
+          mx={{ base: 0, sm: 'md' }}
+          variant="default"
+          mb="md"
+          value={activeTab}
+          onChange={setActiveTab}
+        >
+          <Tabs.List>
             <Scroller>
-              <Tabs.Tab value="about" mr="xs">
-                Sobre
-              </Tabs.Tab>
-              <Tabs.Tab value="people" mr="xs">
-                Pessoas
-              </Tabs.Tab>
-              <Tabs.Tab value="discography" mr="xs">
-                Discografia
-              </Tabs.Tab>
-              <Tabs.Tab value="jobs" mr="xs">
-                Vagas
-              </Tabs.Tab>
-              <Tabs.Tab value="gigs" mr="xs">
-                Gigs
-              </Tabs.Tab>
-              <Tabs.Tab value="social" mr="xs">
-                Redes
-              </Tabs.Tab>
+              <Tabs.Tab value="about">Sobre</Tabs.Tab>
+              <Tabs.Tab value="people">Pessoas ({projectPeople.length})</Tabs.Tab>
+              <Tabs.Tab value="discography">Discografia</Tabs.Tab>
+              <Tabs.Tab value="jobs">Vagas</Tabs.Tab>
+              <Tabs.Tab value="gigs">Gigs</Tabs.Tab>
+              <Tabs.Tab value="social">Redes sociais</Tabs.Tab>
               {userIsAdmin && (
-                <Tabs.Tab value="admin" leftSection={<IconSettings size={16} />} mr="xs">
+                <Tabs.Tab value="admin" leftSection={<IconSettings size={16} />}>
                   Admin
                 </Tabs.Tab>
               )}
@@ -549,11 +608,6 @@ export default function Project() {
 
         {activeTab === 'about' && (
           <Card mx={{ base: 0, sm: 'md' }}>
-            {project?.status?.description_ptbr && (
-              <Badge color={project?.status?.color} variant="light" size="xs" mb="sm">
-                {project?.status?.description_ptbr}
-              </Badge>
-            )}
             <Title order={5} fw={600}>
               Visão geral
             </Title>
@@ -582,16 +636,62 @@ export default function Project() {
         )}
 
         {activeTab === 'people' && (
-          <Stack gap="xs">
-            <Box mx={{ base: 0, sm: 'md' }}>
-              <Group gap="xs">
-                <Title order={5} fw={600}>
-                  Pessoas associadas
-                </Title>
-                <Badge radius="xl" variant="light" color="gray">
-                  {projectPeople.length}
-                </Badge>
-              </Group>
+          <>
+            <Divider my="sm" label="Administradores" labelPosition="left" mx="md" />
+            <Stack gap="xs" mx="md" mb="md">
+              {loadingProjectAdmins ? (
+                <Text size="sm">Carregando...</Text>
+              ) : (
+                <>
+                  {projectAdmins.length > 0 ? (
+                    <Scroller>
+                      <Group gap="xs" wrap="nowrap">
+                        {projectAdmins.map((person) => (
+                          <Flex
+                            key={person.id}
+                            gap={6}
+                            direction="column"
+                            w={85}
+                            justify="center"
+                          >
+                            <Center>
+                              <Link to={`/${person.profile.username}`}>
+                                <Avatar
+                                  size={35}
+                                  src={`${AVATAR_MINI_PATH}${person.profile.avatar}`}
+                                />
+                              </Link>
+                            </Center>
+                            <Text size="11px" ta="center" truncate="end">
+                              {person.profile.full_name}
+                            </Text>
+                          </Flex>
+                        ))}
+                      </Group>
+                    </Scroller>
+                  ) : userIsAdmin ? null : myAdminRequestIsPending ? (
+                    <Text span c="dimmed" size="sm">
+                      Nenhum administrador neste projeto. Sua solicitação está sendo
+                      processada.
+                    </Text>
+                  ) : (
+                    <Text span c="dimmed" size="sm">
+                      Nenhum administrador neste projeto.{' '}
+                      <Text
+                        span
+                        fw={700}
+                        style={{ cursor: 'pointer' }}
+                        onClick={handleRequestAdminStatus}
+                      >
+                        Quero ser administrador
+                      </Text>
+                    </Text>
+                  )}
+                </>
+              )}
+            </Stack>
+            <Divider my="sm" label="Pessoas associadas" labelPosition="left" mx="md" />
+            <Box mx="md" p={0}>
               {loadingProjectPeople ? (
                 <Text size="sm">Carregando...</Text>
               ) : (
@@ -601,7 +701,6 @@ export default function Project() {
                       cols={{ base: 2, sm: 3, md: 5 }}
                       spacing="sm"
                       verticalSpacing="sm"
-                      mt="xs"
                     >
                       {projectPeople.map((person) => (
                         <Paper
@@ -650,83 +749,7 @@ export default function Project() {
                 </>
               )}
             </Box>
-
-            <Card mx={{ base: 0, sm: 'md' }}>
-              <Group justify="space-between">
-                <Group gap="xs">
-                  <Title order={5} fw={600}>
-                    Administradores
-                  </Title>
-                  <Badge radius="xl" variant="light" color="gray">
-                    {projectAdmins.length}
-                  </Badge>
-                </Group>
-                {!userIsAdmin && !loadingMyAdminRequest && (
-                  <Button
-                    variant="light"
-                    size="xs"
-                    onClick={handleRequestAdminStatus}
-                    color="var(--mantine-color-text)"
-                    disabled={myAdminRequestIsPending}
-                    loading={requestAdminMutation.isPending}
-                    leftSection={myAdminRequestIsPending ? <IconClock size={14} /> : null}
-                  >
-                    {myAdminRequestIsPending
-                      ? 'Solicitação pendente'
-                      : 'Solicitar acesso admin'}
-                  </Button>
-                )}
-              </Group>
-              {loadingProjectAdmins ? (
-                <Text size="sm">Carregando...</Text>
-              ) : (
-                <>
-                  {projectAdmins.length > 0 ? (
-                    <Group mt="xs">
-                      {projectAdmins.map((person) => (
-                        <Flex
-                          key={person.id}
-                          gap={6}
-                          direction="column"
-                          w={85}
-                          justify="center"
-                        >
-                          <Center>
-                            <Link to={`/${person.profile.username}`}>
-                              <Avatar
-                                size={50}
-                                src={`${AVATAR_PATH}${person.profile.avatar}`}
-                              />
-                            </Link>
-                          </Center>
-                          <Text size="11px" ta="center" truncate="end">
-                            {person.profile.full_name}
-                          </Text>
-                        </Flex>
-                      ))}
-                    </Group>
-                  ) : userIsAdmin ? null : myAdminRequestIsPending ? (
-                    <Text span c="dimmed" size="sm">
-                      Nenhum administrador neste projeto. Sua solicitação está sendo
-                      processada.
-                    </Text>
-                  ) : (
-                    <Text span c="dimmed" size="sm">
-                      Nenhum administrador neste projeto.{' '}
-                      <Text
-                        span
-                        fw={700}
-                        style={{ cursor: 'pointer' }}
-                        onClick={handleRequestAdminStatus}
-                      >
-                        Quero ser administrador
-                      </Text>
-                    </Text>
-                  )}
-                </>
-              )}
-            </Card>
-          </Stack>
+          </>
         )}
 
         {activeTab === 'discography' && (
@@ -765,7 +788,7 @@ export default function Project() {
         {activeTab === 'social' && (
           <Card mx={{ base: 0, sm: 'md' }}>
             <Title order={5} fw={600} mb="md">
-              Redes
+              Redes sociais
             </Title>
 
             <Stack gap="sm" w={180}>
@@ -816,7 +839,7 @@ export default function Project() {
         )}
 
         {activeTab === 'admin' && userIsAdmin && (
-          <Stack gap="md" mx={{ base: 0, sm: 'md' }}>
+          <Stack gap="md" mx="md">
             {/* Header admin */}
             <Group gap="xs">
               <IconSettings size={18} />
@@ -845,7 +868,7 @@ export default function Project() {
                     </Text>
                   </Box>
 
-                  <Paper withBorder p="sm" radius="md">
+                  <Box>
                     <Group align="flex-start" gap="md" wrap="nowrap">
                       <Box pos="relative">
                         <Avatar
@@ -877,31 +900,26 @@ export default function Project() {
                           onChange={handlePictureChange}
                           size="sm"
                         />
-                        {pictureFile ? (
-                          <Group gap="xs">
-                            <Button
-                              size="xs"
-                              variant="subtle"
-                              color="gray"
-                              leftSection={<IconTrash size={14} />}
-                              onClick={handleRemovePictureSelection}
-                            >
-                              Descartar
-                            </Button>
-                            {pictureUploadProgress > 0 && (
-                              <Text size="xs" c="dimmed">
-                                {pictureUploadProgress}%
-                              </Text>
-                            )}
-                          </Group>
-                        ) : (
-                          <Text size="xs" c="dimmed">
-                            A imagem será recortada em 1:1
-                          </Text>
-                        )}
+
+                        <Group gap="xs">
+                          <Button
+                            size="xs"
+                            variant="subtle"
+                            color="gray"
+                            leftSection={<IconTrash size={14} />}
+                            onClick={handleRemovePictureSelection}
+                          >
+                            Descartar
+                          </Button>
+                          {pictureUploadProgress > 0 && (
+                            <Text size="xs" c="dimmed">
+                              {pictureUploadProgress}%
+                            </Text>
+                          )}
+                        </Group>
                       </Stack>
                     </Group>
-                  </Paper>
+                  </Box>
 
                   <TextInput
                     label="Nome do projeto"
@@ -939,9 +957,19 @@ export default function Project() {
                     autosize
                   />
 
+                  <Select
+                    label="Status do projeto"
+                    description="Situação atual de atividade do projeto"
+                    placeholder="Selecione um status"
+                    data={projectStatusOptions}
+                    value={editForm.activity_status}
+                    onChange={handleActivityStatusChange}
+                    disabled={loadingProjectStatuses}
+                    searchable
+                  />
+
                   <Checkbox
                     label="Em turnê atualmente"
-                    description="Exibe o selo 'Em turnê' no perfil do projeto"
                     checked={editForm.on_tour}
                     onChange={handleOnTourChange}
                   />
@@ -956,6 +984,10 @@ export default function Project() {
                           description: project.description || '',
                           purpose: project.purpose || '',
                           on_tour: !!project.on_tour,
+                          activity_status:
+                            project.activity_status != null
+                              ? String(project.activity_status)
+                              : null,
                         })
                         handleRemovePictureSelection()
                       }}
@@ -1087,7 +1119,7 @@ export default function Project() {
                   withBorder
                   radius="lg"
                   p="lg"
-                  style={{ borderColor: 'var(--mantine-color-red-2)' }}
+                  style={{ borderColor: 'var(--mantine-color-red-4)' }}
                 >
                   <Title order={5} fw={600} c="red.8" mb={4}>
                     Zona de perigo
@@ -1105,7 +1137,7 @@ export default function Project() {
                           Você perderá acesso às configurações
                         </Text>
                       </Box>
-                      <Button variant="outline" color="red" size="xs" w={120}>
+                      <Button variant="filled" color="red" size="xs" w={142}>
                         Sair do admin
                       </Button>
                     </Group>

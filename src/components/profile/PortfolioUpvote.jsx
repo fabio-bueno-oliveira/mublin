@@ -58,23 +58,9 @@ export default function PortfolioUpvote({
           }}
         >
           {hasUpvoted ? (
-            <IconArrowBigUpLineFilled
-              size={14}
-              color={
-                isOwnPortfolio
-                  ? 'var(--mantine-color-gray-text)'
-                  : 'var(--mantine-color-teal-text)'
-              }
-            />
+            <IconArrowBigUpLineFilled size={14} color="var(--mantine-color-teal-text)" />
           ) : (
-            <IconArrowBigUpLine
-              size={14}
-              color={
-                isOwnPortfolio
-                  ? 'var(--mantine-color-gray-text)'
-                  : 'var(--mantine-color-teal-text)'
-              }
-            />
+            <IconArrowBigUpLine size={14} color="var(--mantine-color-teal-text)" />
           )}
         </Button>
         <Button.GroupSection

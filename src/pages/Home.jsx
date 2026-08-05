@@ -4,7 +4,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useQuery } from '@tanstack/react-query'
 import { fetchRecentProfiles } from '../queries/search'
-import { fetchEvents } from '../queries/events'
+import { fetchUpcomingEvents } from '../queries/events'
 import { fetchNewsFeed } from '../queries/feed'
 import NewsCard from '../components/feed/NewsCard'
 // prettier-ignore
@@ -22,7 +22,6 @@ import { useMediaQuery, useScroller } from '@mantine/hooks'
 import AppNavbarMobile from '../components/AppNavbarMobile'
 import { getAvatarUrl } from '../utils/profile'
 import dayjs from 'dayjs'
-import 'dayjs/locale/pt-br'
 import {
   IconUser,
   IconChevronLeft,
@@ -63,7 +62,7 @@ export default function Home() {
 
   const { data: globalEvents = [], isLoading: loadingGlobalEvents } = useQuery({
     queryKey: ['events'],
-    queryFn: () => fetchEvents(10),
+    queryFn: () => fetchUpcomingEvents(10),
     staleTime: 1000 * 60 * 5,
   })
 
@@ -231,8 +230,8 @@ export default function Home() {
                             ? `${p.regions.name}${p.regions.uf ? ` - ${p.regions.uf}` : ''}`
                             : null
 
-                        const mainRole = p.profile_roles?.find((r) => r.main_activity)
-                          ?.roles?.description_ptbr
+                        // const mainRole = p.profile_roles?.find((r) => r.main_activity)
+                        //   ?.roles?.description_ptbr
 
                         return (
                           <Link
@@ -243,7 +242,7 @@ export default function Home() {
                             <Card
                               p="xs"
                               w={140}
-                              h={142}
+                              h={140}
                               shadow="sm"
                               withBorder
                               style={{ flexShrink: 0 }}
@@ -272,11 +271,16 @@ export default function Home() {
                                 <Text size="sm" fw={600} ta="center" lineClamp={1}>
                                   {p.full_name || p.username}
                                 </Text>
-                                {mainRole && (
+                                {p.title && (
+                                  <Text size="10px" ta="center" lineClamp={1} mb={3}>
+                                    {p.title}
+                                  </Text>
+                                )}
+                                {/* {mainRole && (
                                   <Text size="xs" ta="center" lineClamp={1}>
                                     {mainRole}
                                   </Text>
-                                )}
+                                )} */}
                                 {location && (
                                   <Text size="10px" c="dimmed" ta="center" lineClamp={1}>
                                     {location}
@@ -291,91 +295,130 @@ export default function Home() {
               </div>
             </Box>
 
-            <Group justify="space-between" align="center" mt="lg" mb="xs">
-              <Title order={3} fw={600} fz="lg">
-                Eventos
-              </Title>
-              {globalEvents.length > 2 && (
-                <Group>
-                  <ThemeIcon
-                    variant="default"
-                    onClick={eventsScroller.scrollStart}
-                    opacity={eventsScroller.canScrollStart ? 1 : 0.5}
-                  >
-                    <IconChevronLeft style={{ width: '70%', height: '70%' }} />
-                  </ThemeIcon>
-                  <ThemeIcon
-                    variant="default"
-                    onClick={eventsScroller.scrollEnd}
-                    opacity={eventsScroller.canScrollEnd ? 1 : 0.5}
-                  >
-                    <IconChevronRight style={{ width: '70%', height: '70%' }} />
-                  </ThemeIcon>
-                </Group>
-              )}
-            </Group>
-
-            {loadingGlobalEvents ? (
-              <Group wrap="nowrap" gap="md">
-                {[1, 2].map((i) => (
-                  <Skeleton key={i} width={160} height={240} />
-                ))}
-              </Group>
-            ) : (
-              <Box>
-                <div
-                  ref={eventsScroller.ref}
-                  {...eventsScroller.dragHandlers}
-                  className="scrollerHidden"
-                  style={{
-                    overflow: 'auto',
-                    cursor: eventsScroller.isDragging ? 'grabbing' : 'default',
-                  }}
-                >
-                  <Group wrap="nowrap" gap="md">
-                    {globalEvents.map((event) => (
-                      <Link
-                        key={event.id}
-                        to={`/event/${event.slug}`}
-                        style={{ textDecoration: 'none', color: 'inherit' }}
+            {globalEvents.length > 0 && (
+              <>
+                <Group justify="space-between" align="center" mt="lg" mb="xs">
+                  <Title order={3} fw={600} fz="lg">
+                    Eventos próximos
+                  </Title>
+                  {globalEvents.length > 2 && (
+                    <Group>
+                      <ThemeIcon
+                        variant="default"
+                        onClick={eventsScroller.scrollStart}
+                        opacity={eventsScroller.canScrollStart ? 1 : 0.5}
                       >
-                        <Card p="xs" w={160} h={280} shadow="sm" padding="lg" withBorder>
-                          <Card.Section>
-                            <Image
-                              src={EVENTS_IMG_PATH + event.picture_url}
-                              height={160}
-                              alt={event.name}
-                            />
-                          </Card.Section>
-                          <Text fw={600} fz="sm" mt="xs" mb={5} lineClamp={1}>
-                            {event.name}
-                          </Text>
-                          <Text size="10px" mb={8}>
-                            {dayjs(event.date_start).format('DD/MM/YYYY')} {' a '}
-                            {dayjs(event.date_end).format('DD/MM/YYYY')}
-                          </Text>
-                          <Text lineClamp={2} size="xs" c="dimmed">
-                            {event.description}
-                          </Text>
-                          <Flex gap={6} align="center" mt={6}>
-                            <Text size="10px" span c="dimmed">
-                              Criado por
-                            </Text>
-                            <Avatar
-                              src={AVATAR_PATH + event.author?.avatar}
-                              size={20}
-                              title={event.author?.full_name}
-                            />
-                            <Text size="10px" span lineClamp={1}>
-                              {event.author?.username}
-                            </Text>
-                          </Flex>
-                        </Card>
-                      </Link>
+                        <IconChevronLeft style={{ width: '70%', height: '70%' }} />
+                      </ThemeIcon>
+                      <ThemeIcon
+                        variant="default"
+                        onClick={eventsScroller.scrollEnd}
+                        opacity={eventsScroller.canScrollEnd ? 1 : 0.5}
+                      >
+                        <IconChevronRight style={{ width: '70%', height: '70%' }} />
+                      </ThemeIcon>
+                    </Group>
+                  )}
+                </Group>
+
+                {loadingGlobalEvents ? (
+                  <Group wrap="nowrap" gap="md">
+                    {[1, 2].map((i) => (
+                      <Skeleton key={i} width={160} height={240} />
                     ))}
                   </Group>
-                </div>
-              </Box>
+                ) : (
+                  <Box>
+                    <div
+                      ref={eventsScroller.ref}
+                      {...eventsScroller.dragHandlers}
+                      className="scrollerHidden"
+                      style={{
+                        overflow: 'auto',
+                        cursor: eventsScroller.isDragging ? 'grabbing' : 'default',
+                      }}
+                    >
+                      <Group wrap="nowrap" gap="md">
+                        {globalEvents.map((event) => (
+                          <Link
+                            key={event.id}
+                            to={`/event/${event.slug}`}
+                            style={{ textDecoration: 'none', color: 'inherit' }}
+                          >
+                            <Card
+                              p="xs"
+                              w={160}
+                              h={280}
+                              shadow="sm"
+                              padding="lg"
+                              withBorder
+                              style={{ position: 'relative' }}
+                            >
+                              <Card.Section style={{ position: 'relative' }}>
+                                <Image
+                                  src={EVENTS_IMG_PATH + event.picture_url}
+                                  height={160}
+                                  alt={event.name}
+                                />
+                                <Box
+                                  style={{
+                                    position: 'absolute',
+                                    top: 16,
+                                    right: 16,
+                                    backgroundColor: 'rgba(0, 0, 0, 0.75)',
+                                    borderRadius: 6,
+                                    padding: '4px 6px',
+                                    textAlign: 'center',
+                                    lineHeight: 1.1,
+                                  }}
+                                >
+                                  <Text size="sm" fw={700} c="white" ta="center">
+                                    {dayjs(event.date_start).format('DD')}
+                                  </Text>
+                                  <Text
+                                    size="9px"
+                                    fw={600}
+                                    c="white"
+                                    ta="center"
+                                    tt="uppercase"
+                                  >
+                                    {dayjs(event.date_start)
+                                      .locale('pt-br')
+                                      .format('MMM')}
+                                  </Text>
+                                </Box>
+                              </Card.Section>
+                              <Text fw={600} fz="sm" mt="xs" mb={5} lineClamp={1}>
+                                {event.name}
+                              </Text>
+                              <Text size="10px" mb={8}>
+                                {dayjs(event.date_start).format('DD/MM/YYYY')} {' a '}
+                                {dayjs(event.date_end).format('DD/MM/YYYY')}
+                              </Text>
+                              <Text lineClamp={2} size="xs" c="dimmed">
+                                {event.description}
+                              </Text>
+                              <Flex gap={6} align="center" mt={6}>
+                                <Text size="10px" span c="dimmed">
+                                  Criado por
+                                </Text>
+                                <Avatar
+                                  src={AVATAR_PATH + event.author?.avatar}
+                                  size={20}
+                                  title={event.author?.full_name}
+                                />
+                                <Text size="10px" span lineClamp={1}>
+                                  {event.author?.username}
+                                </Text>
+                              </Flex>
+                            </Card>
+                          </Link>
+                        ))}
+                      </Group>
+                    </div>
+                  </Box>
+                )}
+              </>
             )}
 
             <Group justify="space-between" align="center" mt="lg" mb="xs">
