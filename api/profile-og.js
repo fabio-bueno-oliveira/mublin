@@ -37,6 +37,9 @@ export default async function handler(req, res) {
       title,
       is_open_to_work,
       is_public,
+      created_at,
+      updated_at,
+      profile_view_count,
       roles:profile_roles (
         main_activity,
         roles (
@@ -69,14 +72,28 @@ export default async function handler(req, res) {
   const image = profile.avatar || DEFAULT_OG_IMAGE
   const url = `${SITE_URL}/${profile.username}`
 
+  // Google só reconhece isso como "item" elegível a rich result (Profile) quando o
+  // Person vem dentro de um ProfilePage — Person sozinho é dado estruturado válido,
+  // mas não aparece como item detectado no Rich Results Test.
   const jsonLd = {
     '@context': 'https://schema.org',
-    '@type': 'Person',
-    name: profile.full_name,
-    url,
-    image,
-    ...(primaryRole ? { jobTitle: primaryRole } : {}),
-    ...(location ? { homeLocation: { '@type': 'Place', name: location } } : {}),
+    '@type': 'ProfilePage',
+    dateCreated: profile.created_at,
+    dateModified: profile.updated_at || profile.created_at,
+    mainEntity: {
+      '@type': 'Person',
+      '@id': `${url}#person`,
+      name: profile.full_name,
+      url,
+      image,
+      ...(primaryRole ? { jobTitle: primaryRole } : {}),
+      ...(location ? { homeLocation: { '@type': 'Place', name: location } } : {}),
+      interactionStatistic: {
+        '@type': 'InteractionCounter',
+        interactionType: 'https://schema.org/ViewAction',
+        userInteractionCount: profile.profile_view_count || 0,
+      },
+    },
   }
 
   const html = `<!DOCTYPE html>
@@ -106,7 +123,6 @@ export default async function handler(req, res) {
   ${primaryRole ? `<p>${escapeHtml(primaryRole)}</p>` : ''}
   ${location ? `<p>${escapeHtml(location)}</p>` : ''}
   ${profile.is_open_to_work ? '<p>Aberto a oportunidades</p>' : ''}
-  <p>${escapeHtml(profile.title || '')}</p>
   <p><a href="${url}">Ver perfil completo no Mublin</a></p>
 </body>
 </html>`
@@ -135,11 +151,9 @@ function getLocation(cities, regions) {
   return countryName ? `${cityName}, ${countryName}` : cityName
 }
 
-// Descrição para <meta description> e OG: prioriza a title; na ausência dela,
-// monta algo relevante a partir de title/role/localização.
+// Descrição para <meta description> e OG: monta a partir de title/role/localização.
+// Bio é deliberadamente ignorada aqui — texto livre do usuário não deve ser indexado.
 function buildDescription(profile, primaryRole, location) {
-  if (profile.title) return profile.title.slice(0, 160)
-
   const parts = [profile.title, primaryRole, location].filter(Boolean)
   if (parts.length > 0) {
     return `${profile.full_name} · ${parts.join(' · ')} · Perfil no Mublin.`.slice(0, 160)
