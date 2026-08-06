@@ -15,6 +15,18 @@ import {
   respondProjectAdminRequest,
 } from '../queries/projects'
 import {
+  fetchProjectOpenings,
+  fetchOpenProjectOpenings,
+  createProjectOpening,
+  updateProjectOpening,
+  deleteProjectOpening,
+  fetchApplicableRoles,
+  fetchExperienceLevelOptions,
+  fetchProjectEngagementTypeOptions,
+  fetchRateTypeOptions,
+} from '../queries/projectOpenings'
+import { modals } from '@mantine/modals'
+import {
   useMantineColorScheme,
   Skeleton,
   Container,
@@ -31,6 +43,7 @@ import {
   Textarea,
   Select,
   Checkbox,
+  NumberInput,
   FileInput,
   Badge,
   Group,
@@ -41,6 +54,7 @@ import {
   Scroller,
   Center,
   Tooltip,
+  ActionIcon,
   Modal,
   em,
   Divider,
@@ -59,6 +73,9 @@ import {
   IconCheck,
   IconX,
   IconClock,
+  IconPlus,
+  IconPencil,
+  IconRotateClockwise,
 } from '@tabler/icons-react'
 import AppNavbarMobile from '../components/AppNavbarMobile'
 import { MEMBER_REQUEST_STATUS } from '../constants/projects'
@@ -69,6 +86,17 @@ const ADMIN_REQUEST_STATUS = {
   PENDING: 1,
   ACCEPTED: 2,
   DECLINED: 3,
+}
+
+const DEFAULT_OPENING_FORM = {
+  role_id: null,
+  experience_level: null,
+  engagement_type_id: null,
+  description: '',
+  is_paid: false,
+  fee: '',
+  rate_type_id: null,
+  is_remote: false,
 }
 
 // ── Helpers de upload (ImageKit) ──────────────────────────
@@ -127,6 +155,12 @@ export default function Project() {
 
   const [activeTab, setActiveTab] = useState('about')
   const [opened, { open: openModal, close: closeModal }] = useDisclosure(false)
+
+  // ── Vagas do projeto (aba Admin) ──
+  const [openingModalOpened, { open: openOpeningModal, close: closeOpeningModal }] =
+    useDisclosure(false)
+  const [editingOpeningId, setEditingOpeningId] = useState(null)
+  const [openingForm, setOpeningForm] = useState(DEFAULT_OPENING_FORM)
 
   // ── Edição do projeto (aba Admin) ──
   const [editForm, setEditForm] = useState({
@@ -199,6 +233,79 @@ export default function Project() {
       enabled: !!project?.id && userIsAdmin,
       staleTime: 1000 * 30,
     })
+
+  // Todas as vagas do projeto (inclusive preenchidas/pausadas) — gerenciamento admin
+  const { data: projectOpenings = [], isLoading: loadingProjectOpenings } = useQuery({
+    queryKey: ['project-openings', project?.id],
+    queryFn: () => fetchProjectOpenings(project?.id),
+    enabled: !!project?.id && userIsAdmin,
+    staleTime: 1000 * 60,
+  })
+
+  // Vagas abertas do projeto — exibição pública na aba "Vagas"
+  const { data: openProjectOpenings = [], isLoading: loadingOpenProjectOpenings } =
+    useQuery({
+      queryKey: ['project-openings-open', project?.id],
+      queryFn: () => fetchOpenProjectOpenings(project?.id),
+      enabled: !!project?.id,
+      staleTime: 1000 * 60,
+    })
+
+  // Lookups do formulário de vaga — carregados só quando o modal é aberto
+  const { data: applicableRoles = [] } = useQuery({
+    queryKey: ['applicable-roles'],
+    queryFn: fetchApplicableRoles,
+    enabled: openingModalOpened,
+    staleTime: 1000 * 60 * 60,
+  })
+
+  const { data: experienceLevelOptions = [] } = useQuery({
+    queryKey: ['experience-levels'],
+    queryFn: fetchExperienceLevelOptions,
+    enabled: openingModalOpened,
+    staleTime: 1000 * 60 * 60,
+  })
+
+  const { data: engagementTypeOptions = [] } = useQuery({
+    queryKey: ['project-engagement-types'],
+    queryFn: fetchProjectEngagementTypeOptions,
+    enabled: openingModalOpened,
+    staleTime: 1000 * 60 * 60,
+  })
+
+  const { data: rateTypeOptions = [] } = useQuery({
+    queryKey: ['rate-types'],
+    queryFn: fetchRateTypeOptions,
+    enabled: openingModalOpened && openingForm.is_paid,
+    staleTime: 1000 * 60 * 60,
+  })
+
+  const roleSelectOptions = [
+    {
+      group: 'Gestão, produção e outros',
+      items: applicableRoles
+        .filter((r) => !r.instrumentalist)
+        .map((r) => ({ value: String(r.id), label: r.name_ptbr })),
+    },
+    {
+      group: 'Instrumentos',
+      items: applicableRoles
+        .filter((r) => r.instrumentalist)
+        .map((r) => ({ value: String(r.id), label: r.name_ptbr })),
+    },
+  ]
+  const experienceLevelSelectOptions = experienceLevelOptions.map((l) => ({
+    value: String(l.id),
+    label: l.name_pt,
+  }))
+  const engagementTypeSelectOptions = engagementTypeOptions.map((t) => ({
+    value: String(t.id),
+    label: t.name_ptbr,
+  }))
+  const rateTypeSelectOptions = rateTypeOptions.map((t) => ({
+    value: String(t.id),
+    label: t.name_ptbr,
+  }))
 
   // Ajusta o editForm durante a própria renderização quando o projeto muda
   // (em vez de um useEffect). React trata esse "setState durante a
@@ -336,6 +443,67 @@ export default function Project() {
     },
   })
 
+  const createOpeningMutation = useMutation({
+    mutationFn: (payload) => createProjectOpening(payload),
+    onSuccess: () => {
+      notifications.show({
+        title: 'Vaga publicada',
+        message: 'A vaga já está visível na aba de Vagas do projeto.',
+        color: 'green',
+        position: 'top-center',
+      })
+      queryClient.invalidateQueries({ queryKey: ['project-openings', project.id] })
+      queryClient.invalidateQueries({ queryKey: ['project-openings-open', project.id] })
+      closeOpeningModal()
+    },
+    onError: (error) => {
+      notifications.show({
+        title: 'Erro ao criar vaga',
+        message: error?.message || 'Tente novamente em instantes.',
+        color: 'red',
+        position: 'top-center',
+      })
+    },
+  })
+
+  const updateOpeningMutation = useMutation({
+    mutationFn: ({ id, updates }) => updateProjectOpening(id, updates),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['project-openings', project.id] })
+      queryClient.invalidateQueries({ queryKey: ['project-openings-open', project.id] })
+      closeOpeningModal()
+    },
+    onError: (error) => {
+      notifications.show({
+        title: 'Erro ao salvar vaga',
+        message: error?.message || 'Tente novamente em instantes.',
+        color: 'red',
+        position: 'top-center',
+      })
+    },
+  })
+
+  const deleteOpeningMutation = useMutation({
+    mutationFn: (id) => deleteProjectOpening(id),
+    onSuccess: () => {
+      notifications.show({
+        message: 'Vaga removida.',
+        color: 'green',
+        position: 'top-center',
+      })
+      queryClient.invalidateQueries({ queryKey: ['project-openings', project.id] })
+      queryClient.invalidateQueries({ queryKey: ['project-openings-open', project.id] })
+    },
+    onError: (error) => {
+      notifications.show({
+        title: 'Erro ao remover vaga',
+        message: error?.message || 'Tente novamente em instantes.',
+        color: 'red',
+        position: 'top-center',
+      })
+    },
+  })
+
   const handleEditFormChange = (field) => (event) => {
     // Importante: extraia o valor AQUI, de forma síncrona, e não dentro do
     // callback de atualização do setState. O React zera event.currentTarget
@@ -425,6 +593,119 @@ export default function Project() {
 
   const handleRespondAdminRequest = (requestId, accept) => {
     respondAdminRequestMutation.mutate({ requestId, accept })
+  }
+
+  // ── Handlers: Vagas do projeto ────────────────────────
+
+  const handleOpeningTextChange = (field) => (event) => {
+    const { value } = event.currentTarget
+    setOpeningForm((prev) => ({ ...prev, [field]: value }))
+  }
+
+  const handleOpeningSelectChange = (field) => (value) => {
+    setOpeningForm((prev) => ({ ...prev, [field]: value }))
+  }
+
+  const handleOpeningPaidChange = (event) => {
+    const { checked } = event.currentTarget
+    setOpeningForm((prev) => ({ ...prev, is_paid: checked }))
+  }
+
+  const handleOpeningRemoteChange = (event) => {
+    const { checked } = event.currentTarget
+    setOpeningForm((prev) => ({ ...prev, is_remote: checked }))
+  }
+
+  const handleOpeningFeeChange = (value) => {
+    setOpeningForm((prev) => ({ ...prev, fee: value }))
+  }
+
+  const handleOpenCreateOpeningModal = () => {
+    setEditingOpeningId(null)
+    setOpeningForm(DEFAULT_OPENING_FORM)
+    openOpeningModal()
+  }
+
+  const handleOpenEditOpeningModal = (opening) => {
+    setEditingOpeningId(opening.id)
+    setOpeningForm({
+      role_id: opening.role?.id ? String(opening.role.id) : null,
+      experience_level: opening.experience_level?.id
+        ? String(opening.experience_level.id)
+        : null,
+      engagement_type_id: opening.engagement_type?.id
+        ? String(opening.engagement_type.id)
+        : null,
+      description: opening.description || '',
+      is_paid: !!opening.is_paid,
+      fee: opening.fee != null ? String(opening.fee) : '',
+      rate_type_id: opening.rate_type?.id ? String(opening.rate_type.id) : null,
+      is_remote: !!opening.is_remote,
+    })
+    openOpeningModal()
+  }
+
+  const handleSaveOpening = () => {
+    if (!openingForm.role_id) {
+      notifications.show({
+        title: 'Cargo obrigatório',
+        message: 'Selecione qual cargo esta vaga busca.',
+        color: 'red',
+        position: 'top-center',
+      })
+      return
+    }
+
+    const payload = {
+      role_id: Number(openingForm.role_id),
+      experience_level: openingForm.experience_level
+        ? Number(openingForm.experience_level)
+        : null,
+      engagement_type_id: openingForm.engagement_type_id
+        ? Number(openingForm.engagement_type_id)
+        : null,
+      description: openingForm.description.trim() || null,
+      is_paid: openingForm.is_paid,
+      fee: openingForm.is_paid && openingForm.fee ? Number(openingForm.fee) : null,
+      rate_type_id:
+        openingForm.is_paid && openingForm.rate_type_id
+          ? Number(openingForm.rate_type_id)
+          : null,
+      is_remote: openingForm.is_remote,
+    }
+
+    if (editingOpeningId) {
+      updateOpeningMutation.mutate({ id: editingOpeningId, updates: payload })
+    } else {
+      createOpeningMutation.mutate({
+        ...payload,
+        project_id: project.id,
+        created_by: user.id,
+      })
+    }
+  }
+
+  const handleToggleOpeningFilled = (opening) => {
+    updateOpeningMutation.mutate({
+      id: opening.id,
+      updates: { is_filled: !opening.is_filled },
+    })
+  }
+
+  const handleDeleteOpening = (opening) => {
+    modals.openConfirmModal({
+      title: 'Remover vaga',
+      centered: true,
+      children: (
+        <Text size="sm">
+          Tem certeza que deseja remover a vaga de {opening.role?.name_ptbr}? Essa ação
+          não pode ser desfeita.
+        </Text>
+      ),
+      labels: { confirm: 'Remover', cancel: 'Cancelar' },
+      confirmProps: { color: 'red' },
+      onConfirm: () => deleteOpeningMutation.mutate(opening.id),
+    })
   }
 
   return (
@@ -765,12 +1046,56 @@ export default function Project() {
 
         {activeTab === 'jobs' && (
           <Card mx={{ base: 0, sm: 'md' }}>
-            <Title order={5} fw={600}>
+            <Title order={5} fw={600} mb="md">
               Vagas
             </Title>
-            <Text span c="dimmed" size="sm">
-              Nenhuma vaga para este projeto no momento
-            </Text>
+
+            {loadingOpenProjectOpenings ? (
+              <Stack gap="xs">
+                {[1, 2].map((i) => (
+                  <Skeleton key={i} h={58} radius="md" />
+                ))}
+              </Stack>
+            ) : openProjectOpenings.length > 0 ? (
+              <Stack gap="sm">
+                {openProjectOpenings.map((opening) => (
+                  <Paper key={opening.id} withBorder radius="md" p="sm">
+                    <Group gap={6} wrap="wrap" mb={opening.description ? 4 : 0}>
+                      <Text size="lg" fw={600}>
+                        {opening.role?.name_ptbr}
+                      </Text>
+                      {opening.is_remote && (
+                        <Badge size="xs" variant="light" color="blue">
+                          Remoto
+                        </Badge>
+                      )}
+                    </Group>
+                    {opening.engagement_type?.name_ptbr && (
+                      <Text size="xs" c="dimmed">
+                        Vínculo desejado: {opening.engagement_type?.name_ptbr}
+                      </Text>
+                    )}
+                    {opening.description && (
+                      <Text size="xs" c="dimmed">
+                        {opening.description}
+                      </Text>
+                    )}
+                    {opening.is_paid && (
+                      <Badge color="green" variant="outline" size="xs">
+                        Remunerado
+                        {opening.rate_type?.name_ptbr
+                          ? ` · ${opening.rate_type.name_ptbr}`
+                          : ''}
+                      </Badge>
+                    )}
+                  </Paper>
+                ))}
+              </Stack>
+            ) : (
+              <Text span c="dimmed" size="sm">
+                Nenhuma vaga para este projeto no momento
+              </Text>
+            )}
           </Card>
         )}
 
@@ -1145,6 +1470,114 @@ export default function Project() {
                 </Card>
               </Stack>
             </SimpleGrid>
+
+            {/* VAGAS DO PROJETO */}
+            <Card withBorder radius="lg" p="lg">
+              <Group justify="space-between" mb="md">
+                <Box>
+                  <Title order={5} fw={600}>
+                    Vagas do projeto
+                  </Title>
+                  <Text size="xs" c="dimmed">
+                    Gerencie as vagas abertas para músicos e staff
+                  </Text>
+                </Box>
+                <Button
+                  size="xs"
+                  leftSection={<IconPlus size={14} />}
+                  onClick={handleOpenCreateOpeningModal}
+                >
+                  Nova vaga
+                </Button>
+              </Group>
+
+              {loadingProjectOpenings ? (
+                <Stack gap="xs">
+                  {[1, 2].map((i) => (
+                    <Skeleton key={i} h={58} radius="md" />
+                  ))}
+                </Stack>
+              ) : projectOpenings.length > 0 ? (
+                <Stack gap="sm">
+                  {projectOpenings.map((opening) => (
+                    <Paper key={opening.id} withBorder radius="md" p="sm">
+                      <Group justify="space-between" wrap="nowrap" gap="sm">
+                        <Box style={{ minWidth: 0 }}>
+                          <Group gap={6} wrap="wrap">
+                            <Text size="sm" fw={600}>
+                              {opening.role?.name_ptbr}
+                            </Text>
+                            {opening.is_filled && (
+                              <Badge size="xs" variant="light" color="gray">
+                                Preenchida
+                              </Badge>
+                            )}
+                            {!opening.is_active && (
+                              <Badge size="xs" variant="light" color="red">
+                                Pausada
+                              </Badge>
+                            )}
+                            {opening.engagement_type?.name_ptbr && (
+                              <Badge size="xs" variant="light" color="mublinColor">
+                                {opening.engagement_type.name_ptbr}
+                              </Badge>
+                            )}
+                          </Group>
+                          {opening.description && (
+                            <Text size="xs" c="dimmed" lineClamp={1} mt={2}>
+                              {opening.description}
+                            </Text>
+                          )}
+                        </Box>
+                        <Group gap={6} wrap="nowrap">
+                          <Tooltip
+                            label={
+                              opening.is_filled
+                                ? 'Reabrir vaga'
+                                : 'Marcar como preenchida'
+                            }
+                          >
+                            <ActionIcon
+                              variant="light"
+                              color={opening.is_filled ? 'gray' : 'green'}
+                              onClick={() => handleToggleOpeningFilled(opening)}
+                            >
+                              {opening.is_filled ? (
+                                <IconRotateClockwise size={14} />
+                              ) : (
+                                <IconCheck size={14} />
+                              )}
+                            </ActionIcon>
+                          </Tooltip>
+                          <Tooltip label="Editar">
+                            <ActionIcon
+                              variant="light"
+                              color="gray"
+                              onClick={() => handleOpenEditOpeningModal(opening)}
+                            >
+                              <IconPencil size={14} />
+                            </ActionIcon>
+                          </Tooltip>
+                          <Tooltip label="Remover">
+                            <ActionIcon
+                              variant="light"
+                              color="red"
+                              onClick={() => handleDeleteOpening(opening)}
+                            >
+                              <IconTrash size={14} />
+                            </ActionIcon>
+                          </Tooltip>
+                        </Group>
+                      </Group>
+                    </Paper>
+                  ))}
+                </Stack>
+              ) : (
+                <Text size="sm" c="dimmed">
+                  Nenhuma vaga cadastrada ainda.
+                </Text>
+              )}
+            </Card>
           </Stack>
         )}
       </Container>
@@ -1170,6 +1603,103 @@ export default function Project() {
           </Modal.Body>
         </Modal.Content>
       </Modal.Root>
+
+      <Modal
+        opened={openingModalOpened}
+        onClose={closeOpeningModal}
+        title={editingOpeningId ? 'Editar vaga' : 'Nova vaga'}
+        centered
+      >
+        <Stack gap="sm">
+          <Select
+            label="Cargo buscado"
+            placeholder="Selecione o cargo"
+            data={roleSelectOptions}
+            value={openingForm.role_id}
+            onChange={handleOpeningSelectChange('role_id')}
+            searchable
+            required
+            withAsterisk
+          />
+
+          <Select
+            label="Nível de experiência"
+            placeholder="Opcional"
+            data={experienceLevelSelectOptions}
+            value={openingForm.experience_level}
+            onChange={handleOpeningSelectChange('experience_level')}
+            clearable
+          />
+
+          <Select
+            label="Tipo de engajamento"
+            placeholder="Opcional"
+            data={engagementTypeSelectOptions}
+            value={openingForm.engagement_type_id}
+            onChange={handleOpeningSelectChange('engagement_type_id')}
+            clearable
+          />
+
+          <Textarea
+            label="Descrição"
+            placeholder="Detalhes sobre a vaga, requisitos, expectativas..."
+            value={openingForm.description}
+            onChange={handleOpeningTextChange('description')}
+            rows={3}
+            autosize
+            minRows={2}
+            maxRows={6}
+          />
+
+          <Checkbox
+            label="Vaga remunerada"
+            checked={openingForm.is_paid}
+            onChange={handleOpeningPaidChange}
+          />
+
+          {openingForm.is_paid && (
+            <Group grow align="flex-start">
+              <NumberInput
+                label="Valor"
+                placeholder="0,00"
+                value={openingForm.fee}
+                onChange={handleOpeningFeeChange}
+                min={0}
+                decimalScale={2}
+                fixedDecimalScale
+                hideControls
+              />
+              <Select
+                label="Tipo de remuneração"
+                placeholder="Selecione"
+                data={rateTypeSelectOptions}
+                value={openingForm.rate_type_id}
+                onChange={handleOpeningSelectChange('rate_type_id')}
+                clearable
+              />
+            </Group>
+          )}
+
+          <Checkbox
+            label="Aceita candidatos remotos"
+            checked={openingForm.is_remote}
+            onChange={handleOpeningRemoteChange}
+          />
+
+          <Group justify="flex-end" mt="sm">
+            <Button variant="default" onClick={closeOpeningModal}>
+              Cancelar
+            </Button>
+            <Button
+              color="mublinColor"
+              loading={createOpeningMutation.isPending || updateOpeningMutation.isPending}
+              onClick={handleSaveOpening}
+            >
+              {editingOpeningId ? 'Salvar alterações' : 'Publicar vaga'}
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
     </>
   )
 }

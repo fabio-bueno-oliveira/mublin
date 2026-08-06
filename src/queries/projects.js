@@ -196,7 +196,7 @@ export async function fetchRandomOtherProjects(userId) {
   return data
 }
 
-export async function fetchProjectBackstageInfo(projectSlug) {
+export async function fetchProjectBackstageInfo(projectId) {
   const { data, error } = await supabase
     .from('projects')
     .select(
@@ -219,7 +219,7 @@ export async function fetchProjectBackstageInfo(projectSlug) {
       )
     `,
     )
-    .eq('slug', projectSlug)
+    .eq('id', projectId)
     .single()
   if (error) {
     throw new Error(error.message)
@@ -416,14 +416,4 @@ export async function updateProjectProfile(projectId, updates) {
     throw new Error(error.message)
   }
   return data
-}
-
-export async function fetchRandomProjectOpening() {
-  const { data, error } = await supabase.rpc('get_random_project_opening')
-
-  if (error) {
-    throw error
-  }
-
-  return data?.[0] ?? null
 }

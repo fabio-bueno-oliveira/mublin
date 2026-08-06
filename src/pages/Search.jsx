@@ -16,7 +16,7 @@ import {
   searchEvents,
 } from '../queries/search'
 import { fetchGenreCategories } from '../queries/genres'
-import { fetchRandomProjectOpening } from '../queries/projects'
+import { fetchRandomProjectOpening } from '../queries/projectOpenings'
 import { useAuth } from '../hooks/useAuth'
 import {
   Grid,
@@ -783,7 +783,7 @@ export default function Search() {
           </>
         ) : (
           !isMobileFocused && (
-            <Stack gap="xl" mt={{ base: 'md', sm: 60 }}>
+            <Stack gap="lg" mt={{ base: 'md', sm: 60 }}>
               <EmptyState>
                 <EmptyState.Indicator>
                   <IconZoom />
@@ -796,6 +796,7 @@ export default function Search() {
 
               {randomOpening && (
                 <Paper
+                  mt="lg"
                   component={Link}
                   to={`/project/${randomOpening.project_slug}`}
                   withBorder
@@ -806,25 +807,28 @@ export default function Search() {
                   <Group justify="space-between" wrap="nowrap" gap="md">
                     <Group gap="md" wrap="nowrap" style={{ minWidth: 0 }}>
                       <Avatar
-                        size={52}
+                        size={66}
                         radius="md"
                         src={
                           randomOpening.project_picture
-                            ? PATH_PROJECT_AVATAR + randomOpening.project_picture
+                            ? `${PATH_PROJECT_AVATAR + randomOpening.project_id}/${
+                                randomOpening.project_picture
+                              }`
                             : undefined
                         }
                       >
                         <IconBriefcase size={22} />
                       </Avatar>
                       <Box style={{ minWidth: 0 }}>
-                        <Text size="xs" c="dimmed" tt="uppercase" fw={600} lts="0.03em">
+                        <Text size="xs" c="dimmed" tt="uppercase" fw={300} lts="0.03em">
                           Vaga em destaque
                         </Text>
                         <Text fw={600} truncate="end">
                           {randomOpening.project_name}
-                          {randomOpening.genre_name_ptbr &&
-                            `, ${randomOpening.genre_name_ptbr}`}
-                          {`, busca ${randomOpening.role_name_ptbr}`}
+                          {` busca ${randomOpening.role_description_ptbr}`}
+                        </Text>
+                        <Text size="xs" fw={300} truncate="end">
+                          Gênero: {randomOpening.genre_name_ptbr}
                         </Text>
                       </Box>
                     </Group>
@@ -843,6 +847,7 @@ export default function Search() {
                   <SimpleGrid cols={{ base: 2, xs: 3, sm: 4, md: 5, lg: 6 }} spacing="sm">
                     {genreCategories.map((genre) => {
                       const color = genre.color || 'indigo'
+                      const initial = genre.name_ptbr?.charAt(0)?.toUpperCase()
                       return (
                         <UnstyledButton
                           key={genre.id}
@@ -851,91 +856,76 @@ export default function Search() {
                           style={{
                             position: 'relative',
                             overflow: 'hidden',
-                            borderRadius: 16,
-                            height: 92,
-                            border: '1px solid var(--mantine-color-default-border)',
-                            background: 'var(--mantine-color-body)',
+                            borderRadius: 10,
+                            height: 108,
                             padding: 0,
-                            transition:
-                              'transform 120ms ease, box-shadow 120ms ease, border-color 120ms ease',
+                            background: `linear-gradient(155deg, var(--mantine-color-${color}-9) 0%, var(--mantine-color-${color}-8) 100%)`,
+                            transition: 'transform 180ms ease, box-shadow 180ms ease',
                           }}
                           onMouseEnter={(e) => {
-                            // e.currentTarget.style.transform = 'translateY(-2px)'
-                            // e.currentTarget.style.boxShadow = 'var(--mantine-shadow-sm)'
-                            e.currentTarget.style.borderColor = `var(--mantine-color-${color}-3)`
+                            e.currentTarget.style.transform = 'translateY(-3px)'
+                            e.currentTarget.style.boxShadow =
+                              '0 12px 22px rgba(0,0,0,0.28)'
+                            const chip = e.currentTarget.querySelector('.genre-chip')
+                            if (chip) {
+                              chip.style.transform = 'rotate(12deg) scale(1.06)'
+                            }
                           }}
                           onMouseLeave={(e) => {
                             e.currentTarget.style.transform = 'translateY(0)'
                             e.currentTarget.style.boxShadow = 'none'
-                            e.currentTarget.style.borderColor =
-                              'var(--mantine-color-default-border)'
+                            const chip = e.currentTarget.querySelector('.genre-chip')
+                            if (chip) {
+                              chip.style.transform = 'rotate(24deg) scale(1)'
+                            }
                           }}
                         >
-                          {/* barra lateral com a cor do gênero */}
-                          <Box
-                            aria-hidden
-                            style={{
-                              position: 'absolute',
-                              left: 0,
-                              top: 0,
-                              bottom: 0,
-                              width: 4,
-                              background: `var(--mantine-color-${color}-6)`,
-                            }}
-                          />
-                          {/* bolha grande suave */}
-                          <Box
-                            aria-hidden
-                            style={{
-                              position: 'absolute',
-                              right: -18,
-                              bottom: -18,
-                              width: 68,
-                              height: 68,
-                              borderRadius: '50%',
-                              background: `var(--mantine-color-${color}-light)`,
-                              opacity: 0.4,
-                            }}
-                          />
-                          {/* letra inicial gigante fantasma */}
+                          {/* nome do gênero */}
                           <Text
-                            aria-hidden
                             fw={700}
-                            fz={46}
-                            lh={1}
+                            size="sm"
+                            c="white"
+                            lh={1.2}
+                            // lineClamp={2}
                             style={{
                               position: 'absolute',
-                              right: 8,
-                              bottom: -4,
-                              color: `var(--mantine-color-${color}-6)`,
-                              opacity: 0.09,
-                              pointerEvents: 'none',
-                              userSelect: 'none',
+                              top: 12,
+                              left: 14,
+                              right: 54,
+                              zIndex: 2,
+                              letterSpacing: '-0.01em',
+                              textShadow: '0 1px 3px rgba(0,0,0,0.25)',
                             }}
                           >
-                            {genre.name_ptbr?.charAt(0)?.toUpperCase()}
+                            {genre.name_ptbr}
                           </Text>
 
-                          <Flex
-                            h="100%"
-                            align="flex-start"
-                            direction="column"
-                            justify="center"
-                            pl={18}
-                            pr={44}
-                            gap={2}
-                            style={{ position: 'relative', zIndex: 1 }}
+                          {/* "chip" rotacionado com a inicial do gênero, no espírito das capas do Spotify */}
+                          <Center
+                            className="genre-chip"
+                            aria-hidden
+                            style={{
+                              position: 'absolute',
+                              right: -14,
+                              bottom: -14,
+                              width: 64,
+                              height: 64,
+                              borderRadius: 12,
+                              background: `var(--mantine-color-${color}-2)`,
+                              boxShadow: '0 10px 18px rgba(0,0,0,0.35)',
+                              transform: 'rotate(24deg)',
+                              transition: 'transform 220ms ease',
+                            }}
                           >
                             <Text
-                              fw={700}
-                              size="sm"
-                              lh={1.15}
-                              lineClamp={2}
-                              style={{ letterSpacing: '-0.01em' }}
+                              fw={800}
+                              fz={26}
+                              c={`${color}.9`}
+                              style={{ userSelect: 'none' }}
                             >
-                              {genre.name_ptbr}
+                              {initial}
                             </Text>
-                          </Flex>
+                          </Center>
                         </UnstyledButton>
                       )
                     })}
