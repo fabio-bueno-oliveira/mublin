@@ -14,6 +14,16 @@ import { createClient } from '@supabase/supabase-js'
 const SITE_URL = 'https://mublin.com'
 const DEFAULT_OG_IMAGE = `${SITE_URL}/og-default.png`
 
+// Base do ImageKit para o avatar salvo no banco (que vem só com o nome do arquivo,
+// ex: "fabio__TnSxdZgYD.jpg"). Usamos uma transformação maior que os 200px do app,
+// já que o preview do WhatsApp/Twitter/Facebook exibe essa imagem em tamanho grande.
+const IMAGEKIT_AVATAR_BASE =
+  'https://ik.imagekit.io/mublin/tr:w-600,h-600,c-maintain_ratio/users/avatars/'
+
+function getAvatarUrl(avatar) {
+  return avatar ? `${IMAGEKIT_AVATAR_BASE}${avatar}` : DEFAULT_OG_IMAGE
+}
+
 export default async function handler(req, res) {
   const { username } = req.query
 
@@ -69,7 +79,7 @@ export default async function handler(req, res) {
 
   const title = `${profile.full_name} (@${profile.username}) | Mublin`
   const description = buildDescription(profile, primaryRole, location)
-  const image = profile.avatar || DEFAULT_OG_IMAGE
+  const image = getAvatarUrl(profile.avatar)
   const url = `${SITE_URL}/${profile.username}`
 
   // Google só reconhece isso como "item" elegível a rich result (Profile) quando o
@@ -134,7 +144,9 @@ export default async function handler(req, res) {
 
 // Pega o papel principal (main_activity = true); se nenhum estiver marcado, usa o primeiro.
 function getPrimaryRole(profileRoles) {
-  if (!Array.isArray(profileRoles) || profileRoles.length === 0) return null
+  if (!Array.isArray(profileRoles) || profileRoles.length === 0) {
+    return null
+  }
   const main = profileRoles.find((r) => r.main_activity) || profileRoles[0]
   return main?.roles?.name_ptbr || main?.roles?.name_en || null
 }
@@ -142,10 +154,14 @@ function getPrimaryRole(profileRoles) {
 // Monta "Cidade, UF" para perfis no Brasil, ou "Cidade, País" para o resto.
 function getLocation(cities, regions) {
   const cityName = cities?.name
-  if (!cityName) return null
+  if (!cityName) {
+    return null
+  }
 
   const uf = regions?.uf
-  if (uf) return `${cityName}, ${uf}`
+  if (uf) {
+    return `${cityName}, ${uf}`
+  }
 
   const countryName = cities?.countries?.name_ptbr || cities?.countries?.name
   return countryName ? `${cityName}, ${countryName}` : cityName
