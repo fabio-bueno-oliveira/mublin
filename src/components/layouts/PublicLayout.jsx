@@ -3,7 +3,7 @@ import { AppShell } from '@mantine/core'
 import PublicNavbar from '../PublicNavbar'
 import PublicFooter from '../PublicFooter'
 
-export default function PublicLayout() {
+export default function PublicLayout({ children }) {
   return (
     <AppShell header={{ height: 60 }} footer={{ height: 60 }}>
       <AppShell.Header
@@ -17,9 +17,7 @@ export default function PublicLayout() {
         <PublicNavbar />
       </AppShell.Header>
 
-      <AppShell.Main>
-        <Outlet />
-      </AppShell.Main>
+      <AppShell.Main>{children ?? <Outlet />}</AppShell.Main>
 
       <AppShell.Footer
         style={{

@@ -1,0 +1,19 @@
+# robots.txt do Mublin
+
+User-agent: *
+Allow: /
+
+# Rotas de app/autenticação/privadas — não devem ser indexadas
+Disallow: /login
+Disallow: /signup
+Disallow: /dashboard
+Disallow: /settings
+Disallow: /admin
+Disallow: /notifications
+Disallow: /messages
+Disallow: /api/
+
+# Evita indexar páginas com parâmetros de query desnecessários (ex: ?tab=, ?ref=)
+Disallow: /*?
+
+Sitemap: https://mublin.com/sitemap.xml

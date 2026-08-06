@@ -82,6 +82,24 @@ export async function fetchProfileBasicDetails(profileUsername) {
       is_open_to_work,
       plan,
       is_live,
+      roles:profile_roles (
+        id,
+        main_activity,
+        roles (
+          id,
+          name_ptbr,
+          name_en,
+          description_ptbr,
+          instrumentalist
+        )
+      ),
+      genres:profile_genres (
+        id,
+        main_genre,
+        genres (
+          id, name
+        )
+      ),
       cities (
         name, countries ( name, name_ptbr )
       ),

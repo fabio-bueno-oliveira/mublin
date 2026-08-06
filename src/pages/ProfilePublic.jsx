@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { fetchProfileDetails } from '../queries/profiles'
+import { fetchProfileBasicDetails } from '../queries/profiles'
 import { useAuth } from '../hooks/useAuth'
 import {
   Container,
@@ -15,9 +15,9 @@ import {
   Skeleton,
   Alert,
   Badge,
-  Scroller,
+  SimpleGrid,
 } from '@mantine/core'
-import { IconMusic, IconArrowRight, IconMoodSad } from '@tabler/icons-react'
+import { IconArrowRight, IconMoodSad } from '@tabler/icons-react'
 
 const AVATAR_PATH =
   'https://ik.imagekit.io/mublin/tr:h-200,c-maintain_ratio/users/avatars/'
@@ -33,13 +33,19 @@ export default function ProfilePublic() {
     isError,
   } = useQuery({
     queryKey: ['profile', username],
-    queryFn: () => fetchProfileDetails(username),
+    queryFn: () => fetchProfileBasicDetails(username),
     enabled: !!username && !authLoading && !session,
     staleTime: 1000 * 60 * 5,
     retry: 1,
   })
 
-  const roles = profile?.profile_roles?.sort((a, b) => b.main_activity - a.main_activity)
+  const rolesOrdered = profile?.roles
+    ?.slice()
+    ?.sort(
+      (a, b) =>
+        b.main_activity - a.main_activity ||
+        Number(b.roles?.instrumentalist) - Number(a.roles?.instrumentalist),
+    )
 
   if (authLoading) {
     return (
@@ -82,50 +88,40 @@ export default function ProfilePublic() {
 
   return (
     <>
-      <Container size="sm" py={48}>
+      <Container size="sm" pt={60}>
         <Stack gap="xl">
-          <Group align="center" gap="xl">
+          <Group align="center" gap="md">
             <Avatar
               size={96}
               src={profile.avatar ? AVATAR_PATH + profile.avatar : undefined}
             />
-            <Stack gap={1}>
-              <Flex align="center" gap={6} wrap="wrap">
-                <Title order={1} size={24}>
+            <Stack gap={0}>
+              <Badge
+                size="md"
+                color="var(--mantine-color-text)"
+                variant="light"
+                tt="lowercase"
+                fw={300}
+                mb={2}
+              >
+                @{profile.username}
+              </Badge>
+              <Flex align="center" gap="xs" wrap="wrap">
+                <Title order={1} size="h2">
                   {profile.full_name}
                 </Title>
-                <Badge
-                  size="md"
-                  color="gray"
-                  c="dimmed"
-                  variant="light"
-                  tt="lowercase"
-                  fw="500"
-                >
-                  @{profile.username}
-                </Badge>
               </Flex>
-              {roles && roles.length > 0 && (
-                <Scroller>
-                  <Group gap={4} wrap="nowrap">
-                    {roles &&
-                      roles.map(({ id, main_activity, roles: role }) => (
-                        <Badge
-                          key={id}
-                          variant="light"
-                          fw="500"
-                          size="sm"
-                          color={main_activity ? 'indigo' : 'gray'}
-                        >
-                          {role.name_ptbr}
-                        </Badge>
-                      ))}
-                  </Group>
-                </Scroller>
+              {rolesOrdered && rolesOrdered.length > 0 && (
+                <Text size="sm" c="dimmed">
+                  {rolesOrdered
+                    .map((role) => role?.roles?.description_ptbr)
+                    .filter(Boolean)
+                    .join(', ')}
+                </Text>
               )}
-              {profile.bio && (
-                <Text size="sm" maw={420} lh={1.6} mt={4}>
-                  {profile.bio}
+              {profile.title && (
+                <Text size="sm" maw={420}>
+                  {profile.title}
                 </Text>
               )}
             </Stack>
@@ -140,22 +136,19 @@ export default function ProfilePublic() {
               background: 'var(--mantine-color-default)',
             }}
           >
-            <Group justify="space-between" align="center" wrap="wrap" gap="md">
-              <Stack gap={2}>
-                <Group gap={6}>
-                  <IconMusic size={16} color="var(--mantine-color-indigo-6)" />
-                  <Text size="sm" fw={600}>
-                    Veja o perfil completo no Mublin
-                  </Text>
-                </Group>
-                <Text size="xs" c="dimmed">
-                  Projetos, gigs, setlists e muito mais.
+            <SimpleGrid spacing="lg" cols={{ base: 1, sm: 2, lg: 2 }}>
+              <Stack gap="xs">
+                <Text size="lg">
+                  Entre pra ver o perfil completo de <b>{profile.username}</b> no Mublin
+                </Text>
+                <Text size="sm" c="dimmed">
+                  Projetos, gigs, equipamento e muito mais
                 </Text>
               </Stack>
               <Group gap="sm">
                 <Button
-                  variant="subtle"
-                  color="gray"
+                  variant="outline"
+                  color="var(--mantine-color-text)"
                   size="sm"
                   radius="xl"
                   onClick={() => navigate('/login')}
@@ -163,7 +156,6 @@ export default function ProfilePublic() {
                   Entrar
                 </Button>
                 <Button
-                  color="indigo"
                   size="sm"
                   radius="xl"
                   rightSection={<IconArrowRight size={14} />}
@@ -172,7 +164,7 @@ export default function ProfilePublic() {
                   Criar conta grátis
                 </Button>
               </Group>
-            </Group>
+            </SimpleGrid>
           </Box>
         </Stack>
       </Container>
