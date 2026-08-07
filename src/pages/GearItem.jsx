@@ -31,6 +31,7 @@ import {
   Affix,
   Paper,
   Avatar,
+  Tooltip,
   em,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
@@ -45,6 +46,8 @@ import {
   IconBookmark,
   IconBookmarkFilled,
   IconPlus,
+  IconCrown,
+  IconLock,
 } from '@tabler/icons-react'
 import AppNavbarMobile from '../components/AppNavbarMobile'
 import parse from 'html-react-parser'
@@ -58,7 +61,8 @@ const PATH_COLOR_SAMPLE = 'https://ik.imagekit.io/mublin/products/colors/'
 
 export default function GearItem() {
   const { slug } = useParams()
-  const { user } = useAuth()
+  const { user, profile } = useAuth()
+  const isPro = profile?.plan === 'Pro'
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [selectedColorId, setSelectedColorId] = useState(null)
@@ -336,11 +340,11 @@ export default function GearItem() {
           </Box>
         </Flex>
 
-        <Group gap="xs" mb={14}>
+        <Group gap={6} mb={14}>
           <ActionIcon
-            size="md"
+            size="lg"
             variant="default"
-            radius="md"
+            radius="xl"
             onClick={() => handleToggleFavorite(!!favoriteInfo?.id)}
             loading={togglingFavorite}
             disabled={loadingFavoriteInfo}
@@ -352,21 +356,42 @@ export default function GearItem() {
               <IconBookmark size={20} />
             )}
           </ActionIcon>
-          <Button
-            leftSection={alreadyAdded ? <IconX size={16} /> : <IconPlus size={16} />}
-            variant="default"
-            size="sm"
-            radius="md"
-            onClick={
-              alreadyAdded
-                ? () => handleDeleteFromGear()
-                : () => navigate(`/new/gear?id=${product?.id}`)
-            }
-            loading={isLoading || loadingUserGearItem || deletingFromGear}
-            disabled={isLoading || loadingUserGearItem || deletingFromGear}
-          >
-            {alreadyAdded ? 'Remover do meu equipamento' : 'Adicionar ao meu equipamento'}
-          </Button>
+          {alreadyAdded ? (
+            <Button
+              leftSection={<IconX size={16} />}
+              variant="default"
+              size="sm"
+              radius="md"
+              onClick={() => handleDeleteFromGear()}
+              loading={deletingFromGear}
+            >
+              Remover do meu equipamento
+            </Button>
+          ) : isPro ? (
+            <Button
+              leftSection={<IconPlus size={16} />}
+              variant="default"
+              size="sm"
+              radius="md"
+              onClick={() => navigate(`/new/gear?id=${product?.id}`)}
+              loading={isLoading || loadingUserGearItem}
+              disabled={isLoading || loadingUserGearItem}
+            >
+              Adicionar ao meu equipamento
+            </Button>
+          ) : (
+            <Tooltip label="Apenas usuários Pro podem adicionar equipamentos">
+              <Button
+                size="sm"
+                variant="default"
+                leftSection={<IconLock size={16} />}
+                component={Link}
+                to="/settings/plan"
+              >
+                Adicionar ao meu equipamento
+              </Button>
+            </Tooltip>
+          )}
         </Group>
 
         <Grid gutter="xl">

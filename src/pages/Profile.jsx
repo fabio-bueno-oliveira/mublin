@@ -31,7 +31,7 @@ import { Helmet } from 'react-helmet-async'
 // prettier-ignore
 import {
   useMantineColorScheme,
-  Grid, Container, Center,
+  em, Grid, Container, Center,
   Modal, Drawer,
   Scroller, Skeleton, Stack,
   Box, Card,
@@ -42,12 +42,12 @@ import {
   Flex, Group,
   Button, ActionIcon, ThemeIcon, 
   Alert, Tooltip, Anchor,
-  Spoiler, em,
-  Badge, Indicator,
+  Spoiler, Indicator,
 } from '@mantine/core'
 // prettier-ignore
 import { useMediaQuery, useDisclosure, useWindowScroll, useScroller } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
+import { modals } from '@mantine/modals'
 import LoadingSkeleton from '../components/profile/LoadingSkeleton'
 import LinkedItem from '../components/feed/LinkedItem'
 import VideoPlayerYoutube from '../components/feed/VideoPlayerYoutube'
@@ -73,7 +73,6 @@ import {
   IconRosetteDiscountCheckFilled,
   IconSchool, IconUserCircle,
   IconExternalLink,
-  IconSettings,
   IconArrowRight,
 } from '@tabler/icons-react'
 import ProfileHeaderMobile from '../components/profile/ProfileHeaderMobile'
@@ -127,7 +126,6 @@ export default function Profile() {
   const menuItemRefs = useRef({})
 
   const [activeSection, setActiveSection] = useState('')
-  const [expandedBio, setExpandedBio] = useState(false)
 
   const [followersOpened, { open: openFollowers, close: closeFollowers }] =
     useDisclosure(false)
@@ -196,7 +194,6 @@ export default function Profile() {
 
   useEffect(() => {
     scrollTo({ y: 0 })
-    setExpandedBio(false)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [username])
 
@@ -392,10 +389,12 @@ export default function Profile() {
     staleTime: 1000 * 60 * 3,
   })
 
+  const isProfilePro = profile?.plan === 'Pro'
+
   const { data: gearList = [], isLoading: loadingGear } = useQuery({
     queryKey: ['user-gear', profile?.id],
     queryFn: () => fetchProfileGear(profile.id),
-    enabled: !!profile?.id,
+    enabled: !!profile?.id && isProfilePro, // só busca se for Pro
     staleTime: 1000 * 60 * 5,
   })
 
@@ -404,7 +403,7 @@ export default function Profile() {
   const { data: gearSetups = [] } = useQuery({
     queryKey: ['user-gear-setups', profile?.id],
     queryFn: () => fetchProfileGearSetups(profile.id),
-    enabled: !!profile?.id,
+    enabled: !!profile?.id && isProfilePro, // <- só busca se for Pro
     staleTime: 1000 * 60 * 5,
   })
 
@@ -1106,13 +1105,64 @@ export default function Profile() {
                             </Text>
                           </Group>
                         )}
-                        {profile.bio?.length > 150 && !expandedBio ? (
+                        {profile.bio?.length > 150 ? (
                           <>
                             <Text fz="sm" lh={1.4} style={{ whiteSpace: 'pre-line' }}>
                               {truncateString(profile.bio, 150)}
                             </Text>
-                            <Anchor onClick={() => setExpandedBio(true)}>
-                              <Text mt={4} size="sm" c="var(--mantine-color-text)">
+                            <Anchor
+                              underline="never"
+                              onClick={() =>
+                                modals.open({
+                                  title: (
+                                    <Group gap="xs">
+                                      <Avatar
+                                        src={AVATAR_PATH + profile.avatar}
+                                        size={28}
+                                        radius="xl"
+                                      />
+                                      <Box>
+                                        <Text size="sm" c="dimmed" lh={1}>
+                                          Sobre
+                                        </Text>
+                                        <Text fw={600} size="sm" lh={1.1}>
+                                          {profile.full_name}
+                                        </Text>
+                                      </Box>
+                                    </Group>
+                                  ),
+                                  size: 'md',
+                                  centered: true,
+                                  radius: 'md',
+                                  overlayProps: {
+                                    backgroundOpacity: 0.55,
+                                    blur: 3,
+                                  },
+                                  children: (
+                                    <ScrollArea.Autosize
+                                      mah={400}
+                                      type="auto"
+                                      offsetScrollbars
+                                    >
+                                      <Text
+                                        mt="xs"
+                                        fz="sm"
+                                        lh={1.5}
+                                        style={{ whiteSpace: 'pre-line' }}
+                                      >
+                                        {profile.bio}
+                                      </Text>
+                                    </ScrollArea.Autosize>
+                                  ),
+                                })
+                              }
+                            >
+                              <Text
+                                mt={6}
+                                size="sm"
+                                fw={500}
+                                c="var(--mantine-color-text)"
+                              >
                                 Ver mais
                               </Text>
                             </Anchor>
@@ -1777,188 +1827,211 @@ export default function Profile() {
                     </>
                   )}
 
-                  {loadingGear ? (
-                    <Box mx="xs">
-                      <SectionTitle text="Equipamento" mb="md" />
-                      <Group gap="xs" wrap="nowrap">
-                        {[1, 2].map((i) => (
-                          <Skeleton key={i} width="100%" height={90} />
-                        ))}
-                      </Group>
-                    </Box>
-                  ) : (
+                  {isProfilePro && (
                     <>
-                      {gear.length > 0 ? (
-                        <>
-                          <Group justify="space-between" align="center" gap="xs" mt={10}>
-                            <Group gap={10}>
-                              <SectionTitle
-                                id="gear"
-                                text="Equipamento"
-                                ml={{ base: 'sm', md: 0 }}
-                              />
-                              {isOwnProfile && (
-                                <ActionIcon
-                                  variant="light"
-                                  color="gray"
-                                  radius="xl"
-                                  size="md"
-                                  aria-label="Gerenciar meu equipamento"
-                                  title="Gerenciar meu equipamento"
-                                  component={Link}
-                                  to="/settings/gear"
-                                  mr="sm"
-                                >
-                                  <IconPencil size={18} />
-                                </ActionIcon>
-                              )}
-                            </Group>
-
-                            <Group mr={{ base: 'sm', md: 0 }}>
-                              <ThemeIcon
-                                variant="default"
-                                style={{
-                                  cursor: gearScroller.canScrollStart
-                                    ? 'pointer'
-                                    : 'default',
-                                }}
-                                onClick={gearScroller.scrollStart}
-                                opacity={gearScroller.canScrollStart ? 1 : 0.5}
-                              >
-                                <IconChevronLeft
-                                  style={{ width: '70%', height: '70%' }}
-                                />
-                              </ThemeIcon>
-                              <ThemeIcon
-                                variant="default"
-                                style={{
-                                  cursor: gearScroller.canScrollEnd
-                                    ? 'pointer'
-                                    : 'default',
-                                }}
-                                onClick={gearScroller.scrollEnd}
-                                opacity={gearScroller.canScrollEnd ? 1 : 0.5}
-                              >
-                                <IconChevronRight
-                                  style={{ width: '70%', height: '70%' }}
-                                />
-                              </ThemeIcon>
-                            </Group>
+                      {loadingGear ? (
+                        <Box mx="xs">
+                          <SectionTitle text="Equipamento" mb="md" />
+                          <Group gap="xs" wrap="nowrap">
+                            {[1, 2].map((i) => (
+                              <Skeleton key={i} width="100%" height={90} />
+                            ))}
                           </Group>
-                          <Box h="100%">
-                            <div
-                              ref={gearScroller.ref}
-                              {...gearScroller.dragHandlers}
-                              className="scrollerHidden"
-                              style={{
-                                overflow: 'auto',
-                                cursor: gearScroller.isDragging ? 'grabbing' : 'default',
-                              }}
-                            >
-                              <Group mx={{ base: 'xs', md: 0 }} gap="xs" wrap="nowrap">
-                                {/* {isMobile && (
+                        </Box>
+                      ) : (
+                        <>
+                          {gear.length > 0 ? (
+                            <>
+                              <Group
+                                justify="space-between"
+                                align="center"
+                                gap="xs"
+                                mt={10}
+                              >
+                                <Group gap={10}>
+                                  <SectionTitle
+                                    id="gear"
+                                    text="Equipamento"
+                                    ml={{ base: 'sm', md: 0 }}
+                                  />
+                                  {isOwnProfile && (
+                                    <ActionIcon
+                                      variant="light"
+                                      color="gray"
+                                      radius="xl"
+                                      size="md"
+                                      aria-label="Gerenciar meu equipamento"
+                                      title="Gerenciar meu equipamento"
+                                      component={Link}
+                                      to="/settings/gear"
+                                      mr="sm"
+                                    >
+                                      <IconPencil size={18} />
+                                    </ActionIcon>
+                                  )}
+                                </Group>
+
+                                <Group mr={{ base: 'sm', md: 0 }}>
+                                  <ThemeIcon
+                                    variant="default"
+                                    style={{
+                                      cursor: gearScroller.canScrollStart
+                                        ? 'pointer'
+                                        : 'default',
+                                    }}
+                                    onClick={gearScroller.scrollStart}
+                                    opacity={gearScroller.canScrollStart ? 1 : 0.5}
+                                  >
+                                    <IconChevronLeft
+                                      style={{ width: '70%', height: '70%' }}
+                                    />
+                                  </ThemeIcon>
+                                  <ThemeIcon
+                                    variant="default"
+                                    style={{
+                                      cursor: gearScroller.canScrollEnd
+                                        ? 'pointer'
+                                        : 'default',
+                                    }}
+                                    onClick={gearScroller.scrollEnd}
+                                    opacity={gearScroller.canScrollEnd ? 1 : 0.5}
+                                  >
+                                    <IconChevronRight
+                                      style={{ width: '70%', height: '70%' }}
+                                    />
+                                  </ThemeIcon>
+                                </Group>
+                              </Group>
+                              <Box h="100%">
+                                <div
+                                  ref={gearScroller.ref}
+                                  {...gearScroller.dragHandlers}
+                                  className="scrollerHidden"
+                                  style={{
+                                    overflow: 'auto',
+                                    cursor: gearScroller.isDragging
+                                      ? 'grabbing'
+                                      : 'default',
+                                  }}
+                                >
+                                  <Group
+                                    mx={{ base: 'xs', md: 0 }}
+                                    gap="xs"
+                                    wrap="nowrap"
+                                  >
+                                    {/* {isMobile && (
                                   <Box style={{ flexShrink: 10, width: '5px' }} />
                                 )} */}
-                                {gear.map((item) => (
-                                  <Flex
-                                    key={item.id_product}
-                                    direction="column"
-                                    justify="flex-start"
-                                    align="center"
-                                    w={140}
-                                  >
-                                    <Link to={`/${username}/gear/${item.id}`}>
-                                      <Image
-                                        src={`https://ik.imagekit.io/mublin/products/tr:w-240,h-240,cm-pad_resize,bg-FFFFFF,fo-x/${item.products?.picture}`}
-                                        h={120}
-                                        mah={120}
-                                        w="auto"
-                                        fit="contain"
-                                        mb={10}
-                                        radius="md"
-                                      />
-                                    </Link>
-                                    <Text size="xs" c="dimmed" fw={500} lineClamp={1}>
-                                      {item.products?.brands?.name}
-                                    </Text>
-                                    <Text
-                                      size="xs"
-                                      fw={500}
-                                      ta="center"
-                                      lineClamp={1}
-                                      style={{ whiteSpace: 'pre-wrap' }}
-                                    >
-                                      {item.products?.name}
-                                    </Text>
-                                  </Flex>
-                                ))}
-                              </Group>
-                            </div>
-                            <Group justify="center" mt="md" mx={{ base: 'xs', md: 0 }}>
-                              <Button
-                                w="100%"
-                                size="md"
-                                variant="light"
-                                color="var(--mantine-color-text)"
-                                // rightSection={
-                                //   <Badge circle size="md" variant="default">
-                                //     {gear.length}
-                                //   </Badge>
-                                // }
-                                rightSection={<IconArrowRight size={16} />}
-                                component={Link}
-                                to={`/${username}/gear`}
-                              >
-                                Ver tudo
-                              </Button>
-                            </Group>
-                            <Box ml={{ base: 'sm', md: 0 }} mt="lg">
-                              <Text fw={600} size="sm">
-                                Setups de {profile.full_name}{' '}
-                                {!!gearSetups.length && `(${gearSetups.length})`}
-                              </Text>
-                              {gearSetups.length > 0 && (
-                                <Flex gap={12} mt={18}>
-                                  {gearSetups.map((setup) => (
-                                    <Box key={setup.id}>
-                                      <Flex w={80} direction="column" justify="center">
-                                        {/* <Link to={`/setup/${setup.id}`}> */}
-                                        <Link to={`/${username}/gear`}>
+                                    {gear.map((item) => (
+                                      <Flex
+                                        key={item.id_product}
+                                        direction="column"
+                                        justify="flex-start"
+                                        align="center"
+                                        w={140}
+                                      >
+                                        <Link to={`/${username}/gear/${item.id}`}>
                                           <Image
-                                            src={`https://ik.imagekit.io/mublin/users/gear-setups/tr:w-140,h-140/${setup.image}`}
-                                            h={70}
-                                            w={70}
+                                            src={`https://ik.imagekit.io/mublin/products/tr:w-240,h-240,cm-pad_resize,bg-FFFFFF,fo-x/${item.products?.picture}`}
+                                            h={120}
+                                            mah={120}
+                                            w="auto"
                                             fit="contain"
+                                            mb={10}
                                             radius="md"
-                                            mb={4}
                                           />
                                         </Link>
-                                        <Text
-                                          ta="center"
-                                          fw={550}
-                                          size="xs"
-                                          truncate="end"
-                                        >
-                                          {setup.name}
+                                        <Text size="xs" c="dimmed" fw={500} lineClamp={1}>
+                                          {item.products?.brands?.name}
                                         </Text>
-                                        <Text ta="center" size="xs">
-                                          {setup.total_items ?? 0} itens
+                                        <Text
+                                          size="xs"
+                                          fw={500}
+                                          ta="center"
+                                          lineClamp={1}
+                                          style={{ whiteSpace: 'pre-wrap' }}
+                                        >
+                                          {item.products?.name}
                                         </Text>
                                       </Flex>
-                                    </Box>
-                                  ))}
-                                </Flex>
-                              )}
-                            </Box>
-                          </Box>
+                                    ))}
+                                  </Group>
+                                </div>
+                                <Group
+                                  justify="center"
+                                  mt="md"
+                                  mx={{ base: 'xs', md: 0 }}
+                                >
+                                  <Button
+                                    w="100%"
+                                    size="md"
+                                    variant="light"
+                                    color="var(--mantine-color-text)"
+                                    // rightSection={
+                                    //   <Badge circle size="md" variant="default">
+                                    //     {gear.length}
+                                    //   </Badge>
+                                    // }
+                                    rightSection={<IconArrowRight size={16} />}
+                                    component={Link}
+                                    to={`/${username}/gear`}
+                                  >
+                                    Ver tudo
+                                  </Button>
+                                </Group>
+                                <Box ml={{ base: 'sm', md: 0 }} mt="lg">
+                                  <Text fw={600} size="sm">
+                                    Setups de {profile.full_name}{' '}
+                                    {!!gearSetups.length && `(${gearSetups.length})`}
+                                  </Text>
+                                  {gearSetups.length > 0 && (
+                                    <Flex gap={12} mt={18}>
+                                      {gearSetups.map((setup) => (
+                                        <Box key={setup.id}>
+                                          <Flex
+                                            w={80}
+                                            direction="column"
+                                            justify="center"
+                                          >
+                                            {/* <Link to={`/setup/${setup.id}`}> */}
+                                            <Link to={`/${username}/gear`}>
+                                              <Image
+                                                src={`https://ik.imagekit.io/mublin/users/gear-setups/tr:w-140,h-140/${setup.image}`}
+                                                h={70}
+                                                w={70}
+                                                fit="contain"
+                                                radius="md"
+                                                mb={4}
+                                              />
+                                            </Link>
+                                            <Text
+                                              ta="center"
+                                              fw={550}
+                                              size="xs"
+                                              truncate="end"
+                                            >
+                                              {setup.name}
+                                            </Text>
+                                            <Text ta="center" size="xs">
+                                              {setup.total_items ?? 0} itens
+                                            </Text>
+                                          </Flex>
+                                        </Box>
+                                      ))}
+                                    </Flex>
+                                  )}
+                                </Box>
+                              </Box>
+                            </>
+                          ) : (
+                            <SectionPanel>
+                              <SectionTitle text="Equipamento" mb="sm" />
+                              <Text size="sm" c="dimmed">
+                                Nenhum equipamento adicionado
+                              </Text>
+                            </SectionPanel>
+                          )}
                         </>
-                      ) : (
-                        <SectionPanel>
-                          <SectionTitle text="Equipamento" mb="sm" />
-                          <Text size="sm" c="dimmed">
-                            Nenhum equipamento adicionado
-                          </Text>
-                        </SectionPanel>
                       )}
                     </>
                   )}
@@ -2485,10 +2558,15 @@ export default function Profile() {
               c="inherit"
             >
               <Group gap="xs" wrap="nowrap" justify="space-between" py={6}>
-                <Group gap="xs" wrap="nowrap">
-                  <IconWorld size={16} opacity={0.6} style={{ flexShrink: 0 }} />
-                  <Text size="sm">{link.label}</Text>
-                </Group>
+                <Stack gap={2}>
+                  <Group gap="xs" wrap="nowrap">
+                    <IconWorld size={16} opacity={0.6} style={{ flexShrink: 0 }} />
+                    <Text size="sm">{link.label}</Text>
+                  </Group>
+                  <Text size="xs" c="dimmed">
+                    {link.url}
+                  </Text>
+                </Stack>
                 <IconExternalLink size={16} opacity={0.5} style={{ flexShrink: 0 }} />
               </Group>
             </Anchor>

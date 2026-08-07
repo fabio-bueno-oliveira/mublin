@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import {
@@ -38,7 +38,6 @@ import {
   IconArrowLeft,
   IconZoom,
   IconRosetteDiscountCheck,
-  IconStack2,
 } from '@tabler/icons-react'
 import AppNavbarMobile from '../components/AppNavbarMobile'
 import { getAvatarUrl } from '../utils/profile'
@@ -52,6 +51,10 @@ export default function ProfileGear() {
   const { loading: authLoading } = useAuth()
   const navigate = useNavigate()
   const isMobile = useMediaQuery(`(max-width: ${em(750)})`)
+
+  useEffect(() => {
+    scrollTo({ y: 0 })
+  }, [username])
 
   // ── Filtro por categoria ──────────────────────────────
   const [gearCategorySelected, setGearCategorySelected] = useState('')
@@ -144,7 +147,7 @@ export default function ProfileGear() {
       {isMobile && (
         <Affix position={{ top: 0, left: 0 }} w="100%">
           <AppNavbarMobile
-            pageName={profile.username}
+            pageName={`Equipamento de ${profile.username}`}
             // profile={profile}
             // featured={profile.is_open_to_work}
           />
@@ -187,7 +190,7 @@ export default function ProfileGear() {
                 <Group gap={10} mb={12}>
                   {gearCategories.length > 1 && (
                     <Select
-                      size="sm"
+                      size="xs"
                       w={182}
                       value={gearCategorySelected || ''}
                       onChange={(value) => setGearCategorySelected(value || '')}
@@ -202,8 +205,8 @@ export default function ProfileGear() {
                   )}
                   {gearSetups.length > 0 && (
                     <Select
-                      size="sm"
-                      w={148}
+                      size="xs"
+                      w={152}
                       value={selectedSetupId || ''}
                       onChange={(value) => setSelectedSetupId(value || '')}
                       data={[

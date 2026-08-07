@@ -123,7 +123,12 @@ export default function AppSidebar() {
 
           <Card withBorder={false} shadow="xs" radius="md" p="xs">
             <Stack gap={4}>
-              <Text size="xs">
+              <Text
+                size="xs"
+                component={Link}
+                to="/settings/plan"
+                style={{ textDecoration: 'none', color: 'inherit' }}
+              >
                 Plano atual: {profile?.plan === 'Pro' ? 'Mublin Pro' : 'Mublin Free'}
               </Text>
               {profile?.plan === 'Pro' && (

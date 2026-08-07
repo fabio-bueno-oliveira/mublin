@@ -46,6 +46,8 @@ import {
   IconWorld,
   IconUsers,
   IconUserPlus,
+  IconCrown,
+  IconLock,
 } from '@tabler/icons-react'
 
 const PRODUCT_IMG =
@@ -142,8 +144,9 @@ async function fetchSetupItems(setupId) {
 // ── Componente principal ──────────────────────────────────
 
 export default function MyGear() {
-  const { user } = useAuth()
+  const { user, profile } = useAuth()
   const queryClient = useQueryClient()
+  const isPro = profile?.plan === 'Pro'
 
   // ── Modais e Drawer ───────────────────────────────────
   const [editItemOpened, { open: openEditItem, close: closeEditItem }] =
@@ -823,16 +826,51 @@ export default function MyGear() {
                 Adicionar, editar e remover itens
               </Text>
             </div>
-            <Button
-              size="sm"
-              variant="default"
-              leftSection={<IconPlus size={13} />}
-              component={Link}
-              to="/new/gear"
-            >
-              Adicionar
-            </Button>
+            {isPro ? (
+              <Button
+                size="sm"
+                variant="default"
+                leftSection={<IconPlus size={13} />}
+                component={Link}
+                to="/new/gear"
+              >
+                Adicionar
+              </Button>
+            ) : (
+              <Tooltip label="Recurso exclusivo para Pro">
+                <Button
+                  size="sm"
+                  variant="default"
+                  leftSection={<IconLock size={13} />}
+                  disabled
+                >
+                  Adicionar
+                </Button>
+              </Tooltip>
+            )}
           </Group>
+
+          {!isPro && !loadingGear && (
+            <Paper withBorder p="md" radius="md">
+              <Group gap="sm" wrap="nowrap">
+                <ThemeIcon color="yellow" variant="light" size="lg" radius="md">
+                  <IconCrown size={18} />
+                </ThemeIcon>
+                <Box style={{ flex: 1 }}>
+                  <Text size="sm" fw={600}>
+                    Recurso exclusivo Pro
+                  </Text>
+                  <Text size="xs" c="dimmed" lh={1.3}>
+                    Apenas usuários com plano Mublin Pro podem adicionar novos
+                    equipamentos. Seus equipamentos atuais continuam gerenciáveis.
+                  </Text>
+                </Box>
+                <Button size="xs" component={Link} to="/settings/plan">
+                  Ver plano
+                </Button>
+              </Group>
+            </Paper>
+          )}
 
           {loadingGear ? (
             <Grid>

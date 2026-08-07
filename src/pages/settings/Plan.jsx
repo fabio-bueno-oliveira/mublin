@@ -199,16 +199,13 @@ export default function Plan() {
                 Você está no plano Free. Com o Pro você desbloqueia selo verificado,
                 destaque nas buscas, estatísticas avançadas e mais.
               </Text>
-              <Alert color="yellow" variant="light" icon={<IconClock size={16} />}>
-                A assinatura do Mublin Pro via Stripe será disponibilizada em breve.
-                Estamos finalizando os ajustes de pagamento.
-              </Alert>
               <Button disabled color="yellow" leftSection={<IconCrown size={16} />}>
                 Adquirir Plano Pro
               </Button>
-              <Text size="xs" c="dimmed">
-                O botão será liberado assim que o Stripe for ativado.
-              </Text>
+              <Alert color="grape" variant="light" icon={<IconClock size={22} />}>
+                A assinatura do Mublin Pro via Stripe será disponibilizada em breve.
+                Estamos finalizando os ajustes de pagamento.
+              </Alert>
             </Stack>
           )}
         </Card>
