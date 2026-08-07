@@ -124,7 +124,8 @@ export async function fetchArtistsByGenreCategory(categoryId) {
     return []
   }
 
-  // 2. artistas com genre_id OU genre_2_id dentro dessa lista
+  // 2. artistas com genre_id OU genre_2_id dentro dessa lista, já trazendo
+  // as roles de cada artista (artist_roles -> roles) num único request
   const idsList = genreIds.join(',')
 
   const { data, error } = await supabase
@@ -138,12 +139,20 @@ export async function fetchArtistsByGenreCategory(categoryId) {
       is_band,
       is_verified,
       genre:genres!artists_genre_id_fkey ( name_ptbr ),
-      genre_2:genres!artists_genre_2_id_fkey ( name_ptbr )
+      genre_2:genres!artists_genre_2_id_fkey ( name_ptbr ),
+      artist_roles (
+        id,
+        is_main_role,
+        order_show,
+        roles ( name_ptbr, description_ptbr )
+      )
     `,
     )
     .eq('is_active', true)
     .or(`genre_id.in.(${idsList}),genre_2_id.in.(${idsList})`)
     .order('name', { ascending: true })
+    .order('is_main_role', { foreignTable: 'artist_roles', ascending: false })
+    .order('order_show', { foreignTable: 'artist_roles', ascending: true })
 
   if (error) {
     throw new Error(error.message)

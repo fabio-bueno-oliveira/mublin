@@ -17,6 +17,7 @@ import {
   Image, Avatar,
   ThemeIcon,
   Badge,
+  Indicator,
 } from '@mantine/core'
 import { useMediaQuery, useScroller } from '@mantine/hooks'
 import AppNavbarMobile from '../components/AppNavbarMobile'
@@ -28,6 +29,7 @@ import {
   IconChevronRight,
   IconMusic,
   IconSparkles,
+  IconRosetteDiscountCheckFilled,
 } from '@tabler/icons-react'
 
 const CDN_PREFIX = 'https://ik.imagekit.io/mublin'
@@ -260,14 +262,28 @@ export default function Home() {
                                 </Badge>
                               )}
                               <Stack align="center" gap={3}>
-                                <Avatar
-                                  // src={p.avatar ? AVATAR_PATH + p.avatar : null}
-                                  src={getAvatarUrl(p?.avatar, p?.is_open_to_work, 64)}
-                                  size={64}
-                                  radius="xl"
+                                <Indicator
+                                  position="top-end"
+                                  offset={8}
+                                  color="transparent"
+                                  size={20}
+                                  disabled={!p.is_verified}
+                                  label={
+                                    <IconRosetteDiscountCheckFilled
+                                      size={20}
+                                      style={{ display: 'block' }}
+                                    />
+                                  }
                                 >
-                                  {!p.avatar && <IconUser size={28} />}
-                                </Avatar>
+                                  <Avatar
+                                    // src={p.avatar ? AVATAR_PATH + p.avatar : null}
+                                    src={getAvatarUrl(p?.avatar, p?.is_open_to_work, 64)}
+                                    size={64}
+                                    radius="xl"
+                                  >
+                                    {!p.avatar && <IconUser size={28} />}
+                                  </Avatar>
+                                </Indicator>
                                 <Text size="sm" fw={600} ta="center" lineClamp={1}>
                                   {p.full_name || p.username}
                                 </Text>

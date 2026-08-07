@@ -12,16 +12,22 @@ export async function fetchAllGenres() {
   return data
 }
 
+const OTHERS_CATEGORY_ID = 5
+
 export async function fetchGenreCategories() {
   const { data, error } = await supabase
     .from('genre_categories')
     .select('id, name, name_ptbr, color, color_hex')
     .order('name_ptbr', { ascending: true })
-
   if (error) {
     throw error
   }
-  return data
+
+  // mantém a ordem alfabética, só empurra "Outros" (id 5) pro final
+  return (data ?? []).sort(
+    (a, b) =>
+      (a.id === OTHERS_CATEGORY_ID ? 1 : 0) - (b.id === OTHERS_CATEGORY_ID ? 1 : 0),
+  )
 }
 
 export async function fetchGenreCategoryDetails(genreId) {

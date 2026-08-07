@@ -298,7 +298,6 @@ function NotificationItem({ notification, onRead, profile }) {
             <Indicator
               position="bottom-end"
               offset={6}
-              withBorder
               color="transparent"
               size={20}
               label={
