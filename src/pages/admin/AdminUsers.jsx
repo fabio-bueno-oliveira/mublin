@@ -276,47 +276,42 @@ function UserDrawer({ user, opened, onClose, onUpdate }) {
     setSaving(true)
     const days = parseInt(durationDays, 10)
     const note = courtesyNote.trim() || null
-    let error
-    if (days === 0) {
-      // Permanente: sem expiração — update direto incluindo plan_note
-      ;({ error } = await supabase
-        .from('profiles')
-        .update({
-          plan: 'Pro',
-          plan_origin: 'courtesy',
-          plan_expires_at: null,
-          plan_note: note,
-        })
-        .eq('id', user.id))
-    } else {
-      ;({ error } = await supabase.rpc('grant_pro_courtesy', {
-        target_id: user.id,
-        duration_days: days,
-        note,
-      }))
-    }
+
+    // Sempre via RPC - garante SECURITY DEFINER + trigger de notificação
+    const { error, data } = await supabase.rpc('grant_pro_courtesy', {
+      target_id: user.id,
+      duration_days: days,
+      note,
+    })
+
     setSaving(false)
     if (error) {
       notifications.show({
         color: 'red',
-        message: `Erro ao conceder Pro: ${error.message}`,
+        title: 'Erro ao conceder Pro',
+        message: error.message,
       })
-    } else {
-      const expiresAt =
-        days === 0 ? null : new Date(Date.now() + days * 86400000).toISOString()
-      notifications.show({
-        color: 'teal',
-        message: `Plano Pro (cortesia) concedido para @${user.username}.`,
-      })
-      onUpdate({
-        ...user,
-        plan: 'Pro',
-        plan_origin: 'courtesy',
-        plan_expires_at: expiresAt,
-        plan_note: note,
-      })
-      setConfirmModal(null)
+      return
     }
+
+    const expiresAt =
+      days === 0 ? null : new Date(Date.now() + days * 86400000).toISOString()
+
+    notifications.show({
+      color: 'teal',
+      title: 'Pro concedido',
+      message: `Plano Pro (cortesia ${days === 0 ? 'permanente' : `${days}d`}) concedido para @${user.username}.`,
+    })
+
+    onUpdate({
+      ...user,
+      plan: 'Pro',
+      plan_origin: 'courtesy',
+      plan_expires_at: expiresAt,
+      plan_note: note,
+    })
+    setConfirmModal(null)
+    setCourtesyNote('')
   }
 
   async function revokePro() {

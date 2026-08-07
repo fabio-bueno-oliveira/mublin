@@ -375,9 +375,11 @@ export default function AppNavbar({ children }) {
                       src={profile?.avatar ? AVATAR_PATH + profile.avatar : undefined}
                       radius="xl"
                     />
-                    <Text size="sm" fw={600} visibleFrom="sm">
-                      {truncateString(profile?.username, 10)}
-                    </Text>
+                    {profile?.username && (
+                      <Text size="sm" fw={600} visibleFrom="sm">
+                        {profile?.username ? truncateString(profile?.username, 10) : ''}
+                      </Text>
+                    )}
                     <IconChevronDown
                       size={14}
                       style={{ color: 'var(--mantine-color-dimmed)' }}
