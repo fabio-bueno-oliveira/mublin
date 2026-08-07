@@ -1121,14 +1121,14 @@ export default function Profile() {
                                         size={28}
                                         radius="xl"
                                       />
-                                      <Box>
+                                      <Stack gap={4}>
                                         <Text size="sm" c="dimmed" lh={1}>
                                           Sobre
                                         </Text>
                                         <Text fw={600} size="sm" lh={1.1}>
                                           {profile.full_name}
                                         </Text>
-                                      </Box>
+                                      </Stack>
                                     </Group>
                                   ),
                                   size: 'md',
@@ -1146,7 +1146,7 @@ export default function Profile() {
                                     >
                                       <Text
                                         mt="xs"
-                                        fz="sm"
+                                        fz="md"
                                         lh={1.5}
                                         style={{ whiteSpace: 'pre-line' }}
                                       >
@@ -2427,13 +2427,21 @@ export default function Profile() {
                   w={220}
                   withArrow
                   transitionProps={{ duration: 200 }}
-                  label="Usuários com conta premium têm acesso a recursos exclusivos como adicionar equipamentos e subir vídeos"
+                  label="Usuários com conta Pro têm acesso a recursos exclusivos"
                 >
                   <SectionPanel>
                     <Flex gap={6} align="center">
                       <ProPlanBadge small />
-                      <Text size="xs" c="dimmed" lh={1} mt={3}>
-                        {profile?.full_name} possui uma conta Premium
+                      <Text
+                        size="xs"
+                        c="dimmed"
+                        lh={1}
+                        mt={3}
+                        component={Link}
+                        to="/settings/plan"
+                        style={{ textDecoration: 'none', color: 'inherit' }}
+                      >
+                        {profile?.full_name} possui uma conta Pro
                       </Text>
                     </Flex>
                   </SectionPanel>
