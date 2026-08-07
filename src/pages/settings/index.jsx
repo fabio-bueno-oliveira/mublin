@@ -5,6 +5,7 @@ import {
   IconUser,
   IconMusic,
   IconLock,
+  IconCrown,
   IconHeartHandshake,
   IconRadar,
   IconBox,
@@ -20,6 +21,12 @@ const SETTINGS_TABS = [
     label: 'Meus dados',
     icon: IconUser,
     path: '/settings/profile',
+  },
+  {
+    value: 'plan',
+    label: 'Plano',
+    icon: IconCrown,
+    path: '/settings/plan',
   },
   {
     value: 'picture',

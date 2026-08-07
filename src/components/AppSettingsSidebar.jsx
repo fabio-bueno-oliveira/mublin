@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { Container, Tabs } from '@mantine/core'
 import {
   IconUser,
+  IconCrown,
   IconMusic,
   IconLock,
   IconHeartHandshake,
@@ -20,6 +21,12 @@ const SETTINGS_TABS = [
     label: 'Meus dados',
     icon: IconUser,
     path: '/settings/profile',
+  },
+  {
+    value: 'plan',
+    label: 'Plano',
+    icon: IconCrown,
+    path: '/settings/plan',
   },
   {
     value: 'picture',

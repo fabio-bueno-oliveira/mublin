@@ -60,6 +60,7 @@ import NewPost from './pages/NewPost'
 // -- Settings pages
 import SettingsLayout from './pages/settings'
 import EditMyProfile from './pages/settings/EditMyProfile'
+import Plan from './pages/settings/Plan'
 import MusicalPreferences from './pages/settings/MusicalPreferences'
 import Password from './pages/settings/Password'
 import Endorsements from './pages/settings/Endorsements'
@@ -162,6 +163,7 @@ export const router = createBrowserRouter([
         children: [
           { index: true, element: <Navigate to="settings/profile" replace /> },
           { path: 'profile', element: <EditMyProfile /> },
+          { path: 'plan', element: <Plan /> },
           { path: 'musical-preferences', element: <MusicalPreferences /> },
           { path: 'password', element: <Password /> },
           { path: 'endorsements', element: <Endorsements /> },

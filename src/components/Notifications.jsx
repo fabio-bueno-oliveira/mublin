@@ -21,6 +21,7 @@ import {
   IconCalendar,
   IconUserPlus,
   IconSettings,
+  IconCrown,
 } from '@tabler/icons-react'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
@@ -77,11 +78,13 @@ function NotificationIcon({ type }) {
     new_follower: <IconUserPlus size={14} />,
     gig_invite: <IconCalendar size={14} />,
     project_admin_request: <IconSettings size={14} />,
+    pro_courtesy_granted: <IconCrown size={14} />,
   }
   const colors = {
     new_follower: 'blue',
     gig_invite: 'violet',
     project_admin_request: 'orange',
+    pro_courtesy_granted: 'yellow',
   }
 
   return (
@@ -111,7 +114,6 @@ function notificationContent(notification) {
   switch (type) {
     case 'new_follower':
       return {
-        // Link aponta para o perfil de quem seguiu
         href: `/${metadata.follower_username}`,
         avatarSrc: metadata.follower_avatar
           ? AVATAR_PATH + metadata.follower_avatar
@@ -160,7 +162,7 @@ function notificationContent(notification) {
 
     case 'project_admin_request':
       return {
-        href: `/project/${metadata.project_slug}?tab=admin`, // ou onde você mostra as solicitações
+        href: `/project/${metadata.project_slug}?tab=admin`,
         avatarSrc: metadata.requester_avatar
           ? AVATAR_PATH + metadata.requester_avatar
           : undefined,
@@ -181,6 +183,40 @@ function notificationContent(notification) {
         ),
       }
 
+    case 'pro_courtesy_granted': {
+      const isPermanent = metadata?.is_permanent
+      const expiresAt = metadata?.plan_expires_at
+        ? new Date(metadata.plan_expires_at).toLocaleDateString('pt-BR', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+          })
+        : null
+
+      return {
+        href: `/settings/plan`,
+        avatarSrc: undefined,
+        avatarAlt: 'Pro',
+        isPro: true, // flag pra renderizar coroa
+        text: (
+          <>
+            <Text span fw={600} size="xs" c="yellow.8">
+              Você ganhou Mublin Pro! 👑
+            </Text>
+            <Text span size="xs" c="dimmed">
+              {' '}
+              {isPermanent ? 'Cortesia permanente ativada.' : `Válido até ${expiresAt}.`}
+            </Text>
+            {metadata?.plan_note && (
+              <Text size="xs" c="dimmed" fs="italic" display="block" mt={2}>
+                "{metadata.plan_note}"
+              </Text>
+            )}
+          </>
+        ),
+      }
+    }
+
     default:
       return {
         href: '/',
@@ -200,6 +236,7 @@ function notificationContent(notification) {
 function NotificationItem({ notification, onRead }) {
   const content = notificationContent(notification)
   const isUnread = !notification.read
+  const isProCourtesy = notification.type === 'pro_courtesy_granted'
 
   function handleClick() {
     if (isUnread) {
@@ -222,7 +259,6 @@ function NotificationItem({ notification, onRead }) {
         py="xs"
         style={(theme) => ({
           borderRadius: theme.radius.md,
-          // backgroundColor: isUnread ? 'light-dark(#ffffff, #1c1c1c)' : 'transparent',
           transition: 'background-color 150ms ease',
           cursor: 'pointer',
           '&:hover': {
@@ -234,8 +270,18 @@ function NotificationItem({ notification, onRead }) {
       >
         {/* Avatar com indicador de tipo */}
         <Box style={{ position: 'relative', flexShrink: 0 }}>
-          <Avatar src={content.avatarSrc} alt={content.avatarAlt} size={35} radius="xl" />
-          {/* <NotificationIcon type={notification.type} /> */}
+          {isProCourtesy ? (
+            <Avatar size={35} radius="xl" color="yellow" variant="light">
+              👑
+            </Avatar>
+          ) : (
+            <Avatar
+              src={content.avatarSrc}
+              alt={content.avatarAlt}
+              size={35}
+              radius="xl"
+            />
+          )}
         </Box>
 
         {/* Texto + timestamp */}
@@ -295,23 +341,19 @@ export default function Notifications({ limit = 40 }) {
     queryKey: ['notifications', user?.id],
     queryFn: () => fetchNotifications(user.id),
     enabled: !!user?.id,
-    staleTime: 1000 * 30, // 30s — notificações mudam com frequência
+    staleTime: 1000 * 30,
   })
 
-  // Marca todas como lidas ao montar o componente
-  // (comportamento comum em apps de música/redes sociais)
   const { mutate: markAll } = useMutation({
     mutationFn: () => markAllAsRead(user.id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications', user?.id] })
-      // Invalida também o badge de contagem, se você tiver uma query separada
       queryClient.invalidateQueries({ queryKey: ['notifications-unread-count'] })
     },
   })
 
   const { mutate: markOne } = useMutation({
     mutationFn: (id) => markOneAsRead(id),
-    // Atualização otimista: marca como lida na UI antes da resposta do servidor
     onMutate: async (id) => {
       await queryClient.cancelQueries({ queryKey: ['notifications', user?.id] })
       const previous = queryClient.getQueryData(['notifications', user?.id])
@@ -327,8 +369,6 @@ export default function Notifications({ limit = 40 }) {
       queryClient.invalidateQueries({ queryKey: ['notifications-unread-count'] })
     },
   })
-
-  // const unreadCount = notifications.filter((n) => !n.read).length
 
   useEffect(() => {
     markAllRef.current = markAll

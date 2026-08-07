@@ -162,18 +162,18 @@ export default function Profile() {
   })
 
   const { data: profileViewCount } = useQuery({
-    queryKey: ['profile-view-count', profile?.id],
+    queryKey: ['profile-unique-visitor-count', profile?.id],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc('get_profile_view_count', {
-        p_profile_id: profile.id,
+      const { data, error } = await supabase.rpc('get_profile_unique_visitor_count', {
+        p_profile_id: profile?.id,
       })
       if (error) {
         throw error
       }
       return data
     },
-    enabled: isOwnProfile,
-    staleTime: 1000 * 60, // 1 min
+    enabled: !!user?.id,
+    staleTime: 1000 * 60,
   })
 
   const MENU_ITEMS = [
