@@ -343,6 +343,25 @@ function UserDrawer({ user, opened, onClose, onUpdate }) {
     }
   }
 
+  async function toggleVerified() {
+    setSaving(true)
+    const { error } = await supabase
+      .from('profiles')
+      .update({ is_verified: !user.is_verified })
+      .eq('id', user.id)
+
+    setSaving(false)
+    if (error) {
+      notifications.show({ color: 'red', message: error.message })
+    } else {
+      notifications.show({
+        color: 'blue',
+        message: `Verificado ${!user.is_verified ? 'concedido' : 'removido'} para @${user.username}`,
+      })
+      onUpdate({ ...user, is_verified: !user.is_verified })
+    }
+  }
+
   async function toggleAdmin() {
     setSaving(true)
     const { error } = await supabase
@@ -615,6 +634,18 @@ function UserDrawer({ user, opened, onClose, onUpdate }) {
               />
             </Group>
           </Card>
+
+          <Divider label="Verificado" labelPosition="left" />
+
+          <Button
+            size="xs"
+            variant={user.is_verified ? 'filled' : 'light'}
+            color="blue"
+            leftSection={<IconShieldCheck size={14} />}
+            onClick={toggleVerified}
+          >
+            {user.is_verified ? 'Remover verificado' : 'Verificar perfil'}
+          </Button>
 
           <Divider />
 

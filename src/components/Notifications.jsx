@@ -22,6 +22,7 @@ import {
   IconUserPlus,
   IconSettings,
   IconCrown,
+  IconRosetteDiscountCheckFilled,
 } from '@tabler/icons-react'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
@@ -79,6 +80,7 @@ function NotificationIcon({ type }) {
     gig_invite: <IconCalendar size={14} />,
     project_admin_request: <IconSettings size={14} />,
     pro_courtesy_granted: <IconCrown size={14} />,
+    verified_badge: <IconRosetteDiscountCheckFilled size={14} />,
   }
   const colors = {
     new_follower: 'blue',
@@ -108,8 +110,9 @@ function NotificationIcon({ type }) {
 
 // ─── Texto descritivo por tipo ───────────────────────────────────────────────
 
-function notificationContent(notification) {
+function notificationContent(notification, profile) {
   const { type, metadata } = notification
+  const loggedUserAvatar = profile?.avatar ? AVATAR_PATH + profile.avatar : undefined
 
   switch (type) {
     case 'new_follower':
@@ -217,6 +220,23 @@ function notificationContent(notification) {
       }
     }
 
+    case 'verified_badge':
+      return {
+        avatarSrc: loggedUserAvatar,
+        href: `/${profile?.username}`,
+        isVerifiedBadge: true,
+        text: (
+          <>
+            <Text span fw={600} size="xs">
+              Parabéns!{' '}
+            </Text>
+            <Text span size="xs" c="dimmed">
+              Seu perfil foi verificado
+            </Text>
+          </>
+        ),
+      }
+
     default:
       return {
         href: '/',
@@ -233,8 +253,8 @@ function notificationContent(notification) {
 
 // ─── Item individual ─────────────────────────────────────────────────────────
 
-function NotificationItem({ notification, onRead }) {
-  const content = notificationContent(notification)
+function NotificationItem({ notification, onRead, profile }) {
+  const content = notificationContent(notification, profile)
   const isUnread = !notification.read
   const isProCourtesy = notification.type === 'pro_courtesy_granted'
 
@@ -274,6 +294,33 @@ function NotificationItem({ notification, onRead }) {
             <Avatar size={35} radius="xl" color="yellow" variant="light">
               👑
             </Avatar>
+          ) : content.isVerifiedBadge ? (
+            <Indicator
+              position="bottom-end"
+              offset={6}
+              withBorder
+              color="transparent"
+              size={20}
+              label={
+                <IconRosetteDiscountCheckFilled size={14} style={{ display: 'block' }} />
+              }
+              styles={{
+                indicator: {
+                  padding: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderWidth: 2,
+                },
+              }}
+            >
+              <Avatar
+                src={content.avatarSrc}
+                alt={content.avatarAlt}
+                size={35}
+                radius="xl"
+              />
+            </Indicator>
           ) : (
             <Avatar
               src={content.avatarSrc}
@@ -327,7 +374,7 @@ function NotificationSkeleton() {
 // ─── Componente principal ────────────────────────────────────────────────────
 
 export default function Notifications({ limit = 40 }) {
-  const { user } = useAuth()
+  const { user, profile } = useAuth()
   const queryClient = useQueryClient()
 
   const markAllRef = useRef(null)
@@ -418,7 +465,11 @@ export default function Notifications({ limit = 40 }) {
           notifications.slice(0, limit).map((notification, index) => (
             <React.Fragment key={notification.id}>
               {index > 0 && <Divider />}
-              <NotificationItem notification={notification} onRead={markOne} />
+              <NotificationItem
+                notification={notification}
+                onRead={markOne}
+                profile={profile}
+              />
             </React.Fragment>
           ))}
       </Stack>
