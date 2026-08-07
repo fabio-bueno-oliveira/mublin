@@ -176,7 +176,7 @@ export default function Home() {
               <Title order={3} fw={600} fz="lg">
                 Novos por aqui
               </Title>
-              {recentProfiles.length > 4 && (
+              {recentProfiles?.length > 4 && (
                 <Group>
                   <ThemeIcon
                     variant="default"
@@ -295,13 +295,13 @@ export default function Home() {
               </div>
             </Box>
 
-            {globalEvents.length > 0 && (
+            {globalEvents?.length > 0 && (
               <>
                 <Group justify="space-between" align="center" mt="lg" mb="xs">
                   <Title order={3} fw={600} fz="lg">
                     Eventos próximos
                   </Title>
-                  {globalEvents.length > 2 && (
+                  {globalEvents?.length > 2 && (
                     <Group>
                       <ThemeIcon
                         variant="default"
@@ -425,7 +425,7 @@ export default function Home() {
               <Title order={3} fw={600} fz="lg">
                 Notícias recentes
               </Title>
-              {news.length > 2 && (
+              {news?.length > 2 && (
                 <Group>
                   <ThemeIcon
                     variant="default"
