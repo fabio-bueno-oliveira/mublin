@@ -104,6 +104,53 @@ export async function fetchArtistRoles(artistId) {
   return data
 }
 
+// Retorna os artistas cujo gênero principal (genre_id) ou secundário (genre_2_id)
+// pertence a uma categoria de gênero (genres.category_id).
+// OBS: assume que a tabela `genres` tem uma coluna `category_id` (fk para genre_categories.id).
+// Ajuste o nome da coluna abaixo caso o schema real seja diferente.
+export async function fetchArtistsByGenreCategory(categoryId) {
+  // 1. quais genres pertencem a essa categoria
+  const { data: genres, error: genresError } = await supabase
+    .from('genres')
+    .select('id')
+    .eq('id_category', categoryId)
+
+  if (genresError) {
+    throw new Error(genresError.message)
+  }
+
+  const genreIds = genres?.map((genre) => genre.id) ?? []
+  if (genreIds.length === 0) {
+    return []
+  }
+
+  // 2. artistas com genre_id OU genre_2_id dentro dessa lista
+  const idsList = genreIds.join(',')
+
+  const { data, error } = await supabase
+    .from('artists')
+    .select(
+      `
+      id,
+      name,
+      slug,
+      picture,
+      is_band,
+      is_verified,
+      genre:genres!artists_genre_id_fkey ( name_ptbr ),
+      genre_2:genres!artists_genre_2_id_fkey ( name_ptbr )
+    `,
+    )
+    .eq('is_active', true)
+    .or(`genre_id.in.(${idsList}),genre_2_id.in.(${idsList})`)
+    .order('name', { ascending: true })
+
+  if (error) {
+    throw new Error(error.message)
+  }
+  return data
+}
+
 export async function searchArtist(keyword) {
   const { data, error } = await supabase
     .from('artists')

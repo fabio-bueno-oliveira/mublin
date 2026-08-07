@@ -53,6 +53,7 @@ import {
   IconCircleArrowLeftFilled,
   IconCircleArrowRightFilled,
   IconBriefcase,
+  IconArrowRight,
 } from '@tabler/icons-react'
 import { getAvatarUrl } from '../utils/profile'
 
@@ -178,7 +179,7 @@ export default function Search() {
     queryKey: ['genre-categories'],
     queryFn: fetchGenreCategories,
     enabled: !q,
-    staleTime: 1000 * 60 * 60, // muda raramente
+    staleTime: 1000 * 60 * 60,
   })
 
   // Vaga aleatória — uma nova a cada vez que a tela de busca é aberta sem "q"
@@ -795,52 +796,73 @@ export default function Search() {
               </EmptyState>
 
               {randomOpening && (
-                <Paper
-                  mt="lg"
-                  component={Link}
-                  to={`/project/${randomOpening.project_slug}`}
-                  withBorder
-                  radius="lg"
-                  p="md"
-                  style={{ textDecoration: 'none', color: 'inherit' }}
-                >
-                  <Group justify="space-between" wrap="nowrap" gap="md">
-                    <Group gap="md" wrap="nowrap" style={{ minWidth: 0 }}>
-                      <Avatar
-                        size={66}
-                        radius="md"
-                        src={
-                          randomOpening.project_picture
-                            ? `${PATH_PROJECT_AVATAR + randomOpening.project_id}/${
-                                randomOpening.project_picture
-                              }`
-                            : undefined
-                        }
+                <Stack gap={8}>
+                  <Text mt="lg" size="xs" c="dimmed" tt="uppercase" fw={300}>
+                    Vaga em destaque
+                  </Text>
+                  <Paper
+                    component={Link}
+                    to={`/project/${randomOpening.project_slug}`}
+                    withBorder
+                    radius="lg"
+                    p="md"
+                    style={{ textDecoration: 'none', color: 'inherit' }}
+                  >
+                    <Group justify="space-between" wrap="nowrap" gap="md">
+                      <Group gap="md" wrap="nowrap" style={{ minWidth: 0 }}>
+                        <Avatar
+                          size={66}
+                          radius="md"
+                          src={
+                            randomOpening.project_picture
+                              ? `${PATH_PROJECT_AVATAR + randomOpening.project_id}/${
+                                  randomOpening.project_picture
+                                }`
+                              : undefined
+                          }
+                        >
+                          <IconBriefcase size={22} />
+                        </Avatar>
+                        <Box style={{ minWidth: 0 }}>
+                          <Text size="sm">
+                            {randomOpening.role_description_ptbr},{' '}
+                            <Text span tt="lowercase">
+                              {randomOpening.genre_name_ptbr}
+                            </Text>{' '}
+                            em
+                          </Text>
+                          <Text size="md" fw={600} truncate="end">
+                            {randomOpening.project_name}
+                          </Text>
+                        </Box>
+                      </Group>
+                      <Button
+                        visibleFrom="sm"
+                        size="md"
+                        variant="light"
+                        color="gray"
+                        rightSection={<IconArrowRight size={16} />}
+                        component="span"
+                        flex="0 0 auto"
                       >
-                        <IconBriefcase size={22} />
-                      </Avatar>
-                      <Box style={{ minWidth: 0 }}>
-                        <Text size="xs" c="dimmed" tt="uppercase" fw={300} lts="0.03em">
-                          Vaga em destaque
-                        </Text>
-                        <Text fw={600} truncate="end">
-                          {randomOpening.project_name}
-                          {` busca ${randomOpening.role_description_ptbr}`}
-                        </Text>
-                        <Text size="xs" fw={300} truncate="end">
-                          Gênero: {randomOpening.genre_name_ptbr}
-                        </Text>
-                      </Box>
+                        Ver vaga
+                      </Button>
+                      <ActionIcon
+                        hiddenFrom="sm"
+                        size="xl"
+                        radius="xl"
+                        variant="light"
+                        color="gray"
+                      >
+                        <IconArrowRight size={16} />
+                      </ActionIcon>
                     </Group>
-                    <Button size="xs" variant="light" component="span" flex="0 0 auto">
-                      Ver vaga
-                    </Button>
-                  </Group>
-                </Paper>
+                  </Paper>
+                </Stack>
               )}
 
               {!!genreCategories?.length && (
-                <Box>
+                <Box mt="md">
                   <Title order={4} fw={600} mb="sm">
                     Explore por gênero
                   </Title>

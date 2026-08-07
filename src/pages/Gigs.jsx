@@ -1,10 +1,12 @@
 import { useEffect } from 'react'
 import { Helmet } from 'react-helmet-async'
+import { useNavigate } from 'react-router-dom'
 import AppNavbarMobile from '../components/AppNavbarMobile'
-import { Container, Alert, Affix } from '@mantine/core'
-import { IconExclamationCircle } from '@tabler/icons-react'
+import { Container, Affix } from '@mantine/core'
+import Maintenance from '../components/Maintenance'
 
 export default function Gigs() {
+  const navigate = useNavigate()
   useEffect(() => {
     scrollTo({ y: 0 })
   }, [])
@@ -22,16 +24,7 @@ export default function Gigs() {
       </Affix>
 
       <Container size="sm" py="xs" px={{ base: 'md', sm: 0 }} mt={{ base: 62, sm: 0 }}>
-        <Alert
-          mt="xl"
-          variant="light"
-          color="gray"
-          title="Página em manutenção"
-          icon={<IconExclamationCircle />}
-        >
-          Esta página está em manutenção, pedimos desculpas pelo inconveniente. Voltamos
-          em breve!
-        </Alert>
+        <Maintenance onBack={() => navigate(-1) || navigate('/home')} />
       </Container>
     </>
   )
