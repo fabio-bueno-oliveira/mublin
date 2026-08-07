@@ -6,12 +6,12 @@ import { IconBrandInstagram } from '@tabler/icons-react'
 function SobreContent() {
   return (
     <Stack gap="sm">
-      <Text size="sm" c="dimmed" lh={1.6}>
+      <Text size="sm" lh={1.6} mt="xs">
         Mublin é a rede profissional para músicos, produtores, roadies e todos que fazem a
         música acontecer. Nossa missão é conectar profissionais da música e abrir mais
         oportunidades de trabalho — de gigs pontuais a projetos de longo prazo.
       </Text>
-      <Text size="sm" c="dimmed" lh={1.6}>
+      <Text size="sm" lh={1.6}>
         Estamos em desenvolvimento constante, construindo funcionalidades junto com a
         própria comunidade musical.
       </Text>
@@ -22,12 +22,12 @@ function SobreContent() {
 function PrivacidadeContent() {
   return (
     <Stack gap="sm">
-      <Text size="sm" c="dimmed" lh={1.6}>
+      <Text size="sm" lh={1.6} mt="xs">
         Levamos a privacidade dos seus dados a sério. Em resumo: usamos suas informações
         apenas para viabilizar as funcionalidades da plataforma (perfil, conexões,
         oportunidades) e não vendemos seus dados a terceiros.
       </Text>
-      <Text size="sm" c="dimmed" lh={1.6}>
+      <Text size="sm" lh={1.6}>
         Esta é uma versão preliminar. Uma política de privacidade completa, em
         conformidade com a LGPD, será publicada em breve.
       </Text>
@@ -38,7 +38,7 @@ function PrivacidadeContent() {
 function ContatoContent() {
   return (
     <Stack gap="md">
-      <Text size="sm" c="dimmed" lh={1.6}>
+      <Text size="sm" c="dimmed" lh={1.6} mt="xs">
         Fale com a gente pelo Instagram:
       </Text>
       <Stack gap="xs">
@@ -97,6 +97,10 @@ export default function PublicFooter() {
       title,
       centered: true,
       radius: 'md',
+      overlayProps: {
+        backgroundOpacity: 0.55,
+        blur: 3,
+      },
       children: content,
     })
   }
