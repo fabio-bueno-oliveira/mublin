@@ -74,6 +74,7 @@ import {
   IconSchool, IconUserCircle,
   IconExternalLink,
   IconSettings,
+  IconArrowRight,
 } from '@tabler/icons-react'
 import ProfileHeaderMobile from '../components/profile/ProfileHeaderMobile'
 import AppNavbarMobile from '../components/AppNavbarMobile'
@@ -529,7 +530,7 @@ export default function Profile() {
     },
   })
 
-  const rolesOrdered = profile?.profile_roles
+  const rolesOrdered = profile?.roles
     ?.slice()
     ?.sort(
       (a, b) =>
@@ -1796,25 +1797,6 @@ export default function Profile() {
                                 text="Equipamento"
                                 ml={{ base: 'sm', md: 0 }}
                               />
-                              <Button
-                                size="xs"
-                                variant="light"
-                                color="var(--mantine-color-text)"
-                                rightSection={
-                                  <Badge
-                                    circle
-                                    size="sm"
-                                    color="mublinColor"
-                                    variant="filled"
-                                  >
-                                    {gear.length}
-                                  </Badge>
-                                }
-                                component={Link}
-                                to={`/${username}/gear`}
-                              >
-                                Ver tudo
-                              </Button>
                               {isOwnProfile && (
                                 <ActionIcon
                                   variant="light"
@@ -1827,12 +1809,12 @@ export default function Profile() {
                                   to="/settings/gear"
                                   mr="sm"
                                 >
-                                  <IconSettings size={18} />
+                                  <IconPencil size={18} />
                                 </ActionIcon>
                               )}
                             </Group>
 
-                            <Group>
+                            <Group mr={{ base: 'sm', md: 0 }}>
                               <ThemeIcon
                                 variant="default"
                                 style={{
@@ -1873,7 +1855,7 @@ export default function Profile() {
                                 cursor: gearScroller.isDragging ? 'grabbing' : 'default',
                               }}
                             >
-                              <Group gap="xs" wrap="nowrap">
+                              <Group mx={{ base: 'xs', md: 0 }} gap="xs" wrap="nowrap">
                                 {/* {isMobile && (
                                   <Box style={{ flexShrink: 10, width: '5px' }} />
                                 )} */}
@@ -1912,6 +1894,24 @@ export default function Profile() {
                                 ))}
                               </Group>
                             </div>
+                            <Group justify="center" mt="md" mx={{ base: 'xs', md: 0 }}>
+                              <Button
+                                w="100%"
+                                size="md"
+                                variant="light"
+                                color="var(--mantine-color-text)"
+                                // rightSection={
+                                //   <Badge circle size="md" variant="default">
+                                //     {gear.length}
+                                //   </Badge>
+                                // }
+                                rightSection={<IconArrowRight size={16} />}
+                                component={Link}
+                                to={`/${username}/gear`}
+                              >
+                                Ver tudo
+                              </Button>
+                            </Group>
                             <Box ml={{ base: 'sm', md: 0 }} mt="lg">
                               <Text fw={600} size="sm">
                                 Setups de {profile.full_name}{' '}

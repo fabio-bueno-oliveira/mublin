@@ -209,8 +209,8 @@ export async function fetchProfileProjects(profileId) {
   return data
 }
 
-export async function fetchProfileGear(profileId) {
-  const { data, error } = await supabase
+export async function fetchProfileGear(profileId, limit = null) {
+  let query = supabase
     .from('profile_gear')
     .select(
       `
@@ -222,6 +222,13 @@ export async function fetchProfileGear(profileId) {
     `,
     )
     .eq('id_user', profileId)
+    .order('is_featured', { ascending: false })
+
+  if (limit) {
+    query = query.limit(limit)
+  }
+
+  const { data, error } = await query
   if (error) {
     throw new Error(error.message)
   }

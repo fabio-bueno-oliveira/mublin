@@ -1,16 +1,18 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { fetchProfileBasicDetails } from '../queries/profiles'
+import { fetchProfileBasicDetails, fetchProfileGear } from '../queries/profiles'
 import { useAuth } from '../hooks/useAuth'
 import {
   Container,
   Box,
+  Image,
   Avatar,
   Title,
   Text,
   Button,
   Group,
   Flex,
+  Paper,
   Stack,
   Skeleton,
   Alert,
@@ -47,6 +49,13 @@ export default function ProfilePublic() {
         Number(b.roles?.instrumentalist) - Number(a.roles?.instrumentalist),
     )
 
+  const { data: gear = [], isLoading: loadingGear } = useQuery({
+    queryKey: ['user-gear', profile?.id],
+    queryFn: () => fetchProfileGear(profile.id, 3),
+    enabled: !!profile?.id,
+    staleTime: 1000 * 60 * 5,
+  })
+
   if (authLoading) {
     return (
       <Container size="sm" py={48}>
@@ -59,13 +68,18 @@ export default function ProfilePublic() {
     )
   }
 
-  if (isLoading) {
+  if (authLoading || isLoading || loadingGear) {
     return (
-      <Container size="sm" py={48}>
-        <Stack align="center" gap="md">
-          <Skeleton circle height={96} />
-          <Skeleton height={24} width={200} radius="xl" />
-          <Skeleton height={16} width={120} radius="xl" />
+      <Container size="sm" mt={60}>
+        <Stack gap="xl">
+          <Group align="center" gap="md">
+            <Skeleton radius="xl" height={100} width={100} />
+            <Stack gap={8}>
+              <Skeleton height={16} width={120} radius="xl" />
+              <Skeleton height={24} width={200} radius="xl" />
+              <Skeleton height={14} width={120} radius="xl" />
+            </Stack>
+          </Group>
         </Stack>
       </Container>
     )
@@ -76,7 +90,7 @@ export default function ProfilePublic() {
       <Container size="sm" py={48}>
         <Alert
           icon={<IconMoodSad size={18} />}
-          title="Perfil não encontrado"
+          title="P />ão encontrado"
           color="gray"
           radius="md"
         >
@@ -88,17 +102,19 @@ export default function ProfilePublic() {
 
   return (
     <>
-      <Container size="sm" pt={60}>
+      <Container size="sm" mt={60}>
         <Stack gap="xl">
           <Group align="center" gap="md">
             <Avatar
-              size={96}
+              radius="xl"
+              size={100}
               src={profile.avatar ? AVATAR_PATH + profile.avatar : undefined}
             />
             <Stack gap={0}>
               <Badge
                 size="md"
                 color="var(--mantine-color-text)"
+                c="gray"
                 variant="light"
                 tt="lowercase"
                 fw={300}
@@ -119,13 +135,51 @@ export default function ProfilePublic() {
                     .join(', ')}
                 </Text>
               )}
-              {profile.title && (
-                <Text size="sm" maw={420}>
-                  {profile.title}
-                </Text>
-              )}
+              {profile.title && <Text size="sm">{profile.title}</Text>}
             </Stack>
           </Group>
+
+          {gear.length >= 2 && (
+            <Flex mx="sm" gap="xs" justify="flex-start" align="center" id="gear">
+              {gear.map((item) => (
+                <Flex
+                  key={item.id_product}
+                  direction="column"
+                  justify="flex-start"
+                  align="center"
+                  w={60}
+                >
+                  <Image
+                    src={`https://ik.imagekit.io/mublin/products/tr:w-80,h-80,cm-pad_resize,bg-FFFFFF,fo-x/${item.products?.picture}`}
+                    h={40}
+                    mah={40}
+                    w="auto"
+                    fit="inherit"
+                    mb={8}
+                    radius="xl"
+                  />
+                  <Text ta="center" size="11px" c="dimmed" fw={500} lineClamp={1}>
+                    {item.products?.brands?.name}
+                  </Text>
+                  <Text
+                    size="11px"
+                    fw={500}
+                    ta="center"
+                    lineClamp={1}
+                    style={{ whiteSpace: 'pre-wrap' }}
+                    title={item.products?.name}
+                  >
+                    {item.products?.name}
+                  </Text>
+                </Flex>
+              ))}
+              <Paper withBorder p={8} w={64} ml={4} radius="lg">
+                <Text size="11px" ta="center" lh={1.2} c="dimmed">
+                  Entre para ver todos os itens
+                </Text>
+              </Paper>
+            </Flex>
+          )}
 
           {/* CTA */}
           <Box
@@ -145,7 +199,7 @@ export default function ProfilePublic() {
                   Projetos, gigs, equipamento e muito mais
                 </Text>
               </Stack>
-              <Group gap="sm">
+              <Group gap="sm" mb="xs">
                 <Button
                   variant="outline"
                   color="var(--mantine-color-text)"
