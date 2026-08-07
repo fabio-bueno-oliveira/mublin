@@ -277,6 +277,7 @@ export default function ScenePlayer({ scenes, initialIndex, onClose }) {
                 isVertical
                 autoPlay
                 hideCaptionOnVideo
+                hideBottomControls
                 onProgress={setSegmentProgress}
               />
             </motion.div>

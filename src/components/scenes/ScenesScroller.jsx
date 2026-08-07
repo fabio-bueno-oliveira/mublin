@@ -1,7 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { ScrollArea, Group, Box } from '@mantine/core'
 import { IconPlayerPlayFilled } from '@tabler/icons-react'
-import { useEffect, useRef } from 'react'
 import ScenePlayer from './ScenePlayer'
 
 function SceneThumb({ scene, onOpen }) {
@@ -65,12 +64,13 @@ function SceneThumb({ scene, onOpen }) {
           padding: '8px',
           background: 'linear-gradient(transparent, rgba(0,0,0,0.7))',
           color: '#fff',
-          fontSize: 12,
-          fontWeight: 500,
+          fontSize: 11,
+          fontWeight: 200,
           textTransform: 'lowercase',
         }}
+        opacity={0.8}
       >
-        @{scene.profile?.full_name}
+        por <b>@{scene.profile?.full_name}</b>
       </Box>
 
       <Box

@@ -15,6 +15,7 @@ export default function VideoPlayerNative({
   isVertical = false,
   autoPlay = false,
   hideCaptionOnVideo = false,
+  hideBottomControls = false,
   onProgress,
 }) {
   const videoRef = useRef(null)
@@ -151,45 +152,47 @@ export default function VideoPlayerNative({
       )}
 
       {/* Controles */}
-      <div style={s.controls}>
-        <div
-          style={s.progressWrap}
-          onClick={seek}
-          onKeyDown={(e) => {
-            const v = videoRef.current
-            if (e.key === 'ArrowRight') {
-              v.currentTime = Math.min(v.duration, v.currentTime + 5)
-            }
-            if (e.key === 'ArrowLeft') {
-              v.currentTime = Math.max(0, v.currentTime - 5)
-            }
-          }}
-          role="slider"
-          tabIndex={0}
-          aria-label="Progresso do vídeo"
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-valuenow={Math.round(progress)}
-        >
-          <div style={{ ...s.progressFill, width: `${progress}%` }} />
+      {!hideBottomControls && (
+        <div style={s.controls}>
+          <div
+            style={s.progressWrap}
+            onClick={seek}
+            onKeyDown={(e) => {
+              const v = videoRef.current
+              if (e.key === 'ArrowRight') {
+                v.currentTime = Math.min(v.duration, v.currentTime + 5)
+              }
+              if (e.key === 'ArrowLeft') {
+                v.currentTime = Math.max(0, v.currentTime - 5)
+              }
+            }}
+            role="slider"
+            tabIndex={0}
+            aria-label="Progresso do vídeo"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={Math.round(progress)}
+          >
+            <div style={{ ...s.progressFill, width: `${progress}%` }} />
+          </div>
+          <div style={s.bottomRow}>
+            <button type="button" style={s.btn} onClick={togglePlay}>
+              {playing ? (
+                <IconPlayerPauseFilled size={18} />
+              ) : (
+                <IconPlayerPlayFilled size={18} />
+              )}
+            </button>
+            <button type="button" style={s.btn} onClick={toggleMute}>
+              {muted ? <IconVolumeOff stroke={2} /> : <IconVolume stroke={2} />}
+            </button>
+            <span style={s.time}> </span>
+            <button type="button" style={s.btn} onClick={fullscreen}>
+              <IconMaximize size={18} stroke={2} />
+            </button>
+          </div>
         </div>
-        <div style={s.bottomRow}>
-          <button type="button" style={s.btn} onClick={togglePlay}>
-            {playing ? (
-              <IconPlayerPauseFilled size={18} />
-            ) : (
-              <IconPlayerPlayFilled size={18} />
-            )}
-          </button>
-          <button type="button" style={s.btn} onClick={toggleMute}>
-            {muted ? <IconVolumeOff stroke={2} /> : <IconVolume stroke={2} />}
-          </button>
-          <span style={s.time}> </span>
-          <button type="button" style={s.btn} onClick={fullscreen}>
-            <IconMaximize size={18} stroke={2} />
-          </button>
-        </div>
-      </div>
+      )}
     </Box>
   )
 }
