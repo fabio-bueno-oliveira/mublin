@@ -111,7 +111,7 @@ export default function Plan() {
           withBorder
           radius="md"
           padding="lg"
-          style={{ borderColor: isPro ? 'var(--mantine-color-yellow-3)' : undefined }}
+          style={{ borderColor: isPro ? 'var(--mantine-color-teal-3)' : undefined }}
         >
           <Group justify="space-between" align="flex-start" mb="md">
             <Group gap="sm">
@@ -119,7 +119,7 @@ export default function Plan() {
                 size={36}
                 radius="md"
                 variant="light"
-                color={isPro ? 'yellow' : 'gray'}
+                color={isPro ? 'teal' : 'gray'}
               >
                 <IconCrown size={20} />
               </ThemeIcon>
@@ -222,6 +222,7 @@ export default function Plan() {
                 'Contador de visualizações no perfil',
                 'Mais espaço para portfolio',
                 'Cadastro de equipamentos no perfil',
+                'Suporte personalizado',
               ].map((item) => (
                 <Group key={item} gap={6}>
                   <IconCheck size={14} color="var(--mantine-color-teal-6)" />
