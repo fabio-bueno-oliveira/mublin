@@ -56,13 +56,13 @@ export default function AppFooterMobile() {
           </UnstyledButton>
 
           <UnstyledButton
-            className={navItemClass(isActive('/gigs'))}
-            onClick={() => navigate('/gigs')}
-            opacity={isActive('/gigs') && !drawerOpen ? 1 : 0.65}
+            className={navItemClass(isActive('/search'))}
+            onClick={() => navigate('/search')}
+            opacity={isActive('/search') && !drawerOpen ? 1 : 0.65}
           >
-            <IconMusic />
+            <IconSearch />
             <Text size="10px" lh={1.2}>
-              Gigs
+              Buscar
             </Text>
           </UnstyledButton>
 
@@ -80,13 +80,13 @@ export default function AppFooterMobile() {
           </UnstyledButton>
 
           <UnstyledButton
-            className={navItemClass(isActive('/search'))}
-            onClick={() => navigate('/search')}
-            opacity={isActive('/search') && !drawerOpen ? 1 : 0.65}
+            className={navItemClass(isActive('/gigs'))}
+            onClick={() => navigate('/gigs')}
+            opacity={isActive('/gigs') && !drawerOpen ? 1 : 0.65}
           >
-            <IconSearch />
+            <IconMusic />
             <Text size="10px" lh={1.2}>
-              Buscar
+              Gigs
             </Text>
           </UnstyledButton>
 

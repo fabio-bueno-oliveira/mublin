@@ -6,7 +6,9 @@ import { useQuery } from '@tanstack/react-query'
 import { fetchRecentProfiles } from '../queries/search'
 import { fetchUpcomingEvents } from '../queries/events'
 import { fetchNewsFeed } from '../queries/feed'
+import { fetchScenes } from '../queries/scenes'
 import NewsCard from '../components/feed/NewsCard'
+import ScenesScroller from '../components/scenes/ScenesScroller'
 // prettier-ignore
 import {
   Skeleton,
@@ -71,6 +73,12 @@ export default function Home() {
   const { data: news = [], isLoading: loadingNews } = useQuery({
     queryKey: ['news', user?.id],
     queryFn: () => fetchNewsFeed(5),
+    staleTime: 1000 * 60 * 5,
+  })
+
+  const { data: scenes = [], isLoading: loadingScenes } = useQuery({
+    queryKey: ['scenes'],
+    queryFn: () => fetchScenes(8),
     staleTime: 1000 * 60 * 5,
   })
 
@@ -310,6 +318,24 @@ export default function Home() {
                 </Group>
               </div>
             </Box>
+
+            {(loadingScenes || scenes?.length > 0) && (
+              <>
+                <Title order={3} fw={600} fz="lg" mt="lg">
+                  Cenas
+                </Title>
+
+                {loadingScenes ? (
+                  <Group wrap="nowrap" gap={10}>
+                    {[1, 2, 3, 4].map((i) => (
+                      <Skeleton key={i} width={130} height={230} radius={12} />
+                    ))}
+                  </Group>
+                ) : (
+                  <ScenesScroller scenes={scenes} />
+                )}
+              </>
+            )}
 
             {globalEvents?.length > 0 && (
               <>

@@ -864,7 +864,7 @@ export default function Search() {
               {!!genreCategories?.length && (
                 <Box mt="md">
                   <Title order={4} fw={600} mb="sm">
-                    Explore por gênero2
+                    Explore por gênero
                   </Title>
                   <SimpleGrid cols={{ base: 2, xs: 3, sm: 4, md: 5, lg: 6 }} spacing="sm">
                     {genreCategories.map((genre) => {

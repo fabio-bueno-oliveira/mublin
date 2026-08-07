@@ -9,7 +9,14 @@ import {
   IconVolumeOff,
 } from '@tabler/icons-react'
 
-export default function VideoPlayerNative({ src, title, isVertical = false }) {
+export default function VideoPlayerNative({
+  src,
+  title,
+  isVertical = false,
+  autoPlay = false,
+  hideCaptionOnVideo = false,
+  onProgress,
+}) {
   const videoRef = useRef(null)
   const wrapRef = useRef(null)
   const [playing, setPlaying] = useState(false)
@@ -41,6 +48,25 @@ export default function VideoPlayerNative({ src, title, isVertical = false }) {
     }
   }, [])
 
+  useEffect(() => {
+    if (autoPlay && ready && videoRef.current) {
+      videoRef.current.muted = false
+      setMuted(false)
+      videoRef.current
+        .play()
+        .then(() => setPlaying(true))
+        .catch(() => {
+          // se o navegador bloquear autoplay com som, tenta mudo
+          videoRef.current.muted = true
+          setMuted(true)
+          videoRef.current
+            .play()
+            .then(() => setPlaying(true))
+            .catch(() => {})
+        })
+    }
+  }, [autoPlay, ready])
+
   const togglePlay = () => {
     const v = videoRef.current
     if (v.paused) {
@@ -57,7 +83,9 @@ export default function VideoPlayerNative({ src, title, isVertical = false }) {
     if (!v.duration) {
       return
     }
-    setProgress((v.currentTime / v.duration) * 100)
+    const ratio = (v.currentTime / v.duration) * 100
+    setProgress(ratio)
+    onProgress?.(ratio) // avisa o componente pai, se houver
   }
 
   const seek = (e) => {
@@ -103,7 +131,7 @@ export default function VideoPlayerNative({ src, title, isVertical = false }) {
       </video>
 
       {/* Badge com título — só no vertical */}
-      {isVertical && title && <div style={s.badge}>{title}</div>}
+      {isVertical && title && !hideCaptionOnVideo && <div style={s.badge}>{title}</div>}
 
       {/* Overlay de play central */}
       {!playing && (
