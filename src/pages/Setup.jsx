@@ -459,7 +459,7 @@ export default function Setup() {
     <>
       <Helmet>
         <meta charSet="utf-8" />
-        <title>{setup?.name} · Setups · Mublin</title>
+        <title>{`Setup · ${setup?.name} · Mublin`}</title>
         <link rel="canonical" href={`https://mublin.com/setup/${setup?.id}`} />
         <meta name="description" content={setup?.description} />
       </Helmet>
@@ -814,8 +814,8 @@ export default function Setup() {
           )}
 
           <Accordion variant="separated" order={3} defaultValue="Apples">
-            <Accordion.Item value="setup-items">
-              <Accordion.Control>
+            <Accordion.Item value="setup-items" disabled={!canEditItems}>
+              <Accordion.Control disabled={!canEditItems}>
                 <Title order={3} fw={600} fz="lg">
                   Editar setup
                 </Title>

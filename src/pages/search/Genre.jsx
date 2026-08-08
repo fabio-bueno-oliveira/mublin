@@ -95,7 +95,7 @@ export default function SearchGenre() {
         {loadingGenreCategory && <Loader size="sm" variant="dots" color="gray" mt={20} />}
 
         <Stack gap="xs" mb="xl" mt="lg">
-          <Text fw={600} size="26px" lh={1.2}>
+          <Text fw={600} size="24px" lh={1.2}>
             Artistas relacionados
           </Text>
 
