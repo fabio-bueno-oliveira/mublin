@@ -55,6 +55,7 @@ import {
   Loader,
   Pagination,
   em,
+  Accordion,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { useMediaQuery, useDisclosure, useDebouncedValue } from '@mantine/hooks'
@@ -464,10 +465,10 @@ export default function Setup() {
       </Helmet>
 
       <Affix position={{ top: 0, left: 0 }} hiddenFrom="sm">
-        <AppNavbarMobile pageName={setup.name} />
+        <AppNavbarMobile pageName={`Setup: ${setup.name}`} />
       </Affix>
 
-      <Container size="sm" py={isMobile ? 12 : 40}>
+      <Container size="lg" pt="xs" px={{ base: 'md', sm: 0 }} mt={{ base: 62, sm: 0 }}>
         <Stack gap="lg">
           {/* ── Cabeçalho do setup ── */}
           <Group align="flex-start" wrap="nowrap">
@@ -488,13 +489,9 @@ export default function Setup() {
                   </ActionIcon>
                 )}
               </Group>
-              {setup.description && (
-                <Text size="sm" c="dimmed" mt={2}>
-                  {setup.description}
-                </Text>
-              )}
               <Group gap={6} mt={8}>
                 <Badge
+                  size="xs"
                   variant="light"
                   radius="xl"
                   color="var(--mantine-color-dimmed)"
@@ -524,6 +521,7 @@ export default function Setup() {
                     <Text
                       component={Link}
                       to={`/${setup.owner.username}`}
+                      lineClamp={1}
                       size="xs"
                       fw={500}
                       style={{
@@ -542,7 +540,7 @@ export default function Setup() {
                   <Button
                     size="xs"
                     variant={hasLiked ? 'filled' : 'light'}
-                    color={hasLiked ? 'red' : 'gray'}
+                    color={hasLiked ? 'red.9' : 'gray'}
                     radius="xl"
                     leftSection={
                       hasLiked ? <IconHeartFilled size={14} /> : <IconHeart size={14} />
@@ -551,11 +549,6 @@ export default function Setup() {
                     onClick={handleToggleLike}
                   >
                     {likesCount > 0 ? likesCount : ''}{' '}
-                    {likesCount === 1
-                      ? 'curtida'
-                      : hasLiked || likesCount > 0
-                        ? 'curtidas'
-                        : 'Curtir'}
                   </Button>
                 </Tooltip>
               </Flex>
@@ -720,6 +713,12 @@ export default function Setup() {
             </>
           )}
 
+          {setup.description && (
+            <Text size="sm" c="dimmed">
+              {setup.description}
+            </Text>
+          )}
+
           {/* ── Itens do setup ── */}
           {/* ── Foto real do setup + Chain visual ── */}
           {setup?.photo && (
@@ -754,7 +753,7 @@ export default function Setup() {
             <Box>
               <Group justify="space-between" align="center" mb={8}>
                 <Title order={3} fw={600} fz="lg">
-                  Composição do setup
+                  Composição do setup {items.length ? ` (${items.length})` : ''}
                 </Title>
 
                 <Button
@@ -814,170 +813,183 @@ export default function Setup() {
             </Box>
           )}
 
-          <Title order={3} fw={600} fz="lg">
-            {`Itens do setup${items.length ? ` (${items.length})` : ''}`}
-          </Title>
+          <Accordion variant="separated" order={3} defaultValue="Apples">
+            <Accordion.Item value="setup-items">
+              <Accordion.Control>
+                <Title order={3} fw={600} fz="lg">
+                  Editar setup
+                </Title>
+              </Accordion.Control>
+              <Accordion.Panel px="md">
+                {canEditItems && (
+                  <Box mb="xs">
+                    <TextInput
+                      size="sm"
+                      variant="default"
+                      placeholder="Buscar equipamento pra adicionar..."
+                      value={productQuery}
+                      onChange={(e) => setProductQuery(e.currentTarget.value)}
+                    />
+                    {productQuery.trim().length >= 2 && (
+                      <Paper withBorder radius="md" mt={6} p={6}>
+                        {searchingProducts ? (
+                          <Skeleton height={32} />
+                        ) : productResults.length === 0 ? (
+                          <Text size="xs" c="dimmed" p={6}>
+                            Nenhum produto encontrado.
+                          </Text>
+                        ) : (
+                          <Stack gap={4}>
+                            {productResults.map((product) => (
+                              <Group key={product.id} justify="space-between" px={4}>
+                                <Group gap={8}>
+                                  <Image
+                                    src={
+                                      product.picture
+                                        ? PRODUCT_IMG + product.picture
+                                        : undefined
+                                    }
+                                    w={28}
+                                    h={28}
+                                    radius="sm"
+                                    fallbackSrc="https://placehold.co/28x28?text=%20"
+                                  />
+                                  <Text size="xs">
+                                    {product.brands?.name} {product.name}
+                                  </Text>
+                                </Group>
+                                <ActionIcon
+                                  size="sm"
+                                  variant="light"
+                                  loading={isAddingItem}
+                                  onClick={() => handleAddItem(product)}
+                                >
+                                  <IconPlus size={13} />
+                                </ActionIcon>
+                              </Group>
+                            ))}
+                          </Stack>
+                        )}
+                      </Paper>
+                    )}
+                  </Box>
+                )}
 
-          {canEditItems && (
-            <Box>
-              <TextInput
-                size="sm"
-                placeholder="Buscar equipamento pra adicionar..."
-                value={productQuery}
-                onChange={(e) => setProductQuery(e.currentTarget.value)}
-              />
-              {productQuery.trim().length >= 2 && (
-                <Paper withBorder radius="md" mt={6} p={6}>
-                  {searchingProducts ? (
-                    <Skeleton height={32} />
-                  ) : productResults.length === 0 ? (
-                    <Text size="xs" c="dimmed" p={6}>
-                      Nenhum produto encontrado.
-                    </Text>
-                  ) : (
-                    <Stack gap={4}>
-                      {productResults.map((product) => (
-                        <Group key={product.id} justify="space-between" px={4}>
-                          <Group gap={8}>
+                {loadingItems ? (
+                  <Skeleton height={120} radius="md" />
+                ) : items.length === 0 ? (
+                  <Text size="sm" c="dimmed">
+                    Nenhum item adicionado a este setup ainda.
+                  </Text>
+                ) : (
+                  <Stack gap={8}>
+                    {items.map((item) => (
+                      <Card key={item.id} withBorder radius="md" p="sm">
+                        <Flex justify="space-between" align="flex-start" wrap="nowrap">
+                          <Group gap={10} wrap="nowrap" style={{ flex: 1 }}>
                             <Image
                               src={
-                                product.picture
-                                  ? PRODUCT_IMG + product.picture
+                                item.products?.picture
+                                  ? PRODUCT_IMG + item.products.picture
                                   : undefined
                               }
-                              w={28}
-                              h={28}
+                              w={44}
+                              h={44}
                               radius="sm"
-                              fallbackSrc="https://placehold.co/28x28?text=%20"
+                              fallbackSrc="https://placehold.co/44x44?text=%20"
                             />
-                            <Text size="xs">
-                              {product.brands?.name} {product.name}
-                            </Text>
+                            <Box style={{ flex: 1 }}>
+                              <Text size="sm" fw={600}>
+                                {item.products?.brands?.name} {item.products?.name}
+                              </Text>
+                              {editingItemId === item.id ? (
+                                <TextInput
+                                  size="xs"
+                                  mt={4}
+                                  placeholder="Observação (opcional)"
+                                  value={editingItemDraft.comments}
+                                  onChange={(e) =>
+                                    setEditingItemDraft({
+                                      comments: e.currentTarget.value,
+                                    })
+                                  }
+                                />
+                              ) : (
+                                item.comments && (
+                                  <Text size="xs" c="dimmed" mt={2}>
+                                    {item.comments}
+                                  </Text>
+                                )
+                              )}
+                              {isCollabEligible && item.added_by && (
+                                <Text size="10px" c="dimmed" mt={4}>
+                                  Adicionado por{' '}
+                                  <Text component="span" size="10px" fw={600}>
+                                    @{item.added_by.username}
+                                  </Text>
+                                </Text>
+                              )}
+                            </Box>
                           </Group>
-                          <ActionIcon
-                            size="sm"
-                            variant="light"
-                            loading={isAddingItem}
-                            onClick={() => handleAddItem(product)}
-                          >
-                            <IconPlus size={13} />
-                          </ActionIcon>
-                        </Group>
-                      ))}
-                    </Stack>
-                  )}
-                </Paper>
-              )}
-            </Box>
-          )}
-
-          {loadingItems ? (
-            <Skeleton height={120} radius="md" />
-          ) : items.length === 0 ? (
-            <Text size="sm" c="dimmed">
-              Nenhum item adicionado a este setup ainda.
-            </Text>
-          ) : (
-            <Stack gap={8}>
-              {items.map((item) => (
-                <Card key={item.id} withBorder radius="md" p="sm">
-                  <Flex justify="space-between" align="flex-start" wrap="nowrap">
-                    <Group gap={10} wrap="nowrap" style={{ flex: 1 }}>
-                      <Image
-                        src={
-                          item.products?.picture
-                            ? PRODUCT_IMG + item.products.picture
-                            : undefined
-                        }
-                        w={44}
-                        h={44}
-                        radius="sm"
-                        fallbackSrc="https://placehold.co/44x44?text=%20"
-                      />
-                      <Box style={{ flex: 1 }}>
-                        <Text size="sm" fw={600}>
-                          {item.products?.brands?.name} {item.products?.name}
-                        </Text>
-                        {editingItemId === item.id ? (
-                          <TextInput
-                            size="xs"
-                            mt={4}
-                            placeholder="Observação (opcional)"
-                            value={editingItemDraft.comments}
-                            onChange={(e) =>
-                              setEditingItemDraft({ comments: e.currentTarget.value })
-                            }
-                          />
-                        ) : (
-                          item.comments && (
-                            <Text size="xs" c="dimmed" mt={2}>
-                              {item.comments}
-                            </Text>
-                          )
-                        )}
-                        {isCollabEligible && item.added_by && (
-                          <Text size="10px" c="dimmed" mt={4}>
-                            Adicionado por{' '}
-                            <Text component="span" size="10px" fw={600}>
-                              @{item.added_by.username}
-                            </Text>
-                          </Text>
-                        )}
-                      </Box>
-                    </Group>
-                    {canEditItems && (
-                      <Group gap={4} wrap="nowrap">
-                        {editingItemId === item.id ? (
-                          <>
-                            <ActionIcon
-                              size="sm"
-                              variant="light"
-                              color="green"
-                              onClick={() =>
-                                handleSaveItemComment(item.id, item.order_show)
-                              }
-                            >
-                              <IconCheck size={13} />
-                            </ActionIcon>
-                            <ActionIcon
-                              size="sm"
-                              variant="subtle"
-                              onClick={() => setEditingItemId(null)}
-                            >
-                              <IconX size={13} />
-                            </ActionIcon>
-                          </>
-                        ) : (
-                          <>
-                            <ActionIcon
-                              size="sm"
-                              variant="subtle"
-                              onClick={() => handleStartEditItem(item)}
-                            >
-                              <IconPencil size={13} />
-                            </ActionIcon>
-                            <ActionIcon
-                              size="sm"
-                              variant="subtle"
-                              color="red"
-                              onClick={() => handleRemoveItem(item.id)}
-                            >
-                              <IconTrash size={13} />
-                            </ActionIcon>
-                          </>
-                        )}
-                      </Group>
-                    )}
-                  </Flex>
-                </Card>
-              ))}
-            </Stack>
-          )}
+                          {canEditItems && (
+                            <Group gap={4} wrap="nowrap">
+                              {editingItemId === item.id ? (
+                                <>
+                                  <ActionIcon
+                                    size="sm"
+                                    variant="light"
+                                    color="green"
+                                    onClick={() =>
+                                      handleSaveItemComment(item.id, item.order_show)
+                                    }
+                                  >
+                                    <IconCheck size={13} />
+                                  </ActionIcon>
+                                  <ActionIcon
+                                    size="sm"
+                                    variant="subtle"
+                                    onClick={() => setEditingItemId(null)}
+                                  >
+                                    <IconX size={13} />
+                                  </ActionIcon>
+                                </>
+                              ) : (
+                                <>
+                                  <ActionIcon
+                                    size="sm"
+                                    variant="subtle"
+                                    onClick={() => handleStartEditItem(item)}
+                                  >
+                                    <IconPencil size={13} />
+                                  </ActionIcon>
+                                  <ActionIcon
+                                    size="sm"
+                                    variant="subtle"
+                                    color="red"
+                                    onClick={() => handleRemoveItem(item.id)}
+                                  >
+                                    <IconTrash size={13} />
+                                  </ActionIcon>
+                                </>
+                              )}
+                            </Group>
+                          )}
+                        </Flex>
+                      </Card>
+                    ))}
+                  </Stack>
+                )}
+              </Accordion.Panel>
+            </Accordion.Item>
+          </Accordion>
 
           {/* ── Comentários ── */}
-          <Title order={3} fw={600} fz="lg">
-            {`Comentários${commentsCount ? ` (${commentsCount})` : ''}`}
-          </Title>
+          <Group gap={6}>
+            <IconMessageCircle size={18} />
+            <Title order={3} fw={600} fz="lg">
+              {`Comentários${commentsCount ? ` (${commentsCount})` : ''}`}
+            </Title>
+          </Group>
 
           <Stack gap="md">
             {user && (
@@ -985,7 +997,8 @@ export default function Setup() {
                 <TextInput
                   placeholder="Deixe um comentário..."
                   style={{ flex: 1 }}
-                  size="sm"
+                  size="md"
+                  variant="unstyled"
                   value={newComment}
                   maxLength={500}
                   onChange={(e) => setNewComment(e.currentTarget.value)}
@@ -995,17 +1008,6 @@ export default function Setup() {
                       handleSendComment()
                     }
                   }}
-                  rightSection={
-                    newComment ? (
-                      <ActionIcon
-                        size="xs"
-                        variant="subtle"
-                        onClick={() => setNewComment('')}
-                      >
-                        <IconX size={12} />
-                      </ActionIcon>
-                    ) : null
-                  }
                 />
                 <ActionIcon
                   size="lg"
@@ -1028,14 +1030,9 @@ export default function Setup() {
               </Stack>
             ) : comments.length === 0 ? (
               <Paper withBorder radius="md" p="md">
-                <Group gap="xs">
-                  <ThemeIcon variant="light" color="gray" size="sm" radius="xl">
-                    <IconMessageCircle size={14} />
-                  </ThemeIcon>
-                  <Text size="sm" c="dimmed">
-                    Nenhum comentário ainda. Seja o primeiro!
-                  </Text>
-                </Group>
+                <Text size="sm" c="dimmed">
+                  Nenhum comentário ainda. Seja o primeiro!
+                </Text>
               </Paper>
             ) : (
               <>
@@ -1153,7 +1150,7 @@ export default function Setup() {
       >
         <Box
           style={{
-            overflowX: 'auto',
+            overflowX: 'visible',
             overflowY: 'hidden',
             paddingBottom: 8,
           }}
