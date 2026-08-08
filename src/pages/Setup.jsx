@@ -1,745 +1,696 @@
-import { useState } from 'react'
+import { useEffect } from 'react'
 import { Helmet } from 'react-helmet-async'
-import { useParams, useNavigate, Link } from 'react-router-dom'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
-import {
-  fetchSetupById,
-  fetchSetupItems,
-  fetchSetupCollaborators,
-  fetchCanEditSetup,
-  findProfileByUsername,
-  searchProducts,
-  updateSetupMeta,
-  addSetupItem,
-  updateSetupItem,
-  removeSetupItem,
-  addSetupCollaborator,
-  removeSetupCollaborator,
-} from '../queries/setups'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
+import { useQuery } from '@tanstack/react-query'
+import { fetchRecentProfiles } from '../queries/search'
+import { fetchUpcomingEvents } from '../queries/events'
+import { fetchNewsFeed } from '../queries/feed'
+import { fetchScenes } from '../queries/scenes'
+import NewsCard from '../components/feed/NewsCard'
+import ScenesScroller from '../components/scenes/ScenesScroller'
+// prettier-ignore
 import {
-  Affix,
-  Container,
-  Box,
-  EmptyState,
-  Button,
-  Avatar,
-  Text,
-  Title,
-  Group,
-  Flex,
-  Stack,
-  Badge,
-  Image,
-  Card,
-  Center,
-  Paper,
-  Divider,
-  TextInput,
-  Textarea,
-  NativeSelect,
-  Switch,
-  ActionIcon,
-  Tooltip,
   Skeleton,
-  Loader,
-  em,
+  Box, Card,
+  Container, Stack,
+  Group, Flex,
+  Text, Title, 
+  Image, Avatar,
+  ThemeIcon,
+  Badge,
+  Indicator,
 } from '@mantine/core'
-import { notifications } from '@mantine/notifications'
-import { useMediaQuery, useDisclosure } from '@mantine/hooks'
-import {
-  IconMoodSad,
-  IconWorld,
-  IconLock,
-  IconUsers,
-  IconUserPlus,
-  IconPencil,
-  IconPlus,
-  IconTrash,
-  IconCheck,
-  IconX,
-  IconLogout2,
-} from '@tabler/icons-react'
+import { useMediaQuery, useScroller } from '@mantine/hooks'
 import AppNavbarMobile from '../components/AppNavbarMobile'
+import { getAvatarUrl } from '../utils/profile'
+import dayjs from 'dayjs'
+import {
+  IconUser,
+  IconChevronLeft,
+  IconChevronRight,
+  IconMusic,
+  IconSparkles,
+  IconRosetteDiscountCheckFilled,
+  IconRoute,
+} from '@tabler/icons-react'
 
-const SETUP_IMG = 'https://ik.imagekit.io/mublin/users/gear-setups/tr:w-500,h-500/'
-const PRODUCT_IMG =
-  'https://ik.imagekit.io/mublin/products/tr:h-160,cm-pad_resize,bg-FFFFFF/'
+const CDN_PREFIX = 'https://ik.imagekit.io/mublin'
+const EVENTS_IMG_PATH = `${CDN_PREFIX}/tr:h-320,c-maintain_ratio/events/`
+const AVATAR_PATH = `${CDN_PREFIX}/tr:h-80,c-maintain_ratio/users/avatars/`
 
-export default function Setup() {
-  const { id } = useParams()
+export default function Home() {
+  const { user, profile, loading } = useAuth()
   const navigate = useNavigate()
-  const queryClient = useQueryClient()
-  const { user, loading: authLoading } = useAuth()
-  const isMobile = useMediaQuery(`(max-width: ${em(750)})`)
+  const isMobile = useMediaQuery('(max-width: 48em)')
+  const isDesktop = useMediaQuery('(min-width: 48em)')
+  const peopleScroller = useScroller()
+  const eventsScroller = useScroller()
+  const newsScroller = useScroller()
 
-  const [isEditingMeta, { open: openEditMeta, close: closeEditMeta }] =
-    useDisclosure(false)
-  const [metaDraft, setMetaDraft] = useState({
-    name: '',
-    description: '',
-    visibility: 'private',
-    collab_mode: 'owner_only',
-  })
-  const [isSavingMeta, setIsSavingMeta] = useState(false)
-
-  const [collabUsernameInput, setCollabUsernameInput] = useState('')
-  const [isAddingCollaborator, setIsAddingCollaborator] = useState(false)
-  const [isRemovingCollaboratorId, setIsRemovingCollaboratorId] = useState(null)
-
-  const [productQuery, setProductQuery] = useState('')
-  const [isAddingItem, setIsAddingItem] = useState(false)
-  const [editingItemId, setEditingItemId] = useState(null)
-  const [editingItemDraft, setEditingItemDraft] = useState({ comments: '' })
-
-  // ── Queries ───────────────────────────────────────────
-  const {
-    data: setup,
-    isLoading: loadingSetup,
-    isError: setupNotFound,
-  } = useQuery({
-    queryKey: ['setup', id],
-    queryFn: () => fetchSetupById(id),
-    enabled: !!id,
-    retry: 1,
-  })
-
-  const { data: items = [], isLoading: loadingItems } = useQuery({
-    queryKey: ['setup-items', id],
-    queryFn: () => fetchSetupItems(id),
-    enabled: !!id,
-  })
-
-  const isOwner = !!user?.id && !!setup?.id_user && user.id === setup.id_user
-
-  // Só chamamos o RPC se tiver usuário logado e o setup não for owner_only
-  // (nesse caso a resposta seria sempre false pra quem não é dono).
-  const { data: canEditRpc = false } = useQuery({
-    queryKey: ['can-edit-setup', id, user?.id],
-    queryFn: () => fetchCanEditSetup(id),
-    enabled: !!id && !!user?.id && !isOwner && setup?.collab_mode !== 'owner_only',
-  })
-
-  const canEditItems = isOwner || canEditRpc
-
-  const isCollabEligible =
-    setup?.visibility === 'public' && setup?.collab_mode === 'invite_only'
-
-  const { data: collaborators = [], isLoading: loadingCollaborators } = useQuery({
-    queryKey: ['setup-collaborators', id],
-    queryFn: () => fetchSetupCollaborators(id),
-    enabled: !!id && isCollabEligible,
-  })
-
-  const { data: productResults = [], isFetching: searchingProducts } = useQuery({
-    queryKey: ['product-search', productQuery],
-    queryFn: () => searchProducts(productQuery),
-    enabled: productQuery.trim().length >= 2,
-  })
-
-  // ── Handlers: metadados do setup (só dono) ────────────
-  function handleOpenEditMeta() {
-    setMetaDraft({
-      name: setup.name,
-      description: setup.description ?? '',
-      visibility: setup.visibility,
-      collab_mode: setup.collab_mode,
-    })
-    openEditMeta()
-  }
-
-  function handleChangeVisibility(nextVisibility) {
-    setMetaDraft((prev) => ({
-      ...prev,
-      visibility: nextVisibility,
-      collab_mode: nextVisibility === 'public' ? prev.collab_mode : 'owner_only',
-    }))
-  }
-
-  async function handleSaveMeta() {
-    if (!metaDraft.name.trim()) {
-      return
-    }
-    setIsSavingMeta(true)
-    try {
-      await updateSetupMeta(id, metaDraft)
-      await queryClient.refetchQueries({ queryKey: ['setup', id] })
-      notifications.show({
-        color: 'green',
-        position: 'top-center',
-        message: 'Setup atualizado!',
-      })
-      closeEditMeta()
-    } catch (err) {
-      notifications.show({ color: 'red', position: 'top-center', message: err.message })
-    } finally {
-      setIsSavingMeta(false)
-    }
-  }
-
-  // ── Handlers: colaboradores ────────────────────────────
-  async function handleAddCollaborator() {
-    if (!collabUsernameInput.trim()) {
-      return
-    }
-    setIsAddingCollaborator(true)
-    try {
-      const foundProfile = await findProfileByUsername(collabUsernameInput)
-      if (!foundProfile) {
-        notifications.show({
-          color: 'red',
-          position: 'top-center',
-          message: 'Usuário não encontrado.',
-        })
-        return
+  useEffect(() => {
+    if (isDesktop && profile?.feed_as_home) {
+      const redirected = sessionStorage.getItem('feed_redirected')
+      if (!redirected) {
+        sessionStorage.setItem('feed_redirected', 'true')
+        navigate('/feed', { replace: true })
       }
-      if (foundProfile.id === setup.id_user) {
-        notifications.show({
-          color: 'red',
-          position: 'top-center',
-          message: 'Esse usuário já é o dono deste setup.',
-        })
-        return
-      }
-      await addSetupCollaborator({
-        setupId: id,
-        userId: foundProfile.id,
-        invitedBy: user.id,
-      })
-      await queryClient.refetchQueries({ queryKey: ['setup-collaborators', id] })
-      notifications.show({
-        color: 'green',
-        position: 'top-center',
-        message: `${foundProfile.full_name || foundProfile.username} adicionado como colaborador!`,
-      })
-      setCollabUsernameInput('')
-    } catch (err) {
-      notifications.show({ color: 'red', position: 'top-center', message: err.message })
-    } finally {
-      setIsAddingCollaborator(false)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile])
+
+  const { data: recentProfiles = [], isLoading: loadingRecentProfiles } = useQuery({
+    queryKey: ['recent-profiles'],
+    queryFn: () => fetchRecentProfiles(10),
+    staleTime: 1000 * 60 * 5,
+  })
+
+  const { data: globalEvents = [], isLoading: loadingGlobalEvents } = useQuery({
+    queryKey: ['events'],
+    queryFn: () => fetchUpcomingEvents(10),
+    staleTime: 1000 * 60 * 5,
+  })
+
+  const { data: news = [], isLoading: loadingNews } = useQuery({
+    queryKey: ['news', user?.id],
+    queryFn: () => fetchNewsFeed(5),
+    staleTime: 1000 * 60 * 5,
+  })
+
+  const { data: scenes = [], isLoading: loadingScenes } = useQuery({
+    queryKey: ['scenes'],
+    queryFn: () => fetchScenes(8),
+    staleTime: 1000 * 60 * 5,
+  })
+
+  if (loading) {
+    return null
   }
 
-  async function handleRemoveCollaborator(collaboratorRowId) {
-    setIsRemovingCollaboratorId(collaboratorRowId)
-    try {
-      await removeSetupCollaborator(collaboratorRowId)
-      await queryClient.refetchQueries({ queryKey: ['setup-collaborators', id] })
-    } catch (err) {
-      notifications.show({ color: 'red', position: 'top-center', message: err.message })
-    } finally {
-      setIsRemovingCollaboratorId(null)
-    }
-  }
-
-  // ── Handlers: itens do setup ───────────────────────────
-  async function handleAddItem(product) {
-    if (items.some((i) => i.id_product === product.id)) {
-      notifications.show({
-        color: 'yellow',
-        position: 'top-center',
-        message: 'Este item já está no setup.',
-      })
-      return
-    }
-    setIsAddingItem(true)
-    try {
-      const nextOrder =
-        items.length > 0 ? Math.max(...items.map((i) => i.order_show)) + 1 : 1
-      await addSetupItem({
-        setupId: id,
-        userId: user.id,
-        productId: product.id,
-        orderShow: nextOrder,
-      })
-      await queryClient.refetchQueries({ queryKey: ['setup-items', id] })
-      setProductQuery('')
-    } catch (err) {
-      notifications.show({ color: 'red', position: 'top-center', message: err.message })
-    } finally {
-      setIsAddingItem(false)
-    }
-  }
-
-  function handleStartEditItem(item) {
-    setEditingItemId(item.id)
-    setEditingItemDraft({ comments: item.comments ?? '' })
-  }
-
-  async function handleSaveItemComment(itemId, orderShow) {
-    try {
-      await updateSetupItem(itemId, {
-        order_show: orderShow,
-        comments: editingItemDraft.comments.trim() || null,
-      })
-      await queryClient.refetchQueries({ queryKey: ['setup-items', id] })
-      setEditingItemId(null)
-    } catch (err) {
-      notifications.show({ color: 'red', position: 'top-center', message: err.message })
-    }
-  }
-
-  async function handleRemoveItem(itemId) {
-    try {
-      await removeSetupItem(itemId)
-      await queryClient.refetchQueries({ queryKey: ['setup-items', id] })
-    } catch (err) {
-      notifications.show({ color: 'red', position: 'top-center', message: err.message })
-    }
-  }
-
-  // ── Estados de carregamento / erro ─────────────────────
-  if (authLoading || loadingSetup) {
-    return (
-      <Center mih="70vh">
-        <Loader />
-      </Center>
-    )
-  }
-
-  if (setupNotFound || !setup) {
-    return (
-      <Container size="sm" py={80}>
-        <EmptyState>
-          <EmptyState.Indicator>
-            <IconMoodSad />
-          </EmptyState.Indicator>
-          <EmptyState.Title>Setup não encontrado</EmptyState.Title>
-          <EmptyState.Description>
-            Ele pode ter sido removido ou o link está incorreto.
-          </EmptyState.Description>
-          <EmptyState.Actions>
-            <Button variant="default" onClick={() => navigate('/')}>
-              Voltar ao início
-            </Button>
-          </EmptyState.Actions>
-        </EmptyState>
-      </Container>
-    )
-  }
-
-  const visibilityIcon =
-    setup.visibility === 'public' ? (
-      setup.collab_mode === 'owner_only' ? (
-        <IconWorld size={13} />
-      ) : (
-        <IconUsers size={13} />
-      )
-    ) : (
-      <IconLock size={13} />
-    )
-
-  const visibilityLabel =
-    setup.visibility === 'private'
-      ? 'Privado'
-      : setup.collab_mode === 'open'
-        ? 'Público · qualquer um edita'
-        : setup.collab_mode === 'invite_only'
-          ? 'Público · colaboradores convidados'
-          : 'Público · somente leitura'
+  // Dynamic greeting
+  const hour = new Date().getHours()
+  const greeting = hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite'
 
   return (
     <>
       <Helmet>
         <meta charSet="utf-8" />
-        <title>{setup?.name} · Setups · Mublin</title>
-        <link rel="canonical" href={`https://mublin.com/setup/${setup?.id}`} />
-        <meta name="description" content={setup?.description} />
+        <title>Home · Mublin</title>
+        <link rel="canonical" href="https://mublin.com/home" />
       </Helmet>
+      {isMobile && <AppNavbarMobile fixed={false} />}
 
-      <Affix position={{ top: 0, left: 0 }} hiddenFrom="sm">
-        <AppNavbarMobile pageName={setup.name} />
-      </Affix>
+      <Container size="xl" px={{ base: 'sm', sm: 0 }} mt={{ base: 16, sm: 0 }}>
+        {loading ? (
+          <>
+            <Title size="h2" fw={600} lh={1.2} mt={4} mb={4}>
+              Carregando...
+            </Title>
+            <Skeleton width={300} height={18} radius="md" />
+          </>
+        ) : (
+          <>
+            <Title size="22px" fw={600} lh={1.2} ta="left" my="md">
+              {greeting}, {profile?.username}
+            </Title>
 
-      <Container size="sm" py={isMobile ? 12 : 40}>
-        <Stack gap="lg">
-          {/* ── Cabeçalho do setup ── */}
-          <Group align="flex-start" wrap="nowrap">
-            <Image
-              src={setup.image ? SETUP_IMG + setup.image : undefined}
-              w={96}
-              h={96}
-              radius="md"
-              fit="cover"
-              fallbackSrc="https://placehold.co/96x96?text=%20"
-            />
-            <Box style={{ flex: 1 }}>
-              <Group gap={6} wrap="nowrap">
-                <Title order={3}>{setup.name}</Title>
-                {isOwner && (
-                  <ActionIcon variant="subtle" size="sm" onClick={handleOpenEditMeta}>
-                    <IconPencil size={16} />
-                  </ActionIcon>
-                )}
-              </Group>
-              {setup.description && (
-                <Text size="sm" c="dimmed" mt={2}>
-                  {setup.description}
-                </Text>
-              )}
-              <Group gap={6} mt={8}>
-                <Badge
-                  variant="default"
-                  color={setup.visibility === 'public' ? 'indigo' : 'gray'}
-                  leftSection={visibilityIcon}
-                >
-                  {visibilityLabel}
-                </Badge>
-              </Group>
-              {setup.owner && (
-                <Group gap={6} mt={10}>
-                  <Text size="xs" c="dimmed">
-                    Criado por
+            <Card
+              radius="lg"
+              p={{ base: 'md', sm: 'xl' }}
+              mb="md"
+              style={{
+                position: 'relative',
+                overflow: 'hidden',
+                background:
+                  'linear-gradient(135deg, var(--mantine-color-mublinColor-7) 0%, var(--mantine-color-blue-8) 100%)',
+              }}
+            >
+              <IconMusic
+                size={180}
+                stroke={1}
+                style={{
+                  position: 'absolute',
+                  right: -30,
+                  bottom: -40,
+                  opacity: 0.12,
+                  color: 'white',
+                  pointerEvents: 'none',
+                }}
+              />
+
+              <Stack gap={6} maw={520} style={{ position: 'relative', zIndex: 1 }}>
+                <Group gap={6}>
+                  <IconSparkles size={16} color="white" style={{ opacity: 0.85 }} />
+                  <Text
+                    size="xs"
+                    fw={200}
+                    tt="uppercase"
+                    c="white"
+                    style={{ opacity: 0.85 }}
+                  >
+                    Bem-vindo ao Mublin
                   </Text>
-                  <Avatar
+                </Group>
+
+                <Title
+                  order={2}
+                  c="white"
+                  fw={700}
+                  fz={{ base: '20px', sm: '26px' }}
+                  lh={1.25}
+                >
+                  Sua música, suas conexões, novas oportunidades
+                </Title>
+
+                <Text c="white" size="sm" style={{ opacity: 0.9 }}>
+                  Conecte-se com músicos e profissionais da música, mostre seu trabalho e
+                  fique por dentro de projetos, eventos e vagas.
+                </Text>
+
+                {/* <Group mt="sm">
+                  <Button
                     component={Link}
-                    to={`/${setup.owner.username}`}
-                    src={
-                      setup.owner.avatar
-                        ? `https://ik.imagekit.io/mublin/tr:h-60,c-maintain_ratio/users/avatars/${setup.owner.avatar}`
-                        : undefined
-                    }
-                    size={20}
+                    to="/search"
+                    size="xs"
+                    radius="md"
+                    variant="white"
+                    color="dark"
+                    leftSection={<IconZoom size={14} />}
+                  >
+                    Explorar oportunidades
+                  </Button>
+                </Group> */}
+              </Stack>
+            </Card>
+
+            <Group justify="space-between" align="center" mt="xl" mb="xs">
+              <Title order={3} fw={600} fz="lg">
+                Novos por aqui
+              </Title>
+              {recentProfiles?.length > 4 && (
+                <Group>
+                  <ThemeIcon
+                    variant="default"
+                    style={{
+                      cursor: peopleScroller.canScrollStart ? 'pointer' : 'default',
+                    }}
+                    onClick={peopleScroller.scrollStart}
+                    opacity={peopleScroller.canScrollStart ? 1 : 0.5}
+                  >
+                    <IconChevronLeft style={{ width: '70%', height: '70%' }} />
+                  </ThemeIcon>
+                  <ThemeIcon
+                    variant="default"
+                    style={{
+                      cursor: peopleScroller.canScrollEnd ? 'pointer' : 'default',
+                    }}
+                    onClick={peopleScroller.scrollEnd}
+                    opacity={peopleScroller.canScrollEnd ? 1 : 0.5}
+                  >
+                    <IconChevronRight style={{ width: '70%', height: '70%' }} />
+                  </ThemeIcon>
+                </Group>
+              )}
+            </Group>
+
+            <Box>
+              <div
+                ref={peopleScroller.ref}
+                {...peopleScroller.dragHandlers}
+                className="scrollerHidden"
+                style={{
+                  overflow: 'auto',
+                  cursor: peopleScroller.isDragging ? 'grabbing' : 'default',
+                }}
+              >
+                <Group wrap="nowrap" gap="md">
+                  {loadingRecentProfiles
+                    ? [1, 2, 3, 4, 5].map((i) => (
+                        <Skeleton
+                          key={i}
+                          width={140}
+                          height={190}
+                          radius="md"
+                          style={{ flexShrink: 0 }}
+                        />
+                      ))
+                    : recentProfiles.map((p) => {
+                        const location = p.cities?.name
+                          ? `${p.cities.name}${p.cities.countries?.name_ptbr ? `, ${p.cities.countries.name_ptbr}` : ''}`
+                          : p.regions?.name
+                            ? `${p.regions.name}${p.regions.uf ? ` - ${p.regions.uf}` : ''}`
+                            : null
+
+                        // const mainRole = p.profile_roles?.find((r) => r.main_activity)
+                        //   ?.roles?.description_ptbr
+
+                        return (
+                          <Link
+                            key={p.id}
+                            to={`/${p.username}`}
+                            style={{ textDecoration: 'none', color: 'inherit' }}
+                          >
+                            <Card
+                              p="xs"
+                              w={140}
+                              h={140}
+                              shadow="sm"
+                              withBorder
+                              style={{ flexShrink: 0 }}
+                              pos="relative"
+                            >
+                              {p.is_live && (
+                                <Badge
+                                  size="xs"
+                                  color="red.9"
+                                  pos="absolute"
+                                  right={5}
+                                  top={5}
+                                >
+                                  Live
+                                </Badge>
+                              )}
+                              <Stack align="center" gap={3}>
+                                <Indicator
+                                  position="top-end"
+                                  offset={8}
+                                  color="transparent"
+                                  size={20}
+                                  disabled={!p.is_verified}
+                                  label={
+                                    <IconRosetteDiscountCheckFilled
+                                      size={20}
+                                      style={{ display: 'block' }}
+                                    />
+                                  }
+                                >
+                                  <Avatar
+                                    // src={p.avatar ? AVATAR_PATH + p.avatar : null}
+                                    src={getAvatarUrl(p?.avatar, p?.is_open_to_work, 64)}
+                                    size={64}
+                                    radius="xl"
+                                  >
+                                    {!p.avatar && <IconUser size={28} />}
+                                  </Avatar>
+                                </Indicator>
+                                <Text size="sm" fw={600} ta="center" lineClamp={1}>
+                                  {p.full_name || p.username}
+                                </Text>
+                                {p.title && (
+                                  <Text size="10px" ta="center" lineClamp={1} mb={3}>
+                                    {p.title}
+                                  </Text>
+                                )}
+                                {/* {mainRole && (
+                                  <Text size="xs" ta="center" lineClamp={1}>
+                                    {mainRole}
+                                  </Text>
+                                )} */}
+                                {location && (
+                                  <Text size="10px" c="dimmed" ta="center" lineClamp={1}>
+                                    {location}
+                                  </Text>
+                                )}
+                              </Stack>
+                            </Card>
+                          </Link>
+                        )
+                      })}
+                </Group>
+              </div>
+            </Box>
+
+            {(loadingScenes || scenes?.length > 0) && (
+              <>
+                <Title order={3} fw={600} fz="lg" mt="lg">
+                  Cenas
+                </Title>
+
+                {loadingScenes ? (
+                  <Group wrap="nowrap" gap={10}>
+                    {[1, 2, 3, 4].map((i) => (
+                      <Skeleton key={i} width={130} height={230} radius={12} />
+                    ))}
+                  </Group>
+                ) : (
+                  <ScenesScroller scenes={scenes} isMobile={isMobile} />
+                )}
+              </>
+            )}
+
+            {/* ── Banner: Setup em destaque ── */}
+            <Card
+              radius="xl"
+              p={0}
+              mt="xl"
+              withBorder={false}
+              component={Link}
+              to="/setup/4"
+              style={{
+                position: 'relative',
+                overflow: 'hidden',
+                cursor: 'pointer',
+                textDecoration: 'none',
+                minHeight: 260,
+                backgroundColor: 'black',
+              }}
+            >
+              {/* Background photo */}
+              <Box
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  backgroundImage: `url(https://ik.imagekit.io/mublin/users/gear-setups/tr:w-1200,h-600,c-maintain_ratio/0d333085-c093-4dd3-99f7-a35e0096f8ef_setup_photo_5uAffGrln)`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                  filter: 'brightness(0.7)',
+                }}
+              />
+              {/* Gradient overlay */}
+              <Box
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  background:
+                    'linear-gradient(90deg, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.55) 45%, rgba(0,0,0,0.15) 100%)',
+                }}
+              />
+
+              <Box
+                p={{ base: 'lg', sm: 'xl' }}
+                style={{
+                  position: 'relative',
+                  zIndex: 1,
+                  height: '100%',
+                  minHeight: 260,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'center',
+                }}
+              >
+                <Group gap={8} mb={10}>
+                  <Badge
+                    size="sm"
+                    radius="sm"
+                    color="yellow"
+                    variant="filled"
+                    leftSection={<IconSparkles size={12} />}
+                  >
+                    Setup em destaque
+                  </Badge>
+                  <Badge
+                    size="sm"
+                    radius="sm"
+                    color="gray"
+                    variant="filled"
+                    style={{ backgroundColor: 'rgba(255,255,255,0.15)', color: 'white' }}
+                  >
+                    Novo
+                  </Badge>
+                </Group>
+
+                <Title
+                  order={2}
+                  c="white"
+                  fw={800}
+                  fz={{ base: 22, sm: 28 }}
+                  lh={1.1}
+                  maw={420}
+                >
+                  Mateus Asato Tokyo Aug 2026
+                </Title>
+
+                <Text
+                  c="white"
+                  size="sm"
+                  mt={6}
+                  maw={380}
+                  style={{ opacity: 0.85 }}
+                  lineClamp={2}
+                >
+                  Mateus Asato pedalboard in Tokyo Aug 2026 — confira a cadeia completa de
+                  pedais e equipamentos
+                </Text>
+
+                <Group gap={8} mt={14}>
+                  <Avatar
+                    src="https://ik.imagekit.io/mublin/tr:h-80,c-maintain_ratio/users/avatars/0d333085-c093-4dd3-99f7-a35e0096f8ef_avatar_7Kj3VXzdX"
+                    size={26}
                     radius="xl"
                   />
-                  <Text
-                    component={Link}
-                    to={`/${setup.owner.username}`}
-                    size="xs"
-                    fw={500}
+                  <Text size="sm" c="white" fw={500}>
+                    por Mublin
+                  </Text>
+                  <Text size="xs" c="white" style={{ opacity: 0.6 }}>
+                    @mublin
+                  </Text>
+                </Group>
+
+                <Group mt={18} gap={8}>
+                  <Box
                     style={{
-                      display: 'inline',
-                      hover: { textDecoration: 'underline' },
-                      color: 'inherit',
+                      backgroundColor: 'white',
+                      color: 'black',
+                      borderRadius: 20,
+                      padding: '6px 16px',
+                      fontSize: 13,
+                      fontWeight: 600,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6,
                     }}
                   >
-                    {setup.owner.full_name}
-                  </Text>
-                </Group>
-              )}
-            </Box>
-          </Group>
-
-          {/* ── Edição de metadados (só dono) ── */}
-          {isOwner && isEditingMeta && (
-            <Paper withBorder radius="md" p="md">
-              <Stack gap="sm">
-                <TextInput
-                  label="Nome"
-                  value={metaDraft.name}
-                  onChange={(e) => {
-                    const value = e.currentTarget.value
-                    setMetaDraft((prev) => ({ ...prev, name: value }))
-                  }}
-                />
-                <Textarea
-                  label="Descrição"
-                  autosize
-                  minRows={2}
-                  value={metaDraft.description}
-                  onChange={(e) => {
-                    const value = e.currentTarget.value
-                    setMetaDraft((prev) => ({ ...prev, description: value }))
-                  }}
-                />
-                <Switch
-                  label="Setup público"
-                  description="Aparece na comunidade e pode ganhar um link próprio pra compartilhar. Por padrão, continua editável só por você"
-                  checked={metaDraft.visibility === 'public'}
-                  onChange={(e) =>
-                    handleChangeVisibility(e.currentTarget.checked ? 'public' : 'private')
-                  }
-                />
-                {metaDraft.visibility === 'public' && (
-                  <NativeSelect
-                    size="sm"
-                    label="Quem pode editar (além de você)"
-                    value={metaDraft.collab_mode}
-                    onChange={(e) => {
-                      const value = e.currentTarget.value
-                      setMetaDraft((prev) => ({ ...prev, collab_mode: value }))
-                    }}
-                    data={[
-                      { value: 'owner_only', label: 'Ninguém — só eu edito' },
-                      { value: 'invite_only', label: 'Colaboradores que eu convidar' },
-                      { value: 'open', label: 'Qualquer usuário da comunidade' },
-                    ]}
-                  />
-                )}
-                <Group justify="flex-end">
-                  <Button variant="default" onClick={closeEditMeta}>
-                    Cancelar
-                  </Button>
-                  <Button
-                    loading={isSavingMeta}
-                    disabled={!metaDraft.name.trim()}
-                    onClick={handleSaveMeta}
-                  >
-                    Salvar
-                  </Button>
-                </Group>
-              </Stack>
-            </Paper>
-          )}
-
-          {/* ── Colaboradores ── */}
-          {isCollabEligible && (
-            <>
-              {/* <Divider label="Colaboradores" labelPosition="left" /> */}
-              <Stack gap="sm">
-                {isOwner && (
-                  <Group gap={6} align="flex-end">
-                    <TextInput
-                      size="sm"
-                      style={{ flex: 1 }}
-                      placeholder="username"
-                      label="Convidar por @username"
-                      value={collabUsernameInput}
-                      onChange={(e) => setCollabUsernameInput(e.currentTarget.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && collabUsernameInput.trim()) {
-                          handleAddCollaborator()
-                        }
-                      }}
-                    />
-                    <ActionIcon
-                      variant="default"
-                      size="lg"
-                      loading={isAddingCollaborator}
-                      disabled={!collabUsernameInput.trim()}
-                      onClick={handleAddCollaborator}
-                    >
-                      <IconUserPlus size={16} />
-                    </ActionIcon>
-                  </Group>
-                )}
-
-                {loadingCollaborators ? (
-                  <Skeleton height={40} radius="md" />
-                ) : collaborators.length === 0 ? (
-                  <Text size="xs" c="dimmed">
-                    Nenhum colaborador adicional neste setup.
-                  </Text>
-                ) : (
-                  <Stack gap={6}>
-                    {collaborators.map((c) => (
-                      <Paper key={c.id} withBorder radius="md" p="xs">
-                        <Flex justify="space-between" align="center">
-                          <Group gap="xs">
-                            <Avatar
-                              component={Link}
-                              to={`/${c.profiles?.username}`}
-                              src={
-                                c.profiles?.avatar
-                                  ? `https://ik.imagekit.io/mublin/tr:h-60,c-maintain_ratio/users/avatars/${c.profiles.avatar}`
-                                  : undefined
-                              }
-                              radius="xl"
-                              size={28}
-                            />
-                            <Stack gap={0}>
-                              <Text size="xs" fw={600}>
-                                {c.profiles?.full_name}
-                              </Text>
-                              <Text size="10px" c="dimmed">
-                                @{c.profiles?.username}
-                              </Text>
-                            </Stack>
-                          </Group>
-                          {(isOwner || c.id_user === user?.id) && (
-                            <Tooltip
-                              label={
-                                c.id_user === user?.id && !isOwner
-                                  ? 'Sair da colaboração'
-                                  : 'Remover colaborador'
-                              }
-                            >
-                              <ActionIcon
-                                variant="subtle"
-                                color="red"
-                                size="sm"
-                                loading={isRemovingCollaboratorId === c.id}
-                                onClick={() => handleRemoveCollaborator(c.id)}
-                              >
-                                {c.id_user === user?.id && !isOwner ? (
-                                  <IconLogout2 size={13} />
-                                ) : (
-                                  <IconX size={13} />
-                                )}
-                              </ActionIcon>
-                            </Tooltip>
-                          )}
-                        </Flex>
-                      </Paper>
-                    ))}
-                  </Stack>
-                )}
-              </Stack>
-            </>
-          )}
-
-          {/* ── Itens do setup ── */}
-          <Divider
-            label={`Itens do setup${items.length ? ` (${items.length})` : ''}`}
-            labelPosition="left"
-          />
-
-          {canEditItems && (
-            <Box>
-              <TextInput
-                size="sm"
-                placeholder="Buscar equipamento pra adicionar..."
-                value={productQuery}
-                onChange={(e) => setProductQuery(e.currentTarget.value)}
-              />
-              {productQuery.trim().length >= 2 && (
-                <Paper withBorder radius="md" mt={6} p={6}>
-                  {searchingProducts ? (
-                    <Skeleton height={32} />
-                  ) : productResults.length === 0 ? (
-                    <Text size="xs" c="dimmed" p={6}>
-                      Nenhum produto encontrado.
+                    Ver setup <IconChevronRight size={14} />
+                  </Box>
+                  <Group gap={4} c="white" style={{ opacity: 0.7 }}>
+                    <IconRoute size={14} />
+                    <Text size="xs" c="white">
+                      Setup público · colaboração aberta
                     </Text>
-                  ) : (
-                    <Stack gap={4}>
-                      {productResults.map((product) => (
-                        <Group key={product.id} justify="space-between" px={4}>
-                          <Group gap={8}>
-                            <Image
-                              src={
-                                product.picture
-                                  ? PRODUCT_IMG + product.picture
-                                  : undefined
-                              }
-                              w={28}
-                              h={28}
-                              radius="sm"
-                              fallbackSrc="https://placehold.co/28x28?text=%20"
-                            />
-                            <Text size="xs">
-                              {product.brands?.name} {product.name}
-                            </Text>
-                          </Group>
-                          <ActionIcon
-                            size="sm"
-                            variant="light"
-                            loading={isAddingItem}
-                            onClick={() => handleAddItem(product)}
-                          >
-                            <IconPlus size={13} />
-                          </ActionIcon>
-                        </Group>
-                      ))}
-                    </Stack>
-                  )}
-                </Paper>
-              )}
-            </Box>
-          )}
+                  </Group>
+                </Group>
+              </Box>
 
-          {loadingItems ? (
-            <Skeleton height={120} radius="md" />
-          ) : items.length === 0 ? (
-            <Text size="sm" c="dimmed">
-              Nenhum item adicionado a este setup ainda.
-            </Text>
-          ) : (
-            <Stack gap={8}>
-              {items.map((item) => (
-                <Card key={item.id} withBorder radius="md" p="sm">
-                  <Flex justify="space-between" align="flex-start" wrap="nowrap">
-                    <Group gap={10} wrap="nowrap" style={{ flex: 1 }}>
-                      <Image
-                        src={
-                          item.products?.picture
-                            ? PRODUCT_IMG + item.products.picture
-                            : undefined
-                        }
-                        w={44}
-                        h={44}
-                        radius="sm"
-                        fallbackSrc="https://placehold.co/44x44?text=%20"
-                      />
-                      <Box style={{ flex: 1 }}>
-                        <Text size="sm" fw={600}>
-                          {item.products?.brands?.name} {item.products?.name}
-                        </Text>
-                        {editingItemId === item.id ? (
-                          <TextInput
-                            size="xs"
-                            mt={4}
-                            placeholder="Observação (opcional)"
-                            value={editingItemDraft.comments}
-                            onChange={(e) =>
-                              setEditingItemDraft({ comments: e.currentTarget.value })
-                            }
-                          />
-                        ) : (
-                          item.comments && (
-                            <Text size="xs" c="dimmed" mt={2}>
-                              {item.comments}
-                            </Text>
-                          )
-                        )}
-                        {isCollabEligible && item.added_by && (
-                          <Text size="10px" c="dimmed" mt={4}>
-                            Adicionado por{' '}
-                            <Text component="span" size="10px" fw={600}>
-                              @{item.added_by.username}
-                            </Text>
-                          </Text>
-                        )}
-                      </Box>
+              {/* Thumbnail thumb no canto (desktop) */}
+              <Box
+                visibleFrom="sm"
+                style={{
+                  position: 'absolute',
+                  right: 24,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  zIndex: 1,
+                  borderRadius: 12,
+                  overflow: 'hidden',
+                  border: '2px solid rgba(255,255,255,0.2)',
+                  boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+                }}
+              >
+                <Image
+                  src="https://ik.imagekit.io/mublin/users/gear-setups/tr:w-200,h-200/0d333085-c093-4dd3-99f7-a35e0096f8ef_setup_1dRtHFr41"
+                  w={110}
+                  h={110}
+                  fit="cover"
+                />
+              </Box>
+            </Card>
+
+            {globalEvents?.length > 0 && (
+              <>
+                <Group justify="space-between" align="center" mt="lg" mb="xs">
+                  <Title order={3} fw={600} fz="lg">
+                    Eventos próximos
+                  </Title>
+                  {globalEvents?.length > 2 && (
+                    <Group>
+                      <ThemeIcon
+                        variant="default"
+                        onClick={eventsScroller.scrollStart}
+                        opacity={eventsScroller.canScrollStart ? 1 : 0.5}
+                      >
+                        <IconChevronLeft style={{ width: '70%', height: '70%' }} />
+                      </ThemeIcon>
+                      <ThemeIcon
+                        variant="default"
+                        onClick={eventsScroller.scrollEnd}
+                        opacity={eventsScroller.canScrollEnd ? 1 : 0.5}
+                      >
+                        <IconChevronRight style={{ width: '70%', height: '70%' }} />
+                      </ThemeIcon>
                     </Group>
-                    {canEditItems && (
-                      <Group gap={4} wrap="nowrap">
-                        {editingItemId === item.id ? (
-                          <>
-                            <ActionIcon
-                              size="sm"
-                              variant="light"
-                              color="green"
-                              onClick={() =>
-                                handleSaveItemComment(item.id, item.order_show)
-                              }
+                  )}
+                </Group>
+
+                {loadingGlobalEvents ? (
+                  <Group wrap="nowrap" gap="md">
+                    {[1, 2].map((i) => (
+                      <Skeleton key={i} width={160} height={240} />
+                    ))}
+                  </Group>
+                ) : (
+                  <Box>
+                    <div
+                      ref={eventsScroller.ref}
+                      {...eventsScroller.dragHandlers}
+                      className="scrollerHidden"
+                      style={{
+                        overflow: 'auto',
+                        cursor: eventsScroller.isDragging ? 'grabbing' : 'default',
+                      }}
+                    >
+                      <Group wrap="nowrap" gap="md">
+                        {globalEvents.map((event) => (
+                          <Link
+                            key={event.id}
+                            to={`/event/${event.slug}`}
+                            style={{ textDecoration: 'none', color: 'inherit' }}
+                          >
+                            <Card
+                              p="xs"
+                              w={160}
+                              h={280}
+                              shadow="sm"
+                              padding="lg"
+                              withBorder
+                              style={{ position: 'relative' }}
                             >
-                              <IconCheck size={13} />
-                            </ActionIcon>
-                            <ActionIcon
-                              size="sm"
-                              variant="subtle"
-                              onClick={() => setEditingItemId(null)}
-                            >
-                              <IconX size={13} />
-                            </ActionIcon>
-                          </>
-                        ) : (
-                          <>
-                            <ActionIcon
-                              size="sm"
-                              variant="subtle"
-                              onClick={() => handleStartEditItem(item)}
-                            >
-                              <IconPencil size={13} />
-                            </ActionIcon>
-                            <ActionIcon
-                              size="sm"
-                              variant="subtle"
-                              color="red"
-                              onClick={() => handleRemoveItem(item.id)}
-                            >
-                              <IconTrash size={13} />
-                            </ActionIcon>
-                          </>
-                        )}
+                              <Card.Section style={{ position: 'relative' }}>
+                                <Image
+                                  src={EVENTS_IMG_PATH + event.picture_url}
+                                  height={160}
+                                  alt={event.name}
+                                />
+                                <Box
+                                  style={{
+                                    position: 'absolute',
+                                    top: 16,
+                                    right: 16,
+                                    backgroundColor: 'rgba(0, 0, 0, 0.75)',
+                                    borderRadius: 6,
+                                    padding: '4px 6px',
+                                    textAlign: 'center',
+                                    lineHeight: 1.1,
+                                  }}
+                                >
+                                  <Text size="sm" fw={700} c="white" ta="center">
+                                    {dayjs(event.date_start).format('DD')}
+                                  </Text>
+                                  <Text
+                                    size="9px"
+                                    fw={600}
+                                    c="white"
+                                    ta="center"
+                                    tt="uppercase"
+                                  >
+                                    {dayjs(event.date_start)
+                                      .locale('pt-br')
+                                      .format('MMM')}
+                                  </Text>
+                                </Box>
+                              </Card.Section>
+                              <Text fw={600} fz="sm" mt="xs" mb={5} lineClamp={1}>
+                                {event.name}
+                              </Text>
+                              <Text size="10px" mb={8}>
+                                {dayjs(event.date_start).format('DD/MM/YYYY')} {' a '}
+                                {dayjs(event.date_end).format('DD/MM/YYYY')}
+                              </Text>
+                              <Text lineClamp={2} size="xs" c="dimmed">
+                                {event.description}
+                              </Text>
+                              <Flex gap={6} align="center" mt={6}>
+                                <Text size="10px" span c="dimmed">
+                                  Criado por
+                                </Text>
+                                <Avatar
+                                  src={AVATAR_PATH + event.author?.avatar}
+                                  size={20}
+                                  title={event.author?.full_name}
+                                />
+                                <Text size="10px" span lineClamp={1}>
+                                  {event.author?.username}
+                                </Text>
+                              </Flex>
+                            </Card>
+                          </Link>
+                        ))}
                       </Group>
-                    )}
-                  </Flex>
-                </Card>
-              ))}
-            </Stack>
-          )}
-        </Stack>
+                    </div>
+                  </Box>
+                )}
+              </>
+            )}
+
+            <Group justify="space-between" align="center" mt="lg" mb="xs">
+              <Title order={3} fw={600} fz="lg">
+                Notícias recentes
+              </Title>
+              {news?.length > 2 && (
+                <Group>
+                  <ThemeIcon
+                    variant="default"
+                    style={{
+                      cursor: newsScroller.canScrollStart ? 'pointer' : 'default',
+                    }}
+                    onClick={newsScroller.scrollStart}
+                    opacity={newsScroller.canScrollStart ? 1 : 0.5}
+                  >
+                    <IconChevronLeft style={{ width: '70%', height: '70%' }} />
+                  </ThemeIcon>
+                  <ThemeIcon
+                    variant="default"
+                    style={{
+                      cursor: newsScroller.canScrollEnd ? 'pointer' : 'default',
+                    }}
+                    onClick={newsScroller.scrollEnd}
+                    opacity={newsScroller.canScrollEnd ? 1 : 0.5}
+                  >
+                    <IconChevronRight style={{ width: '70%', height: '70%' }} />
+                  </ThemeIcon>
+                </Group>
+              )}
+            </Group>
+
+            <Box>
+              <div
+                ref={newsScroller.ref}
+                {...newsScroller.dragHandlers}
+                className="scrollerHidden"
+                style={{
+                  overflow: 'auto',
+                  cursor: newsScroller.isDragging ? 'grabbing' : 'default',
+                }}
+              >
+                <Group gap="xs" wrap="nowrap">
+                  {loadingNews
+                    ? [1, 2, 3, 4, 5].map((i) => (
+                        <Skeleton
+                          key={i}
+                          width={300}
+                          height={144}
+                          style={{ flexShrink: 0 }}
+                        />
+                      ))
+                    : news.map((item) => (
+                        <Box key={item.id} style={{ flexShrink: 0 }}>
+                          <NewsCard item={item} width={300} />
+                        </Box>
+                      ))}
+                </Group>
+              </div>
+            </Box>
+
+            {/* <Card bg="mublinColor.9">
+              <Title order={2}>Guitarrista</Title>
+              <Title order={4}>Guitarrista para show cover anos 80</Title>
+              <Text />
+              <Text>
+                95% match Sorocaba, SP · Bar Manifesto · 28 jun · 21h Rock · Guitar solo
+                exigido · 4h de show R$ 400 cachê encerra hoje
+              </Text>
+            </Card> */}
+          </>
+        )}
       </Container>
     </>
   )

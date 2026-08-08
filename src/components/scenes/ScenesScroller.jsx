@@ -87,7 +87,7 @@ function SceneThumb({ scene, onOpen }) {
   )
 }
 
-export default function ScenesScroller({ scenes }) {
+export default function ScenesScroller({ scenes, isMobile }) {
   const [activeIndex, setActiveIndex] = useState(null)
 
   if (!scenes?.length) {
@@ -96,7 +96,7 @@ export default function ScenesScroller({ scenes }) {
 
   return (
     <>
-      <ScrollArea type="scroll" scrollbarSize={6} offsetScrollbars>
+      <ScrollArea type={isMobile ? 'never' : 'scroll'} scrollbarSize={6} offsetScrollbars>
         <Group wrap="nowrap" gap={10} py={4}>
           {scenes.map((scene, index) => (
             <SceneThumb

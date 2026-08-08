@@ -33,6 +33,7 @@ import {
   Avatar,
   Tooltip,
   em,
+  Spoiler,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { useMediaQuery, useWindowScroll } from '@mantine/hooks'
@@ -42,11 +43,9 @@ import {
   IconX,
   IconDiamond,
   IconChevronUp,
-  IconMessage,
   IconBookmark,
   IconBookmarkFilled,
   IconPlus,
-  IconCrown,
   IconLock,
 } from '@tabler/icons-react'
 import AppNavbarMobile from '../components/AppNavbarMobile'
@@ -488,9 +487,30 @@ export default function GearItem() {
               </Title>
               {product?.description ? (
                 <Stack gap={4}>
-                  <Text size="sm" style={{ whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
-                    {product?.description}
-                  </Text>
+                  <Spoiler
+                    maxHeight={140}
+                    showLabel={
+                      <Text size="sm" c="var(--mantine-color-text)">
+                        Ver mais
+                      </Text>
+                    }
+                    hideLabel={
+                      <Text size="sm" c="var(--mantine-color-text)">
+                        Ver menos
+                      </Text>
+                    }
+                    transitionDuration={200}
+                  >
+                    <Text
+                      size="sm"
+                      style={{
+                        whiteSpace: 'pre-wrap',
+                        lineHeight: 1.6,
+                      }}
+                    >
+                      {product?.description}
+                    </Text>
+                  </Spoiler>
                   {product?.description_source && (
                     <Text size="xs" c="dimmed">
                       Fonte: {product?.description_source}
@@ -515,10 +535,9 @@ export default function GearItem() {
               )}
             </Box>
 
-            {/* Quem utiliza */}
             <Box>
               <Title size="md" fw={600} mb={3}>
-                Quem utiliza {owners.length > 0 ? `(${owners.length})` : null}
+                Quem adicionou esse item
               </Title>
               {isLoadingOwners ? (
                 <Stack gap={10}>
@@ -575,8 +594,8 @@ export default function GearItem() {
                           {/* Badges */}
                           <Group gap={6} mt={6}>
                             {owner.is_currently_using && (
-                              <Badge size="sm" color="lime" variant="filled">
-                                Em uso
+                              <Badge size="xs" color="lime" variant="light">
+                                Em uso atualmente
                               </Badge>
                             )}
                             {owner.is_for_sale && (
@@ -613,17 +632,15 @@ export default function GearItem() {
 
                       {owner.owner_comments && (
                         <Paper p="xs" mt={8} w="100%">
-                          <Group gap={6}>
-                            <IconMessage size={16} color="gray" />
-                            <Text
-                              size="xs"
-                              style={{ whiteSpace: 'pre-wrap', lineHeight: 1.6 }}
-                            >
-                              {parse(
-                                linkifyStr(owner.owner_comments, { target: '_blank' }),
-                              )}
-                            </Text>
-                          </Group>
+                          <Text
+                            fs="italic"
+                            size="xs"
+                            style={{ whiteSpace: 'pre-wrap', lineHeight: 1.6 }}
+                          >
+                            {parse(
+                              linkifyStr(owner.owner_comments, { target: '_blank' }),
+                            )}
+                          </Text>
                         </Paper>
                       )}
                     </Box>

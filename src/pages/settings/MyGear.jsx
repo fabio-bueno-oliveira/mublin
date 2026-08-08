@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { Helmet } from 'react-helmet-async'
 import { useAuth } from '../../hooks/useAuth'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabaseClient'
+import { searchGear } from '../../queries/search'
 import {
   Stack,
   Group,
@@ -30,7 +32,7 @@ import {
   ThemeIcon,
   Tooltip,
 } from '@mantine/core'
-import { useDisclosure } from '@mantine/hooks'
+import { useDisclosure, useDebouncedValue } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
 import { upload } from '@imagekit/react'
 import {
@@ -48,11 +50,14 @@ import {
   IconUserPlus,
   IconCrown,
   IconLock,
+  IconSearch,
 } from '@tabler/icons-react'
 
 const PRODUCT_IMG =
   'https://ik.imagekit.io/mublin/products/tr:h-160,cm-pad_resize,bg-FFFFFF/'
 const SETUP_IMG = 'https://ik.imagekit.io/mublin/users/gear-setups/tr:w-140,h-140/'
+const SETUP_PHOTO = 'https://ik.imagekit.io/mublin/users/gear-setups/tr:w-800/'
+const SETUP_PHOTO_FALLBACK = 'https://ik.imagekit.io/mublin/users/gear-setups/tr:w-800/'
 const SETUP_IMG_FALLBACK =
   'https://ik.imagekit.io/mublin/bg/tr:w-140,h-140/blue-soft_1_.jpg'
 
@@ -83,7 +88,7 @@ async function fetchUserGear(userId) {
 async function fetchUserSetups(userId) {
   const { data, error } = await supabase
     .from('gear_setups')
-    .select('id, name, image, description, visibility, collab_mode')
+    .select('id, name, image, photo, description, visibility, collab_mode')
     .eq('id_user', userId)
     .order('created_at', { ascending: false })
   if (error) {
@@ -174,12 +179,16 @@ export default function MyGear() {
   const [activeSetup, setActiveSetup] = useState(null)
   const [showAddToSetup, setShowAddToSetup] = useState(false)
   const [isAddingToSetup, setIsAddingToSetup] = useState(false)
+  const [gearSearchQuery, setGearSearchQuery] = useState('')
+  const [debouncedGearSearch] = useDebouncedValue(gearSearchQuery, 350)
   const [isDeletingSetupItem, setIsDeletingSetupItem] = useState(null)
   const [editingSetupItem, setEditingSetupItem] = useState(null)
   const [isSavingSetupItem, setIsSavingSetupItem] = useState(false)
   const [editingSetup, setEditingSetup] = useState({
     name: '',
     description: '',
+    image: '',
+    photo: '',
     visibility: 'private',
     collab_mode: 'owner_only',
   })
@@ -190,12 +199,19 @@ export default function MyGear() {
     name: '',
     description: '',
     image: '',
+    photo: '',
     visibility: 'private',
     collab_mode: 'owner_only',
   })
   const [isCreatingSetup, setIsCreatingSetup] = useState(false)
   const [isUploadingSetupImg, setIsUploadingSetupImg] = useState(false)
   const [setupImgFileId, setSetupImgFileId] = useState('')
+  const [isUploadingSetupPhoto, setIsUploadingSetupPhoto] = useState(false)
+  const [setupPhotoFileId, setSetupPhotoFileId] = useState('')
+  const [isUploadingEditSetupImg, setIsUploadingEditSetupImg] = useState(false)
+  const [editSetupImgFileId, setEditSetupImgFileId] = useState('')
+  const [isUploadingEditSetupPhoto, setIsUploadingEditSetupPhoto] = useState(false)
+  const [editSetupPhotoFileId, setEditSetupPhotoFileId] = useState('')
 
   // ── Estado: colaboradores do setup ativo ──────────────
   const [collabUsernameInput, setCollabUsernameInput] = useState('')
@@ -230,11 +246,23 @@ export default function MyGear() {
   const isCollabEligible =
     editingSetup.visibility === 'public' && editingSetup.collab_mode === 'invite_only'
 
+  // Setups públicos podem receber qualquer item da tabela "products" do Mublin,
+  // não apenas os equipamentos que o usuário já possui.
+  const isPublicSetup = activeSetup?.visibility === 'public'
+  const trimmedGearSearch = debouncedGearSearch.trim()
+
   const { data: collaborators = [], isLoading: loadingCollaborators } = useQuery({
     queryKey: ['setup-collaborators', activeSetup?.id],
     queryFn: () => fetchSetupCollaborators(activeSetup.id),
     enabled: !!activeSetup?.id && isCollabEligible,
     staleTime: 1000 * 30,
+  })
+
+  const { data: gearSearchResults = [], isFetching: isSearchingGear } = useQuery({
+    queryKey: ['gear-search', trimmedGearSearch],
+    queryFn: () => searchGear(trimmedGearSearch),
+    enabled: isPublicSetup && showAddToSetup && trimmedGearSearch.length >= 2,
+    staleTime: 1000 * 60,
   })
 
   // ── Gear separado: principal vs sub ──────────────────
@@ -327,12 +355,17 @@ export default function MyGear() {
     setEditingSetup({
       name: setup.name,
       description: setup.description ?? '',
+      image: setup.image ?? '',
+      photo: setup.photo ?? '',
       visibility: setup.visibility ?? 'private',
       collab_mode: setup.collab_mode ?? 'owner_only',
     })
+    setEditSetupImgFileId('')
+    setEditSetupPhotoFileId('')
     setShowAddToSetup(false)
     setEditingSetupItem(null)
     setCollabUsernameInput('')
+    setGearSearchQuery('')
     openSetupDrawer()
   }
 
@@ -342,6 +375,7 @@ export default function MyGear() {
     setShowAddToSetup(false)
     setEditingSetupItem(null)
     setCollabUsernameInput('')
+    setGearSearchQuery('')
   }
 
   // ── Handlers: visibilidade e colaboração ──────────────
@@ -463,6 +497,7 @@ export default function MyGear() {
       await queryClient.refetchQueries({ queryKey: ['setup-items', activeSetup.id] })
       await queryClient.refetchQueries({ queryKey: ['user-setups', user.id] })
       setShowAddToSetup(false)
+      setGearSearchQuery('')
     }
     setIsAddingToSetup(false)
   }
@@ -506,6 +541,8 @@ export default function MyGear() {
       .update({
         name: editingSetup.name.trim(),
         description: editingSetup.description.trim() || null,
+        image: editingSetup.image || null,
+        photo: editingSetup.photo || null,
         visibility: editingSetup.visibility,
         collab_mode: editingSetup.collab_mode,
         updated_at: new Date().toISOString(),
@@ -523,6 +560,8 @@ export default function MyGear() {
         ...prev,
         name: editingSetup.name,
         description: editingSetup.description,
+        image: editingSetup.image,
+        photo: editingSetup.photo,
         visibility: editingSetup.visibility,
         collab_mode: editingSetup.collab_mode,
       }))
@@ -576,6 +615,122 @@ export default function MyGear() {
     }
   }
 
+  async function handleSetupPhotoUpload(file) {
+    if (!file) return
+    setIsUploadingSetupPhoto(true)
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
+      const authRes = await fetch(import.meta.env.VITE_IMAGEKIT_AUTH_ENDPOINT, {
+        headers: { Authorization: `Bearer ${session?.access_token}` },
+      })
+      const { token: ikToken, expire, signature } = await authRes.json()
+      const response = await upload({
+        file,
+        fileName: `${user.id}_setup_photo`,
+        folder: '/users/gear-setups/',
+        tags: ['setup', 'photo'],
+        useUniqueFileName: true,
+        publicKey: import.meta.env.VITE_IMAGEKIT_PUBLIC_KEY,
+        urlEndpoint: import.meta.env.VITE_IMAGEKIT_URL_ENDPOINT,
+        token: ikToken,
+        expire,
+        signature,
+      })
+      const n = response.filePath.lastIndexOf('/')
+      const fileName = response.filePath.substring(n + 1)
+      setSetupPhotoFileId(response.fileId)
+      setNewSetup((prev) => ({ ...prev, photo: fileName }))
+    } catch {
+      notifications.show({
+        color: 'red',
+        position: 'top-center',
+        message: 'Erro ao enviar foto. Tente novamente.',
+      })
+    } finally {
+      setIsUploadingSetupPhoto(false)
+    }
+  }
+
+  async function handleEditSetupImageUpload(file) {
+    if (!file) return
+    setIsUploadingEditSetupImg(true)
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
+      const authRes = await fetch(import.meta.env.VITE_IMAGEKIT_AUTH_ENDPOINT, {
+        headers: { Authorization: `Bearer ${session?.access_token}` },
+      })
+      const { token: ikToken, expire, signature } = await authRes.json()
+      const response = await upload({
+        file,
+        fileName: `${user.id}_setup`,
+        folder: '/users/gear-setups/',
+        tags: ['setup'],
+        useUniqueFileName: true,
+        publicKey: import.meta.env.VITE_IMAGEKIT_PUBLIC_KEY,
+        urlEndpoint: import.meta.env.VITE_IMAGEKIT_URL_ENDPOINT,
+        token: ikToken,
+        expire,
+        signature,
+      })
+      const n = response.filePath.lastIndexOf('/')
+      const fileName = response.filePath.substring(n + 1)
+      setEditSetupImgFileId(response.fileId)
+      setEditingSetup((prev) => ({ ...prev, image: fileName }))
+      setActiveSetup((prev) => ({ ...prev, image: fileName }))
+    } catch {
+      notifications.show({
+        color: 'red',
+        position: 'top-center',
+        message: 'Erro ao enviar imagem.',
+      })
+    } finally {
+      setIsUploadingEditSetupImg(false)
+    }
+  }
+
+  async function handleEditSetupPhotoUpload(file) {
+    if (!file) return
+    setIsUploadingEditSetupPhoto(true)
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
+      const authRes = await fetch(import.meta.env.VITE_IMAGEKIT_AUTH_ENDPOINT, {
+        headers: { Authorization: `Bearer ${session?.access_token}` },
+      })
+      const { token: ikToken, expire, signature } = await authRes.json()
+      const response = await upload({
+        file,
+        fileName: `${user.id}_setup_photo`,
+        folder: '/users/gear-setups/',
+        tags: ['setup', 'photo'],
+        useUniqueFileName: true,
+        publicKey: import.meta.env.VITE_IMAGEKIT_PUBLIC_KEY,
+        urlEndpoint: import.meta.env.VITE_IMAGEKIT_URL_ENDPOINT,
+        token: ikToken,
+        expire,
+        signature,
+      })
+      const n = response.filePath.lastIndexOf('/')
+      const fileName = response.filePath.substring(n + 1)
+      setEditSetupPhotoFileId(response.fileId)
+      setEditingSetup((prev) => ({ ...prev, photo: fileName }))
+      setActiveSetup((prev) => ({ ...prev, photo: fileName }))
+    } catch {
+      notifications.show({
+        color: 'red',
+        position: 'top-center',
+        message: 'Erro ao enviar foto.',
+      })
+    } finally {
+      setIsUploadingEditSetupPhoto(false)
+    }
+  }
+
   async function handleCreateSetup() {
     if (!newSetup.name) {
       return
@@ -588,10 +743,11 @@ export default function MyGear() {
         name: newSetup.name.trim(),
         description: newSetup.description.trim() || null,
         image: newSetup.image || null,
+        photo: newSetup.photo || null,
         visibility: newSetup.visibility,
         collab_mode: newSetup.collab_mode,
       })
-      .select('id, name, image, description, visibility, collab_mode')
+      .select('id, name, image, photo, description, visibility, collab_mode')
       .single()
     if (error) {
       notifications.show({
@@ -610,10 +766,12 @@ export default function MyGear() {
         name: '',
         description: '',
         image: '',
+        photo: '',
         visibility: 'private',
         collab_mode: 'owner_only',
       })
       setSetupImgFileId('')
+      setSetupPhotoFileId('')
       closeNewSetup()
       // Convidar colaboradores exige um id_setup existente, então só é possível
       // depois de criado — abrimos o drawer de edição automaticamente nesse caso.
@@ -692,6 +850,12 @@ export default function MyGear() {
   // ── Render ────────────────────────────────────────────
   return (
     <>
+      <Helmet>
+        <meta charSet="utf-8" />
+        <title>Configurações · Equipamentos · Mublin</title>
+        <link rel="canonical" href="https://mublin.com/settings/gear" />
+      </Helmet>
+
       <Stack gap="lg">
         {/* ── Setups ──────────────────────────────────── */}
         <Stack gap="md">
@@ -819,7 +983,7 @@ export default function MyGear() {
                   <IconPackages size={16} />
                 </ThemeIcon>
                 <Text fw={600} size="sm" tt="uppercase" lts="0.05em">
-                  Equipamentos ({mainGear.length})
+                  Meus equipamentos ({mainGear.length})
                 </Text>
               </Group>
               <Text size="xs" c="dimmed" mt={2}>
@@ -1172,10 +1336,10 @@ export default function MyGear() {
             }}
           />
 
-          {/* Upload de imagem */}
+          {/* Upload de thumbnail */}
           <Box>
             <Text size="sm" fw={500} mb={4}>
-              Imagem (opcional)
+              Thumbnail (opcional)
             </Text>
             {newSetup.image ? (
               <Flex align="center" gap="sm">
@@ -1207,7 +1371,7 @@ export default function MyGear() {
                 htmlFor="setup-image-input"
                 disabled={isUploadingSetupImg}
               >
-                {isUploadingSetupImg ? 'Enviando...' : 'Escolher imagem'}
+                {isUploadingSetupImg ? 'Enviando...' : 'Escolher thumbnail'}
               </Button>
             )}
             <input
@@ -1216,9 +1380,73 @@ export default function MyGear() {
               accept="image/png,image/jpeg"
               style={{ display: 'none' }}
               onChange={(e) => {
-                if (e.target.files?.[0]) {
-                  handleSetupImageUpload(e.target.files[0])
+                if (e.target.files?.[0]) handleSetupImageUpload(e.target.files[0])
+              }}
+            />
+          </Box>
+
+          {/* Upload de foto real/raw */}
+          <Box>
+            <Text size="sm" fw={500} mb={4}>
+              Foto real do setup (opcional)
+            </Text>
+            <Text size="xs" c="dimmed" mb={8}>
+              Foto mais ampla, sem crop - ideal para mostrar o setup montado
+            </Text>
+            {newSetup.photo ? (
+              <Box>
+                <Image
+                  src={SETUP_PHOTO + newSetup.photo}
+                  h={120}
+                  w="100%"
+                  radius="md"
+                  fit="cover"
+                  mb={8}
+                />
+                <Group gap="xs">
+                  <Button
+                    size="xs"
+                    color="red"
+                    variant="light"
+                    leftSection={<IconX size={13} />}
+                    onClick={() => {
+                      setNewSetup((p) => ({ ...p, photo: '' }))
+                      setSetupPhotoFileId('')
+                    }}
+                  >
+                    Remover foto
+                  </Button>
+                  <Button
+                    size="xs"
+                    variant="default"
+                    component="label"
+                    htmlFor="setup-photo-input"
+                  >
+                    Trocar foto
+                  </Button>
+                </Group>
+              </Box>
+            ) : (
+              <Button
+                size="xs"
+                variant="default"
+                leftSection={
+                  isUploadingSetupPhoto ? <Loader size={13} /> : <IconPhoto size={13} />
                 }
+                component="label"
+                htmlFor="setup-photo-input"
+                disabled={isUploadingSetupPhoto}
+              >
+                {isUploadingSetupPhoto ? 'Enviando...' : 'Adicionar foto real'}
+              </Button>
+            )}
+            <input
+              id="setup-photo-input"
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              style={{ display: 'none' }}
+              onChange={(e) => {
+                if (e.target.files?.[0]) handleSetupPhotoUpload(e.target.files[0])
               }}
             />
           </Box>
@@ -1271,8 +1499,7 @@ export default function MyGear() {
               Cancelar
             </Button>
             <Button
-              color="indigo"
-              radius="xl"
+              radius="lg"
               loading={isCreatingSetup}
               disabled={!newSetup.name}
               leftSection={<IconCheck size={15} />}
@@ -1341,6 +1568,158 @@ export default function MyGear() {
                 setEditingSetup((prev) => ({ ...prev, description: value }))
               }}
             />
+
+            {/* Thumbnail */}
+            <Box>
+              <Text size="sm" fw={500} mb={4}>
+                Thumbnail
+              </Text>
+              {editingSetup.image ? (
+                <Flex align="center" gap="sm">
+                  <Image
+                    src={SETUP_IMG + editingSetup.image}
+                    h={50}
+                    w={50}
+                    radius="md"
+                    fit="cover"
+                  />
+                  <Group gap="xs">
+                    <Button
+                      size="xs"
+                      variant="default"
+                      component="label"
+                      htmlFor="edit-setup-image-input"
+                      leftSection={
+                        isUploadingEditSetupImg ? (
+                          <Loader size={12} />
+                        ) : (
+                          <IconPhoto size={12} />
+                        )
+                      }
+                      disabled={isUploadingEditSetupImg}
+                    >
+                      Trocar
+                    </Button>
+                    <ActionIcon
+                      size="sm"
+                      color="red"
+                      variant="light"
+                      onClick={() => {
+                        setEditingSetup((p) => ({ ...p, image: '' }))
+                        setEditSetupImgFileId('')
+                      }}
+                    >
+                      <IconX size={12} />
+                    </ActionIcon>
+                  </Group>
+                </Flex>
+              ) : (
+                <Button
+                  size="xs"
+                  variant="default"
+                  leftSection={
+                    isUploadingEditSetupImg ? (
+                      <Loader size={12} />
+                    ) : (
+                      <IconPhoto size={12} />
+                    )
+                  }
+                  component="label"
+                  htmlFor="edit-setup-image-input"
+                  disabled={isUploadingEditSetupImg}
+                >
+                  {isUploadingEditSetupImg ? 'Enviando...' : 'Adicionar thumbnail'}
+                </Button>
+              )}
+              <input
+                id="edit-setup-image-input"
+                type="file"
+                accept="image/png,image/jpeg"
+                style={{ display: 'none' }}
+                onChange={(e) => {
+                  if (e.target.files?.[0]) handleEditSetupImageUpload(e.target.files[0])
+                }}
+              />
+            </Box>
+
+            {/* Foto real/raw */}
+            <Box>
+              <Text size="sm" fw={500} mb={4}>
+                Foto real do setup
+              </Text>
+              <Text size="xs" c="dimmed" mb={6}>
+                Foto ampla, sem crop
+              </Text>
+              {editingSetup.photo ? (
+                <Box>
+                  <Image
+                    src={SETUP_PHOTO + editingSetup.photo}
+                    h={140}
+                    w="100%"
+                    radius="md"
+                    fit="cover"
+                    mb={6}
+                  />
+                  <Group gap="xs">
+                    <Button
+                      size="xs"
+                      variant="default"
+                      component="label"
+                      htmlFor="edit-setup-photo-input"
+                      leftSection={
+                        isUploadingEditSetupPhoto ? (
+                          <Loader size={12} />
+                        ) : (
+                          <IconPhoto size={12} />
+                        )
+                      }
+                      disabled={isUploadingEditSetupPhoto}
+                    >
+                      Trocar foto
+                    </Button>
+                    <Button
+                      size="xs"
+                      color="red"
+                      variant="light"
+                      leftSection={<IconX size={12} />}
+                      onClick={() => {
+                        setEditingSetup((p) => ({ ...p, photo: '' }))
+                        setEditSetupPhotoFileId('')
+                      }}
+                    >
+                      Remover
+                    </Button>
+                  </Group>
+                </Box>
+              ) : (
+                <Button
+                  size="xs"
+                  variant="default"
+                  leftSection={
+                    isUploadingEditSetupPhoto ? (
+                      <Loader size={12} />
+                    ) : (
+                      <IconPhoto size={12} />
+                    )
+                  }
+                  component="label"
+                  htmlFor="edit-setup-photo-input"
+                  disabled={isUploadingEditSetupPhoto}
+                >
+                  {isUploadingEditSetupPhoto ? 'Enviando...' : 'Adicionar foto real'}
+                </Button>
+              )}
+              <input
+                id="edit-setup-photo-input"
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                style={{ display: 'none' }}
+                onChange={(e) => {
+                  if (e.target.files?.[0]) handleEditSetupPhotoUpload(e.target.files[0])
+                }}
+              />
+            </Box>
+
             <Switch
               label="Setup público"
               description="Aparece na comunidade e pode ganhar um link próprio pra compartilhar. Por padrão, continua editável só por você"
@@ -1475,12 +1854,92 @@ export default function MyGear() {
             leftSection={
               showAddToSetup ? <IconMinus size={13} /> : <IconPlus size={13} />
             }
-            onClick={() => setShowAddToSetup((v) => !v)}
+            onClick={() => {
+              setShowAddToSetup((v) => !v)
+              setGearSearchQuery('')
+            }}
           >
             {showAddToSetup ? 'Cancelar' : 'Adicionar item ao setup'}
           </Button>
 
-          {showAddToSetup && (
+          {showAddToSetup && isPublicSetup && (
+            // Setup público: busca em toda a base de equipamentos do Mublin,
+            // não fica restrito ao gear do próprio usuário.
+            <Stack gap="xs">
+              <TextInput
+                size="sm"
+                leftSection={<IconSearch size={14} />}
+                placeholder="Buscar por marca, modelo, categoria..."
+                value={gearSearchQuery}
+                onChange={(e) => setGearSearchQuery(e.currentTarget.value)}
+                disabled={isAddingToSetup}
+              />
+
+              {trimmedGearSearch.length > 0 && trimmedGearSearch.length < 2 ? (
+                <Text size="xs" c="dimmed">
+                  Digite ao menos 2 caracteres.
+                </Text>
+              ) : isSearchingGear ? (
+                <Skeleton height={40} radius="md" />
+              ) : trimmedGearSearch.length >= 2 && gearSearchResults.length === 0 ? (
+                <Text size="xs" c="dimmed">
+                  Nenhum equipamento encontrado.
+                </Text>
+              ) : gearSearchResults.length > 0 ? (
+                <Stack gap={6} mah={260} style={{ overflowY: 'auto' }}>
+                  {gearSearchResults.map((product) => {
+                    const alreadyAdded = setupItemProductIds.includes(product.id)
+                    return (
+                      <Paper
+                        key={product.id}
+                        withBorder
+                        radius="md"
+                        p="xs"
+                        style={{
+                          cursor:
+                            alreadyAdded || isAddingToSetup ? 'not-allowed' : 'pointer',
+                          opacity: alreadyAdded ? 0.5 : 1,
+                        }}
+                        onClick={() => {
+                          if (!alreadyAdded && !isAddingToSetup) {
+                            handleAddToSetup(product.id)
+                          }
+                        }}
+                      >
+                        <Group gap="sm" wrap="nowrap">
+                          <Image
+                            src={
+                              product.picture ? PRODUCT_IMG + product.picture : undefined
+                            }
+                            h={36}
+                            w={36}
+                            fit="contain"
+                            radius="sm"
+                            fallbackSrc="https://placehold.co/80x80?text=?"
+                          />
+                          <Stack gap={0} style={{ flex: 1, minWidth: 0 }}>
+                            <Text size="10px" c="dimmed" lineClamp={1}>
+                              {product.brand_name}
+                            </Text>
+                            <Text size="xs" fw={600} lineClamp={1}>
+                              {product.name}
+                            </Text>
+                          </Stack>
+                          {alreadyAdded && (
+                            <Badge size="xs" variant="light" color="gray">
+                              Já adicionado
+                            </Badge>
+                          )}
+                        </Group>
+                      </Paper>
+                    )
+                  })}
+                </Stack>
+              ) : null}
+            </Stack>
+          )}
+
+          {showAddToSetup && !isPublicSetup && (
             <NativeSelect
               size="sm"
               disabled={isAddingToSetup}

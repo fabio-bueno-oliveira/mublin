@@ -7,7 +7,7 @@ export async function fetchSetupById(setupId) {
     .from('gear_setups')
     .select(
       `
-      id, name, description, image, visibility, collab_mode, created_at, updated_at,
+      id, name, description, image, photo, visibility, collab_mode, created_at, updated_at,
       id_user,
       owner:profiles!gear_setups_id_user_fkey ( id, username, full_name, avatar )
     `,
@@ -168,4 +168,117 @@ export async function removeSetupCollaborator(collaboratorRowId) {
   if (error) {
     throw new Error(error.message)
   }
+}
+
+// ── Comentários ──────────────────────────────────────
+
+export async function fetchSetupCommentsCount(setupId) {
+  const { count, error } = await supabase
+    .from('gear_setup_comments')
+    .select('id', { count: 'exact', head: true })
+    .eq('id_setup', setupId)
+  if (error) {
+    throw new Error(error.message)
+  }
+  return count ?? 0
+}
+
+export async function fetchSetupComments(setupId, page = 1, perPage = 10) {
+  const from = (page - 1) * perPage
+  const to = from + perPage - 1
+  const { data, error, count } = await supabase
+    .from('gear_setup_comments')
+    .select(
+      `
+      id, content, created_at, id_user,
+      profiles!gear_setup_comments_id_user_fkey ( id, username, full_name, avatar )
+    `,
+      { count: 'exact' },
+    )
+    .eq('id_setup', setupId)
+    .order('created_at', { ascending: false })
+    .range(from, to)
+  if (error) {
+    throw new Error(error.message)
+  }
+  return { data, count }
+}
+
+export async function addSetupComment({ setupId, userId, content }) {
+  const { data, error } = await supabase
+    .from('gear_setup_comments')
+    .insert({
+      id_setup: setupId,
+      id_user: userId,
+      content,
+    })
+    .select('id')
+    .single()
+  if (error) {
+    throw new Error(error.message)
+  }
+  return data
+}
+
+export async function deleteSetupComment(commentId) {
+  const { error } = await supabase
+    .from('gear_setup_comments')
+    .delete()
+    .eq('id', commentId)
+  if (error) {
+    throw new Error(error.message)
+  }
+}
+
+// ── Likes ──────────────────────────────────────────
+
+export async function fetchSetupLikesCount(setupId) {
+  const { count, error } = await supabase
+    .from('gear_setup_likes')
+    .select('id', { count: 'exact', head: true })
+    .eq('id_setup', setupId)
+  if (error) {
+    throw new Error(error.message)
+  }
+  return count ?? 0
+}
+
+export async function fetchHasLiked(setupId, userId) {
+  if (!userId) {
+    return false
+  }
+  const { data, error } = await supabase
+    .from('gear_setup_likes')
+    .select('id')
+    .eq('id_setup', setupId)
+    .eq('id_user', userId)
+    .maybeSingle()
+  if (error) {
+    throw new Error(error.message)
+  }
+  return !!data
+}
+
+export async function toggleSetupLike({ setupId, userId, currentlyLiked }) {
+  if (currentlyLiked) {
+    const { error } = await supabase
+      .from('gear_setup_likes')
+      .delete()
+      .eq('id_setup', setupId)
+      .eq('id_user', userId)
+    if (error) {
+      throw new Error(error.message)
+    }
+    return false
+  }
+  const { error } = await supabase
+    .from('gear_setup_likes')
+    .insert({ id_setup: setupId, id_user: userId })
+  if (error) {
+    if (error.code === '23505') {
+      return true
+    } // já curtiu (race condition)
+    throw new Error(error.message)
+  }
+  return true
 }

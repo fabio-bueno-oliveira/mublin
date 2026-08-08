@@ -268,11 +268,11 @@ export default function ProfileGearItem() {
                                 ? PRODUCT_IMG_LG + selectedItem.products.picture
                                 : undefined
                             }
-                            w={180}
+                            w={140}
                             fit="contain"
                             mb={12}
                             radius="md"
-                            fallbackSrc="https://ik.imagekit.io/mublin/products/tr:w-400,cm-pad_resize,bg-FFFFFF/no-picture.png"
+                            fallbackSrc="https://ik.imagekit.io/mublin/products/tr:w-140,cm-pad_resize,bg-FFFFFF/no-picture.png"
                           />
                         </Link>
 
@@ -299,13 +299,9 @@ export default function ProfileGearItem() {
                             <Anchor component={Link} to={`/${username}`}>
                               <Avatar
                                 size={60}
-                                src={getAvatarUrl(
-                                  profile.avatar,
-                                  profile.is_open_to_work,
-                                  120,
-                                )}
+                                src={`https://ik.imagekit.io/mublin/users/avatars/${profile.avatar}`}
                                 style={{
-                                  border: '3px solid var(--mantine-color-body)',
+                                  // border: '3px solid var(--mantine-color-body)',
                                   boxShadow: '0 6px 14px rgba(0, 0, 0, 0.2)',
                                 }}
                               />
