@@ -25,6 +25,7 @@ import Search from './pages/Search'
 import SearchPeople from './pages/search/People'
 // -- Profile pages
 import ProfileRouter from './components/ProfileRouter'
+import ProfileBio from './pages/ProfileBio'
 import ProfileGear from './pages/ProfileGear'
 import ProfileGearItem from './pages/ProfileGearItem'
 import Setup from './pages/Setup'
@@ -144,6 +145,7 @@ export const router = createBrowserRouter([
   {
     element: <AppProfileLayout />,
     children: [
+      { path: '/:username/bio', element: <ProfileBio /> },
       { path: '/:username/gear', element: <ProfileGear /> },
       { path: '/:username/gear/:profileGearItemId', element: <ProfileGearItem /> }, // adicionando agora este aqui
     ],

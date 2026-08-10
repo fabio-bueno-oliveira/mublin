@@ -47,7 +47,6 @@ import {
 // prettier-ignore
 import { useMediaQuery, useDisclosure, useWindowScroll, useScroller } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
-import { modals } from '@mantine/modals'
 import LoadingSkeleton from '../components/profile/LoadingSkeleton'
 import LinkedItem from '../components/feed/LinkedItem'
 import VideoPlayerYoutube from '../components/feed/VideoPlayerYoutube'
@@ -80,6 +79,7 @@ import AppNavbarMobile from '../components/AppNavbarMobile'
 import ProPlanBadge from '../components/ProPlanBadge'
 import SimilarProfiles from '../components/SimilarProfiles'
 import { formatPortfolioPeriod, getAvatarUrl } from '../utils/profile'
+import { openImagePreviewModal } from '../utils/openImagePreviewModal'
 import { isProfileLive } from '../utils/live'
 import { isMublinOG } from '../utils/badges'
 import { AVAILABLE_FROM_LABELS } from '../constants/availability'
@@ -774,6 +774,15 @@ export default function Profile() {
                     <Avatar
                       size={140}
                       src={getAvatarUrl(profile.avatar, profile.is_open_to_work, 140)}
+                      style={{ cursor: profile.avatar ? 'pointer' : 'default' }}
+                      onClick={() =>
+                        profile.avatar &&
+                        openImagePreviewModal(
+                          getAvatarUrl(profile.avatar, profile.is_open_to_work, 600),
+                          profile.full_name,
+                          { circular: true },
+                        )
+                      }
                     />
                   </Center>
 
@@ -1111,51 +1120,9 @@ export default function Profile() {
                               {truncateString(profile.bio, 150)}
                             </Text>
                             <Anchor
+                              component={Link}
+                              to={`/${profile.username}/bio`}
                               underline="never"
-                              onClick={() =>
-                                modals.open({
-                                  title: (
-                                    <Group gap="xs">
-                                      <Avatar
-                                        src={AVATAR_PATH + profile.avatar}
-                                        size={28}
-                                        radius="xl"
-                                      />
-                                      <Stack gap={4}>
-                                        <Text size="sm" c="dimmed" lh={1}>
-                                          Sobre
-                                        </Text>
-                                        <Text fw={600} size="sm" lh={1.1}>
-                                          {profile.full_name}
-                                        </Text>
-                                      </Stack>
-                                    </Group>
-                                  ),
-                                  size: 'md',
-                                  centered: true,
-                                  radius: 'md',
-                                  overlayProps: {
-                                    backgroundOpacity: 0.55,
-                                    blur: 3,
-                                  },
-                                  children: (
-                                    <ScrollArea.Autosize
-                                      mah={400}
-                                      type="auto"
-                                      offsetScrollbars
-                                    >
-                                      <Text
-                                        mt="xs"
-                                        fz="md"
-                                        lh={1.5}
-                                        style={{ whiteSpace: 'pre-line' }}
-                                      >
-                                        {profile.bio}
-                                      </Text>
-                                    </ScrollArea.Autosize>
-                                  ),
-                                })
-                              }
                             >
                               <Text
                                 mt={6}

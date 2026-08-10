@@ -7,6 +7,7 @@ import {
 import { isProfileLive } from '../../utils/live'
 import { truncateString } from '../../utils/formatter'
 import { getAvatarUrl } from '../../utils/profile'
+import { openImagePreviewModal } from '../../utils/openImagePreviewModal'
 // import ProPlanBadge from '../ProPlanBadge'
 
 export default function ProfileHeaderMobile({
@@ -25,6 +26,15 @@ export default function ProfileHeaderMobile({
         mb="md"
         size={84}
         src={getAvatarUrl(profile.avatar, profile.is_open_to_work, 168)}
+        style={{ cursor: profile.avatar ? 'pointer' : 'default' }}
+        onClick={() =>
+          profile.avatar &&
+          openImagePreviewModal(
+            getAvatarUrl(profile.avatar, profile.is_open_to_work, 600),
+            profile.full_name,
+            { circular: true },
+          )
+        }
       />
       <Stack gap={2} style={{ overflow: 'hidden' }}>
         <Flex align="center" gap={3} mb={2} wrap="wrap">
