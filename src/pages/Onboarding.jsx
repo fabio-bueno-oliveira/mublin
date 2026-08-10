@@ -363,10 +363,14 @@ export default function Onboarding() {
     }
     setAvatarFile(file)
     setAvatarPreview(URL.createObjectURL(file))
+    setAvatarUploaded(false)
+    // Upload direto, sem exigir confirmação manual do usuário
+    handleAvatarUpload(file)
   }
 
-  async function handleAvatarUpload() {
-    if (!avatarFile) {
+  async function handleAvatarUpload(file) {
+    const fileToUpload = file ?? avatarFile
+    if (!fileToUpload) {
       return
     }
     setAvatarUploading(true)
@@ -382,7 +386,7 @@ export default function Onboarding() {
       const { token: ikToken, expire, signature } = await authRes.json()
 
       const response = await upload({
-        file: avatarFile,
+        file: fileToUpload,
         fileName: `${profile?.username || user.id}_.jpg`,
         folder: '/users/avatars/',
         tags: ['avatar', 'user'],
@@ -791,6 +795,11 @@ export default function Onboarding() {
 
   return (
     <Container size="sm" pb={100} py={24} mb={80}>
+      <style>{`
+        .portfolio-search-result:hover {
+          background-color: var(--mantine-color-default-hover);
+        }
+      `}</style>
       <Stack gap="xl">
         <Stack gap={4} align="center">
           <Image
@@ -826,22 +835,50 @@ export default function Onboarding() {
               Uma boa foto aumenta suas chances de ser encontrado por outros músicos.
             </Text>
 
-            <Avatar
-              size={120}
-              src={
-                avatarPreview ||
-                (profile?.avatar ? AVATAR_PATH + profile.avatar : undefined)
-              }
-              style={{
-                border: '3px solid var(--mantine-color-default-border)',
-              }}
-            />
+            <Box style={{ position: 'relative' }}>
+              <Avatar
+                size={120}
+                src={
+                  avatarPreview ||
+                  (profile?.avatar ? AVATAR_PATH + profile.avatar : undefined)
+                }
+                style={{
+                  border: '3px solid var(--mantine-color-default-border)',
+                  opacity: avatarUploading ? 0.5 : 1,
+                  transition: 'opacity 150ms ease',
+                }}
+              />
+              {avatarUploading && (
+                <Loader
+                  size="md"
+                  style={{
+                    position: 'absolute',
+                    top: '50%',
+                    left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                  }}
+                />
+              )}
+              {avatarUploaded && !avatarUploading && (
+                <ActionIcon
+                  radius="xl"
+                  size={28}
+                  color="green"
+                  variant="filled"
+                  style={{ position: 'absolute', bottom: 0, right: 0 }}
+                >
+                  <IconCheck size={16} />
+                </ActionIcon>
+              )}
+            </Box>
 
-            {uploadProgress > 0 && uploadProgress < 100 && (
-              <Text size="xs" c="dimmed">
-                Enviando... {uploadProgress}%
-              </Text>
-            )}
+            <Box h={18}>
+              {avatarUploading && (
+                <Text size="xs" c="dimmed" fw={500}>
+                  Enviando... {uploadProgress}%
+                </Text>
+              )}
+            </Box>
 
             <Group gap="sm">
               <Button
@@ -850,6 +887,7 @@ export default function Onboarding() {
                 leftSection={<IconUpload size={16} />}
                 component="label"
                 htmlFor="avatar-input"
+                disabled={avatarUploading}
               >
                 {avatarPreview ? 'Trocar foto' : 'Selecionar foto'}
               </Button>
@@ -860,17 +898,6 @@ export default function Onboarding() {
                 style={{ display: 'none' }}
                 onChange={(e) => handleAvatarSelect(e.target.files?.[0])}
               />
-              {avatarPreview && !avatarUploaded && (
-                <Button
-                  color="green"
-                  radius="xl"
-                  loading={avatarUploading}
-                  leftSection={<IconCheck size={16} />}
-                  onClick={handleAvatarUpload}
-                >
-                  Confirmar foto
-                </Button>
-              )}
             </Group>
           </Stack>
         )}
@@ -1167,13 +1194,24 @@ export default function Onboarding() {
         )}
         {/* ── Step 3: Portfólio ────────────────────────── */}
         {active === 3 && (
-          <Stack gap="md">
+          <Stack gap="sm">
             <Title order={3} fw={700} ta="center">
               Seu portfólio
             </Title>
             <Text c="dimmed" size="sm" ta="center">
               Em quais projetos, bandas ou com quais artistas você já atuou?
             </Text>
+
+            <Button
+              variant="filled"
+              color="mublinColor"
+              size="sm"
+              mt={userPortfolio.length === 0 ? 16 : 0}
+              leftSection={<IconPlus size={14} />}
+              onClick={handleOpenPortfolioModal}
+            >
+              Adicionar ao portfólio
+            </Button>
 
             {loadingPortfolio ? (
               <Text size="sm" c="dimmed" ta="center">
@@ -1214,7 +1252,7 @@ export default function Onboarding() {
                           )}
                         </Avatar>
                         <Stack gap={0} style={{ minWidth: 0 }}>
-                          <Text size="sm" fw={600} truncate>
+                          <Text size="md" fw={400} truncate>
                             {entity?.name || 'Sem título'}
                           </Text>
                           <Text size="xs" c="dimmed" truncate>
@@ -1223,7 +1261,7 @@ export default function Onboarding() {
                         </Stack>
                       </Group>
                       <ActionIcon
-                        size="md"
+                        size="lg"
                         variant="subtle"
                         color="red"
                         loading={isDeletingPortfolioItem}
@@ -1231,7 +1269,7 @@ export default function Onboarding() {
                         title="Remover item"
                         style={{ flexShrink: 0 }}
                       >
-                        <IconTrash size={14} />
+                        <IconTrash size={18} />
                       </ActionIcon>
                     </Group>
                   )
@@ -1243,18 +1281,7 @@ export default function Onboarding() {
               </Text>
             )}
 
-            <Button
-              variant="filled"
-              color="mublinColor"
-              size="sm"
-              mt={userPortfolio.length === 0 ? 16 : 0}
-              leftSection={<IconPlus size={14} />}
-              onClick={handleOpenPortfolioModal}
-            >
-              Adicionar ao portfólio
-            </Button>
-
-            <Button
+            {/* <Button
               mt="xs"
               variant="outline"
               color="teal"
@@ -1262,7 +1289,7 @@ export default function Onboarding() {
               onClick={() => openNewProjectModal()}
             >
               Não encontrou? Cadastre um novo projeto
-            </Button>
+            </Button> */}
             <Text size="sm" c="dimmed" ta="center">
               Não se preocupe, você poderá adicionar mais itens depois!
             </Text>
@@ -1430,23 +1457,32 @@ export default function Onboarding() {
           />
 
           <Radio.Group
-            label="O que você está adicionando?"
+            label="Onde você atuou?"
+            description="Escolha uma opção e depois busque pelo nome na lista abaixo"
             value={entryType}
             onChange={(value) => {
               setEntryType(value)
               setSelectedProject(null)
               setSelectedArtist(null)
+              setProjectSearch('')
+              setProjectResults([])
+              setArtistSearch('')
+              setArtistResults([])
             }}
           >
-            <Group gap="xs" mt={6}>
-              <Radio value="project" label="Projeto cadastrado no Mublin" size="sm" />
+            <Stack gap={6} mt={6}>
               <Radio
-                value="artist"
-                label="Artista ou projeto externo"
-                description="Artistas mainstream e outras figuras do mercado"
+                value="project"
+                label="Uma banda/projeto já cadastrado no Mublin"
                 size="sm"
               />
-            </Group>
+              <Radio
+                value="artist"
+                label="Um artista, banda ou projeto famoso (fora do Mublin)"
+                description="Ex: artistas mainstream, bandas consagradas..."
+                size="sm"
+              />
+            </Stack>
           </Radio.Group>
 
           {entryType === 'project' &&
@@ -1479,7 +1515,7 @@ export default function Onboarding() {
             ) : (
               <Stack gap="xs">
                 <TextInput
-                  placeholder="Buscar projeto cadastrado no Mublin..."
+                  placeholder="Digite o nome do projeto ou banda..."
                   leftSection={<IconSearch size={15} />}
                   rightSection={projectSearchLoading ? <Loader size="xs" /> : undefined}
                   value={projectSearch}
@@ -1488,10 +1524,31 @@ export default function Onboarding() {
                     handleProjectSearch(e.target.value)
                   }}
                 />
+                {projectSearch.length < 2 && (
+                  <Text size="xs" c="dimmed">
+                    Digite ao menos 2 letras. Os resultados aparecem abaixo — toque em um
+                    deles para selecionar.
+                  </Text>
+                )}
                 {projectResults.length > 0 && (
-                  <Stack gap="xs" mah={220} style={{ overflowY: 'auto' }}>
+                  <Stack gap={2} mah={220} style={{ overflowY: 'auto' }}>
                     {projectResults.map((project) => (
-                      <Group key={project.id} gap="sm" justify="space-between">
+                      <Group
+                        key={project.id}
+                        gap="sm"
+                        justify="space-between"
+                        p={6}
+                        style={{
+                          cursor: 'pointer',
+                          borderRadius: 8,
+                        }}
+                        className="portfolio-search-result"
+                        onClick={() => {
+                          setSelectedProject(project)
+                          setProjectSearch('')
+                          setProjectResults([])
+                        }}
+                      >
                         <Group gap="sm">
                           <Avatar
                             size={32}
@@ -1506,15 +1563,7 @@ export default function Onboarding() {
                           </Avatar>
                           <Text size="sm">{project.name}</Text>
                         </Group>
-                        <Button
-                          size="xs"
-                          variant="light"
-                          onClick={() => {
-                            setSelectedProject(project)
-                            setProjectSearch('')
-                            setProjectResults([])
-                          }}
-                        >
+                        <Button size="xs" variant="light" tabIndex={-1}>
                           Selecionar
                         </Button>
                       </Group>
@@ -1524,9 +1573,19 @@ export default function Onboarding() {
                 {projectSearch.length >= 2 &&
                   !projectSearchLoading &&
                   projectResults.length === 0 && (
-                    <Text size="sm" c="dimmed" ta="center">
-                      Nenhum projeto encontrado.
-                    </Text>
+                    <Stack gap={10} align="center">
+                      <Text size="sm" ta="center">
+                        Nenhum projeto encontrado com esse nome.
+                      </Text>
+                      <Button
+                        variant="filled"
+                        color="green"
+                        size="xs"
+                        onClick={() => openNewProjectModal()}
+                      >
+                        Cadastrar “{projectSearch}” no Mublin
+                      </Button>
+                    </Stack>
                   )}
               </Stack>
             ))}
@@ -1561,7 +1620,7 @@ export default function Onboarding() {
             ) : (
               <Stack gap="xs">
                 <TextInput
-                  placeholder="Buscar artista por nome..."
+                  placeholder="Digite o nome do artista, banda ou projeto..."
                   leftSection={<IconSearch size={15} />}
                   rightSection={artistSearchLoading ? <Loader size="xs" /> : undefined}
                   value={artistSearch}
@@ -1570,10 +1629,28 @@ export default function Onboarding() {
                     handleArtistSearch(e.target.value)
                   }}
                 />
+                {artistSearch.length < 2 && (
+                  <Text size="xs" c="dimmed">
+                    Digite ao menos 2 letras. Os resultados aparecem abaixo — toque em um
+                    deles para selecionar.
+                  </Text>
+                )}
                 {artistResults.length > 0 && (
-                  <Stack gap="xs" mah={220} style={{ overflowY: 'auto' }}>
+                  <Stack gap={2} mah={220} style={{ overflowY: 'auto' }}>
                     {artistResults.map((artist) => (
-                      <Group key={artist.id} gap="sm" justify="space-between">
+                      <Group
+                        key={artist.id}
+                        gap="sm"
+                        justify="space-between"
+                        p={6}
+                        style={{ cursor: 'pointer', borderRadius: 8 }}
+                        className="portfolio-search-result"
+                        onClick={() => {
+                          setSelectedArtist(artist)
+                          setArtistSearch('')
+                          setArtistResults([])
+                        }}
+                      >
                         <Group gap="sm">
                           <Avatar
                             size={32}
@@ -1586,15 +1663,7 @@ export default function Onboarding() {
                           </Avatar>
                           <Text size="sm">{artist.name}</Text>
                         </Group>
-                        <Button
-                          size="xs"
-                          variant="light"
-                          onClick={() => {
-                            setSelectedArtist(artist)
-                            setArtistSearch('')
-                            setArtistResults([])
-                          }}
-                        >
+                        <Button size="xs" variant="light" tabIndex={-1}>
                           Selecionar
                         </Button>
                       </Group>
@@ -1605,7 +1674,7 @@ export default function Onboarding() {
                   !artistSearchLoading &&
                   artistResults.length === 0 && (
                     <Text size="sm" c="dimmed" ta="center">
-                      Nenhum artista encontrado.
+                      Nenhum artista encontrado com esse nome.
                     </Text>
                   )}
               </Stack>
@@ -1613,7 +1682,7 @@ export default function Onboarding() {
 
           <Switch
             label="Colaboração esporádica"
-            description="Selecione caso você atue ou atuou em participações pontuais em shows ou gravações junto a este projeto, sem um período fixo"
+            description="Selecione se atua pontualmente neste projeto, sem um período fixo"
             checked={portfolioIsSporadic}
             onChange={(e) => {
               const checked = e.currentTarget.checked
@@ -1672,13 +1741,17 @@ export default function Onboarding() {
             mt="xs"
             size="sm"
             loading={isSavingPortfolioItem}
-            disabled={
-              selectedRoleIds.length === 0 || (!selectedProject && !selectedArtist)
-            }
             onClick={handleAddPortfolioItem}
           >
             Adicionar ao meu portfólio
           </Button>
+          {(selectedRoleIds.length === 0 || (!selectedProject && !selectedArtist)) && (
+            <Text size="xs" c="dimmed" ta="center" mt={-4}>
+              {selectedRoleIds.length === 0
+                ? 'Selecione ao menos um papel exercido para continuar'
+                : 'Busque e selecione um projeto ou artista na lista acima para continuar'}
+            </Text>
+          )}
         </Stack>
       </Modal>
 
