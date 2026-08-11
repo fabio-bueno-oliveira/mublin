@@ -7,13 +7,23 @@ import { supabase } from '../../lib/supabaseClient'
 
 const AVATAR_PATH =
   'https://ik.imagekit.io/mublin/tr:h-80,c-maintain_ratio/users/avatars/'
-
 const SWIPE_THRESHOLD = 60
 
+function getIKUrl(originalUrl, type) {
+  if (!originalUrl?.includes('ik.imagekit.io')) {
+    return originalUrl
+  }
+  const base = originalUrl.split('/tr:')[0].split('?')[0].replace(/\/$/, '')
+  if (type === 'player') {
+    return `${base}/tr:h-720,q-80`
+  }
+  return originalUrl
+}
+
 const variants = {
-  enter: (direction) => ({ x: direction > 0 ? 60 : -60, opacity: 0 }),
+  enter: (d) => ({ x: d > 0 ? 60 : -60, opacity: 0 }),
   center: { x: 0, opacity: 1 },
-  exit: (direction) => ({ x: direction > 0 ? -60 : 60, opacity: 0 }),
+  exit: (d) => ({ x: d > 0 ? -60 : 60, opacity: 0 }),
 }
 
 export default function ScenePlayer({ scenes, initialIndex, onClose }) {
@@ -27,6 +37,8 @@ export default function ScenePlayer({ scenes, initialIndex, onClose }) {
   const hasNext = index < scenes.length - 1
   const hasPrev = index > 0
 
+  const optimizedSrc = getIKUrl(scene.video_url, 'player')
+
   const goNext = () => {
     if (hasNext) {
       setDirection(1)
@@ -36,7 +48,6 @@ export default function ScenePlayer({ scenes, initialIndex, onClose }) {
       onClose()
     }
   }
-
   const goPrev = () => {
     if (hasPrev) {
       setDirection(-1)
@@ -45,17 +56,14 @@ export default function ScenePlayer({ scenes, initialIndex, onClose }) {
     }
   }
 
-  // Trava o scroll da página de fundo enquanto o player está aberto
   useEffect(() => {
     document.body.style.overflow = 'hidden'
     return () => {
       document.body.style.overflow = ''
     }
   }, [])
-
-  // Teclado: ESC fecha, setas navegam
   useEffect(() => {
-    const handleKeyDown = (e) => {
+    const h = (e) => {
       if (e.key === 'Escape') {
         onClose()
       }
@@ -66,29 +74,18 @@ export default function ScenePlayer({ scenes, initialIndex, onClose }) {
         goPrev()
       }
     }
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [index, scenes.length])
-
-  // Incrementa views_count a cada scene exibida (troca de índice inclusa)
+    window.addEventListener('keydown', h)
+    return () => window.removeEventListener('keydown', h)
+  }, [index])
   useEffect(() => {
     supabase
       .from('scenes')
       .update({ views_count: (scene.views_count ?? 0) + 1 })
       .eq('id', scene.id)
-      .then(({ error }) => {
-        if (error) {
-          console.error('Erro ao incrementar views_count:', error)
-        }
-      })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+      .then()
   }, [scene.id])
 
-  // --- Swipe touch (mobile) ---
-  const onTouchStart = (e) => {
-    dragStartX.current = e.touches[0].clientX
-  }
+  const onTouchStart = (e) => (dragStartX.current = e.touches[0].clientX)
   const onTouchEnd = (e) => {
     if (dragStartX.current === null) {
       return
@@ -101,11 +98,7 @@ export default function ScenePlayer({ scenes, initialIndex, onClose }) {
       goPrev()
     }
   }
-
-  // --- Drag de mouse (desktop) ---
-  const onMouseDown = (e) => {
-    dragStartX.current = e.clientX
-  }
+  const onMouseDown = (e) => (dragStartX.current = e.clientX)
   const onMouseUp = (e) => {
     if (dragStartX.current === null) {
       return
@@ -113,7 +106,7 @@ export default function ScenePlayer({ scenes, initialIndex, onClose }) {
     const delta = e.clientX - dragStartX.current
     dragStartX.current = null
     if (Math.abs(delta) > SWIPE_THRESHOLD) {
-      ignoreNextClick.current = true // evita que o click (disparado após o mouseup) feche o overlay
+      ignoreNextClick.current = true
       if (delta < 0) {
         goNext()
       } else {
@@ -121,7 +114,6 @@ export default function ScenePlayer({ scenes, initialIndex, onClose }) {
       }
     }
   }
-
   const handleOverlayClick = () => {
     if (ignoreNextClick.current) {
       ignoreNextClick.current = false
@@ -152,7 +144,6 @@ export default function ScenePlayer({ scenes, initialIndex, onClose }) {
           userSelect: 'none',
         }}
       >
-        {/* Indicador de progresso, estilo Stories */}
         <Group
           gap={4}
           onClick={(e) => e.stopPropagation()}
@@ -181,8 +172,6 @@ export default function ScenePlayer({ scenes, initialIndex, onClose }) {
             </Box>
           ))}
         </Group>
-
-        {/* Header: perfil do músico */}
         <Group
           justify="space-between"
           onClick={(e) => e.stopPropagation()}
@@ -201,25 +190,15 @@ export default function ScenePlayer({ scenes, initialIndex, onClose }) {
               )}
             </Box>
           </Group>
-
-          <ActionIcon
-            variant="subtle"
-            color="gray"
-            size="lg"
-            onClick={onClose}
-            aria-label="Fechar"
-          >
+          <ActionIcon variant="subtle" color="gray" size="lg" onClick={onClose}>
             <IconX size={22} color="#fff" />
           </ActionIcon>
         </Group>
-
-        {/* Setas de navegação — só aparecem em dispositivos com mouse (hover) */}
         {hasPrev && (
           <ActionIcon
-            variant="subtle"
-            color="gray"
-            size="xl"
             className="scenePlayerArrow"
+            variant="subtle"
+            size="xl"
             onClick={(e) => {
               e.stopPropagation()
               goPrev()
@@ -231,17 +210,15 @@ export default function ScenePlayer({ scenes, initialIndex, onClose }) {
               transform: 'translateY(-50%)',
               zIndex: 3,
             }}
-            aria-label="Cena anterior"
           >
             <IconChevronLeft size={26} color="#fff" />
           </ActionIcon>
         )}
         {hasNext && (
           <ActionIcon
-            variant="subtle"
-            color="gray"
-            size="xl"
             className="scenePlayerArrow"
+            variant="subtle"
+            size="xl"
             onClick={(e) => {
               e.stopPropagation()
               goNext()
@@ -253,13 +230,10 @@ export default function ScenePlayer({ scenes, initialIndex, onClose }) {
               transform: 'translateY(-50%)',
               zIndex: 3,
             }}
-            aria-label="Próxima cena"
           >
             <IconChevronRight size={26} color="#fff" />
           </ActionIcon>
         )}
-
-        {/* Player, com stopPropagation pra clicar nos controles sem fechar o overlay */}
         <Box onClick={(e) => e.stopPropagation()} style={{ overflow: 'hidden' }}>
           <AnimatePresence mode="wait" custom={direction} initial={false}>
             <motion.div
@@ -272,7 +246,7 @@ export default function ScenePlayer({ scenes, initialIndex, onClose }) {
               transition={{ duration: 0.2, ease: 'easeOut' }}
             >
               <VideoPlayerNative
-                src={scene.video_url}
+                src={optimizedSrc}
                 title={scene.caption}
                 isVertical
                 autoPlay
@@ -283,19 +257,6 @@ export default function ScenePlayer({ scenes, initialIndex, onClose }) {
             </motion.div>
           </AnimatePresence>
         </Box>
-
-        {/* Pré-carrega o próximo vídeo em segundo plano, sem exibir */}
-        {hasNext && (
-          <video
-            key={`preload-${scenes[index + 1].id}`}
-            src={scenes[index + 1].video_url}
-            preload="auto"
-            muted
-            style={{ display: 'none' }}
-          />
-        )}
-
-        {/* Caption, se houver */}
         {scene.caption && (
           <Text
             size="sm"
@@ -309,13 +270,7 @@ export default function ScenePlayer({ scenes, initialIndex, onClose }) {
           </Text>
         )}
       </Box>
-
-      <style>{`
-        .scenePlayerArrow { display: none; }
-        @media (hover: hover) and (pointer: fine) {
-          .scenePlayerArrow { display: flex; }
-        }
-      `}</style>
+      <style>{`.scenePlayerArrow { display: none; } @media (hover: hover) and (pointer: fine) { .scenePlayerArrow { display: flex; } }`}</style>
     </Portal>
   )
 }

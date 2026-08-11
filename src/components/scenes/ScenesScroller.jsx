@@ -1,34 +1,72 @@
 import { useState, useEffect, useRef } from 'react'
-import { ScrollArea, Group, Box } from '@mantine/core'
+import { ScrollArea, Group, Box, Skeleton, Image } from '@mantine/core'
 import { IconPlayerPlayFilled } from '@tabler/icons-react'
 import ScenePlayer from './ScenePlayer'
 
+/**
+ * ImageKit FREE - helper correto
+ * Free só permite: w, h, q, e ik-thumbnail.jpg
+ * so- / eo- (corte) é pago
+ */
+function getIKUrl(originalUrl, type) {
+  if (!originalUrl?.includes('ik.imagekit.io')) return originalUrl
+  const base = originalUrl.split('/tr:')[0].split('?')[0].replace(/\/$/, '')
+
+  if (type === 'poster') {
+    // Thumbnail JPG - frame do segundo 1, 130x230
+    return `${base}/ik-thumbnail.jpg?tr=w-130,h-230,so-1,q-80`
+  }
+  if (type === 'preview') {
+    // Preview leve pro scroller - 130x230, qualidade 60, ~400kb
+    // Quando migrar pro pago, troque pra: w-130,h-230,q-60,so-0,eo-5
+    return `${base}/tr:w-130,h-230,q-60`
+  }
+  if (type === 'player') {
+    // Player otimizado - 720p, qualidade 80
+    return `${base}/tr:h-720,q-80`
+  }
+  return originalUrl
+}
+
 function SceneThumb({ scene, onOpen }) {
   const videoRef = useRef(null)
+  const containerRef = useRef(null)
+  const [isVisible, setIsVisible] = useState(false)
+  const [isLoaded, setIsLoaded] = useState(false)
+  const [hasError, setHasError] = useState(false)
+
+  const posterUrl = getIKUrl(scene.video_url, 'poster')
+  const previewUrl = getIKUrl(scene.video_url, 'preview')
 
   useEffect(() => {
+    const container = containerRef.current
     const video = videoRef.current
-    if (!video) {
-      return
-    }
+    if (!container || !video) return
 
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting) {
+        const visible = entry.isIntersecting && entry.intersectionRatio >= 0.4
+        setIsVisible(visible)
+        if (visible) {
+          if (!video.src) {
+            video.src = previewUrl
+            video.load()
+          }
           video.play().catch(() => {})
         } else {
           video.pause()
         }
       },
-      { threshold: 0.6 },
+      { threshold: [0, 0.4], rootMargin: '100px' },
     )
 
-    observer.observe(video)
+    observer.observe(container)
     return () => observer.disconnect()
-  }, [])
+  }, [previewUrl])
 
   return (
     <Box
+      ref={containerRef}
       onClick={onOpen}
       style={{
         position: 'relative',
@@ -41,19 +79,35 @@ function SceneThumb({ scene, onOpen }) {
         backgroundColor: '#000',
       }}
     >
-      <video
-        ref={videoRef}
-        src={scene.video_url}
-        muted
-        loop
-        playsInline
-        preload="metadata"
-        style={{
-          width: '100%',
-          height: '100%',
-          objectFit: 'cover',
-        }}
-      />
+      {!isLoaded && !hasError && (
+        <Skeleton
+          style={{ position: 'absolute', inset: 0 }}
+          radius={0}
+          animate={isVisible}
+        />
+      )}
+
+      {hasError ? (
+        <Image src={posterUrl} w={130} h={230} fit="cover" />
+      ) : (
+        <video
+          ref={videoRef}
+          poster={posterUrl}
+          muted
+          loop
+          playsInline
+          preload="none"
+          onLoadedData={() => setIsLoaded(true)}
+          onError={() => setHasError(true)}
+          style={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            opacity: isLoaded ? 1 : 0,
+            transition: 'opacity 250ms ease',
+          }}
+        />
+      )}
 
       <Box
         style={{
@@ -62,15 +116,13 @@ function SceneThumb({ scene, onOpen }) {
           left: 0,
           right: 0,
           padding: '8px',
-          background: 'linear-gradient(transparent, rgba(0,0,0,0.7))',
+          background: 'linear-gradient(transparent, rgba(0,0,0,0.75))',
           color: '#fff',
           fontSize: 11,
-          fontWeight: 200,
-          textTransform: 'lowercase',
+          pointerEvents: 'none',
         }}
-        opacity={0.8}
       >
-        por <b>@{scene.profile?.full_name}</b>
+        por <b>@{scene.profile?.username || scene.profile?.full_name}</b>
       </Box>
 
       <Box
@@ -78,10 +130,17 @@ function SceneThumb({ scene, onOpen }) {
           position: 'absolute',
           top: 8,
           right: 8,
-          opacity: 0.85,
+          width: 22,
+          height: 22,
+          borderRadius: 11,
+          backgroundColor: 'rgba(0,0,0,0.35)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          pointerEvents: 'none',
         }}
       >
-        <IconPlayerPlayFilled size={16} color="#fff" />
+        <IconPlayerPlayFilled size={12} color="#fff" />
       </Box>
     </Box>
   )
@@ -89,11 +148,7 @@ function SceneThumb({ scene, onOpen }) {
 
 export default function ScenesScroller({ scenes, isMobile }) {
   const [activeIndex, setActiveIndex] = useState(null)
-
-  if (!scenes?.length) {
-    return null
-  }
-
+  if (!scenes?.length) return null
   return (
     <>
       <ScrollArea type={isMobile ? 'never' : 'scroll'} scrollbarSize={6} offsetScrollbars>
@@ -107,7 +162,6 @@ export default function ScenesScroller({ scenes, isMobile }) {
           ))}
         </Group>
       </ScrollArea>
-
       {activeIndex !== null && (
         <ScenePlayer
           scenes={scenes}

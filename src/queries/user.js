@@ -31,6 +31,39 @@ export async function fetchUserRoles(userId) {
   return data
 }
 
+export async function fetchUserRolesCount(userId) {
+  const { count, error } = await supabase
+    .from('profile_roles')
+    .select('id', { count: 'exact', head: true })
+    .eq('id_profile', userId)
+  if (error) {
+    throw new Error(error.message)
+  }
+  return count ?? 0
+}
+
+export async function fetchUserGenres(userId) {
+  const { data, error } = await supabase
+    .from('profile_genres')
+    .select('id, genres(id, name)')
+    .eq('id_profile', userId)
+  if (error) {
+    throw new Error(error.message)
+  }
+  return data
+}
+
+export async function fetchUserGenresCount(userId) {
+  const { count, error } = await supabase
+    .from('profile_genres')
+    .select('id', { count: 'exact', head: true })
+    .eq('id_profile', userId)
+  if (error) {
+    throw new Error(error.message)
+  }
+  return count ?? 0
+}
+
 export async function fetchUserPortfolio(userId) {
   const { data, error } = await supabase
     .from('portfolio')
@@ -60,6 +93,17 @@ export async function fetchUserPortfolio(userId) {
     throw new Error(error.message)
   }
   return data
+}
+
+export async function fetchUserPortfolioCount(userId) {
+  const { count, error } = await supabase
+    .from('portfolio')
+    .select('id', { count: 'exact', head: true })
+    .eq('profile_id', userId)
+  if (error) {
+    throw new Error(error.message)
+  }
+  return count ?? 0
 }
 
 export async function fetchUserProjects(userId) {
@@ -98,7 +142,6 @@ export async function fetchUserProjects(userId) {
     throw new Error(error.message)
   }
 
-  // Projetos sem end_year (ativos) primeiro, com end_year (encerrados) por último
   return data.sort((a, b) => {
     const aEnd = a.projects?.end_year ?? null
     const bEnd = b.projects?.end_year ?? null
@@ -107,11 +150,11 @@ export async function fetchUserProjects(userId) {
     }
     if (aEnd === null) {
       return -1
-    } // a vem primeiro
+    }
     if (bEnd === null) {
       return 1
-    } // b vem primeiro
-    return aEnd - bEnd // ambos têm end_year: ordena crescente
+    }
+    return aEnd - bEnd
   })
 }
 
@@ -151,7 +194,6 @@ export async function fetchUserAdminProjects(userId) {
     throw new Error(error.message)
   }
 
-  // Projetos sem end_year (ativos) primeiro, com end_year (encerrados) por último
   return data.sort((a, b) => {
     const aEnd = a.projects?.end_year ?? null
     const bEnd = b.projects?.end_year ?? null
@@ -171,23 +213,23 @@ export async function fetchUserAdminProjects(userId) {
 export async function fetchUserGearCount(userId) {
   const { count, error } = await supabase
     .from('profile_gear')
-    .select('*', { count: 'exact', head: true })
+    .select('id', { count: 'exact', head: true })
     .eq('id_user', userId)
   if (error) {
     throw new Error(error.message)
   }
-  return count
+  return count ?? 0
 }
 
 export async function fetchUserGigsCount(userId) {
   const { count, error } = await supabase
     .from('gig_applications')
-    .select('*', { count: 'exact', head: true })
+    .select('id', { count: 'exact', head: true })
     .eq('profile_id', userId)
   if (error) {
     throw new Error(error.message)
   }
-  return count
+  return count ?? 0
 }
 
 export async function fetchUserFavoriteProfiles(userId) {
@@ -230,12 +272,7 @@ export async function removeFavoriteProfile(profileId, userId) {
   if (error) {
     throw new Error(error.message)
   }
-
-  return {
-    success: true,
-    action: 'unfavorited',
-    removed: count > 0,
-  }
+  return { success: true, action: 'unfavorited', removed: count > 0 }
 }
 
 export async function fetchUserFavoriteProducts(userId) {
@@ -273,12 +310,7 @@ export async function removeFavoriteProduct(productId, userId) {
   if (error) {
     throw new Error(error.message)
   }
-
-  return {
-    success: true,
-    action: 'unfavorited',
-    removed: count > 0,
-  }
+  return { success: true, action: 'unfavorited', removed: count > 0 }
 }
 
 export async function fetchUserLinks(userId) {
@@ -329,7 +361,7 @@ export async function deleteProfileLink(linkId) {
 export async function fetchUserProfileOnboarding(userId) {
   const { data, error } = await supabase
     .from('profiles')
-    .select('avatar, bio, city_id, ')
+    .select('avatar, bio, city_id')
     .eq('id', userId)
     .single()
   if (error) {
@@ -342,10 +374,19 @@ export async function fetchUserProfileVisitors(userId) {
   const { data, error } = await supabase.rpc('get_profile_visitors', {
     p_profile_id: userId,
   })
-
   if (error) {
     throw new Error(error.message)
   }
-
   return data
+}
+
+export async function fetchUserInspirationsCount(profileId) {
+  const { count, error } = await supabase
+    .from('profile_inspirations')
+    .select('id', { count: 'exact', head: true })
+    .eq('profile_id', profileId)
+  if (error) {
+    throw new Error(error.message)
+  }
+  return count ?? 0
 }
