@@ -1,49 +1,51 @@
-// Disable text selection for small devices
-// prettier-ignore
-@media only screen and (max-width:700px) {
-  html, body, div, span, applet, object, iframe,
-  h1, h2, h3, h4, h5, h6, p, blockquote, pre,
-  a, abbr, acronym, address, big, cite, code,
-  del, dfn, em, img, ins, kbd, q, s, samp,
-  small, strike, strong, sub, sup, tt, var,
-  b, u, i, center,
-  dl, dt, dd, ol, ul, li,
-  fieldset, form, label, legend,
-  table, caption, tbody, tfoot, thead, tr, th, td,
-  article, aside, canvas, details, embed, 
-  figure, figcaption, footer, header, hgroup, 
-  menu, nav, output, ruby, section, summary,
-  time, mark, audio, video {
-    user-select: none;
-  }
-}
+/* Mublin - Native-like SCSS - Otimizado */
 
 * {
   -webkit-tap-highlight-color: transparent;
 }
 
-// Mantine styles
+/* --- NATIVE FEEL --- */
+/* Desktop: tudo selecionável por padrão (não faz nada) */
+/* Mobile: bloqueia para feel de app nativo */
+@media only screen and (max-width: 700px) {
+  html {
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none; /* remove menu "Copiar imagem" no iOS */
+    overscroll-behavior-y: auto; /* mantém pull-to-refresh */
+  }
+}
 
+/* No mobile, libera só onde importa */
+@media only screen and (max-width: 700px) {
+  .allow-copy,
+  .mantine-Spoiler-root,
+  .mantine-Accordion-content,
+  input,
+  textarea,
+  [contenteditable='true'],
+  [data-allow-copy='true'] {
+    user-select: text !important;
+    -webkit-user-select: text !important;
+    -webkit-touch-callout: default !important;
+  }
+}
+
+/* --- Mantine overrides --- */
 .mantine-Tabs-list::before {
-  display: none !important;
+  display: none;
 }
 
-.mantine-Tabs-tab {
-  &:hover {
-    background-color: transparent;
-  }
+.mantine-Tabs-tab:hover {
+  background-color: transparent;
 }
 
-[data-mantine-color-scheme='light'] {
-  .mantine-Divider-root {
-    opacity: 1 !important;
-  }
+[data-mantine-color-scheme='light'] .mantine-Divider-root {
+  opacity: 1;
 }
 
-[data-mantine-color-scheme='dark'] {
-  .mantine-Divider-root {
-    opacity: 0.8 !important;
-  }
+[data-mantine-color-scheme='dark'] .mantine-Divider-root {
+  opacity: 0.8;
 }
 
 .mantine-Accordion-content {
@@ -54,10 +56,8 @@
   text-align: left;
 }
 
-.buttonContentToLeft {
-  .mantine-Button-inner {
-    justify-content: flex-start;
-  }
+.buttonContentToLeft .mantine-Button-inner {
+  justify-content: flex-start;
 }
 
 .mantine-Modal-close:focus-visible {
@@ -85,15 +85,10 @@
 .mantine-Spoiler-root {
   .mantine-Spoiler-control {
     top: 100%;
-    // color: gray;
-    // opacity: 0.6 !important;
     &:hover {
       text-decoration: none;
     }
   }
-  // &[data-has-spoiler='true'] {
-  //   bottom: 8px !important;
-  // }
   @media (hover: hover) and (max-width: 48em) {
     &[data-has-spoiler='true'] {
       bottom: 28px !important;
@@ -113,39 +108,25 @@
   background: linear-gradient(to left, var(--scroller-background-color) 10%, transparent);
 }
 
-/* Esconde os controles por padrão (só em desktop) */
 @media (hover: hover) and (min-width: 48em) {
   .scrollerControl {
     opacity: 0;
     transition: opacity 0.2s ease;
   }
-
-  /* Respeita o estado nativo do Mantine */
   .scrollerControl[data-hidden] {
     opacity: 0 !important;
     pointer-events: none;
   }
-
   .scrollerRoot:hover .scrollerControl:not([data-hidden]) {
     opacity: 1;
   }
 }
 
-// Other styles
-
-.paperWrapper {
-  padding: 1rem 0.7rem 0.5rem 0.7rem;
-  @media (max-width: 48em) {
-    // background-color: transparent!important;
-    padding: 0.8rem 0 0.3rem 0;
-    border-radius: 0;
-  }
-}
-
+/* --- Layout --- */
+.paperWrapper,
 .feedPostWrapper {
   padding: 0.8rem 0.7rem 0.5rem 0.7rem;
   @media (max-width: 48em) {
-    // background-color: transparent!important;
     padding: 0.8rem 0 0.3rem 0;
     border-radius: 0;
   }
@@ -165,7 +146,6 @@
     padding-left: 1rem;
     padding-right: 1rem;
   }
-
   &.prX {
     padding-right: 0.8rem;
     @media (max-width: 48em) {
@@ -176,7 +156,6 @@
 
 .post-image {
   border-radius: var(--mantine-radius-md);
-
   @media (max-width: 48em) {
     border-radius: 0;
   }
@@ -199,98 +178,69 @@
   }
 }
 
+/* --- Icons --- */
 .iconBadge {
-  width: calc(1.1rem);
-  height: calc(1.1rem);
+  width: 1.1rem;
+  height: 1.1rem;
   margin-left: 1px;
-
   &.small {
-    width: calc(1rem);
-    height: calc(1rem);
+    width: 1rem;
+    height: 1rem;
     margin-left: 2px;
     cursor: default;
   }
-
   &.big {
-    width: calc(1.4rem);
-    height: calc(1.4rem);
+    width: 1.4rem;
+    height: 1.4rem;
     margin-left: 2px;
     cursor: default;
   }
-
   &.white {
     color: #ffffff;
   }
 }
 
 .iconVerified {
-  // color: var(--mantine-color-mublinColor-3);
-  width: calc(1.1rem);
-  height: calc(1.1rem);
+  width: 1.1rem;
+  height: 1.1rem;
   margin-left: 1px;
-  opacity: 1;
-
   &.small {
-    width: calc(1rem);
-    height: calc(1rem);
+    width: 1rem;
+    height: 1rem;
     margin-left: 2px;
     cursor: default;
   }
-
   &.large {
-    width: calc(1.3rem);
-    height: calc(1.3rem);
+    width: 1.3rem;
+    height: 1.3rem;
     margin-left: 2px;
     cursor: default;
   }
 }
 
 .iconLegend {
-  // color: var(--mantine-color-yellow-7);
   color: var(--mantine-color-violet-4);
-  // color: var(--mantine-color-mublinColor-3);
-  width: calc(1.1rem);
-  height: calc(1.1rem);
-  margin-left: 0px;
-
+  width: 1.1rem;
+  height: 1.1rem;
+  margin-left: 0;
   &.small {
-    width: calc(1rem);
-    height: calc(1rem);
+    width: 1rem;
+    height: 1rem;
     margin-left: 2px;
     cursor: default;
   }
-
   &.big {
-    width: calc(1.4rem);
-    height: calc(1.4rem);
+    width: 1.4rem;
+    height: 1.4rem;
     margin-left: 2px;
     cursor: default;
   }
-
   &.white {
     color: #ffffff;
   }
 }
 
-@keyframes live-pulse {
-  0%,
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.5;
-    transform: scale(0.92);
-  }
-}
-
-.icon-live {
-  color: var(--mantine-color-white);
-  animation: live-pulse 1.4s ease-in-out infinite;
-  display: flex;
-  align-items: center;
-}
-
+/* --- Live --- */
 @keyframes live-pulse {
   0% {
     transform: scale(0.95);
@@ -306,6 +256,13 @@
   }
 }
 
+.icon-live {
+  color: var(--mantine-color-white);
+  animation: live-pulse 1.4s ease-in-out infinite;
+  display: flex;
+  align-items: center;
+}
+
 .live-dot {
   width: 8px;
   height: 8px;
@@ -313,51 +270,41 @@
   background-color: var(--mantine-color-red-6);
   display: inline-block;
   position: relative;
-  /* Animação mais suave e visível */
   animation: live-pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
-/* Opcional: Um brilho fixo interno para o ponto não sumir no fundo escuro */
-.live-dot::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  background: inherit;
-}
-
-[data-mantine-color-scheme='light'] {
-  .defaultMublinButton {
-    background-color: var(--mantine-color-mublinGray-9);
-    transition: background-color 150ms ease;
-
-    &:hover {
-      background-color: var(--mantine-color-gray-7);
-    }
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: inherit;
   }
 }
 
-[data-mantine-color-scheme='dark'] {
-  .defaultMublinButton {
-    background-color: var(--mantine-color-mublinGray-9);
-    transition: background-color 150ms ease;
-
-    &:hover {
-      background-color: var(--mantine-color-gray-9);
-    }
+/* --- Buttons --- */
+[data-mantine-color-scheme='light'] .defaultMublinButton {
+  background-color: var(--mantine-color-mublinGray-9);
+  transition: background-color 150ms ease;
+  &:hover {
+    background-color: var(--mantine-color-gray-7);
   }
 }
 
-.roudedWrapper {
+[data-mantine-color-scheme='dark'] .defaultMublinButton {
+  background-color: var(--mantine-color-mublinGray-9);
+  transition: background-color 150ms ease;
+  &:hover {
+    background-color: var(--mantine-color-gray-9);
+  }
+}
+
+.roundedWrapper {
   border-radius: var(--mantine-radius-sm);
-  border-width: 1px;
-  border-color: rgba(255, 255, 255, 0.3);
-  border-style: solid;
+  border: 1px solid rgba(255, 255, 255, 0.3);
   overflow: hidden;
-  padding: 0px 1px 1px 1px;
+  padding: 0 1px 1px 1px;
 }
 
 .avatar-open-to-work {
@@ -371,19 +318,17 @@
     #4ade80 85%,
     #bef264
   );
-}
-
-.avatar-open-to-work > * {
-  display: block;
-  border-radius: 50%;
-  outline: 3px solid var(--mantine-color-body);
+  > * {
+    display: block;
+    border-radius: 50%;
+    outline: 3px solid var(--mantine-color-body);
+  }
 }
 
 .scrollerHidden {
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE/Edge legado */
-}
-
-.scrollerHidden::-webkit-scrollbar {
-  display: none; /* Chrome, Safari, Edge novo */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
 }

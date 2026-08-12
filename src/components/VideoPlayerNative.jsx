@@ -1,9 +1,8 @@
 import { useRef, useState, useEffect } from 'react'
-import { Box } from '@mantine/core'
+import { Box, Center, Loader } from '@mantine/core'
 import {
   IconMaximize,
   IconPlayerPauseFilled,
-  IconPlayerPlay,
   IconPlayerPlayFilled,
   IconVolume,
   IconVolumeOff,
@@ -112,7 +111,11 @@ export default function VideoPlayerNative({
 
   return (
     <Box ref={wrapRef} style={isVertical ? s.wrapVertical : s.wrapHorizontal}>
-      {!ready && <div style={s.loading}>Carregando...</div>}
+      {!ready && (
+        <Center mt={280}>
+          <Loader />
+        </Center>
+      )}
 
       <video
         ref={videoRef}
@@ -135,7 +138,7 @@ export default function VideoPlayerNative({
       {isVertical && title && !hideCaptionOnVideo && <div style={s.badge}>{title}</div>}
 
       {/* Overlay de play central */}
-      {!playing && (
+      {!playing && ready && progress > 0 && (
         <button
           type="button"
           style={{ ...s.overlay, background: 'none', border: 'none', cursor: 'pointer' }}
@@ -147,7 +150,7 @@ export default function VideoPlayerNative({
           }}
           aria-label="Play"
         >
-          <IconPlayerPlay size={42} stroke={1} />
+          <IconPlayerPlayFilled size={50} stroke={1} />
         </button>
       )}
 

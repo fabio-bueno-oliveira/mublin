@@ -26,7 +26,7 @@ const variants = {
   exit: (d) => ({ x: d > 0 ? -60 : 60, opacity: 0 }),
 }
 
-export default function ScenePlayer({ scenes, initialIndex, onClose }) {
+export default function ScenePlayer({ scenes, initialIndex, onClose, onForceClose }) {
   const [index, setIndex] = useState(initialIndex)
   const [direction, setDirection] = useState(0)
   const [segmentProgress, setSegmentProgress] = useState(0)
@@ -36,7 +36,6 @@ export default function ScenePlayer({ scenes, initialIndex, onClose }) {
   const scene = scenes[index]
   const hasNext = index < scenes.length - 1
   const hasPrev = index > 0
-
   const optimizedSrc = getIKUrl(scene.video_url, 'player')
 
   const goNext = () => {
@@ -62,6 +61,7 @@ export default function ScenePlayer({ scenes, initialIndex, onClose }) {
       document.body.style.overflow = ''
     }
   }, [])
+
   useEffect(() => {
     const h = (e) => {
       if (e.key === 'Escape') {
@@ -77,6 +77,7 @@ export default function ScenePlayer({ scenes, initialIndex, onClose }) {
     window.addEventListener('keydown', h)
     return () => window.removeEventListener('keydown', h)
   }, [index])
+
   useEffect(() => {
     supabase
       .from('scenes')

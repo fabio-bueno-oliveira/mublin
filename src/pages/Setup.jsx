@@ -781,7 +781,13 @@ export default function Setup() {
                 >
                   {items.map((item, idx) => (
                     <Flex key={item.id} align="center" gap={0} wrap="nowrap">
-                      <Paper withBorder radius="md" p={4} style={{ flexShrink: 0 }}>
+                      <Paper
+                        bg="white"
+                        withBorder
+                        radius="md"
+                        p={4}
+                        style={{ flexShrink: 0 }}
+                      >
                         <Image
                           src={
                             item.products?.picture
@@ -1154,6 +1160,7 @@ export default function Setup() {
             overflowY: 'hidden',
             paddingBottom: 8,
           }}
+          p="md"
         >
           <Flex gap={0} align="center" wrap="nowrap" style={{ minWidth: 'max-content' }}>
             {items.map((item, idx) => (
@@ -1162,6 +1169,7 @@ export default function Setup() {
                   withBorder
                   radius="md"
                   p="sm"
+                  bg="white"
                   style={{
                     flexShrink: 0,
                   }}
@@ -1186,11 +1194,11 @@ export default function Setup() {
                   <ThemeIcon
                     variant="transparent"
                     color="indigo"
-                    size="lg"
+                    size="xl"
                     mx="md"
                     style={{ flexShrink: 0 }}
                   >
-                    <IconRoute size={24} />
+                    <IconRoute size={34} />
                   </ThemeIcon>
                 )}
               </Flex>

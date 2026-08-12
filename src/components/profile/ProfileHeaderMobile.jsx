@@ -1,9 +1,15 @@
-import { Flex, Box, Title, Text, Avatar, Group, Anchor, Stack } from '@mantine/core'
 import {
-  IconRosetteDiscountCheck,
-  IconLink,
-  IconRosetteDiscountCheckFilled,
-} from '@tabler/icons-react'
+  Flex,
+  Box,
+  Title,
+  Text,
+  Avatar,
+  Group,
+  Anchor,
+  Stack,
+  ThemeIcon,
+} from '@mantine/core'
+import { IconLink, IconRosetteDiscountCheckFilled } from '@tabler/icons-react'
 import { isProfileLive } from '../../utils/live'
 import { truncateString } from '../../utils/formatter'
 import { getAvatarUrl } from '../../utils/profile'
@@ -46,6 +52,21 @@ export default function ProfileHeaderMobile({
               className="iconVerified"
               title="Perfil verificado"
             />
+          )}
+          {profile.is_fake_profile && (
+            <ThemeIcon
+              variant="gradient"
+              gradient={{
+                from: 'grape.8',
+                to: 'mublinColor.8',
+                deg: 55,
+              }}
+              size="md"
+              fz={12}
+              ml={4}
+            >
+              IA
+            </ThemeIcon>
           )}
         </Flex>
         <Text fz="15px" lh={1.3} mt={2} lineClamp={2}>

@@ -88,7 +88,7 @@ export function useProfileChecklist() {
       key: 'role',
       label: 'Informe seus papéis (ex: guitarrista, etc...)',
       completed: hasRole,
-      href: '/settings/profile',
+      href: '/settings/musical-preferences',
       count: rolesCount,
     },
     {

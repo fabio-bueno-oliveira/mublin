@@ -53,9 +53,9 @@ export default function ProfileChecklistCard() {
 
   // Perfil completo: some com o card, sem poluir a Home de quem já
   // preencheu tudo.
-  /* if (isComplete) {
+  if (isComplete) {
     return null
-  } */
+  }
 
   return (
     <Card radius="lg" withBorder px={{ base: 'md', sm: 'lg' }} mb="md">
@@ -139,11 +139,11 @@ export default function ProfileChecklistCard() {
                   >
                     {item.label}
                   </Text>
-                  {item.proOnly && (
+                  {item.proOnly && !isComplete && (
                     <Badge
                       size="xs"
                       variant="filled"
-                      color="mublinSecondary"
+                      color="dark"
                       radius="sm"
                       style={{ flexShrink: 0 }}
                     >

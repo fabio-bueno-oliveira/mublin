@@ -1,28 +1,20 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { ScrollArea, Group, Box, Skeleton, Image } from '@mantine/core'
 import { IconPlayerPlayFilled } from '@tabler/icons-react'
 import ScenePlayer from './ScenePlayer'
 
-/**
- * ImageKit FREE - helper correto
- * Free só permite: w, h, q, e ik-thumbnail.jpg
- * so- / eo- (corte) é pago
- */
 function getIKUrl(originalUrl, type) {
-  if (!originalUrl?.includes('ik.imagekit.io')) return originalUrl
+  if (!originalUrl?.includes('ik.imagekit.io')) {
+    return originalUrl
+  }
   const base = originalUrl.split('/tr:')[0].split('?')[0].replace(/\/$/, '')
-
   if (type === 'poster') {
-    // Thumbnail JPG - frame do segundo 1, 130x230
     return `${base}/ik-thumbnail.jpg?tr=w-130,h-230,so-1,q-80`
   }
   if (type === 'preview') {
-    // Preview leve pro scroller - 130x230, qualidade 60, ~400kb
-    // Quando migrar pro pago, troque pra: w-130,h-230,q-60,so-0,eo-5
     return `${base}/tr:w-130,h-230,q-60`
   }
   if (type === 'player') {
-    // Player otimizado - 720p, qualidade 80
     return `${base}/tr:h-720,q-80`
   }
   return originalUrl
@@ -41,8 +33,9 @@ function SceneThumb({ scene, onOpen }) {
   useEffect(() => {
     const container = containerRef.current
     const video = videoRef.current
-    if (!container || !video) return
-
+    if (!container || !video) {
+      return
+    }
     const observer = new IntersectionObserver(
       ([entry]) => {
         const visible = entry.isIntersecting && entry.intersectionRatio >= 0.4
@@ -59,7 +52,6 @@ function SceneThumb({ scene, onOpen }) {
       },
       { threshold: [0, 0.4], rootMargin: '100px' },
     )
-
     observer.observe(container)
     return () => observer.disconnect()
   }, [previewUrl])
@@ -86,7 +78,6 @@ function SceneThumb({ scene, onOpen }) {
           animate={isVisible}
         />
       )}
-
       {hasError ? (
         <Image src={posterUrl} w={130} h={230} fit="cover" />
       ) : (
@@ -108,7 +99,6 @@ function SceneThumb({ scene, onOpen }) {
           }}
         />
       )}
-
       <Box
         style={{
           position: 'absolute',
@@ -124,7 +114,6 @@ function SceneThumb({ scene, onOpen }) {
       >
         por <b>@{scene.profile?.username || scene.profile?.full_name}</b>
       </Box>
-
       <Box
         style={{
           position: 'absolute',
@@ -148,17 +137,49 @@ function SceneThumb({ scene, onOpen }) {
 
 export default function ScenesScroller({ scenes, isMobile }) {
   const [activeIndex, setActiveIndex] = useState(null)
-  if (!scenes?.length) return null
+
+  // --- Controle de histórico para botão Voltar nativo ---
+  const handleOpen = useCallback((index) => {
+    setActiveIndex(index)
+    // Cria uma entrada no history: ao apertar voltar, o popstate vai fechar
+    if (window.history.state?.scenesOpen !== true) {
+      window.history.pushState({ scenesOpen: true }, '', window.location.href)
+    }
+  }, [])
+
+  const handleClose = useCallback(() => {
+    // Se abrimos com pushState, voltamos no histórico (volta pra /home sem reload)
+    // Se não, apenas fecha
+    if (window.history.state?.scenesOpen === true) {
+      window.history.back()
+    } else {
+      setActiveIndex(null)
+    }
+  }, [])
+
+  // Quando o usuário aperta Voltar do device, o browser dispara popstate
+  // Nesse momento, se estávamos com scenesOpen, fechamos o player sem navegar pra outra página
+  useEffect(() => {
+    const onPopState = (event) => {
+      if (activeIndex !== null) {
+        // O estado anterior não tinha scenesOpen, então era a Home -> fecha player
+        setActiveIndex(null)
+      }
+    }
+    window.addEventListener('popstate', onPopState)
+    return () => window.removeEventListener('popstate', onPopState)
+  }, [activeIndex])
+
+  if (!scenes?.length) {
+    return null
+  }
+
   return (
     <>
       <ScrollArea type={isMobile ? 'never' : 'scroll'} scrollbarSize={6} offsetScrollbars>
         <Group wrap="nowrap" gap={10} py={4}>
           {scenes.map((scene, index) => (
-            <SceneThumb
-              key={scene.id}
-              scene={scene}
-              onOpen={() => setActiveIndex(index)}
-            />
+            <SceneThumb key={scene.id} scene={scene} onOpen={() => handleOpen(index)} />
           ))}
         </Group>
       </ScrollArea>
@@ -166,7 +187,9 @@ export default function ScenesScroller({ scenes, isMobile }) {
         <ScenePlayer
           scenes={scenes}
           initialIndex={activeIndex}
-          onClose={() => setActiveIndex(null)}
+          onClose={handleClose}
+          // Callback interno para quando o popstate já fechou
+          onForceClose={() => setActiveIndex(null)}
         />
       )}
     </>

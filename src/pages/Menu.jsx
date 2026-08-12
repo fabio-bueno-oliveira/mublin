@@ -31,6 +31,7 @@ import {
   IconMusic,
   IconCalendar,
   IconBookmark,
+  IconKey,
 } from '@tabler/icons-react'
 
 const AVATAR_BASE =
@@ -202,6 +203,22 @@ export default function Menu() {
               {label}
             </Button>
           ))}
+
+          {profile.is_admin && (
+            <Button
+              variant="transparent"
+              justify="space-between"
+              color={buttonColor}
+              size="md"
+              leftSection={<IconKey style={iconStyle} />}
+              rightSection={<IconChevronRight />}
+              fw={550}
+              component={Link}
+              to="/admin"
+            >
+              Admin
+            </Button>
+          )}
 
           {/* Logout — separado pois é action, não rota */}
           <Button

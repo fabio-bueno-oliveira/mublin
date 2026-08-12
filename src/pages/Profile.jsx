@@ -43,6 +43,8 @@ import {
   Button, ActionIcon, ThemeIcon, 
   Alert, Tooltip, Anchor,
   Spoiler, Indicator,
+  Badge,
+  Paper,
 } from '@mantine/core'
 // prettier-ignore
 import { useMediaQuery, useDisclosure, useWindowScroll, useScroller } from '@mantine/hooks'
@@ -163,14 +165,14 @@ export default function Profile() {
     queryKey: ['profile-unique-visitor-count', profile?.id],
     queryFn: async () => {
       const { data, error } = await supabase.rpc('get_profile_unique_visitor_count', {
-        p_profile_id: profile?.id,
+        p_profile_id: profile.id,
       })
       if (error) {
         throw error
       }
       return data
     },
-    enabled: !!user?.id,
+    enabled: isOwnProfile,
     staleTime: 1000 * 60,
   })
 
@@ -529,7 +531,7 @@ export default function Profile() {
     },
   })
 
-  const rolesOrdered = profile?.roles
+  const rolesOrdered = profile?.profile_roles
     ?.slice()
     ?.sort(
       (a, b) =>
@@ -540,7 +542,7 @@ export default function Profile() {
   const instrumentRolesCount =
     rolesOrdered?.filter((role) => role.roles?.instrumentalist).length ?? 0
 
-  const genres = profile?.profile_genres.sort((a, b) => b.main_genre - a.main_genre)
+  const genres = profile?.profile_genres?.sort((a, b) => b.main_genre - a.main_genre)
   const city = profile?.cities?.name
   const region = profile?.regions?.name
   const country =
@@ -932,6 +934,22 @@ export default function Profile() {
                         title="Perfil verificado"
                       />
                     )}
+                    {profile.is_fake_profile && (
+                      <ThemeIcon
+                        variant="gradient"
+                        gradient={{
+                          from: 'grape.8',
+                          to: 'mublinColor.8',
+                          deg: 55,
+                        }}
+                        fz={12}
+                        px={4}
+                        py={4}
+                        ml={4}
+                      >
+                        IA
+                      </ThemeIcon>
+                    )}
                   </Flex>
                   {profile.title && (
                     <Text size="15px" fw={400} maw={420} lh={1.2} my={3}>
@@ -943,11 +961,13 @@ export default function Profile() {
                         @{profile.username}
                       </Text> */}
                     {(city || region) && (
-                      <Text size="xs" fw={300}>
-                        {[city, region, country].filter(Boolean).join(', ')}
-                      </Text>
+                      <Group gap={4}>
+                        <Text size="xs" fw={300}>
+                          {[city, region, country].filter(Boolean).join(', ')}
+                        </Text>
+                        <Text size="xs">·</Text>
+                      </Group>
                     )}
-                    <Text size="xs">·</Text>
                     <Anchor
                       size="xs"
                       onClick={openContactInfo}
@@ -1083,6 +1103,15 @@ export default function Profile() {
                     </SectionPanel>
                   )}
 
+                  {profile.is_fake_profile && (
+                    <SectionPanel py={10}>
+                      <Text size="sm" c="dimmed">
+                        Este perfil foi criado por IA para fins de teste e não representa
+                        uma pessoa real
+                      </Text>
+                    </SectionPanel>
+                  )}
+
                   <SectionPanel id="about">
                     {profile.bio && (
                       <>
@@ -1105,34 +1134,48 @@ export default function Profile() {
                           )}
                         </Group>
 
-                        {profile.is_fake_profile && (
-                          <Group gap={4} mb={10} wrap="nowrap">
-                            <IconSparkles size={20} />
-                            <Text size="xs" lh={1} opacity={0.8}>
-                              Este perfil foi criado por IA para fins de teste e não
-                              representa uma pessoa real
-                            </Text>
-                          </Group>
-                        )}
                         {profile.bio?.length > 150 ? (
                           <>
-                            <Text fz="sm" lh={1.4} style={{ whiteSpace: 'pre-line' }}>
-                              {truncateString(profile.bio, 150)}
-                            </Text>
-                            <Anchor
-                              component={Link}
-                              to={`/${profile.username}/bio`}
-                              underline="never"
-                            >
-                              <Text
-                                mt={6}
-                                size="sm"
-                                fw={500}
-                                c="var(--mantine-color-text)"
+                            {isMobile ? (
+                              <>
+                                <Text fz="sm" lh={1.4} style={{ whiteSpace: 'pre-line' }}>
+                                  {truncateString(profile.bio, 150)}
+                                </Text>
+                                <Anchor
+                                  component={Link}
+                                  to={`/${profile.username}/bio`}
+                                  underline="never"
+                                >
+                                  <Text
+                                    mt={6}
+                                    size="sm"
+                                    fw={500}
+                                    c="var(--mantine-color-text)"
+                                  >
+                                    Ver mais
+                                  </Text>
+                                </Anchor>
+                              </>
+                            ) : (
+                              <Spoiler
+                                mb={40}
+                                maxHeight={42}
+                                showLabel={
+                                  <Text size="sm" c="var(--mantine-color-text)">
+                                    Ver mais
+                                  </Text>
+                                }
+                                hideLabel={
+                                  <Text size="sm" c="var(--mantine-color-text)">
+                                    Ver menos
+                                  </Text>
+                                }
                               >
-                                Ver mais
-                              </Text>
-                            </Anchor>
+                                <Text size="sm" style={{ whiteSpace: 'pre-line' }}>
+                                  {profile.bio}
+                                </Text>
+                              </Spoiler>
+                            )}
                           </>
                         ) : (
                           <Text fz="sm" lh={1.4} style={{ whiteSpace: 'pre-line' }}>
@@ -1265,30 +1308,35 @@ export default function Profile() {
                                   align="center"
                                   justify="flex-start"
                                   gap={4}
-                                  w={92}
+                                  w={104}
                                   component={Link}
                                   to={`/event/${event.slug}`}
                                   style={{ textDecoration: 'none', color: 'inherit' }}
+                                  pos="relative"
                                 >
-                                  <Indicator
-                                    disabled={!event.is_confirmed}
-                                    color="green"
-                                    size={14}
-                                    position="bottom-end"
-                                    withBorder
-                                    label={<IconCheck size={9} />}
-                                  >
-                                    <Avatar
-                                      size={70}
-                                      radius="md"
-                                      src={
-                                        event.picture_url
-                                          ? EVENTS_PATH + event.picture_url
-                                          : undefined
-                                      }
-                                      alt={event.name}
-                                    />
-                                  </Indicator>
+                                  <Avatar
+                                    size={70}
+                                    radius="md"
+                                    src={
+                                      event.picture_url
+                                        ? EVENTS_PATH + event.picture_url
+                                        : undefined
+                                    }
+                                    alt={event.name}
+                                  />
+                                  {event.is_confirmed && (
+                                    <Tooltip label="Confirmou presença">
+                                      <ThemeIcon
+                                        color="green"
+                                        pos="absolute"
+                                        top={2}
+                                        right={12}
+                                        size="xs"
+                                      >
+                                        <IconCheck size={12} stroke={4} />
+                                      </ThemeIcon>
+                                    </Tooltip>
+                                  )}
                                   <Text
                                     size="xs"
                                     fw={500}
