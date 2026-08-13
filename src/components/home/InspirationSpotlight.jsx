@@ -54,6 +54,16 @@ export default function InspirationSpotlight() {
 
   const { artist, profiles, totalCount } = data
 
+  const getInitials = (name) => {
+    if (!name) {
+      return ''
+    }
+    const parts = name.trim().split(/\s+/)
+    const first = parts[0]?.[0] ?? ''
+    const last = parts.length > 1 ? parts[parts.length - 1][0] : ''
+    return (first + last).toUpperCase()
+  }
+
   return (
     <Box>
       {/* <Title order={3} fw={600} fz="lg" mb="sm">
@@ -71,12 +81,14 @@ export default function InspirationSpotlight() {
       >
         <Group align="center" wrap="nowrap">
           <Box pos="relative">
-            <Avatar
-              src={artist.picture ? CDN_ARTISTS + artist.picture : undefined}
-              size={80}
-              radius="md"
-              alt={artist.name}
-            />
+            <Link to={`/artist/${artist.slug}`}>
+              <Avatar
+                src={artist.picture ? CDN_ARTISTS + artist.picture : undefined}
+                size={80}
+                radius="md"
+                alt={artist.name}
+              />
+            </Link>
           </Box>
 
           <Box style={{ flex: 1, minWidth: 0 }}>
@@ -87,7 +99,7 @@ export default function InspirationSpotlight() {
                   src={
                     p.avatar
                       ? `https://ik.imagekit.io/mublin/tr:h-80,c-maintain_ratio/users/avatars/${p.avatar}`
-                      : undefined
+                      : `https://api.dicebear.com/10.x/initials/svg?seed=${p.full_name}`
                   }
                   size="sm"
                   radius="xl"
@@ -116,11 +128,12 @@ export default function InspirationSpotlight() {
             </Text>
 
             <Text size="xs" c="dimmed" mt={2}>
-              {totalCount}{' '}
-              {totalCount === 1 ? 'pessoa se inspira' : 'pessoas se inspiram'} •{' '}
+              {/* {totalCount}{' '}
+              {totalCount === 1 ? 'pessoa se inspira' : 'pessoas se inspiram'}•{' '} */}
               <Text
                 span
-                c="var(--mantine-color-text)"
+                // c="var(--mantine-color-text)"
+                c="dimmed"
                 component={Link}
                 to={`/artist/${artist.slug}`}
                 style={{ textDecoration: 'none' }}

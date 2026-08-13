@@ -5,7 +5,6 @@ import { fetchUserProjects } from '../queries/user'
 import { fetchProjectForDashbar } from '../queries/projects'
 import { useAuth } from '../hooks/useAuth'
 import { useDisclosure, useMediaQuery } from '@mantine/hooks'
-// import Gif from '../assets/gif/electric-guitar-pixel-art.gif'
 import DashbarTextLoop from './DashbarTextLoop'
 import {
   Grid,

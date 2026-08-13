@@ -406,7 +406,7 @@ export default function Artist() {
                         src={
                           item.profiles?.avatar
                             ? AVATAR_PATH + item.profiles?.avatar
-                            : undefined
+                            : `https://api.dicebear.com/10.x/initials/svg?seed=${item.profiles?.full_name}`
                         }
                         title={item.profiles?.full_name}
                       />

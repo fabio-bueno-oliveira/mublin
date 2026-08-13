@@ -775,7 +775,11 @@ export default function Profile() {
                   <Center mb="sm">
                     <Avatar
                       size={140}
-                      src={getAvatarUrl(profile.avatar, profile.is_open_to_work, 140)}
+                      src={
+                        profile.avatar
+                          ? getAvatarUrl(profile.avatar, profile.is_open_to_work, 140)
+                          : `https://api.dicebear.com/10.x/initials/svg?seed=${profile.full_name}`
+                      }
                       style={{ cursor: profile.avatar ? 'pointer' : 'default' }}
                       onClick={() =>
                         profile.avatar &&

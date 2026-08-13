@@ -226,11 +226,15 @@ export default function Home() {
                                     >
                                       <Avatar
                                         // src={p.avatar ? AVATAR_PATH + p.avatar : null}
-                                        src={getAvatarUrl(
-                                          p?.avatar,
-                                          p?.is_open_to_work,
-                                          64,
-                                        )}
+                                        src={
+                                          p?.avatar
+                                            ? getAvatarUrl(
+                                                p?.avatar,
+                                                p?.is_open_to_work,
+                                                64,
+                                              )
+                                            : `https://api.dicebear.com/10.x/initials/svg?seed=${p.full_name}`
+                                        }
                                         size={64}
                                         radius="xl"
                                       >

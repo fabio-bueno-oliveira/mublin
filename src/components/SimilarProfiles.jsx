@@ -45,7 +45,11 @@ export default function SimilarProfiles({ profiles = [], loading }) {
                 <Avatar
                   size={40}
                   radius="xl"
-                  src={p.avatar ? AVATAR_PATH + p.avatar : undefined}
+                  src={
+                    p.avatar
+                      ? AVATAR_PATH + p.avatar
+                      : `https://api.dicebear.com/10.x/initials/svg?seed=${p.full_name}`
+                  }
                 />
               </Box>
               <Stack gap={0} style={{ flexGrow: 1 }} maw="78%">
