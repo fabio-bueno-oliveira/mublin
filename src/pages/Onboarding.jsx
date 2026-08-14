@@ -4,7 +4,9 @@ import { useAuth } from '../hooks/useAuth'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { fetchUserProfile, fetchUserRoles } from '../queries/user'
 import { fetchAllRoles } from '../queries/roles'
+import { fetchAllGenres, fetchGenreCategories } from '../queries/genres'
 import { searchArtist } from '../queries/artists'
+import { formatFullName } from '../utils/name'
 import { fetchRegions, searchCitiesByName, fetchCityById } from '../queries/locations'
 import { supabase } from '../lib/supabaseClient'
 import {
@@ -63,6 +65,7 @@ import {
   IconMicrophone2,
   IconStarFilled,
   IconStar,
+  IconVinyl,
 } from '@tabler/icons-react'
 const NewProject = lazy(() => import('./NewProject'))
 
@@ -98,6 +101,17 @@ async function fetchUserPortfolio(profileId) {
     )
     .eq('profile_id', profileId)
     .order('order_number', { ascending: true, nullsFirst: false })
+  if (error) {
+    throw new Error(error.message)
+  }
+  return data
+}
+
+async function fetchUserGenres(profileId) {
+  const { data, error } = await supabase
+    .from('profile_genres')
+    .select('id, id_genre, main_genre, genres(id, name_ptbr)')
+    .eq('id_profile', profileId)
   if (error) {
     throw new Error(error.message)
   }
@@ -200,6 +214,25 @@ export default function Onboarding() {
     },
   })
 
+  useEffect(() => {
+    if (profile) {
+      profileForm.setValues({
+        full_name: formatFullName(
+          profile.full_name || user?.user_metadata?.full_name || '',
+        ),
+        username: profile.username || '',
+        title: profile.title || '',
+        bio: profile.bio || '',
+        region_id: profile.region_id ? String(profile.region_id) : '',
+      })
+
+      // if (profile.city_id) {
+      //   fetchCityById(profile.city_id).then(setSelectedCity)
+      // }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile])
+
   // ── Step 3: Roles ─────────────────────────────────────
   const [userRoles, setUserRoles] = useState([])
   const [addingRole, setAddingRole] = useState(false)
@@ -211,7 +244,18 @@ export default function Onboarding() {
     },
   })
 
-  // ── Step 4: Portfólio ──────────────────────────────────
+  // ── Step 4: Genres ─────────────────────────────────────
+  const [userGenres, setUserGenres] = useState([])
+  const [addingGenre, setAddingGenre] = useState(false)
+  const [genreSearch, setGenreSearch] = useState('')
+  const comboboxGenre = useCombobox({
+    onDropdownClose: () => {
+      comboboxGenre.resetSelectedOption()
+      setGenreSearch('')
+    },
+  })
+
+  // ── Step 5: Portfólio ──────────────────────────────────
   const [selectedRoleIds, setSelectedRoleIds] = useState([])
   const [selectedEngagementTypeIds, setSelectedEngagementTypeIds] = useState([])
   const [entryType, setEntryType] = useState('project') // 'project' | 'artist'
@@ -265,6 +309,25 @@ export default function Onboarding() {
     staleTime: 1000 * 60 * 30,
   })
 
+  const { data: savedGenres = [] } = useQuery({
+    queryKey: ['profile-genres', user?.id],
+    queryFn: () => fetchUserGenres(user.id),
+    enabled: !!user?.id,
+    staleTime: 1000 * 60 * 5,
+  })
+
+  const { data: genreCategories = [] } = useQuery({
+    queryKey: ['genre-categories'],
+    queryFn: fetchGenreCategories,
+    staleTime: Infinity,
+  })
+
+  const { data: allGenres = [] } = useQuery({
+    queryKey: ['all-genres'],
+    queryFn: fetchAllGenres,
+    staleTime: Infinity,
+  })
+
   const { data: allEngagementTypes = [] } = useQuery({
     queryKey: ['all-engagement-types'],
     queryFn: fetchAllEngagementTypes,
@@ -315,6 +378,11 @@ export default function Onboarding() {
     label: t.name_ptbr,
   }))
 
+  const sortedGenreCategories = [
+    ...genreCategories.filter((c) => c.id !== 5),
+    ...genreCategories.filter((c) => c.id === 5),
+  ]
+
   // ── Popula os estados iniciais ──
 
   useEffect(() => {
@@ -343,6 +411,13 @@ export default function Onboarding() {
   }, [savedProfile])
 
   useEffect(() => {
+    setTimeout(() => {
+      handleUsernameCheck(profile.username)
+    }, 300)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active])
+
+  useEffect(() => {
     if (!savedRoles.length) {
       return
     }
@@ -353,6 +428,18 @@ export default function Onboarding() {
     }))
     setUserRoles(mapped)
   }, [savedRoles])
+
+  useEffect(() => {
+    if (!savedGenres.length) {
+      return
+    }
+    const mapped = savedGenres.map((g) => ({
+      id: g.genres.id,
+      name: g.genres.name_ptbr,
+      main_genre: g.main_genre,
+    }))
+    setUserGenres(mapped)
+  }, [savedGenres])
 
   // ── Handlers ──────────────────────────────────────────
 
@@ -405,11 +492,6 @@ export default function Onboarding() {
       await supabase.from('profiles').update({ avatar: fileName }).eq('id', user.id)
 
       setAvatarUploaded(true)
-      notifications.show({
-        color: 'green',
-        position: 'top-center',
-        message: 'Foto de perfil atualizada!',
-      })
     } catch {
       notifications.show({
         color: 'red',
@@ -441,6 +523,7 @@ export default function Onboarding() {
       .from('reserved_usernames')
       .select('username')
       .eq('username', value)
+      .neq('id', user.id)
       .maybeSingle()
 
     if (reserved) {
@@ -585,7 +668,86 @@ export default function Onboarding() {
     }
   }
 
-  // Step 4 — Portfólio
+  // Step 4 — Genres
+  async function handleAddGenre(genreId) {
+    if (!genreId || userGenres.find((g) => g.id === Number(genreId))) {
+      return
+    }
+    setAddingGenre(true)
+    const genre = allGenres.find((g) => g.id === Number(genreId))
+    const isFirst = userGenres.length === 0
+
+    const { error } = await supabase.from('profile_genres').insert({
+      id_profile: user.id,
+      id_genre: Number(genreId),
+      main_genre: isFirst,
+    })
+
+    if (!error) {
+      setUserGenres((prev) => [
+        ...prev,
+        { id: genre.id, name: genre.name_ptbr, main_genre: isFirst },
+      ])
+    }
+    setAddingGenre(false)
+  }
+
+  async function handleRemoveGenre(genreId) {
+    await supabase
+      .from('profile_genres')
+      .delete()
+      .eq('id_profile', user.id)
+      .eq('id_genre', genreId)
+
+    setUserGenres((prev) => prev.filter((g) => g.id !== genreId))
+  }
+
+  async function handleSetMainGenre(genreId) {
+    const previousMain = userGenres.find((g) => g.main_genre)
+    if (previousMain?.id === genreId) {
+      return
+    }
+
+    // Atualização otimista
+    setUserGenres((prev) => prev.map((g) => ({ ...g, main_genre: g.id === genreId })))
+
+    const updates = [
+      supabase
+        .from('profile_genres')
+        .update({ main_genre: true })
+        .eq('id_profile', user.id)
+        .eq('id_genre', genreId),
+    ]
+    if (previousMain) {
+      updates.push(
+        supabase
+          .from('profile_genres')
+          .update({ main_genre: false })
+          .eq('id_profile', user.id)
+          .eq('id_genre', previousMain.id),
+      )
+    }
+
+    const results = await Promise.all(updates)
+    const hasError = results.some((r) => r.error)
+
+    if (hasError) {
+      // Reverte em caso de erro
+      setUserGenres((prev) =>
+        prev.map((g) => ({
+          ...g,
+          main_genre: previousMain ? g.id === previousMain.id : false,
+        })),
+      )
+      notifications.show({
+        color: 'red',
+        position: 'top-center',
+        message: 'Erro ao atualizar gênero principal. Tente novamente.',
+      })
+    }
+  }
+
+  // Step 5 — Portfólio
   const handleProjectSearch = useDebouncedCallback(async (query) => {
     if (query.trim().length < 2) {
       setProjectResults([])
@@ -823,6 +985,7 @@ export default function Onboarding() {
           <Stepper.Step icon={<IconCamera stroke={2} />} />
           <Stepper.Step icon={<IconUserEdit stroke={2} />} />
           <Stepper.Step icon={<IconMusic stroke={2} />} />
+          <Stepper.Step icon={<IconVinyl stroke={2} />} />
           <Stepper.Step icon={<IconUsersGroup stroke={2} />} />
         </Stepper>
         {/* ── Step 0: Foto de perfil ───────────────────── */}
@@ -1143,7 +1306,7 @@ export default function Onboarding() {
                 {userRoles.map((role) => (
                   <Pill
                     key={role.id}
-                    size="md"
+                    size="lg"
                     withRemoveButton
                     onRemove={() => handleRemoveRole(role.id)}
                     style={
@@ -1192,8 +1355,152 @@ export default function Onboarding() {
             )}
           </Stack>
         )}
-        {/* ── Step 3: Portfólio ────────────────────────── */}
+        {/* ── Step 3: Gêneros musicais ──────────────────── */}
         {active === 3 && (
+          <Stack gap="md">
+            <Title order={3} fw={700} ta="center">
+              Seus gêneros musicais
+            </Title>
+            <Text c="dimmed" size="sm" ta="center">
+              Em quais estilos você atua?
+            </Text>
+
+            {(() => {
+              const filteredGroups = sortedGenreCategories
+                .map((category) => ({
+                  category,
+                  items: allGenres
+                    .filter((g) => g.id_category === category.id)
+                    .filter((g) =>
+                      g.name_ptbr
+                        .toLowerCase()
+                        .includes(genreSearch.toLowerCase().trim()),
+                    ),
+                }))
+                .filter((group) => group.items.length > 0)
+
+              const hasOptions = filteredGroups.length > 0
+
+              return (
+                <Combobox
+                  store={comboboxGenre}
+                  onOptionSubmit={(val) => {
+                    handleAddGenre(val)
+                    comboboxGenre.closeDropdown()
+                    setGenreSearch('')
+                  }}
+                >
+                  <Combobox.Target>
+                    <TextInput
+                      placeholder={addingGenre ? 'Salvando...' : 'Buscar gênero...'}
+                      disabled={addingGenre}
+                      size="md"
+                      value={genreSearch}
+                      onChange={(e) => {
+                        setGenreSearch(e.target.value)
+                        comboboxGenre.openDropdown()
+                        comboboxGenre.updateSelectedOptionIndex()
+                      }}
+                      onClick={() => comboboxGenre.openDropdown()}
+                      onFocus={() => comboboxGenre.openDropdown()}
+                      onBlur={() => comboboxGenre.closeDropdown()}
+                      rightSection={
+                        addingGenre ? <Loader size={16} /> : <Combobox.Chevron />
+                      }
+                      rightSectionPointerEvents="none"
+                    />
+                  </Combobox.Target>
+
+                  <Combobox.Dropdown>
+                    <Combobox.Search
+                      value={genreSearch}
+                      onChange={(e) => {
+                        setGenreSearch(e.target.value)
+                        comboboxGenre.updateSelectedOptionIndex()
+                      }}
+                      placeholder="Buscar..."
+                    />
+                    <Combobox.Options>
+                      <ScrollArea.Autosize type="scroll" mah={184}>
+                        {!hasOptions && (
+                          <Combobox.Empty>Nenhum gênero encontrado</Combobox.Empty>
+                        )}
+                        {filteredGroups.map(({ category, items }) => (
+                          <Combobox.Group key={category.id} label={category.name_ptbr}>
+                            {items.map((genre) => (
+                              <Combobox.Option
+                                key={genre.id}
+                                value={String(genre.id)}
+                                disabled={userGenres.find((ug) => ug.id === genre.id)}
+                              >
+                                {genre.name_ptbr}
+                              </Combobox.Option>
+                            ))}
+                          </Combobox.Group>
+                        ))}
+                      </ScrollArea.Autosize>
+                    </Combobox.Options>
+                  </Combobox.Dropdown>
+                </Combobox>
+              )
+            })()}
+
+            {userGenres.length > 0 && (
+              <Pill.Group>
+                {userGenres.map((genre) => (
+                  <Pill
+                    key={genre.id}
+                    size="lg"
+                    withRemoveButton
+                    onRemove={() => handleRemoveGenre(genre.id)}
+                    style={
+                      genre.main_genre
+                        ? {
+                            background:
+                              'linear-gradient(190deg, var(--mantine-color-grape-9), var(--mantine-color-mublinColor-9))',
+                            color: 'white',
+                          }
+                        : undefined
+                    }
+                  >
+                    <Group gap={4} wrap="nowrap" component="span">
+                      <Tooltip
+                        label={
+                          genre.main_genre
+                            ? 'Gênero principal'
+                            : 'Definir como gênero principal'
+                        }
+                        withArrow
+                      >
+                        <ActionIcon
+                          size={14}
+                          variant="transparent"
+                          c={genre.main_genre ? 'white' : 'gray'}
+                          onClick={() => handleSetMainGenre(genre.id)}
+                        >
+                          {genre.main_genre ? (
+                            <IconStarFilled size={12} />
+                          ) : (
+                            <IconStar size={12} />
+                          )}
+                        </ActionIcon>
+                      </Tooltip>
+                      {genre.name}
+                    </Group>
+                  </Pill>
+                ))}
+              </Pill.Group>
+            )}
+
+            {userGenres.length === 0 && (
+              <Text size="md" c="dimmed" ta="center">
+                Nenhum gênero adicionado ainda
+              </Text>
+            )}
+          </Stack>
+        )}
+        {/* ── Step 4: Portfólio ────────────────────────── */}
+        {active === 4 && (
           <Stack gap="sm">
             <Title order={3} fw={700} ta="center">
               Seu portfólio
@@ -1324,7 +1631,7 @@ export default function Onboarding() {
             <Box />
           )}
 
-          {active < 3 ? (
+          {active < 4 ? (
             <Group gap="sm">
               {active === 0 && (
                 <Button
@@ -1370,6 +1677,10 @@ export default function Onboarding() {
         size="sm"
         radius="md"
         centered
+        overlayProps={{
+          backgroundOpacity: 0.55,
+          blur: 3,
+        }}
       >
         <Stack gap="sm">
           <TextInput

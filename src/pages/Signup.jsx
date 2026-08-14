@@ -45,7 +45,11 @@ export default function Signup() {
   async function handleSubmit(values) {
     setLoading(true)
 
-    const { error } = await signUpWithEmail(values.email, values.password)
+    const { error } = await signUpWithEmail(
+      values.email,
+      values.password,
+      values.full_name,
+    )
     if (error) {
       setLoading(false)
       notifications.show({

@@ -100,7 +100,7 @@ export function useProfileChecklist() {
     },
     {
       key: 'portfolio',
-      label: 'Adicione um item ao seu portfólio',
+      label: 'Adicione um projeto ao seu portfólio',
       completed: hasPortfolioItem,
       href: '/settings/portfolio',
       count: portfolioCount,

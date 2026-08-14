@@ -1,9 +1,8 @@
-import { Stack, Group, Text } from '@mantine/core'
+import { Group, Text, Badge, ThemeIcon } from '@mantine/core'
 import { IconCheck } from '@tabler/icons-react'
 
-export function WorkAvailabilityItem({ item }) {
+export default function WorkAvailabilityItem({ item }) {
   const { avg_rate, rate_currency, rate_types, work_types } = item
-
   const hasRate = avg_rate != null
 
   const formattedRate = hasRate
@@ -15,24 +14,31 @@ export function WorkAvailabilityItem({ item }) {
     : null
 
   return (
-    <Stack gap={1}>
-      <Text span size="15px" lh={1.2} fw={500}>
-        <IconCheck size={9} stroke={4} /> {work_types?.name_ptbr ?? '—'}
-      </Text>
-      <Group justify="space-between" wrap="nowrap">
-        {hasRate ? (
-          <Group gap={6} wrap="nowrap">
-            <Text size="xs" opacity={0.8}>
-              Média de preço: {formattedRate}
-              {rate_types?.name_ptbr && ` ${rate_types.name_ptbr.toLowerCase()}`}
-            </Text>
-          </Group>
-        ) : (
-          <Text size="xs" opacity={0.8}>
-            Média de preço: a combinar
-          </Text>
-        )}
-      </Group>
-    </Stack>
+    <Group gap="sm" wrap="nowrap" align="flex-start">
+      <ThemeIcon
+        size={20}
+        radius="xl"
+        variant="light"
+        color="var(--mantine-color-text)"
+        mt={1}
+      >
+        <IconCheck size={12} stroke={4} />
+      </ThemeIcon>
+      <div style={{ flex: 1 }}>
+        <Text size="sm" fw={600} lh={1.2}>
+          {work_types?.name_ptbr}
+        </Text>
+        <Text size="xs" c="dimmed" mt={2}>
+          {hasRate
+            ? `${formattedRate} ${rate_types?.name_ptbr?.toLowerCase() || '/ evento'}`
+            : 'Valor a combinar'}
+        </Text>
+      </div>
+      {hasRate && (
+        <Badge variant="light" size="xs" color="gray">
+          {rate_currency || 'BRL'}
+        </Badge>
+      )}
+    </Group>
   )
 }

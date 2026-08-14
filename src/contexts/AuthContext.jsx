@@ -74,8 +74,24 @@ export function AuthProvider({ children }) {
     return { data, error }
   }
 
-  async function signUpWithEmail(email, password) {
-    const { data, error } = await supabase.auth.signUp({ email, password })
+  async function signUpWithEmail(email, password, fullName) {
+    const cleanName = fullName?.trim() || ''
+
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          full_name: cleanName,
+          username: cleanName
+            .toLowerCase()
+            .replace(/\s+/g, '')
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .replace(/[^a-z0-9_]/g, ''),
+        },
+      },
+    })
     return { data, error }
   }
 

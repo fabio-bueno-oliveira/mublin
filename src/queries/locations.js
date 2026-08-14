@@ -25,14 +25,17 @@ export async function fetchCityById(cityId) {
 }
 
 export async function searchCitiesByName(query, regionId) {
-  const { data, error } = await supabase
-    .from('cities')
-    .select('id, name')
-    .eq('region_id', regionId)
-    .ilike('name', `%${query}%`)
-    .order('name')
-    .limit(20)
+  if (!query || !regionId) {
+    return []
+  }
+
+  const { data, error } = await supabase.rpc('search_cities_by_name', {
+    p_query: query.trim(),
+    p_region_id: Number(regionId),
+  })
+
   if (error) {
+    console.error('search_cities_by_name error:', error)
     throw new Error(error.message)
   }
   return data

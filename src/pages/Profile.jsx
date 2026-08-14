@@ -42,20 +42,19 @@ import {
   Flex, Group,
   Button, ActionIcon, ThemeIcon, 
   Alert, Tooltip, Anchor,
-  Spoiler, Indicator,
-  Badge,
-  Paper,
+  Spoiler,
 } from '@mantine/core'
 // prettier-ignore
 import { useMediaQuery, useDisclosure, useWindowScroll, useScroller } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
-import LoadingSkeleton from '../components/profile/LoadingSkeleton'
 import LinkedItem from '../components/feed/LinkedItem'
 import VideoPlayerYoutube from '../components/feed/VideoPlayerYoutube'
 import SectionPanel from '../components/SectionPanel'
 import InviteToGigModal from '../components/gigs/InviteToGigModal'
+import LoadingSkeleton from '../components/profile/LoadingSkeleton'
 import RecognitionBadge from '../components/profile/RecognitionBadge'
 import PortfolioUpvote from '../components/profile/PortfolioUpvote'
+import AvailabilityPanel from '../components/profile/AvailabilityPanel'
 import { truncateString } from '../utils/formatter'
 // prettier-ignore
 import {
@@ -69,8 +68,7 @@ import {
   IconSend, IconEye, IconLink,
   IconUserPlus, IconUserX,
   IconChevronLeft, IconChevronRight,
-  IconPencil, IconSparkles,
-  IconBookmark, IconBookmarkFilled,
+  IconPencil, IconBookmark, IconBookmarkFilled,
   IconRosetteDiscountCheckFilled,
   IconSchool, IconUserCircle,
   IconExternalLink,
@@ -84,10 +82,8 @@ import { formatPortfolioPeriod, getAvatarUrl } from '../utils/profile'
 import { openImagePreviewModal } from '../utils/openImagePreviewModal'
 import { isProfileLive } from '../utils/live'
 import { isMublinOG } from '../utils/badges'
-import { AVAILABLE_FROM_LABELS } from '../constants/availability'
 import { SOCIAL_CONFIG } from '../constants/socialConfig'
 import relativeTime from 'dayjs/plugin/relativeTime'
-import { WorkAvailabilityItem } from '../components/profile/WorkAvailabilityItem'
 import MublinMLogo from '../assets/svg/mublin-m-logo-silver.svg'
 import dayjs from 'dayjs'
 dayjs.extend(relativeTime)
@@ -409,7 +405,7 @@ export default function Profile() {
     staleTime: 1000 * 60 * 5,
   })
 
-  const { data: workAvailability = [] } = useQuery({
+  const { data: workAvailability = [], isLoading: loadingWorkAvailability } = useQuery({
     queryKey: ['user-work-availability', profile?.id],
     queryFn: () => fetchProfileWorkAvailability(profile.id),
     enabled: !!profile?.id,
@@ -2061,81 +2057,15 @@ export default function Profile() {
           <Grid.Col span={{ base: 12, md: 3 }}>
             <Stack gap={10}>
               {profile?.show_availability_info && (
-                <SectionPanel id="availability">
-                  <SectionTitle text="Disponibilidade" mb="sm" />
-                  <Divider mt="sm" label="Disponível a partir de:" labelPosition="left" />
-                  {profile.available_from ? (
-                    <Text size="15px">
-                      {AVAILABLE_FROM_LABELS[profile.available_from] ||
-                        profile.available_from}
-                    </Text>
-                  ) : (
-                    <Text size="15px" c="dimmed">
-                      Não informado
-                    </Text>
-                  )}
-                  <Divider
-                    mt="xs"
-                    mb={2}
-                    label="Tipos de trabalho:"
-                    labelPosition="left"
-                  />
-                  {workAvailability.length > 0 ? (
-                    <Flex gap="xs" wrap="wrap" direction="column">
-                      {workAvailability.map((item) => (
-                        <Stack gap={1} key={item.id}>
-                          <WorkAvailabilityItem item={item} />
-                        </Stack>
-                      ))}
-                    </Flex>
-                  ) : (
-                    <Text size="15px" c="dimmed">
-                      Não informado
-                    </Text>
-                  )}
-                  <Divider
-                    mt="sm"
-                    mb={2}
-                    label="Vínculos de preferência:"
-                    labelPosition="left"
-                  />
-                  {workFocus.length > 0 ? (
-                    <Group gap={6} wrap="wrap">
-                      {workFocus.map((item) => (
-                        <Text span size="15px" lh={1.2} fw={500} key={item.id}>
-                          <IconCheck size={9} stroke={4} />{' '}
-                          {item.work_focuses?.title_ptbr}
-                        </Text>
-                      ))}
-                    </Group>
-                  ) : (
-                    <Text size="15px" c="dimmed">
-                      Não informado
-                    </Text>
-                  )}
-                  <Divider
-                    mt="sm"
-                    label="Preferência para viagens:"
-                    labelPosition="left"
-                  />
-                  {loadingTravelPreference ? (
-                    <Text size="15px" c="dimmed">
-                      Carregando...
-                    </Text>
-                  ) : (
-                    <>
-                      {travelPreference?.id ? (
-                        <Text span size="15px" lh={1.2} fw={500}>
-                          {travelPreference?.travel_preferences?.label}
-                        </Text>
-                      ) : (
-                        <Text size="15px" c="dimmed">
-                          Não informado
-                        </Text>
-                      )}
-                    </>
-                  )}
-                </SectionPanel>
+                <AvailabilityPanel
+                  id="availability"
+                  profile={profile}
+                  workAvailability={workAvailability}
+                  workAvailabilityLoading={loadingWorkAvailability}
+                  workFocuses={workFocus}
+                  travelPreference={travelPreference}
+                  isOwnProfile={isOwnProfile}
+                />
               )}
 
               <SectionPanel id="recognitions">
@@ -2409,14 +2339,15 @@ export default function Profile() {
                           target="_blank"
                           rel="noopener noreferrer"
                           style={{ textDecoration: 'none', color: 'inherit' }}
+                          pl={6}
                         >
                           <Icon
                             color="var(--mantine-color-text)"
                             stroke={1.5}
                             size={25}
                           />
-                          <Stack gap={2} w={180}>
-                            <Text size="sm" fw={600} truncate="end">
+                          <Stack pl={6} gap={2} w={180}>
+                            <Text size="sm" fw={600} tt="capitalize">
                               {link.platform}
                             </Text>
                             <Text size="xs" truncate="end" c="dimmed">
