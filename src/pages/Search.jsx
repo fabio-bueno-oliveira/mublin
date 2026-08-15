@@ -919,7 +919,7 @@ export default function Search() {
                               textShadow: '0 1px 3px rgba(0,0,0,0.25)',
                             }}
                           >
-                            {genre.name_ptbr}
+                            {genre.pop_name_ptbr || genre.name_ptbr}
                           </Text>
 
                           {/* "chip" rotacionado com a inicial do gênero, no espírito das capas do Spotify */}

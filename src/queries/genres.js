@@ -17,7 +17,7 @@ const OTHERS_CATEGORY_ID = 5
 export async function fetchGenreCategories() {
   const { data, error } = await supabase
     .from('genre_categories')
-    .select('id, name, name_ptbr, color, color_hex')
+    .select('id, name, name_ptbr, pop_name_ptbr, color, color_hex')
     .order('name_ptbr', { ascending: true })
   if (error) {
     throw error

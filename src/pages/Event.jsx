@@ -18,111 +18,151 @@ import {
   Skeleton,
   Modal,
   Grid,
+  Image,
   Checkbox,
-  Alert,
+  Popover,
   Switch,
   Group,
-  Anchor,
   Avatar,
   Box,
   Title,
   Text,
   Stack,
-  Center,
   Flex,
   Affix,
-  Card,
-  List,
   ThemeIcon,
-  ScrollArea,
-  Indicator,
   Spoiler,
   Paper,
   Button,
   Divider,
-  Popover,
-  Tooltip,
+  Badge,
+  Scroller,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { useDisclosure } from '@mantine/hooks'
 import { useForm } from '@mantine/form'
 import {
-  IconCheck,
-  IconClock,
-  IconHeart,
-  IconHeartFilled,
   IconCircleCheck,
-  IconInfoCircle,
-  IconX,
   IconInfoCircleFilled,
+  IconX,
+  IconMapPin,
+  IconTicket,
+  IconWorld,
   IconBrandInstagram,
+  IconExternalLink,
+  IconBrandWaze,
+  IconCheck,
+  IconCalendar,
 } from '@tabler/icons-react'
 import dayjs from 'dayjs'
 
 const EVENTS_PATH =
-  'https://ik.imagekit.io/mublin/events/tr:h-200,w-200,c-maintain_ratio/'
+  'https://ik.imagekit.io/mublin/events/tr:h-144,w-144,c-maintain_ratio/'
 const AVATAR_PATH =
-  'https://ik.imagekit.io/mublin/tr:h-80,c-maintain_ratio/users/avatars/'
-const PROJECT_AVATAR_PATH = 'https://ik.imagekit.io/mublin/projects/'
+  'https://ik.imagekit.io/mublin/tr:h-120,w-120,c-maintain_ratio/users/avatars/'
+
+function EventMap({ latitude, longitude, venueName, addressLine }) {
+  if (!latitude || !longitude) {
+    return null
+  }
+  const bbox = `${longitude - 0.008}%2C${latitude - 0.008}%2C${longitude + 0.008}%2C${latitude + 0.008}`
+  return (
+    <Paper withBorder radius="md" style={{ overflow: 'hidden' }}>
+      <Box h={300}>
+        <iframe
+          title={`Mapa - ${venueName}`}
+          width="100%"
+          height="100%"
+          style={{ border: 0, display: 'block' }}
+          loading="lazy"
+          src={`https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${latitude}%2C${longitude}`}
+        />
+      </Box>
+      <Box
+        p="sm"
+        bg="light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-7))"
+      >
+        <Group gap="xs" mb={2}>
+          <ThemeIcon size={18} radius="xl" variant="light" color="violet">
+            <IconMapPin size={12} />
+          </ThemeIcon>
+          <Text size="sm" fw={600} lineClamp={1}>
+            {venueName}
+          </Text>
+        </Group>
+        <Text size="xs" c="dimmed">
+          {addressLine}
+        </Text>
+        <Group gap="xs" mt="sm">
+          <Button
+            size="compact-xs"
+            variant="light"
+            color="var(--mantine-color-text)"
+            component="a"
+            href={`https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`}
+            target="_blank"
+          >
+            Google Maps
+          </Button>
+          <Button
+            size="compact-xs"
+            variant="light"
+            color="var(--mantine-color-text)"
+            component="a"
+            href={`https://waze.com/ul?ll=${latitude},${longitude}&navigate=yes`}
+            target="_blank"
+            leftSection={<IconBrandWaze size={14} />}
+          >
+            Waze
+          </Button>
+        </Group>
+      </Box>
+    </Paper>
+  )
+}
 
 export default function Event() {
   const { user } = useAuth()
   const { slug } = useParams()
   const queryClient = useQueryClient()
-
   const [opened, { open, close }] = useDisclosure(false)
+  const [attendeesModal, { open: openAttendees, close: closeAttendees }] =
+    useDisclosure(false)
 
   useEffect(() => {
-    scrollTo({ y: 0 })
+    window.scrollTo({ y: 0 })
   }, [])
 
-  const {
-    data: event,
-    isLoading: isLoadingEventDetails,
-    isSuccess,
-  } = useQuery({
+  const { data: event, isLoading } = useQuery({
     queryKey: ['event-details', slug],
     queryFn: () => fetchEventDetails(slug),
     enabled: !!slug,
     staleTime: 1000 * 60 * 4,
   })
-
-  const { data: attendees, isLoading: loadingAttendees } = useQuery({
+  const { data: attendees = [] } = useQuery({
     queryKey: ['event-attendees', event?.id],
     queryFn: () => fetchEventAttendees(event.id),
     enabled: !!event?.id,
   })
-
   const { data: gigs = [], isLoading: isLoadingGigs } = useQuery({
     queryKey: ['event-gigs', event?.id],
     queryFn: () => fetchEventGigs(event?.id),
     enabled: !!event?.id,
-    staleTime: 1000 * 60 * 5,
   })
-
-  // Busca meu interesse atual
   const { data: myInterest } = useQuery({
     queryKey: ['my-event-interest', event?.id, user?.id],
     queryFn: () => fetchMyEventInterest(event.id, user.id),
     enabled: !!event?.id && !!user?.id,
   })
-
-  // Busca tipos disponíveis
   const { data: interestTypes } = useQuery({
     queryKey: ['interest-types'],
     queryFn: fetchInterestTypes,
   })
 
-  // Form do modal
   const interestForm = useForm({
-    initialValues: {
-      is_interested: false,
-      is_confirmed: false,
-      type_ids: [],
-    },
+    initialValues: { is_interested: false, is_confirmed: false, type_ids: [] },
   })
 
-  // Sincroniza form com dados do banco quando abrir
   useEffect(() => {
     if (myInterest && opened) {
       interestForm.setValues({
@@ -133,7 +173,6 @@ export default function Event() {
     }
   }, [myInterest, opened])
 
-  // Mutation pra salvar
   const saveMutation = useMutation({
     mutationFn: upsertEventInterest,
     onSuccess: () => {
@@ -146,30 +185,24 @@ export default function Event() {
       queryClient.invalidateQueries({ queryKey: ['event-attendees', event?.id] })
       close()
     },
-    onError: () => {
-      notifications.show({
-        color: 'red',
-        title: 'Ops...',
-        message: 'Não foi possível salvar. Tente novamente.',
-      })
+  })
+  const deleteMutation = useMutation({
+    mutationFn: () => deleteEventInterest(event.id, user.id),
+    onSuccess: () => {
+      notifications.show({ color: 'blue', message: 'Interesse removido' })
+      queryClient.invalidateQueries({ queryKey: ['my-event-interest', event?.id] })
+      queryClient.invalidateQueries({ queryKey: ['event-attendees', event?.id] })
+      interestForm.reset()
+      close()
     },
   })
-
   function handleSaveInterest(values) {
     if (!user) {
-      notifications.show({
-        color: 'orange',
-        message: 'Faça login para demonstrar interesse',
-      })
-      return
+      return notifications.show({ color: 'orange', message: 'Faça login' })
     }
-
-    // Se desmarcou "Tenho interesse", deleta o registro
     if (!values.is_interested && myInterest) {
-      deleteMutation.mutate()
-      return
+      return deleteMutation.mutate()
     }
-
     saveMutation.mutate({
       eventId: event.id,
       userId: user.id,
@@ -180,491 +213,405 @@ export default function Event() {
   }
 
   useEffect(() => {
-    // Se marcar "Estou entre as atrações", confirma automaticamente
     if (interestForm.values.type_ids.includes('4')) {
       interestForm.setFieldValue('is_confirmed', true)
     }
   }, [interestForm.values.type_ids])
 
-  const deleteMutation = useMutation({
-    mutationFn: () => deleteEventInterest(event.id, user.id),
-    onSuccess: () => {
-      notifications.show({
-        color: 'blue',
-        message: 'Interesse removido',
-      })
-      queryClient.invalidateQueries({ queryKey: ['my-event-interest', event?.id] })
-      queryClient.invalidateQueries({ queryKey: ['event-attendees', event?.id] })
-      interestForm.reset()
-      close() // fecha o modal
-    },
-    onError: () => {
-      notifications.show({
-        color: 'red',
-        message: 'Erro ao remover. Tente novamente.',
-      })
-    },
-  })
+  if (isLoading) {
+    return (
+      <Container
+        size="md"
+        py={{ base: 'md', sm: 0 }}
+        px={{ base: 'md', sm: 'md' }}
+        mt={{ base: 44, sm: 10 }}
+      >
+        <Skeleton height={120} radius="md" />
+      </Container>
+    )
+  }
+  if (!event) {
+    return (
+      <Container size="sm" py="xl">
+        <Flex direction="column" align="center">
+          <Text>Evento não encontrado</Text>
+        </Flex>
+      </Container>
+    )
+  }
+
+  const addressLine = event?.venue
+    ? `${event.venue.address || ''}${event.venue.address_number ? `, ${event.venue.address_number}` : ''} - ${event.venue.neighborhood || ''} - ${event.venue.city?.name || ''}`
+    : ''
 
   return (
     <>
       <Helmet>
-        <meta charSet="utf-8" />
         <title>{event?.name ? `${event.name} · Mublin` : 'Mublin'}</title>
-        <link rel="canonical" href={`https://mublin.com/event/${event?.slug || ''}`} />
-        <meta
-          name="description"
-          content={`Informações de '${event?.name || ''}' no Mublin`}
-        />
       </Helmet>
-
       <Affix position={{ top: 0, left: 0 }} hiddenFrom="sm">
         <AppNavbarMobile pageName="Evento" />
       </Affix>
 
-      <Container size="sm" py="xs" px={{ base: 'md', sm: 0 }} mt={{ base: 62, sm: 0 }}>
-        <Stack gap="xs" mb="xl">
-          {isLoadingEventDetails ? (
-            <Center>
-              <Skeleton radius="xl" height={100} width={100} />
-            </Center>
-          ) : (
-            <>
-              {isSuccess && event ? (
-                <>
-                  <Text ta="center" c="dimmed" size="13px" mb={6} visibleFrom="sm">
-                    Evento
-                  </Text>
-                  <Center pos="relative">
-                    <Avatar
-                      size={100}
-                      radius="xl"
-                      src={
-                        event?.picture_url ? EVENTS_PATH + event.picture_url : undefined
-                      }
-                      title={event?.name}
-                      alt={event?.name}
-                    />
-                  </Center>
-                  <Flex justify="center" direction="column">
-                    <Stack align="center" gap={2} mb="lg">
-                      <Group align="center" gap="md" mb="sm">
-                        {/* Caixinha da data */}
-                        {event.date_start === event.date_end ? (
-                          <Paper
-                            withBorder
-                            radius="md"
-                            w={70}
-                            style={{ overflow: 'hidden' }}
-                          >
-                            <Stack gap={0} align="center">
-                              <Text
-                                size="xs"
-                                fw={700}
-                                tt="uppercase"
-                                c="white"
-                                bg="red.6"
-                                w="100%"
-                                ta="center"
-                                py={2}
-                              >
-                                {dayjs(event.date_start).format('MMM')}
-                              </Text>
-                              <Text size="xl" fw={700} py={4}>
-                                {dayjs(event.date_start).format('DD')}
-                              </Text>
-                            </Stack>
-                          </Paper>
-                        ) : (
-                          <Paper
-                            withBorder
-                            radius="md"
-                            w={70}
-                            style={{ overflow: 'hidden' }}
-                          >
-                            <Stack gap={0} align="center">
-                              <Text
-                                size="xs"
-                                fw={700}
-                                tt="uppercase"
-                                c="white"
-                                bg="red.6"
-                                w="100%"
-                                ta="center"
-                                py={2}
-                              >
-                                {dayjs(event.date_start).format('MMM')}
-                              </Text>
-                              <Text size="sm" fw={700} py={12}>
-                                {dayjs(event.date_start).format('DD')} a{' '}
-                                {dayjs(event.date_end).format('DD')}
-                              </Text>
-                            </Stack>
-                          </Paper>
-                        )}
-
-                        {/* Título do evento */}
-                        <Stack gap={2} style={{ flex: 1 }}>
-                          <Title order={1} fz="h2">
-                            {event?.name}
-                          </Title>
-                          <Text size="xs" c="dimmed">
-                            {dayjs(event.date_start).format('dddd, DD [de] MMMM')}
-                            <br />
-                            {event.date_start !== event.date_end &&
-                              `a ${dayjs(event.date_end).format('dddd, DD [de] MMMM [de] YYYY')}`}
-                          </Text>
-                        </Stack>
-                      </Group>
-                      <Flex gap={6} align="center">
-                        <Text size="xs" span c="dimmed">
-                          Evento criado por
-                        </Text>
-                        <Link to={`/${event.author?.username}`}>
-                          <Avatar src={AVATAR_PATH + event.author?.avatar} size={20} />
-                        </Link>
-                        <Text size="xs" span c="dimmed">
-                          {event.author?.full_name}
-                        </Text>
-                        <Popover width={240} position="bottom" withArrow shadow="md">
-                          <Popover.Target>
-                            <IconInfoCircleFilled
-                              size={16}
-                              color="gray"
-                              style={{ cursor: 'pointer' }}
-                            />
-                          </Popover.Target>
-                          <Popover.Dropdown>
-                            <Text size="xs">
-                              O criador deste evento no Mublin não necessariamente
-                              representa a organização oficial
-                            </Text>
-                          </Popover.Dropdown>
-                        </Popover>
-                      </Flex>
-                      {user && (
-                        <Flex justify="center" mt="sm">
-                          <Button
-                            size="sm"
-                            variant={myInterest?.is_interested ? 'light' : 'outline'}
-                            leftSection={
-                              myInterest?.is_interested ? (
-                                <IconHeartFilled size={18} />
-                              ) : (
-                                <IconHeart size={18} />
-                              )
-                            }
-                            color={
-                              myInterest?.is_interested ? 'mublinColor' : 'mublinColor'
-                            }
-                            onClick={open}
-                          >
-                            {myInterest?.is_interested
-                              ? 'Interesse registrado'
-                              : 'Demonstrar interesse'}
-                          </Button>
-                        </Flex>
-                      )}
-                      <Spoiler
-                        mt="lg"
-                        maxHeight={68}
-                        showLabel={<Text size="sm">Ver mais</Text>}
-                        hideLabel={<Text size="sm">Ver menos</Text>}
-                        fz="sm"
-                        style={{ whiteSpace: 'pre-line' }}
-                      >
-                        {event?.description}
-                      </Spoiler>
-                    </Stack>
-
-                    {loadingAttendees ? (
-                      <Text c="dimmed">
-                        Carregando pessoas interessadas neste evento...
+      <Container
+        size="md"
+        py={{ base: 'md', sm: 0 }}
+        px={{ base: 'md', sm: 'md' }}
+        mt={{ base: 44, sm: 10 }}
+      >
+        <Grid gutter="xl" align="flex-start">
+          <Grid.Col span={{ base: 12, md: 8 }}>
+            <Stack gap="lg">
+              {/* HEADER */}
+              <Paper withBorder radius="md" p="md" className="paperWrapper">
+                <Group gap="sm" align="center" wrap="nowrap">
+                  <Image
+                    src={event?.picture_url ? EVENTS_PATH + event.picture_url : undefined}
+                    fit="cover"
+                    w={94}
+                    h={94}
+                    radius="lg"
+                  />
+                  <Stack gap={6}>
+                    <Group gap="xs">
+                      <Badge size="sm" variant="light" color="var(--mantine-color-text)">
+                        {event.category?.name || 'Evento'}
+                      </Badge>
+                      <Badge size="sm" variant="light" color="var(--mantine-color-text)">
+                        {event?.event_type?.name}
+                      </Badge>
+                    </Group>
+                    <Title order={2} size="h3" lh={1.1}>
+                      {event.name}
+                    </Title>
+                    <Flex gap={6} align="center">
+                      <Text size="xs" span c="dimmed">
+                        Criado por
                       </Text>
-                    ) : (
-                      <>
-                        {attendees && attendees.length > 0 && (
-                          <>
-                            <Divider
-                              label={`Interessados neste evento (${attendees.length})`}
-                              labelPosition="left"
-                            />
-
-                            <ScrollArea type="hover" offsetScrollbars>
-                              <Group gap="sm" wrap="nowrap" py="xs" align="flex-start">
-                                {attendees.map((person) => (
-                                  <Stack
-                                    key={person.id}
-                                    align="center"
-                                    gap={4}
-                                    w={88}
-                                    style={{ minWidth: 0, flexShrink: 0 }}
-                                  >
-                                    <Link to={`/${person.username}`}>
-                                      <Tooltip
-                                        label="Confirmou presença"
-                                        disabled={!person.is_confirmed}
-                                        withArrow
-                                        position="top"
-                                      >
-                                        <Indicator
-                                          disabled={!person.is_confirmed}
-                                          color="green"
-                                          size={14}
-                                          position="bottom-end"
-                                          withBorder
-                                          label={<IconCheck size={9} />}
-                                        >
-                                          <Avatar
-                                            src={AVATAR_PATH + person.avatar}
-                                            size={44}
-                                            radius="xl"
-                                          >
-                                            {person.full_name?.charAt(0)}
-                                          </Avatar>
-                                        </Indicator>
-                                      </Tooltip>
-                                    </Link>
-
-                                    <Text
-                                      ta="center"
-                                      size="xs"
-                                      fw={500}
-                                      lineClamp={1}
-                                      w="100%"
-                                      title={person.full_name}
-                                    >
-                                      {person.full_name}
-                                    </Text>
-
-                                    {person.interests.length > 0 && (
-                                      <Stack gap={0}>
-                                        {person.interests.map((interest) => (
-                                          <Text
-                                            style={{ whiteSpace: 'nowrap' }}
-                                            key={interest}
-                                            fz="10px"
-                                            c="dimmed"
-                                            ta="center"
-                                            lineClamp={2}
-                                          >
-                                            ✓ {interest}
-                                          </Text>
-                                        ))}
-                                      </Stack>
-                                    )}
-                                  </Stack>
-                                ))}
-                              </Group>
-                            </ScrollArea>
-                          </>
-                        )}
-                      </>
-                    )}
-
-                    {isLoadingGigs ? (
-                      <Text>Carregando gigs relacionadas a este evento...</Text>
-                    ) : (
-                      <Box>
-                        <Divider
-                          label={`Gigs neste evento: (${gigs.length})`}
-                          labelPosition="left"
+                      <Link to={`/${event.author?.username}`}>
+                        <Avatar
+                          src={AVATAR_PATH + event.author?.avatar}
+                          size={20}
+                          title={event.author?.full_name}
                         />
-                        {gigs.length > 0 ? (
-                          <Group mb="md" mt={8}>
-                            {gigs.map((gig) => (
-                              <Card p="xs" w={180}>
-                                <Avatar
-                                  src={
-                                    gig.project?.picture
-                                      ? `${PROJECT_AVATAR_PATH}/${gig.project?.id}/tr:h-200,w-200,c-maintain_ratio/${gig.project?.picture}`
-                                      : undefined
-                                  }
-                                  radius="sm"
-                                  size={40}
-                                  mb="xs"
-                                />
-                                <Text size="xs">{gig.project?.name}</Text>
-                                <Text size="xs" opacity={0.7}>
-                                  {gig.project?.type?.name_ptbr}
-                                </Text>
-                                {gig.roles?.length > 0 && (
-                                  <List listStyleType="none" mt={6} type="unordered">
-                                    {gig.roles?.map((role) => (
-                                      <List.Item
-                                        icon={
-                                          <ThemeIcon
-                                            color={role.is_filled ? 'green' : 'blue'}
-                                            size={18}
-                                            radius="md"
-                                          >
-                                            {role.is_filled ? (
-                                              <IconCheck size={12} />
-                                            ) : (
-                                              <IconClock size={12} />
-                                            )}
-                                          </ThemeIcon>
-                                        }
-                                      >
-                                        <Text size="11px">
-                                          {role.role.description_ptbr}
-                                        </Text>
-                                      </List.Item>
-                                    ))}
-                                  </List>
-                                )}
-                              </Card>
-                            ))}
-                          </Group>
-                        ) : (
-                          <Card p="xs" mt="xs" mb="sm">
-                            <Text ta="center" c="dimmed" size="sm">
-                              Nenhuma gig vinculada a este evento até o momento
-                            </Text>
-                          </Card>
-                        )}
-                      </Box>
-                    )}
+                      </Link>
+                      <Text size="xs" span c="dimmed">
+                        {event.author?.username}
+                      </Text>
+                      <Popover width={240} position="bottom" withArrow shadow="md">
+                        <Popover.Target>
+                          <IconInfoCircleFilled
+                            size={14}
+                            color="gray"
+                            style={{ cursor: 'pointer' }}
+                          />
+                        </Popover.Target>
+                        <Popover.Dropdown>
+                          <Text size="xs">
+                            O criador deste evento no Mublin não necessariamente
+                            representa a organização oficial
+                          </Text>
+                        </Popover.Dropdown>
+                      </Popover>
+                    </Flex>
+                  </Stack>
+                </Group>
+                <Stack gap={4} mt="xs">
+                  <Group gap={4}>
+                    <ThemeIcon size={18} radius="xl" variant="transparent">
+                      <IconCalendar size={15} stroke={2} color="gray" />
+                    </ThemeIcon>
+                    <Text size="xs" c="dimmed">
+                      {dayjs(event.date_start).format('DD [de] MMMM')}
+                      {' · '}
+                      {event.time_event_start?.slice(0, 5)} às{' '}
+                      {event.time_event_end?.slice(0, 5)}
+                    </Text>
+                  </Group>
+                  <Group gap={4}>
+                    <ThemeIcon size={18} radius="xl" variant="transparent">
+                      <IconMapPin size={15} stroke={2} color="gray" />
+                    </ThemeIcon>
+                    <Text size="xs" c="dimmed" lineClamp={1}>
+                      {event.venue?.name} · {event.venue?.city?.name}
+                    </Text>
+                  </Group>
+                </Stack>
+                <Group mt="xs">
+                  <Button
+                    size="xs"
+                    leftSection={myInterest?.is_interested && <IconCheck size={16} />}
+                    onClick={open}
+                    color={
+                      myInterest?.is_interested ? 'green.9' : 'var(--mantine-color-text)'
+                    }
+                    variant={myInterest?.is_interested ? 'filled' : 'light'}
+                  >
+                    {myInterest?.is_interested
+                      ? 'Interesse registrado'
+                      : 'Demonstrar interesse'}
+                  </Button>
+                  <Text size="xs" c="dimmed">
+                    {attendees?.length || 0} interessados
+                  </Text>
+                </Group>
+                {event.description && (
+                  <>
+                    <Divider variant="dashed" my="md" />
+                    <Spoiler
+                      maxHeight={82}
+                      showLabel={<Text size="sm">Ver mais</Text>}
+                      hideLabel={<Text size="sm">Ver menos</Text>}
+                    >
+                      <Text
+                        size="sm"
+                        className="allow-copy"
+                        style={{ whiteSpace: 'pre-wrap' }}
+                      >
+                        {event.description}
+                      </Text>
+                    </Spoiler>
+                  </>
+                )}
+              </Paper>
 
-                    <Stack mt="md" gap="sm">
-                      <Grid>
-                        <Grid.Col span={{ base: 12, md: 6 }}>
-                          <Box>
-                            <Text size="sm" c="dimmed" lh={1}>
-                              Website
-                            </Text>
-                            <Anchor size="sm" href={event?.website_url} target="_blank">
-                              {event?.website_url}
-                            </Anchor>
-                          </Box>
-                        </Grid.Col>
-                        <Grid.Col span={{ base: 12, md: 6 }}>
-                          <Box>
-                            <Text size="sm" c="dimmed" lh={1}>
-                              Ingressos
-                            </Text>
-                            <Anchor size="sm" href={event?.tickets_url} target="_blank">
-                              Acessar site de compra de ingressos
-                            </Anchor>
-                          </Box>
-                        </Grid.Col>
-                      </Grid>
-
-                      {event?.instagram_handle && (
-                        <Box>
-                          <Group gap={4}>
-                            <Text size="sm" c="dimmed" lh={1}>
-                              Instagram
-                            </Text>
-                            <IconBrandInstagram size={16} color="gray" />
-                          </Group>
-                          <Anchor
-                            size="sm"
-                            href={event?.instagram_handle}
-                            target="_blank"
+              {/* INTERESSADOS - SCROLLER */}
+              <Paper withBorder radius="md" p="md">
+                <Group justify="space-between" mb="sm">
+                  <Group gap="xs">
+                    <Text fw={600} size="18px">
+                      Interessados
+                    </Text>
+                    <Badge size="xs" variant="light" color="gray">
+                      {attendees.length}
+                    </Badge>
+                  </Group>
+                  {attendees.length > 8 && (
+                    <Button size="compact-xs" variant="subtle" onClick={openAttendees}>
+                      Ver todos
+                    </Button>
+                  )}
+                </Group>
+                {attendees.length ? (
+                  <Scroller type="auto" scrollbars="x" className="scrollerRoot">
+                    <Group gap="sm" wrap="nowrap" py={4}>
+                      {attendees.map((att) => {
+                        const prof = att.profiles || att.user || att
+                        return (
+                          <Stack
+                            key={att.id || prof.id}
+                            gap={4}
+                            align="center"
+                            style={{ minWidth: 64 }}
                           >
-                            @{event?.instagram_handle}
-                          </Anchor>
-                        </Box>
-                      )}
-
-                      <Box>
-                        <Text size="sm" c="dimmed">
-                          Local
-                        </Text>
-                        <Text size="sm">{event?.venue?.name}</Text>
-                        <Text size="xs">
-                          {event?.venue?.address}, {event?.venue?.address_number}
-                        </Text>
-                        <Text size="xs">
-                          {event?.venue?.neighborhood} - {event?.venue?.city?.name},{' '}
-                          {event?.venue?.city?.region?.uf ??
-                            event?.venue?.city?.region?.name}
-                        </Text>
-                        {event?.venue.longitude && event?.venue.latitude && (
-                          <Box mt="sm" style={{ borderRadius: 8, overflow: 'hidden' }}>
-                            <iframe
-                              title="Mapa"
-                              width="100%"
-                              height="120"
-                              style={{ border: 0 }}
-                              loading="lazy"
-                              src={`https://www.openstreetmap.org/export/embed.html?bbox=${
-                                event?.venue.longitude - 0.01
-                              }%2C${event?.venue.latitude - 0.01}%2C${
-                                event?.venue.longitude + 0.01
-                              }%2C${event?.venue.latitude + 0.01}&layer=mapnik&marker=${event?.venue.latitude}%2C${event?.venue.longitude}`}
+                            <Avatar
+                              size={48}
+                              radius="xl"
+                              src={prof.avatar ? AVATAR_PATH + prof.avatar : undefined}
+                              component={Link}
+                              to={`/${prof.username}`}
                             />
+                            <Text size="11px" c="dimmed" lineClamp={1} ta="center" w={64}>
+                              {prof.full_name?.split(' ')[0] || prof.username}
+                            </Text>
+                          </Stack>
+                        )
+                      })}
+                    </Group>
+                  </Scroller>
+                ) : (
+                  <Text size="sm" c="dimmed">
+                    Seja o primeiro a demonstrar interesse
+                  </Text>
+                )}
+              </Paper>
+
+              {/* GIGS */}
+              <Paper withBorder radius="md" p="md">
+                <Text fw={600} size="18px" mb="sm">
+                  Gigs associadas a este evento
+                </Text>
+                {isLoadingGigs ? (
+                  <Skeleton height={60} />
+                ) : gigs.length ? (
+                  <Stack gap="sm">
+                    {gigs.map((g) => (
+                      <Paper key={g.id} withBorder p="sm" radius="sm">
+                        <Group justify="space-between">
+                          <Box>
+                            <Text size="sm" fw={600}>
+                              {g.title || 'Vaga'}
+                            </Text>
+                            <Text size="xs" c="dimmed">
+                              {g.description}
+                            </Text>
                           </Box>
-                        )}
-                      </Box>
-                    </Stack>
-                  </Flex>
-                </>
-              ) : (
-                <Flex mt="lg" align="center" direction="column">
-                  <Text size="lg" ta="center">
-                    Evento não encontrado
+                          <Button
+                            size="xs"
+                            variant="light"
+                            component={Link}
+                            to={`/gigs/${g.id}`}
+                          >
+                            Ver vaga
+                          </Button>
+                        </Group>
+                      </Paper>
+                    ))}
+                  </Stack>
+                ) : (
+                  <Text size="sm" c="dimmed">
+                    Nenhuma gig associada até o momento
+                  </Text>
+                )}
+              </Paper>
+            </Stack>
+          </Grid.Col>
+
+          <Grid.Col span={{ base: 12, md: 4 }}>
+            <Stack gap="md" pos={{ base: 'static', md: 'sticky' }} top={20}>
+              <Paper withBorder radius="md" p="md">
+                <Stack gap="sm">
+                  {event.tickets_url && (
+                    <Button
+                      fullWidth
+                      leftSection={<IconTicket size={20} />}
+                      component="a"
+                      href={event.tickets_url}
+                      target="_blank"
+                    >
+                      Comprar ingressos
+                    </Button>
+                  )}
+                  {event.website_url && (
+                    <Button
+                      fullWidth
+                      variant="light"
+                      color="var(--mantine-color-text)"
+                      leftSection={<IconWorld size={20} />}
+                      component="a"
+                      href={event.website_url}
+                      target="_blank"
+                      rightSection={<IconExternalLink size={18} />}
+                    >
+                      Site oficial
+                    </Button>
+                  )}
+                  {event.instagram_handle && (
+                    <Button
+                      fullWidth
+                      variant="default"
+                      leftSection={<IconBrandInstagram size={16} />}
+                      component="a"
+                      href={`https://instagram.com/${event.instagram_handle.replace('@', '')}`}
+                      target="_blank"
+                    >
+                      @{event.instagram_handle.replace('@', '')}
+                    </Button>
+                  )}
+                </Stack>
+              </Paper>
+
+              <Box>
+                <Box p={{ base: 'lg', sm: 0 }}>
+                  <EventMap
+                    latitude={event.venue?.latitude}
+                    longitude={event.venue?.longitude}
+                    venueName={event.venue?.name}
+                    addressLine={addressLine}
+                  />
+                </Box>
+                <Text size="xs" c="dimmed" mt="xs" className="allow-copy">
+                  {event.venue?.address}, {event.venue?.address_number}
+                  <br />
+                  {event.venue?.neighborhood} - {event.venue?.city?.name},{' '}
+                  {event.venue?.city?.region?.uf}
+                </Text>
+              </Box>
+            </Stack>
+          </Grid.Col>
+        </Grid>
+      </Container>
+
+      {/* MODAL TODOS INTERESSADOS */}
+      <Modal
+        opened={attendeesModal}
+        onClose={closeAttendees}
+        title={`Interessados (${attendees.length})`}
+        radius="md"
+        size="sm"
+        centered
+      >
+        <Stack gap="xs" mt="sm">
+          {attendees.map((att) => {
+            const prof = att.profiles || att.user || att
+            return (
+              <Group
+                key={att.id || prof.id}
+                gap="sm"
+                component={Link}
+                to={`/${prof.username}`}
+                className="noDecoration"
+              >
+                <Avatar
+                  size={36}
+                  radius="xl"
+                  src={prof.avatar ? AVATAR_PATH + prof.avatar : undefined}
+                />
+                <Box>
+                  <Text size="sm" fw={500}>
+                    {prof.full_name}
                   </Text>
                   <Text size="xs" c="dimmed">
-                    Verifique o endereço da página e tente novamente
+                    @{prof.username}
                   </Text>
-                </Flex>
-              )}
-            </>
-          )}
+                </Box>
+              </Group>
+            )
+          })}
         </Stack>
-      </Container>
-      <Modal opened={opened} onClose={close} title="Demonstrar interesse">
-        <Stack mt="xs">
+      </Modal>
+
+      <Modal
+        opened={opened}
+        onClose={close}
+        title="Demonstrar interesse"
+        radius="md"
+        centered
+      >
+        <Stack mt="xs" gap="md">
           <Switch
-            label="Tenho interesse neste evento"
-            description="Você será notificado sobre novidades"
+            label="Tenho interesse"
+            description="Será notificado"
             size="sm"
             {...interestForm.getInputProps('is_interested', { type: 'checkbox' })}
           />
-
           <Switch
-            label="Minha presença está confirmada"
-            description="Já comprei ingresso / vou comparecer"
+            label="Presença confirmada"
             size="sm"
             disabled={!interestForm.values.is_interested}
             {...interestForm.getInputProps('is_confirmed', { type: 'checkbox' })}
           />
-
           <Divider label="Qual seu interesse?" labelPosition="left" />
-
-          <Checkbox.Group
-            {...interestForm.getInputProps('type_ids')}
-            label="Selecione uma ou mais opções"
-          >
+          <Checkbox.Group {...interestForm.getInputProps('type_ids')}>
             <Stack gap="xs" mt="xs">
-              {interestTypes?.map((type) => (
+              {interestTypes?.map((t) => (
                 <Checkbox
-                  key={type.id}
-                  value={String(type.id)}
-                  label={type.name}
-                  description={type.description}
+                  key={t.id}
+                  value={String(t.id)}
+                  label={t.name}
+                  description={t.description}
                   disabled={!interestForm.values.is_interested}
                 />
               ))}
             </Stack>
           </Checkbox.Group>
-
-          {interestForm.values.type_ids.includes('4') && (
-            <Alert icon={<IconInfoCircle size={16} />} color="blue" variant="light">
-              Marcando "Estou entre as atrações confirmadas", sua presença será
-              automaticamente confirmada.
-            </Alert>
-          )}
-
           <Group justify="space-between" mt="md">
             <Box>
               {myInterest?.is_interested && (
                 <Button
                   variant="subtle"
                   color="red"
-                  size="xs"
+                  size="sm"
                   loading={deleteMutation.isPending}
                   onClick={() => deleteMutation.mutate()}
                   leftSection={<IconX size={16} />}
@@ -673,13 +620,12 @@ export default function Event() {
                 </Button>
               )}
             </Box>
-
             <Group>
-              <Button size="xs" variant="default" onClick={close}>
+              <Button size="sm" variant="default" onClick={close}>
                 Cancelar
               </Button>
               <Button
-                size="xs"
+                size="sm"
                 loading={saveMutation.isPending}
                 onClick={() => interestForm.onSubmit(handleSaveInterest)()}
                 disabled={!interestForm.values.is_interested}

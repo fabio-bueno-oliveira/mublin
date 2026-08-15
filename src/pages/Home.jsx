@@ -233,7 +233,7 @@ export default function Home() {
                                                 p?.is_open_to_work,
                                                 64,
                                               )
-                                            : `https://api.dicebear.com/10.x/initials/svg?seed=${p.full_name}`
+                                            : `https://api.dicebear.com/10.x/initials/svg?seed=${p?.full_name}`
                                         }
                                         size={64}
                                         radius="xl"
@@ -242,9 +242,9 @@ export default function Home() {
                                       </Avatar>
                                     </Indicator>
                                     <Text size="sm" fw={600} ta="center" lineClamp={1}>
-                                      {p.full_name || p.username}
+                                      {p?.full_name || p?.username}
                                     </Text>
-                                    {p.title && (
+                                    {p?.title && (
                                       <Text size="10px" ta="center" lineClamp={1} mb={3}>
                                         {p.title}
                                       </Text>
