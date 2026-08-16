@@ -12,7 +12,6 @@ import {
   fetchGearOwners,
   searchGearCategories,
   searchBrands,
-  searchArtists,
   searchEvents,
 } from '../queries/search'
 import { fetchGenreCategories } from '../queries/genres'
@@ -50,8 +49,6 @@ import {
   IconX,
   IconArrowLeft,
   IconZoom,
-  IconCircleArrowLeftFilled,
-  IconCircleArrowRightFilled,
   IconBriefcase,
   IconArrowRight,
 } from '@tabler/icons-react'
@@ -158,13 +155,6 @@ export default function Search() {
     queryFn: () => searchBrands(q),
     enabled: !!q,
     staleTime: 1000 * 60 * 5,
-  })
-
-  const { data: artistsResults, isLoading: loadingArtists } = useQuery({
-    queryKey: ['searchArtists', q],
-    queryFn: () => searchArtists(q),
-    enabled: q.trim().length > 1,
-    staleTime: 1000 * 60 * 3,
   })
 
   const { data: eventsResults, isLoading: loadingEvents } = useQuery({
@@ -464,91 +454,9 @@ export default function Search() {
                     )}
                   </Box>
 
-                  {!!artistsResults?.length && (
-                    <Box id="artists">
-                      <Title order={4} fw={600}>
-                        Artistas e personalidades mainstream
-                      </Title>
-                      {!!artistsResults?.length && (
-                        <Scroller
-                          key={artistsResults.length}
-                          draggable
-                          controlSize="xl"
-                          showEndControl={artistsResults.length > 2}
-                          startControlIcon={<IconCircleArrowLeftFilled size={26} />}
-                          endControlIcon={<IconCircleArrowRightFilled size={26} />}
-                        >
-                          <Group gap="xs" wrap="nowrap">
-                            {artistsResults?.map((artist) => (
-                              <Flex
-                                key={artist.id}
-                                w={82}
-                                mt="xs"
-                                gap="xs"
-                                align="center"
-                                direction="column"
-                                component={Link}
-                                to={`/artist/${artist.slug}`}
-                                style={{ textDecoration: 'none', color: 'inherit' }}
-                              >
-                                <Avatar
-                                  src={
-                                    artist.picture
-                                      ? `https://ik.imagekit.io/mublin/artists/tr:h-100,w-100,c-maintain_ratio/${artist.picture}`
-                                      : null
-                                  }
-                                  size={50}
-                                  radius="xl"
-                                />
-                                <Flex
-                                  justify="flex-start"
-                                  align="center"
-                                  direction="column"
-                                >
-                                  <Text
-                                    size="xs"
-                                    truncate="end"
-                                    w={72}
-                                    fw={500}
-                                    title={artist.name}
-                                  >
-                                    {artist.name}
-                                  </Text>
-                                  {artist.genre_name && (
-                                    <Text
-                                      size="10px"
-                                      c="dimmed"
-                                      ta="center"
-                                      truncate="end"
-                                      w="100%"
-                                    >
-                                      {artist.genre_name}
-                                    </Text>
-                                  )}
-                                  {/* <Text
-                                    size="xs"
-                                    ta="center"
-                                    c="dimmed"
-                                    w="90%"
-                                    truncate="end"
-                                  >
-                                    {artist.artist_roles?.length > 0 &&
-                                      artist.artist_roles
-                                        .map((ar) => ar.roles?.name_ptbr)
-                                        .join(', ')}
-                                  </Text> */}
-                                </Flex>
-                              </Flex>
-                            ))}
-                          </Group>
-                        </Scroller>
-                      )}
-                    </Box>
-                  )}
-
                   <Box id="projects">
                     <Title order={4} fw={600}>
-                      Projetos
+                      Projetos e artistas
                     </Title>
 
                     {loadingProjects ? (
@@ -578,7 +486,7 @@ export default function Search() {
                                 : undefined
                             }
                             size={80}
-                            radius="sm"
+                            radius="md"
                           />
                           <Flex direction="column" justify="center">
                             <Text size="md" fw={600} lh={1.2}>

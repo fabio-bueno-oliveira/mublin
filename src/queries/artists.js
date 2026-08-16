@@ -121,8 +121,22 @@ export async function fetchArtistsByGenreCategory(categoryId) {
     return []
   }
 
-  // 2. projects vinculados a esses genres via project_genres (!inner filtra
-  // só quem tem pelo menos um vínculo dentro da lista), já trazendo as roles
+  // 2. quais projects têm vínculo com algum desses genres
+  const { data: links, error: linksError } = await supabase
+    .from('project_genres')
+    .select('project_id')
+    .in('genre_id', genreIds)
+
+  if (linksError) {
+    throw new Error(linksError.message)
+  }
+
+  const projectIds = [...new Set((links ?? []).map((l) => l.project_id))]
+  if (projectIds.length === 0) {
+    return []
+  }
+
+  // 3. busca os projects encontrados, já com roles e a lista completa de gêneros
   const { data, error } = await supabase
     .from('projects')
     .select(
@@ -132,8 +146,9 @@ export async function fetchArtistsByGenreCategory(categoryId) {
       slug,
       picture,
       is_verified,
+      popularity_tier_id,
       project_type:project_types ( name_ptbr, slug ),
-      project_genres!inner ( genre:genres ( name_ptbr ) ),
+      project_genres ( genre:genres ( name_ptbr ) ),
       artist_roles (
         id,
         is_main_role,
@@ -142,7 +157,7 @@ export async function fetchArtistsByGenreCategory(categoryId) {
       )
     `,
     )
-    .in('project_genres.genre_id', genreIds)
+    .in('id', projectIds)
     .order('name', { ascending: true })
     .order('is_main_role', { foreignTable: 'artist_roles', ascending: false })
     .order('order_show', { foreignTable: 'artist_roles', ascending: true })

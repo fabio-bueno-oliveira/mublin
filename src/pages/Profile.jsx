@@ -1453,24 +1453,34 @@ export default function Profile() {
                                 </Flex>
                                 <Stack gap={2} style={{ flex: 1, minWidth: 0 }}>
                                   {roleNames.length > 0 && (
-                                    <Text size="15px" fw={600}>
+                                    <Text
+                                      size="15px"
+                                      fw={600}
+                                      component={Link}
+                                      to={url}
+                                      style={{
+                                        display: 'inline',
+                                        textDecoration: 'none',
+                                        color: 'inherit',
+                                      }}
+                                    >
                                       {roleNames.join(', ')}
                                     </Text>
                                   )}
-                                  <Group gap={6} align="center" wrap="wrap">
-                                    <Text size="sm" opacity={0.9}>
-                                      <Text
-                                        span
-                                        component={Link}
-                                        to={url}
-                                        style={{
-                                          display: 'inline',
-                                          hover: { textDecoration: 'underline' },
-                                          color: 'inherit',
-                                        }}
-                                      >
-                                        {entity.name}
-                                      </Text>{' '}
+                                  <Group
+                                    gap={6}
+                                    align="center"
+                                    wrap="wrap"
+                                    component={Link}
+                                    to={url}
+                                    style={{
+                                      display: 'inline',
+                                      textDecoration: 'none',
+                                      color: 'inherit',
+                                    }}
+                                  >
+                                    <Text size="sm">
+                                      <Text span>{entity.name}</Text>{' '}
                                       <Text span>
                                         (
                                         {isProject
@@ -1482,7 +1492,7 @@ export default function Profile() {
                                   </Group>
 
                                   {engagementNames.length > 0 && (
-                                    <Text size="xs" opacity={0.9} mt={6} mb={4} lh={1}>
+                                    <Text size="xs" opacity={0.7} mt={2} mb={4} lh={1}>
                                       {engagementNames.length === 1
                                         ? 'Vínculo:'
                                         : 'Vínculos:'}{' '}
@@ -1698,22 +1708,21 @@ export default function Profile() {
                       {profilePosts.length > 0 ? (
                         <SectionPanel mt="sm">
                           <Group justify="space-between" align="center" mb="sm">
-                            <Group gap={10}>
-                              <SectionTitle text="Postagens" id="posts" />
-                              {isOwnProfile && (
-                                <Button
-                                  size="xs"
-                                  variant="light"
-                                  color="var(--mantine-color-text)"
-                                  component={Link}
-                                  to="/new/post"
-                                  leftSection={<IconPlus size={14} />}
-                                >
-                                  Novo post
-                                </Button>
-                              )}
-                            </Group>
+                            <SectionTitle text="Postagens" id="posts" />
                             <Group>
+                              <ActionIcon
+                                variant="light"
+                                color="gray"
+                                radius="xl"
+                                size="md"
+                                aria-label="Criar nova postagem"
+                                title="Criar nova postagem"
+                                component={Link}
+                                to="/new/post"
+                                mr="sm"
+                              >
+                                <IconPlus size={18} />
+                              </ActionIcon>
                               <ThemeIcon
                                 variant="default"
                                 style={{
@@ -1843,9 +1852,9 @@ export default function Profile() {
                   )}
 
                   {isProfilePro && (
-                    <>
+                    <SectionPanel mt="sm">
                       {loadingGear ? (
-                        <Box mx="xs">
+                        <Box>
                           <SectionTitle text="Equipamento" mb="md" />
                           <Group gap="xs" wrap="nowrap">
                             {[1, 2].map((i) => (
@@ -1861,14 +1870,11 @@ export default function Profile() {
                                 justify="space-between"
                                 align="center"
                                 gap="xs"
-                                mt={10}
+                                mb="sm"
                               >
-                                <Group gap={10}>
-                                  <SectionTitle
-                                    id="gear"
-                                    text="Equipamento"
-                                    ml={{ base: 'sm', md: 0 }}
-                                  />
+                                <SectionTitle id="gear" text="Equipamento" />
+
+                                <Group mr={{ base: 'sm', md: 0 }}>
                                   {isOwnProfile && (
                                     <ActionIcon
                                       variant="light"
@@ -1884,9 +1890,6 @@ export default function Profile() {
                                       <IconPencil size={18} />
                                     </ActionIcon>
                                   )}
-                                </Group>
-
-                                <Group mr={{ base: 'sm', md: 0 }}>
                                   <ThemeIcon
                                     variant="default"
                                     style={{
@@ -1980,7 +1983,7 @@ export default function Profile() {
                                   <Button
                                     w="100%"
                                     size="md"
-                                    variant="light"
+                                    variant="subtle"
                                     color="var(--mantine-color-text)"
                                     // rightSection={
                                     //   <Badge circle size="md" variant="default">
@@ -1991,10 +1994,10 @@ export default function Profile() {
                                     component={Link}
                                     to={`/${username}/gear`}
                                   >
-                                    Ver tudo
+                                    Ver todos
                                   </Button>
                                 </Group>
-                                <Box ml={{ base: 'sm', md: 0 }} mt="lg">
+                                <Box ml={{ base: 'sm', md: 0 }} mt="sm">
                                   <Text fw={600} size="sm">
                                     Setups de {profile.full_name}{' '}
                                     {!!gearSetups.length && `(${gearSetups.length})`}
@@ -2039,16 +2042,16 @@ export default function Profile() {
                               </Box>
                             </>
                           ) : (
-                            <SectionPanel>
+                            <>
                               <SectionTitle text="Equipamento" mb="sm" />
                               <Text size="sm" c="dimmed">
                                 Nenhum equipamento adicionado
                               </Text>
-                            </SectionPanel>
+                            </>
                           )}
                         </>
                       )}
-                    </>
+                    </SectionPanel>
                   )}
                 </Stack>
               </Grid.Col>

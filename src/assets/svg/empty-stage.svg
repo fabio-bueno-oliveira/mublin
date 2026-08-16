@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="320" viewBox="0 0 600 320" fill="none">
+  <g opacity="0.55" stroke="#8E8E93" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Cortinas -->
+    <path d="M20 20 C20 20 20 280 20 280 L30 290 Q60 285 70 270 L70 20 Z" fill="none" opacity="0.4"/>
+    <path d="M580 20 C580 20 580 280 580 280 L570 290 Q540 285 530 270 L530 20 Z" fill="none" opacity="0.4"/>
+    <!-- Chão -->
+    <path d="M10 270 Q300 285 590 270" opacity="0.35"/>
+    <!-- Bateria - Bumbo -->
+    <ellipse cx="165" cy="220" rx="52" ry="52" fill="none" stroke-width="2.5"/>
+    <ellipse cx="165" cy="220" rx="38" ry="38" opacity="0.35"/>
+    <!-- Tons -->
+    <ellipse cx="125" cy="155" rx="28" ry="16" fill="none"/>
+    <ellipse cx="125" cy="185" rx="28" ry="8" opacity="0.4"/>
+    <ellipse cx="225" cy="165" rx="30" ry="17" fill="none"/>
+    <ellipse cx="225" cy="195" rx="30" ry="9" opacity="0.4"/>
+    <ellipse cx="280" cy="195" rx="26" ry="15" fill="none"/>
+    <!-- Pratos -->
+    <ellipse cx="105" cy="138" rx="32" ry="10" fill="none"/>
+    <ellipse cx="325" cy="148" rx="28" ry="9" fill="none"/>
+    <!-- Microfone -->
+    <line x1="365" y1="270" x2="365" y2="120"/>
+    <ellipse cx="365" cy="275" rx="28" ry="7" fill="none" opacity="0.5"/>
+    <g transform="translate(365 105) rotate(-35)">
+      <rect x="-6" y="-18" width="36" height="14" rx="7" fill="none" stroke-width="2.2"/>
+    </g>
+    <!-- Amp -->
+    <rect x="435" y="195" width="95" height="70" rx="8" fill="none" stroke-width="2.5"/>
+    <rect x="442" y="202" width="81" height="18" rx="4" fill="none" opacity="0.5"/>
+    <!-- Guitarra -->
+    <g transform="translate(415 260) rotate(-18)">
+      <path d="M0 0 C-8 -12 5 -28 18 -22 C28 -18 35 -8 32 5 C29 18 18 28 5 26 C-6 24 -10 10 0 0 Z" fill="none" stroke-width="2.5"/>
+      <rect x="18" y="-85" width="10" height="85" rx="3" fill="none" stroke-width="2.2"/>
+      <path d="M18 -85 L18 -105 Q18 -112 26 -112 Q34 -112 34 -104 L28 -85 Z" fill="none"/>
+    </g>
+  </g>
+</svg>

@@ -563,7 +563,7 @@ export default function Project() {
   const PICTURE_AVATAR_LARGE_PATH = `https://ik.imagekit.io/mublin/projects/${project?.id}/tr:h-400,w-400,c-maintain_ratio/`
   const PICTURE_COVER_PATH = `https://ik.imagekit.io/mublin/projects/${project?.id}/tr:h-100,w-1042,fo-top,c-maintain_ratio/`
   const DEFAULT_COVER_PICTURE =
-    'https://ik.imagekit.io/mublin/bg/tr:fo-bottom,bl-8/project-cover-default-b.png'
+    'https://ik.imagekit.io/mublin/bg/grey-dark.jpg?updatedAt=1628214942212'
 
   if (isError) {
     return (
@@ -775,7 +775,7 @@ export default function Project() {
               h={70}
               style={{
                 background:
-                  'linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.35) 45%, rgba(0,0,0,0.8) 100%)',
+                  'linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.35) 25%, rgba(0,0,0,0.8) 100%)',
                 pointerEvents: 'none',
                 zIndex: 1,
               }}
@@ -797,12 +797,18 @@ export default function Project() {
                 <Avatar
                   src={PICTURE_AVATAR_PATH + project?.picture}
                   size={100}
-                  radius={0}
                   onClick={openModal}
+                  radius="lg"
                   style={
                     colorScheme === 'light'
-                      ? { border: '3px solid white' }
-                      : { border: '3px solid #1c1c1c' }
+                      ? {
+                          // border: '2px solid white',
+                          boxShadow: '-1px -1px 21px -3px rgba(0,0,0,0.75)',
+                        }
+                      : {
+                          // border: '2px solid #1c1c1c',
+                          boxShadow: '-1px -1px 21px -3px rgba(0,0,0,0.75)',
+                        }
                   }
                 />
               )}

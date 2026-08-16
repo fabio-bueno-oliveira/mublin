@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { Helmet } from 'react-helmet-async'
 import AppNavbarMobile from '../../components/AppNavbarMobile'
 import {
   Container,
@@ -8,20 +9,22 @@ import {
   Group,
   Affix,
   Flex,
+  Image,
   Box,
   Text,
   Avatar,
   Button,
   SimpleGrid,
 } from '@mantine/core'
+import EmptyStageSvg from '../../assets/svg/empty-stage.svg'
 import { Link, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { fetchGenreCategoryDetails } from '../../queries/genres'
 import { fetchArtistsByGenreCategory } from '../../queries/artists'
 import { IconMusic, IconChevronDown } from '@tabler/icons-react'
 
-const ARTISTS_PATH =
-  'https://ik.imagekit.io/mublin/artists/tr:h-100,w-100,c-maintain_ratio/'
+const PROJECTS_PATH =
+  'https://ik.imagekit.io/mublin/projects/tr:h-100,w-100,c-maintain_ratio/'
 
 // altura aproximada de ~2.5 linhas da grade (avatar + nome + gênero + role + espaçamento)
 // a altura muda um pouco conforme os artistas têm ou não role/gênero preenchidos,
@@ -35,6 +38,13 @@ function getArtistMainRole(artist) {
   }
   const main = roles.find((role) => role.is_main_role) ?? roles[0]
   return main?.roles?.name_ptbr ?? null
+}
+
+function getArtistGenreNames(artist) {
+  return (artist.project_genres ?? [])
+    .map((pg) => pg.genre?.name_ptbr)
+    .filter(Boolean)
+    .join(', ')
 }
 
 export default function SearchGenre() {
@@ -53,6 +63,20 @@ export default function SearchGenre() {
     enabled: !!genreId,
     staleTime: 1000 * 60 * 10,
   })
+
+  // "Artistas relacionados" mostra só quem está nos tiers 4 (Consagrado) e 5
+  // (Global) de popularidade — corte fixo, não relativo aos resultados de
+  // cada categoria. Quem não tem tier definido (ainda não curado) ou está
+  // em tier 1–3 cai em "Projetos".
+  const topTierArtists = useMemo(
+    () => artists.filter((a) => a.popularity_tier_id === 4 || a.popularity_tier_id === 5),
+    [artists],
+  )
+
+  const otherProjects = useMemo(
+    () => artists.filter((a) => a.popularity_tier_id !== 4 && a.popularity_tier_id !== 5),
+    [artists],
+  )
 
   const artistsGridRef = useRef(null)
   const [artistsExpanded, setArtistsExpanded] = useState(false)
@@ -76,10 +100,17 @@ export default function SearchGenre() {
     const observer = new ResizeObserver(measure)
     observer.observe(el)
     return () => observer.disconnect()
-  }, [artists])
+  }, [topTierArtists])
 
   return (
     <>
+      <Helmet>
+        <meta charSet="utf-8" />
+        <title>{`${genreCategory?.name_ptbr} · Mublin`}</title>
+        <meta name="robots" content="noindex, nofollow" />
+        <meta name="description" content="Página de categoria de música no Mublin" />
+      </Helmet>
+
       <Affix position={{ top: 0, left: 0 }} hiddenFrom="sm">
         <AppNavbarMobile pageName={genreCategory?.name_ptbr} />
       </Affix>
@@ -94,14 +125,16 @@ export default function SearchGenre() {
 
         {loadingGenreCategory && <Loader size="sm" variant="dots" color="gray" mt={20} />}
 
-        <Stack gap="xs" mb="xl" mt="lg">
-          <Text fw={600} size="24px" lh={1.2}>
-            Artistas relacionados
-          </Text>
+        <Stack gap="xs" mb="xl">
+          {topTierArtists?.length > 0 && (
+            <Title fw={600} size="20px" mt="xl">
+              Artistas relacionados
+            </Title>
+          )}
 
           {loadingArtists && <Loader size="sm" variant="dots" color="gray" />}
 
-          {!loadingArtists && !!artists?.length && (
+          {!loadingArtists && topTierArtists?.length > 0 && (
             <>
               <Box
                 ref={artistsGridRef}
@@ -118,7 +151,7 @@ export default function SearchGenre() {
                   spacing="xs"
                   verticalSpacing="md"
                 >
-                  {artists.map((artist) => (
+                  {topTierArtists.map((artist) => (
                     <Flex
                       key={artist.id}
                       gap={4}
@@ -129,7 +162,11 @@ export default function SearchGenre() {
                       style={{ textDecoration: 'none', color: 'inherit' }}
                     >
                       <Avatar
-                        src={artist.picture ? ARTISTS_PATH + artist.picture : undefined}
+                        src={
+                          artist.picture
+                            ? `${PROJECTS_PATH}${artist.id}/${artist.picture}`
+                            : undefined
+                        }
                         size={50}
                         radius="xl"
                       />
@@ -155,7 +192,7 @@ export default function SearchGenre() {
                             {getArtistMainRole(artist)}
                           </Text>
                         )}
-                        {(artist.genre?.name_ptbr || artist.genre_2?.name_ptbr) && (
+                        {getArtistGenreNames(artist) && (
                           <Text
                             size="10px"
                             c="dimmed"
@@ -163,10 +200,7 @@ export default function SearchGenre() {
                             truncate="end"
                             w="100%"
                           >
-                            {artist.genre?.name_ptbr ?? artist.genre?.name_ptbr}
-                            {artist.genre_2?.name_ptbr
-                              ? `, ${artist.genre_2?.name_ptbr}`
-                              : ''}
+                            {getArtistGenreNames(artist)}
                           </Text>
                         )}
                       </Flex>
@@ -200,18 +234,78 @@ export default function SearchGenre() {
             </>
           )}
 
-          {!loadingArtists && !artists?.length && (
-            <Text size="sm" c="dimmed">
-              Nenhum artista encontrado nessa categoria ainda.
-            </Text>
-          )}
-
-          <Text fw={600} size="18px" mt="xl">
+          <Title fw={600} size="20px" mt="xl">
             Projetos
-          </Text>
-          <Text size="sm" c="dimmed">
-            Nenhum projeto no momento
-          </Text>
+          </Title>
+          {loadingArtists && <Loader size="sm" variant="dots" color="gray" />}
+          {!loadingArtists && !!otherProjects?.length && (
+            <SimpleGrid
+              cols={{ base: 4, sm: 5, md: 7 }}
+              spacing="xs"
+              verticalSpacing="md"
+            >
+              {otherProjects.map((project) => (
+                <Flex
+                  key={project.id}
+                  gap={4}
+                  align="center"
+                  direction="column"
+                  component={Link}
+                  to={`/artist/${project.slug}`}
+                  style={{ textDecoration: 'none', color: 'inherit' }}
+                >
+                  <Avatar
+                    src={
+                      project.picture
+                        ? `${PROJECTS_PATH}${project.id}/${project.picture}`
+                        : undefined
+                    }
+                    size={50}
+                    radius="xl"
+                  />
+                  <Flex justify="flex-start" align="center" direction="column">
+                    <Text
+                      size="xs"
+                      truncate="end"
+                      w="100%"
+                      ta="center"
+                      fw={500}
+                      title={project.name}
+                    >
+                      {project.name}
+                    </Text>
+                    {getArtistMainRole(project) && (
+                      <Text size="11px" c="dimmed" ta="center" truncate="end" w="100%">
+                        {getArtistMainRole(project)}
+                      </Text>
+                    )}
+                    {getArtistGenreNames(project) && (
+                      <Text size="10px" c="dimmed" ta="center" truncate="end" w="100%">
+                        {getArtistGenreNames(project)}
+                      </Text>
+                    )}
+                  </Flex>
+                </Flex>
+              ))}
+            </SimpleGrid>
+          )}
+          {!loadingArtists && !otherProjects?.length && (
+            <Stack>
+              <Text size="sm" c="dimmed">
+                Nenhum projeto por aqui no momento
+              </Text>
+              <Flex justify="center">
+                {/* <Image
+                src="https://ik.imagekit.io/mublin/misc/empty_stage_cozy.webp"
+                maw={600}
+                mah={600}
+                radius="md"
+                fallbackSrc="https://placehold.co/320x320?text=404"
+              /> */}
+                <Image src={EmptyStageSvg} maw={450} w="100%" mt="lg" alt="Palco vazio" />
+              </Flex>
+            </Stack>
+          )}
 
           {/* <Divider label="Pessoas" my="lg" labelPosition="left" />
           <Divider label="Projetos" my="lg" labelPosition="left" />
