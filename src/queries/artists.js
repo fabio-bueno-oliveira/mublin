@@ -5,7 +5,7 @@ export async function checkArtistIsInspiration(userId, artistId) {
     .from('profile_inspirations')
     .select('id')
     .eq('profile_id', userId)
-    .eq('artist_id', artistId)
+    .eq('project_id', artistId)
     .maybeSingle()
   if (error) {
     throw new Error(error.message)
@@ -15,24 +15,22 @@ export async function checkArtistIsInspiration(userId, artistId) {
 
 export async function fetchArtistDetails(slug) {
   const { data, error } = await supabase
-    .from('artists')
+    .from('projects')
     .select(
       `
       id,
       name,
       slug,
       picture,
-      is_band,
       is_verified,
       is_active_in_business,
       spotify_id,
       instagram,
       apple_music_id,
       youtube_handle,
-      artist_related_slug,
-      related_artist:artist_related_slug ( name, slug, picture ),
-      genre:genres!artists_genre_id_fkey ( name, name_ptbr ),
-      genre_2:genres!artists_genre_2_id_fkey ( name, name_ptbr ),
+      project_type:project_types ( name_ptbr, slug ),
+      genre:genres!projects_genre_id_fkey ( name, name_ptbr ),
+      project_genres ( genre:genres ( name, name_ptbr ) ),
       countries ( name )
     `,
     )
@@ -53,7 +51,7 @@ export async function fetchArtistsInspirated(artistId) {
       profiles ( id, full_name, username, avatar, title, bio )
     `,
     )
-    .eq('artist_id', artistId)
+    .eq('project_id', artistId)
     .order('created_at', { ascending: true })
   if (error) {
     throw new Error(error.message)
@@ -75,7 +73,7 @@ export async function fetchArtistGear(artistId) {
       gear_frequencies_of_use ( name_ptbr, name_en )
     `,
     )
-    .eq('artist_id', artistId)
+    .eq('project_id', artistId)
     .order('order_show', { ascending: true })
   if (error) {
     throw new Error(error.message)
@@ -94,7 +92,7 @@ export async function fetchArtistRoles(artistId) {
       roles ( name_ptbr, description_ptbr )
     `,
     )
-    .eq('artist_id', artistId)
+    .eq('project_id', artistId)
     .order('is_main_role', { ascending: false })
     .order('order_show', { ascending: true })
 
@@ -104,10 +102,9 @@ export async function fetchArtistRoles(artistId) {
   return data
 }
 
-// Retorna os artistas cujo gênero principal (genre_id) ou secundário (genre_2_id)
-// pertence a uma categoria de gênero (genres.category_id).
-// OBS: assume que a tabela `genres` tem uma coluna `category_id` (fk para genre_categories.id).
-// Ajuste o nome da coluna abaixo caso o schema real seja diferente.
+// Retorna os projects (catálogo mainstream ou não) cujo gênero, principal ou
+// adicional, pertence a uma categoria de gênero (genres.id_category), via
+// junção many-to-many em project_genres.
 export async function fetchArtistsByGenreCategory(categoryId) {
   // 1. quais genres pertencem a essa categoria
   const { data: genres, error: genresError } = await supabase
@@ -124,22 +121,19 @@ export async function fetchArtistsByGenreCategory(categoryId) {
     return []
   }
 
-  // 2. artistas com genre_id OU genre_2_id dentro dessa lista, já trazendo
-  // as roles de cada artista (artist_roles -> roles) num único request
-  const idsList = genreIds.join(',')
-
+  // 2. projects vinculados a esses genres via project_genres (!inner filtra
+  // só quem tem pelo menos um vínculo dentro da lista), já trazendo as roles
   const { data, error } = await supabase
-    .from('artists')
+    .from('projects')
     .select(
       `
       id,
       name,
       slug,
       picture,
-      is_band,
       is_verified,
-      genre:genres!artists_genre_id_fkey ( name_ptbr ),
-      genre_2:genres!artists_genre_2_id_fkey ( name_ptbr ),
+      project_type:project_types ( name_ptbr, slug ),
+      project_genres!inner ( genre:genres ( name_ptbr ) ),
       artist_roles (
         id,
         is_main_role,
@@ -148,8 +142,7 @@ export async function fetchArtistsByGenreCategory(categoryId) {
       )
     `,
     )
-    .eq('is_active', true)
-    .or(`genre_id.in.(${idsList}),genre_2_id.in.(${idsList})`)
+    .in('project_genres.genre_id', genreIds)
     .order('name', { ascending: true })
     .order('is_main_role', { foreignTable: 'artist_roles', ascending: false })
     .order('order_show', { foreignTable: 'artist_roles', ascending: true })
@@ -162,12 +155,11 @@ export async function fetchArtistsByGenreCategory(categoryId) {
 
 export async function searchArtist(keyword) {
   const { data, error } = await supabase
-    .from('artists')
+    .from('projects')
     .select(
-      'id, name, slug, picture, is_band, genres!artists_genre_id_fkey ( name_ptbr )',
+      'id, name, slug, picture, project_type:project_types ( slug ), genres!projects_genre_id_fkey ( name_ptbr )',
     )
     .ilike('name', `%${keyword}%`)
-    .eq('is_active', true)
     .order('name')
     .limit(20)
   if (error) {

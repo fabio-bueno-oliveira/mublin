@@ -383,14 +383,14 @@ export async function fetchProfileInspirations(profileId) {
       `
       id,
       order_show,
-      artists (
+      projects (
         id,
         name,
         slug,
         picture,
-        is_band,
         is_verified,
-        genre:genres!artists_genre_id_fkey ( name, name_ptbr ),
+        project_type:project_types ( name_ptbr, slug ),
+        genre:genres!projects_genre_id_fkey ( name, name_ptbr ),
         countries ( name ),
         artist_roles (
           id,

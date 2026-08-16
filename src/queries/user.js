@@ -73,13 +73,11 @@ export async function fetchUserPortfolio(userId) {
       order_number,
       notes,
       project_id,
-      artist_id,
       year_start,
       year_end,
       is_sporadic,
       is_mublin_facilitated,
       projects ( id, name, picture, slug ),
-      artists ( id, name, picture, slug ),
       portfolio_roles ( role_id, roles ( id, name_ptbr ) ),
       portfolio_engagement_types (
         engagement_type_id,

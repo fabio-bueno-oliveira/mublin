@@ -2183,7 +2183,7 @@ export default function Profile() {
                     }}
                   >
                     <Group gap="xs" wrap="nowrap" align="flex-start">
-                      {inspirations.map(({ id, artists: artist }) => (
+                      {inspirations.map(({ id, projects: artist }) => (
                         <Flex
                           key={id}
                           direction="column"

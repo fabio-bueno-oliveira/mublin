@@ -1,11 +1,10 @@
-import { useState, useEffect, lazy } from 'react'
+import { useState, useEffect, useMemo, lazy } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { fetchUserProfile, fetchUserRoles } from '../queries/user'
 import { fetchAllRoles } from '../queries/roles'
 import { fetchAllGenres, fetchGenreCategories } from '../queries/genres'
-import { searchArtist } from '../queries/artists'
 import { formatFullName } from '../utils/name'
 import { fetchRegions, searchCitiesByName, fetchCityById } from '../queries/locations'
 import { supabase } from '../lib/supabaseClient'
@@ -24,6 +23,7 @@ import {
   TextInput,
   NativeSelect,
   MultiSelect,
+  Alert,
   Switch,
   Combobox,
   useCombobox,
@@ -37,10 +37,10 @@ import {
   Badge,
   Loader,
   ActionIcon,
-  Radio,
   NumberInput,
   Pill,
   Tooltip,
+  Center,
 } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { useDebouncedCallback, useDisclosure } from '@mantine/hooks'
@@ -62,15 +62,13 @@ import {
   IconPlus,
   IconTrash,
   IconDisc,
-  IconMicrophone2,
   IconStarFilled,
   IconStar,
   IconVinyl,
+  IconAlertTriangle,
 } from '@tabler/icons-react'
 const NewProject = lazy(() => import('./NewProject'))
 
-const ARTISTS_PATH =
-  'https://ik.imagekit.io/mublin/artists/tr:h-96,w-96,c-maintain_ratio/'
 const PROJECTS_PATH =
   'https://ik.imagekit.io/mublin/projects/tr:h-96,w-96,c-maintain_ratio/'
 
@@ -85,13 +83,11 @@ async function fetchUserPortfolio(profileId) {
       order_number,
       notes,
       project_id,
-      artist_id,
       year_start,
       year_end,
       is_sporadic,
       is_mublin_facilitated,
       projects ( id, name, picture ),
-      artists ( id, name, picture ),
       portfolio_roles ( role_id, roles ( id, name_ptbr ) ),
       portfolio_engagement_types (
         engagement_type_id,
@@ -133,7 +129,7 @@ async function fetchAllEngagementTypes() {
 async function searchProjects(keyword) {
   const { data, error } = await supabase
     .from('projects')
-    .select('id, name, picture')
+    .select('id, name, picture, type:project_types ( id, name_ptbr )')
     .ilike('name', `%${keyword}%`)
     .limit(10)
   if (error) {
@@ -178,6 +174,10 @@ export default function Onboarding() {
     modalNewProjectOpened,
     { open: openNewProjectModal, close: closeNewProjectModal },
   ] = useDisclosure(false)
+  const [dropdown1Opened, { open: openDropdown1, close: closeDropdown1 }] =
+    useDisclosure()
+  const [dropdown2Opened, { open: openDropdown2, close: closeDropdown2 }] =
+    useDisclosure()
 
   const profileForm = useForm({
     initialValues: {
@@ -258,9 +258,7 @@ export default function Onboarding() {
   // ── Step 5: Portfólio ──────────────────────────────────
   const [selectedRoleIds, setSelectedRoleIds] = useState([])
   const [selectedEngagementTypeIds, setSelectedEngagementTypeIds] = useState([])
-  const [entryType, setEntryType] = useState('project') // 'project' | 'artist'
   const [selectedProject, setSelectedProject] = useState(null)
-  const [selectedArtist, setSelectedArtist] = useState(null)
   const [portfolioNotes, setPortfolioNotes] = useState('')
   const [portfolioYearStart, setPortfolioYearStart] = useState('')
   const [portfolioYearEnd, setPortfolioYearEnd] = useState('')
@@ -272,10 +270,6 @@ export default function Onboarding() {
   const [projectSearch, setProjectSearch] = useState('')
   const [projectResults, setProjectResults] = useState([])
   const [projectSearchLoading, setProjectSearchLoading] = useState(false)
-
-  const [artistSearch, setArtistSearch] = useState('')
-  const [artistResults, setArtistResults] = useState([])
-  const [artistSearchLoading, setArtistSearchLoading] = useState(false)
 
   const [modalPortfolioOpened, { open: openPortfolioModal, close: closePortfolioModal }] =
     useDisclosure(false)
@@ -358,17 +352,38 @@ export default function Onboarding() {
       tags: r.tags,
     }))
 
+  // Verifica, dentre os papéis selecionados no modal, quais já existem em algum
+  // item de portfólio salvo para o MESMO projeto — não bloqueia o envio (pode ser
+  // um segundo período/turnê legítimo), só avisa.
+  const overlappingRoleNames = useMemo(() => {
+    if (!selectedProject || selectedRoleIds.length === 0) {
+      return []
+    }
+    const selectedIdsSet = new Set(selectedRoleIds.map(String))
+    const names = new Set()
+    userPortfolio
+      .filter((item) => item.project_id === selectedProject.id)
+      .forEach((item) => {
+        item.portfolio_roles?.forEach((pr) => {
+          if (selectedIdsSet.has(String(pr.role_id)) && pr.roles?.name_ptbr) {
+            names.add(pr.roles.name_ptbr)
+          }
+        })
+      })
+    return Array.from(names)
+  }, [selectedProject, selectedRoleIds, userPortfolio])
+
   const roleSelectData = [
     {
       group: 'Gestão, produção e outros',
       items: roles
-        .filter((r) => !r.instrumentalist)
+        .filter((r) => !r.instrumentalist && r.applies_to_a_project)
         .map((r) => ({ value: String(r.id), label: r.name_ptbr })),
     },
     {
       group: 'Instrumentos',
       items: roles
-        .filter((r) => r.instrumentalist)
+        .filter((r) => r.instrumentalist && r.applies_to_a_project)
         .map((r) => ({ value: String(r.id), label: r.name_ptbr })),
     },
   ]
@@ -412,10 +427,10 @@ export default function Onboarding() {
 
   useEffect(() => {
     setTimeout(() => {
-      handleUsernameCheck(profile.username)
+      handleUsernameCheck(profile?.username)
     }, 300)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active])
+  }, [active, profile?.username])
 
   useEffect(() => {
     if (!savedRoles.length) {
@@ -764,28 +779,10 @@ export default function Onboarding() {
     }
   }, 500)
 
-  const handleArtistSearch = useDebouncedCallback(async (query) => {
-    if (query.trim().length < 2) {
-      setArtistResults([])
-      return
-    }
-    setArtistSearchLoading(true)
-    try {
-      const results = await searchArtist(query)
-      setArtistResults(results)
-    } catch (err) {
-      console.error(err)
-    } finally {
-      setArtistSearchLoading(false)
-    }
-  }, 500)
-
   function resetPortfolioForm() {
     setSelectedRoleIds([])
     setSelectedEngagementTypeIds([])
-    setEntryType('project')
     setSelectedProject(null)
-    setSelectedArtist(null)
     setPortfolioNotes('')
     setPortfolioYearStart('')
     setPortfolioYearEnd('')
@@ -793,8 +790,6 @@ export default function Onboarding() {
     setPortfolioIsMublinFacilitated(false)
     setProjectSearch('')
     setProjectResults([])
-    setArtistSearch('')
-    setArtistResults([])
   }
 
   function handleOpenPortfolioModal() {
@@ -816,7 +811,7 @@ export default function Onboarding() {
       })
       return
     }
-    if (!selectedProject && !selectedArtist) {
+    if (!selectedProject) {
       notifications.show({
         color: 'red',
         position: 'top-center',
@@ -832,8 +827,7 @@ export default function Onboarding() {
       .from('portfolio')
       .insert({
         profile_id: user.id,
-        project_id: selectedProject ? Number(selectedProject.id) : null,
-        artist_id: selectedArtist ? Number(selectedArtist.id) : null,
+        project_id: Number(selectedProject.id),
         order_number: nextOrder,
         notes: portfolioNotes.trim() ? portfolioNotes.trim() : null,
         year_start:
@@ -1517,7 +1511,7 @@ export default function Onboarding() {
               leftSection={<IconPlus size={14} />}
               onClick={handleOpenPortfolioModal}
             >
-              Adicionar ao portfólio
+              Adicionar item ao meu portfólio
             </Button>
 
             {loadingPortfolio ? (
@@ -1527,11 +1521,9 @@ export default function Onboarding() {
             ) : userPortfolio.length > 0 ? (
               <Stack gap="xs">
                 {userPortfolio.map((item) => {
-                  const entity = item.projects || item.artists
-                  const isProject = !!item.projects
+                  const entity = item.projects
                   const picture = entity?.picture
-                    ? (isProject ? `${PROJECTS_PATH}${item.project_id}/` : ARTISTS_PATH) +
-                      entity.picture
+                    ? `${PROJECTS_PATH}${item.project_id}/${entity.picture}`
                     : undefined
                   const roleNames =
                     item.portfolio_roles
@@ -1552,11 +1544,7 @@ export default function Onboarding() {
                           src={picture}
                           style={{ flexShrink: 0 }}
                         >
-                          {isProject ? (
-                            <IconDisc size={18} />
-                          ) : (
-                            <IconMicrophone2 size={18} />
-                          )}
+                          <IconDisc size={18} />
                         </Avatar>
                         <Stack gap={0} style={{ minWidth: 0 }}>
                           <Text size="md" fw={400} truncate>
@@ -1613,9 +1601,10 @@ export default function Onboarding() {
             padding: '16px',
             backgroundColor: 'var(--mantine-color-body)',
             borderTop: '1px solid var(--mantine-color-default-border)',
+            boxShadow: '-1px -8px 28px -7px rgba(0,0,0,0.75)',
             zIndex: 100,
           }}
-          mt="md"
+          mt="sm"
         >
           {active > 0 ? (
             <Button
@@ -1746,14 +1735,21 @@ export default function Onboarding() {
             }
             data={roleSelectData}
             value={selectedRoleIds}
-            onChange={setSelectedRoleIds}
+            onChange={(value) => {
+              setSelectedRoleIds(value)
+              closeDropdown1()
+            }}
+            dropdownOpened={dropdown1Opened}
+            onDropdownOpen={openDropdown1}
+            onDropdownClose={closeDropdown1}
             searchable
+            hidePickedOptions
             clearable
             size="sm"
           />
 
           <MultiSelect
-            label="Tipo de vínculo (opcional)"
+            label="Tipos de vínculos (opcional)"
             placeholder={
               selectedEngagementTypeIds.length === 0
                 ? 'Ex: turnê, gravação, show único...'
@@ -1761,306 +1757,226 @@ export default function Onboarding() {
             }
             data={engagementTypeSelectData}
             value={selectedEngagementTypeIds}
-            onChange={setSelectedEngagementTypeIds}
+            onChange={(value) => {
+              setSelectedEngagementTypeIds(value)
+              closeDropdown2()
+            }}
+            dropdownOpened={dropdown2Opened}
+            onDropdownOpen={openDropdown2}
+            onDropdownClose={closeDropdown2}
             searchable
+            hidePickedOptions
             clearable
             size="sm"
           />
 
-          <Radio.Group
-            label="Onde você atuou?"
-            description="Escolha uma opção e depois busque pelo nome na lista abaixo"
-            value={entryType}
-            onChange={(value) => {
-              setEntryType(value)
-              setSelectedProject(null)
-              setSelectedArtist(null)
-              setProjectSearch('')
-              setProjectResults([])
-              setArtistSearch('')
-              setArtistResults([])
-            }}
-          >
-            <Stack gap={6} mt={6}>
-              <Radio
-                value="project"
-                label="Uma banda/projeto já cadastrado no Mublin"
-                size="sm"
-              />
-              <Radio
-                value="artist"
-                label="Um artista, banda ou projeto famoso (fora do Mublin)"
-                description="Ex: artistas mainstream, bandas consagradas..."
-                size="sm"
-              />
-            </Stack>
-          </Radio.Group>
+          <Text size="sm" fw={500} mt={4} lh={1}>
+            Onde você atuou?
+          </Text>
 
-          {entryType === 'project' &&
-            (selectedProject ? (
-              <Group gap="sm" justify="space-between" p={6}>
-                <Group gap="sm">
-                  <Avatar
-                    size={32}
-                    radius="xl"
-                    src={
-                      selectedProject.picture
-                        ? `${PROJECTS_PATH}${selectedProject.id}/${selectedProject.picture}`
-                        : undefined
-                    }
-                  >
-                    <IconDisc size={16} />
-                  </Avatar>
-                  <Text size="sm" fw={600}>
-                    {selectedProject.name}
-                  </Text>
-                </Group>
-                <ActionIcon
-                  size="sm"
-                  variant="subtle"
-                  onClick={() => setSelectedProject(null)}
+          {selectedProject ? (
+            <Group gap="sm" justify="space-between" p={6}>
+              <Group gap="sm">
+                <Avatar
+                  size={32}
+                  radius="xl"
+                  src={
+                    selectedProject.picture
+                      ? `${PROJECTS_PATH}${selectedProject.id}/${selectedProject.picture}`
+                      : undefined
+                  }
                 >
-                  <IconTrash size={14} />
-                </ActionIcon>
+                  <IconDisc size={16} />
+                </Avatar>
+                <Text size="sm" fw={600}>
+                  {selectedProject.name}
+                </Text>
               </Group>
-            ) : (
-              <Stack gap="xs">
-                <TextInput
-                  placeholder="Digite o nome do projeto ou banda..."
-                  leftSection={<IconSearch size={15} />}
-                  rightSection={projectSearchLoading ? <Loader size="xs" /> : undefined}
-                  value={projectSearch}
-                  onChange={(e) => {
-                    setProjectSearch(e.target.value)
-                    handleProjectSearch(e.target.value)
-                  }}
-                />
-                {projectSearch.length < 2 && (
-                  <Text size="xs" c="dimmed">
-                    Digite ao menos 2 letras. Os resultados aparecem abaixo — toque em um
-                    deles para selecionar.
-                  </Text>
-                )}
-                {projectResults.length > 0 && (
-                  <Stack gap={2} mah={220} style={{ overflowY: 'auto' }}>
-                    {projectResults.map((project) => (
-                      <Group
-                        key={project.id}
-                        gap="sm"
-                        justify="space-between"
-                        p={6}
-                        style={{
-                          cursor: 'pointer',
-                          borderRadius: 8,
-                        }}
-                        className="portfolio-search-result"
-                        onClick={() => {
-                          setSelectedProject(project)
-                          setProjectSearch('')
-                          setProjectResults([])
-                        }}
-                      >
-                        <Group gap="sm">
-                          <Avatar
-                            size={32}
-                            radius="xl"
-                            src={
-                              project.picture
-                                ? `${PROJECTS_PATH}${project.id}/${project.picture}`
-                                : undefined
-                            }
-                          >
-                            <IconDisc size={16} />
-                          </Avatar>
-                          <Text size="sm">{project.name}</Text>
-                        </Group>
-                        <Button size="xs" variant="light" tabIndex={-1}>
-                          Selecionar
-                        </Button>
-                      </Group>
-                    ))}
-                  </Stack>
-                )}
-                {projectSearch.length >= 2 &&
-                  !projectSearchLoading &&
-                  projectResults.length === 0 && (
-                    <Stack gap={10} align="center">
-                      <Text size="sm" ta="center">
-                        Nenhum projeto encontrado com esse nome.
-                      </Text>
-                      <Button
-                        variant="filled"
-                        color="green"
-                        size="xs"
-                        onClick={() => openNewProjectModal()}
-                      >
-                        Cadastrar “{projectSearch}” no Mublin
-                      </Button>
-                    </Stack>
-                  )}
-              </Stack>
-            ))}
-
-          {entryType === 'artist' &&
-            (selectedArtist ? (
-              <Group gap="sm" justify="space-between" p={6}>
-                <Group gap="sm">
-                  <Avatar
-                    size={32}
-                    radius="xl"
-                    src={
-                      selectedArtist.picture
-                        ? ARTISTS_PATH + selectedArtist.picture
-                        : undefined
-                    }
-                  >
-                    <IconMicrophone2 size={16} />
-                  </Avatar>
-                  <Text size="sm" fw={600}>
-                    {selectedArtist.name}
-                  </Text>
-                </Group>
-                <ActionIcon
-                  size="sm"
-                  variant="subtle"
-                  onClick={() => setSelectedArtist(null)}
-                >
-                  <IconTrash size={14} />
-                </ActionIcon>
-              </Group>
-            ) : (
-              <Stack gap="xs">
-                <TextInput
-                  placeholder="Digite o nome do artista, banda ou projeto..."
-                  leftSection={<IconSearch size={15} />}
-                  rightSection={artistSearchLoading ? <Loader size="xs" /> : undefined}
-                  value={artistSearch}
-                  onChange={(e) => {
-                    setArtistSearch(e.target.value)
-                    handleArtistSearch(e.target.value)
-                  }}
-                />
-                {artistSearch.length < 2 && (
-                  <Text size="xs" c="dimmed">
-                    Digite ao menos 2 letras. Os resultados aparecem abaixo — toque em um
-                    deles para selecionar.
-                  </Text>
-                )}
-                {artistResults.length > 0 && (
-                  <Stack gap={2} mah={220} style={{ overflowY: 'auto' }}>
-                    {artistResults.map((artist) => (
-                      <Group
-                        key={artist.id}
-                        gap="sm"
-                        justify="space-between"
-                        p={6}
-                        style={{ cursor: 'pointer', borderRadius: 8 }}
-                        className="portfolio-search-result"
-                        onClick={() => {
-                          setSelectedArtist(artist)
-                          setArtistSearch('')
-                          setArtistResults([])
-                        }}
-                      >
-                        <Group gap="sm">
-                          <Avatar
-                            size={32}
-                            radius="xl"
-                            src={
-                              artist.picture ? ARTISTS_PATH + artist.picture : undefined
-                            }
-                          >
-                            <IconMicrophone2 size={16} />
-                          </Avatar>
-                          <Text size="sm">{artist.name}</Text>
-                        </Group>
-                        <Button size="xs" variant="light" tabIndex={-1}>
-                          Selecionar
-                        </Button>
-                      </Group>
-                    ))}
-                  </Stack>
-                )}
-                {artistSearch.length >= 2 &&
-                  !artistSearchLoading &&
-                  artistResults.length === 0 && (
-                    <Text size="sm" c="dimmed" ta="center">
-                      Nenhum artista encontrado com esse nome.
-                    </Text>
-                  )}
-              </Stack>
-            ))}
-
-          <Switch
-            label="Colaboração esporádica"
-            description="Selecione se atua pontualmente neste projeto, sem um período fixo"
-            checked={portfolioIsSporadic}
-            onChange={(e) => {
-              const checked = e.currentTarget.checked
-              setPortfolioIsSporadic(checked)
-              if (checked) {
-                setPortfolioYearStart('')
-                setPortfolioYearEnd('')
-              }
-            }}
-          />
-
-          {!portfolioIsSporadic && (
-            <Group grow gap="sm">
-              <NumberInput
-                label="Ano de início"
-                description="Início da atuação"
-                placeholder="Ex: 2019"
-                min={1900}
-                max={currentYear + 1}
-                value={portfolioYearStart}
-                onChange={setPortfolioYearStart}
-                hideControls
-              />
-              <NumberInput
-                label="Ano de término"
-                description="Fim da atuação (opcional)"
-                min={1900}
-                max={currentYear + 1}
-                value={portfolioYearEnd}
-                onChange={setPortfolioYearEnd}
-                hideControls
-              />
+              <ActionIcon
+                size="md"
+                variant="subtle"
+                color="red"
+                onClick={() => setSelectedProject(null)}
+              >
+                <IconTrash size={18} />
+              </ActionIcon>
             </Group>
+          ) : (
+            <Stack gap="xs">
+              <TextInput
+                placeholder="Digite o nome do projeto, banda ou artista..."
+                leftSection={<IconSearch size={15} />}
+                loading={projectSearchLoading}
+                value={projectSearch}
+                onChange={(e) => {
+                  setProjectSearch(e.target.value)
+                  handleProjectSearch(e.target.value)
+                }}
+              />
+              {projectSearch.length < 2 && (
+                <Text size="xs" c="dimmed">
+                  Digite ao menos 2 letras. Os resultados aparecem abaixo — toque em um
+                  deles para selecionar.
+                </Text>
+              )}
+              {projectSearchLoading && (
+                <Center my="sm">
+                  <Loader size="sm" />
+                </Center>
+              )}
+              {projectResults.length > 0 && !projectSearchLoading && (
+                <Stack gap={2} mah={220} style={{ overflowY: 'auto' }}>
+                  {projectResults.map((project) => (
+                    <Group
+                      key={project.id}
+                      gap="sm"
+                      justify="space-between"
+                      p={6}
+                      style={{
+                        cursor: 'pointer',
+                        borderRadius: 8,
+                      }}
+                      className="portfolio-search-result"
+                      onClick={() => {
+                        setSelectedProject(project)
+                        setProjectSearch('')
+                        setProjectResults([])
+                      }}
+                    >
+                      <Group gap="sm">
+                        <Avatar
+                          size={32}
+                          radius="xl"
+                          src={
+                            project.picture
+                              ? `${PROJECTS_PATH}${project.id}/${project.picture}`
+                              : undefined
+                          }
+                        >
+                          <IconDisc size={16} />
+                        </Avatar>
+                        <Text size="sm">{project.name}</Text>
+                      </Group>
+                      <Button size="xs" variant="light" tabIndex={-1}>
+                        Selecionar
+                      </Button>
+                    </Group>
+                  ))}
+                </Stack>
+              )}
+              {projectSearch.length >= 2 &&
+                !projectSearchLoading &&
+                projectResults.length === 0 && (
+                  <Stack gap={10} align="center">
+                    <Text size="sm" ta="center">
+                      Nenhum projeto ou artista encontrado com esse nome.
+                    </Text>
+                    <Button
+                      variant="filled"
+                      color="green.9"
+                      size="xs"
+                      onClick={() => openNewProjectModal()}
+                    >
+                      Cadastrar “{projectSearch}” no Mublin
+                    </Button>
+                  </Stack>
+                )}
+            </Stack>
           )}
 
-          <Switch
-            label="Esse vínculo foi facilitado pelo Mublin"
-            color="lime"
-            checked={portfolioIsMublinFacilitated}
-            onChange={(e) => setPortfolioIsMublinFacilitated(e.currentTarget.checked)}
-          />
+          {selectedProject && (
+            <>
+              {overlappingRoleNames.length > 0 && (
+                <Alert
+                  color="yellow"
+                  variant="light"
+                  icon={<IconAlertTriangle size={16} />}
+                  py={8}
+                >
+                  <Text size="xs">
+                    Você já tem um item no portfólio com{' '}
+                    {overlappingRoleNames.length === 1
+                      ? `o papel "${overlappingRoleNames[0]}"`
+                      : `os papéis "${overlappingRoleNames.join('", "')}"`}{' '}
+                    para {selectedProject.name}
+                  </Text>
+                </Alert>
+              )}
+              <Switch
+                label="Colaboração esporádica"
+                description="Caso atue esporadicamente neste projeto sem um período fixo"
+                checked={portfolioIsSporadic}
+                onChange={(e) => {
+                  const checked = e.currentTarget.checked
+                  setPortfolioIsSporadic(checked)
+                  if (checked) {
+                    setPortfolioYearStart('')
+                    setPortfolioYearEnd('')
+                  }
+                }}
+              />
 
-          <Textarea
-            label="Comentário (opcional)"
-            placeholder="Ex: Guitarrista na turnê de 2019, gravei os vocais de apoio no álbum..."
-            description={`${portfolioNotes.length}/2000`}
-            minRows={2}
-            maxRows={6}
-            maxLength={2000}
-            value={portfolioNotes}
-            onChange={(e) => setPortfolioNotes(e.currentTarget.value)}
-          />
+              {!portfolioIsSporadic && (
+                <Group grow gap="sm">
+                  <NumberInput
+                    label="Ano de início"
+                    description="Início da atuação"
+                    placeholder="Ex: 2019"
+                    min={1900}
+                    max={currentYear + 1}
+                    value={portfolioYearStart}
+                    onChange={setPortfolioYearStart}
+                    hideControls
+                  />
+                  <NumberInput
+                    label="Ano de término"
+                    description="Fim da atuação (opcional)"
+                    min={1900}
+                    max={currentYear + 1}
+                    value={portfolioYearEnd}
+                    onChange={setPortfolioYearEnd}
+                    hideControls
+                  />
+                </Group>
+              )}
 
-          <Button
-            fullWidth
-            mt="xs"
-            size="sm"
-            loading={isSavingPortfolioItem}
-            onClick={handleAddPortfolioItem}
-          >
-            Adicionar ao meu portfólio
-          </Button>
-          {(selectedRoleIds.length === 0 || (!selectedProject && !selectedArtist)) && (
+              <Switch
+                label="Esse vínculo foi facilitado pelo Mublin"
+                color="lime"
+                checked={portfolioIsMublinFacilitated}
+                onChange={(e) => setPortfolioIsMublinFacilitated(e.currentTarget.checked)}
+              />
+
+              <Textarea
+                label="Comentário (opcional)"
+                placeholder="Ex: Guitarrista na turnê de 2019, gravei os vocais de apoio no álbum..."
+                description={`${portfolioNotes.length}/2000`}
+                minRows={2}
+                maxRows={6}
+                maxLength={2000}
+                value={portfolioNotes}
+                onChange={(e) => setPortfolioNotes(e.currentTarget.value)}
+              />
+
+              <Button
+                fullWidth
+                mt="xs"
+                size="sm"
+                loading={isSavingPortfolioItem}
+                onClick={handleAddPortfolioItem}
+              >
+                Adicionar ao meu portfólio
+              </Button>
+            </>
+          )}
+          {selectedRoleIds.length === 0 && (
             <Text size="xs" c="dimmed" ta="center" mt={-4}>
-              {selectedRoleIds.length === 0
-                ? 'Selecione ao menos um papel exercido para continuar'
-                : 'Busque e selecione um projeto ou artista na lista acima para continuar'}
+              Selecione ao menos um papel exercido para continuar
+            </Text>
+          )}
+          {projectResults.length > 0 && !selectedProject && (
+            <Text size="xs" c="dimmed" ta="center" mt={-4}>
+              Selecione um projeto ou artista na lista acima
             </Text>
           )}
         </Stack>

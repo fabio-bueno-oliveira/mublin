@@ -39,10 +39,11 @@ import {
   IconApple,
   IconBrandYoutube,
   IconPlus,
+  IconX,
 } from '@tabler/icons-react'
 
-const ARTISTS_PATH =
-  'https://ik.imagekit.io/mublin/artists/tr:h-200,w-200,c-maintain_ratio/'
+const PROJECTS_PATH =
+  'https://ik.imagekit.io/mublin/projects/tr:h-200,w-200,c-maintain_ratio/'
 const AVATAR_PATH =
   'https://ik.imagekit.io/mublin/tr:h-80,c-maintain_ratio/users/avatars/'
 const PRODUCT_IMAGE_PATH =
@@ -102,7 +103,7 @@ export default function Artist() {
     setIsUpdatingInspiration(true)
     const { error } = await supabase.from('profile_inspirations').insert({
       profile_id: user.id,
-      artist_id: artist?.id,
+      project_id: artist?.id,
       order_show: null,
     })
     if (error) {
@@ -131,7 +132,7 @@ export default function Artist() {
       .from('profile_inspirations')
       .delete()
       .eq('profile_id', user.id)
-      .eq('artist_id', artist?.id)
+      .eq('project_id', artist?.id)
     if (error) {
       notifications.show({
         color: 'red',
@@ -185,52 +186,22 @@ export default function Artist() {
                     <Avatar
                       size={100}
                       radius="xl"
-                      src={artist?.picture ? ARTISTS_PATH + artist.picture : undefined}
+                      src={
+                        artist?.picture
+                          ? `${PROJECTS_PATH}/${artist.id}/${artist.picture}`
+                          : undefined
+                      }
                       title={artist?.name}
                       alt={artist?.name}
                     />
-                    {artist.artist_related_slug && (
-                      <Flex
-                        direction="column"
-                        align="center"
-                        w={100}
-                        pos="absolute"
-                        top={0}
-                        left="64%"
-                        gap={1}
-                        component={Link}
-                        to={`/artist/${artist.artist_related_slug}`}
-                        style={{ textDecoration: 'none', color: 'inherit' }}
-                      >
-                        <Avatar
-                          size={75}
-                          radius="xl"
-                          src={
-                            artist?.related_artist?.picture
-                              ? ARTISTS_PATH + artist?.related_artist?.picture
-                              : undefined
-                          }
-                          title={artist?.related_artist?.name}
-                          alt={artist?.related_artist?.name}
-                        />
-                        <Text ta="center" size="10px" c="dimmed">
-                          Relacionado:
-                        </Text>
-                        <Title lh={1} ta="center" order={4} fz="h5">
-                          {artist?.related_artist?.name}
-                        </Title>
-                      </Flex>
-                    )}
                   </Center>
                   <Flex direction="column" align="center">
                     <Title order={1} fz="h2">
                       {artist?.name}
                     </Title>
                     <Text size="sm" c="dimmed">
-                      {[
-                        artist?.genre?.name_ptbr || artist?.genre?.name,
-                        artist?.genre_2?.name_ptbr || artist?.genre_2?.name,
-                      ]
+                      {(artist?.project_genres ?? [])
+                        .map((pg) => pg.genre?.name_ptbr || pg.genre?.name)
                         .filter(Boolean)
                         .join(', ')}
                     </Text>
@@ -263,8 +234,8 @@ export default function Artist() {
                     <Group justify="center">
                       {artist.spotify_id && (
                         <ActionIcon
-                          color="gray"
                           c="var(--mantine-color-text)"
+                          color="var(--mantine-color-text)"
                           variant="subtle"
                           component={Anchor}
                           href={`https://open.spotify.com/artist/${artist.spotify_id}`}
@@ -276,8 +247,8 @@ export default function Artist() {
                       )}
                       {artist.apple_music_id && (
                         <ActionIcon
-                          color="gray"
                           c="var(--mantine-color-text)"
+                          color="var(--mantine-color-text)"
                           variant="subtle"
                           component={Anchor}
                           href={`https://music.apple.com/br/artist/${artist.apple_music_id}`}
@@ -289,8 +260,8 @@ export default function Artist() {
                       )}
                       {artist.instagram && (
                         <ActionIcon
-                          color="gray"
                           c="var(--mantine-color-text)"
+                          color="var(--mantine-color-text)"
                           variant="subtle"
                           component={Anchor}
                           href={`https://www.instagram.com/${artist.instagram}`}
@@ -302,8 +273,8 @@ export default function Artist() {
                       )}
                       {artist.youtube_handle && (
                         <ActionIcon
-                          color="gray"
                           c="var(--mantine-color-text)"
+                          color="var(--mantine-color-text)"
                           variant="subtle"
                           component={Anchor}
                           href={`https://www.youtube.com/${artist.youtube_handle}`}
@@ -315,38 +286,32 @@ export default function Artist() {
                       )}
                     </Group>
                   )}
-                  {!artist?.is_band && (
-                    <Group gap={8} justify="center" align="flex-end">
-                      {artist?.is_active_in_business && (
-                        <>
-                          <Image
-                            src={
-                              colorScheme === 'light'
-                                ? MublinMLogoBlack
-                                : MublinMLogoWhite
-                            }
-                            h={20}
-                            w="auto"
-                            fit="contain"
-                            opacity={artist?.profile_id ? 1 : 0.4}
-                          />
-                          <Text c={artist?.profile_id ? undefined : 'dimmed'} size="xs">
-                            {artist?.profile_id
-                              ? 'Possui perfil pessoal no Mublin'
-                              : 'Não possui perfil pessoal no Mublin'}
-                          </Text>
-                        </>
-                      )}
-                    </Group>
-                  )}
+                  {artist?.project_type?.slug !== 'band' &&
+                    artist?.is_active_in_business && (
+                      <Group gap={8} justify="center" align="flex-end">
+                        <Image
+                          src={
+                            colorScheme === 'light' ? MublinMLogoBlack : MublinMLogoWhite
+                          }
+                          h={20}
+                          w="auto"
+                          fit="contain"
+                          opacity={0.4}
+                        />
+                        <Text c="dimmed" size="xs">
+                          Não possui perfil pessoal no Mublin
+                        </Text>
+                      </Group>
+                    )}
                   <Center my="xs">
                     {isInspiration ? (
                       <Button
                         size="xs"
-                        variant="outline"
-                        color="mublinColor"
+                        variant="light"
+                        color="var(--mantine-color-text)"
                         loading={isUpdatingInspiration}
                         onClick={handleRemoveInspiration}
+                        leftSection={<IconX size={16} />}
                       >
                         Remover como inspiração em meu perfil
                       </Button>

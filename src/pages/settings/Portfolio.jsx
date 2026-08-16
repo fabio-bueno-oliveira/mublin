@@ -1,10 +1,10 @@
 import { useState, useCallback } from 'react'
+import { Helmet } from 'react-helmet-async'
 import { useAuth } from '../../hooks/useAuth'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabaseClient'
 import { fetchAllRoles } from '../../queries/roles'
 import { fetchUserPortfolio } from '../../queries/user'
-import { searchArtist } from '../../queries/artists'
 import {
   Stack,
   Group,
@@ -18,7 +18,6 @@ import {
   ActionIcon,
   Box,
   Loader,
-  Radio,
   Textarea,
   Switch,
   Badge,
@@ -32,14 +31,10 @@ import {
   IconTrash,
   IconGripVertical,
   IconDisc,
-  IconMicrophone2,
   IconSparkles,
   IconPencil,
 } from '@tabler/icons-react'
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd'
-
-const ARTISTS_PATH =
-  'https://ik.imagekit.io/mublin/artists/tr:h-96,w-96,c-maintain_ratio/'
 
 const PROJECTS_PATH =
   'https://ik.imagekit.io/mublin/projects/tr:h-96,w-96,c-maintain_ratio/'
@@ -82,24 +77,18 @@ export default function Portfolio() {
   // ── Estados: formulário do modal ──────────────────────
   const [selectedRoleIds, setSelectedRoleIds] = useState([])
   const [selectedEngagementTypeIds, setSelectedEngagementTypeIds] = useState([])
-  const [entryType, setEntryType] = useState('project') // 'project' | 'artist'
   const [selectedProject, setSelectedProject] = useState(null)
-  const [selectedArtist, setSelectedArtist] = useState(null)
   const [notes, setNotes] = useState('')
   const [yearStart, setYearStart] = useState('')
   const [yearEnd, setYearEnd] = useState('')
   const [isSporadic, setIsSporadic] = useState(false)
   const [isMublinFacilitated, setIsMublinFacilitated] = useState(false)
+  const [isReordering, setIsReordering] = useState(false)
 
   // ── Estados: busca de projeto ──────────────────────────
   const [projectSearch, setProjectSearch] = useState('')
   const [projectResults, setProjectResults] = useState([])
   const [searchingProjects, setSearchingProjects] = useState(false)
-
-  // ── Estados: busca de artista ──────────────────────────
-  const [artistSearch, setArtistSearch] = useState('')
-  const [artistResults, setArtistResults] = useState([])
-  const [searchingArtists, setSearchingArtists] = useState(false)
 
   // ── Estados: ações ──────────────────────────────────────
   const [isSavingItem, setIsSavingItem] = useState(false)
@@ -173,40 +162,13 @@ export default function Portfolio() {
     debouncedProjectSearch(keyword)
   }
 
-  // ── Handlers: busca de artista ─────────────────────────
-
-  const executeArtistSearch = useCallback(async (keyword) => {
-    if (keyword.trim().length < 2) {
-      setArtistResults([])
-      return
-    }
-    setSearchingArtists(true)
-    try {
-      const results = await searchArtist(keyword)
-      setArtistResults(results)
-    } catch (err) {
-      console.error(err)
-    } finally {
-      setSearchingArtists(false)
-    }
-  }, [])
-
-  const debouncedArtistSearch = useDebouncedCallback(executeArtistSearch, 400)
-
-  function handleArtistSearch(keyword) {
-    setArtistSearch(keyword)
-    debouncedArtistSearch(keyword)
-  }
-
   // ── Handler: reset do formulário ───────────────────────
 
   function resetForm() {
     setEditingItemId(null)
     setSelectedRoleIds([])
     setSelectedEngagementTypeIds([])
-    setEntryType('project')
     setSelectedProject(null)
-    setSelectedArtist(null)
     setNotes('')
     setYearStart('')
     setYearEnd('')
@@ -214,8 +176,6 @@ export default function Portfolio() {
     setIsMublinFacilitated(false)
     setProjectSearch('')
     setProjectResults([])
-    setArtistSearch('')
-    setArtistResults([])
   }
 
   function handleCloseModal() {
@@ -226,16 +186,12 @@ export default function Portfolio() {
   // ── Handler: abrir modal em modo edição ────────────────
 
   function handleOpenEditModal(item) {
-    const isProject = !!item.projects
-
     setEditingItemId(item.id)
     setSelectedRoleIds(item.portfolio_roles?.map((pr) => String(pr.role_id)) ?? [])
     setSelectedEngagementTypeIds(
       item.portfolio_engagement_types?.map((pe) => String(pe.engagement_type_id)) ?? [],
     )
-    setEntryType(isProject ? 'project' : 'artist')
-    setSelectedProject(isProject ? item.projects : null)
-    setSelectedArtist(!isProject ? item.artists : null)
+    setSelectedProject(item.projects ?? null)
     setNotes(item.notes ?? '')
     setYearStart(item.year_start ?? '')
     setYearEnd(item.year_end ?? '')
@@ -255,7 +211,7 @@ export default function Portfolio() {
       })
       return
     }
-    if (!selectedProject && !selectedArtist) {
+    if (!selectedProject) {
       notifications.show({
         color: 'red',
         position: 'top-center',
@@ -271,8 +227,7 @@ export default function Portfolio() {
       .from('portfolio')
       .insert({
         profile_id: user.id,
-        project_id: selectedProject ? Number(selectedProject.id) : null,
-        artist_id: selectedArtist ? Number(selectedArtist.id) : null,
+        project_id: Number(selectedProject.id),
         order_number: nextOrder,
         notes: notes.trim() ? notes.trim() : null,
         // Se for esporádico, ignoramos os anos mesmo que tenham sido preenchidos antes do toggle
@@ -346,7 +301,7 @@ export default function Portfolio() {
       })
       return
     }
-    if (!selectedProject && !selectedArtist) {
+    if (!selectedProject) {
       notifications.show({
         color: 'red',
         position: 'top-center',
@@ -360,8 +315,7 @@ export default function Portfolio() {
     const { error: updateError } = await supabase
       .from('portfolio')
       .update({
-        project_id: selectedProject ? Number(selectedProject.id) : null,
-        artist_id: selectedArtist ? Number(selectedArtist.id) : null,
+        project_id: Number(selectedProject.id),
         notes: notes.trim() ? notes.trim() : null,
         year_start: !isSporadic && yearStart ? Number(yearStart) : null,
         year_end: !isSporadic && yearEnd ? Number(yearEnd) : null,
@@ -468,8 +422,7 @@ export default function Portfolio() {
     setIsDeletingItem(false)
   }
 
-  // ── Handler: reordenar via drag and drop ───────────────
-
+  // ── Handler: reordenar via drag and drop (otimizado - 1 RPC) ──
   async function handleDragEnd(result) {
     if (!result.destination) {
       return
@@ -482,47 +435,39 @@ export default function Portfolio() {
     const [reorderedItem] = items.splice(result.source.index, 1)
     items.splice(result.destination.index, 0, reorderedItem)
 
-    queryClient.setQueryData(['user-portfolio', user.id], items)
+    const previous = userPortfolio
+    const optimistic = items.map((it, idx) => ({ ...it, order_number: idx + 1 }))
+    queryClient.setQueryData(['user-portfolio', user.id], optimistic)
 
+    setIsReordering(true)
     try {
-      const promises = items
-        .map((item, index) => {
-          const correctOrder = index + 1
-          if (item.order_number !== correctOrder) {
-            return supabase
-              .from('portfolio')
-              .update({ order_number: correctOrder })
-              .eq('id', item.id)
-          }
-          return null
-        })
-        .filter(Boolean)
-
-      if (promises.length > 0) {
-        await Promise.all(promises)
+      const orderedIds = optimistic.map((it) => it.id)
+      const { error } = await supabase.rpc('reorder_portfolio', {
+        p_ordered_ids: orderedIds,
+      })
+      if (error) {
+        throw error
       }
-
       notifications.show({
         color: 'green',
         position: 'top-center',
-        message: 'Nova ordem do portfólio salva com sucesso!',
+        message: 'Nova ordem salva!',
       })
-    } catch (error) {
-      console.error('Erro ao salvar nova ordenação:', error)
-      notifications.show({
-        color: 'red',
-        position: 'top-center',
-        message: 'Houve um erro ao sincronizar a ordem com o servidor.',
-      })
+    } catch (err) {
+      queryClient.setQueryData(['user-portfolio', user.id], previous)
+      notifications.show({ color: 'red', message: 'Erro ao salvar ordem' })
     } finally {
-      await queryClient.invalidateQueries({ queryKey: ['user-portfolio', user.id] })
+      setIsReordering(false)
     }
   }
 
-  // ── Render ──────────────────────────────────────────────
-
   return (
     <>
+      <Helmet>
+        <meta charSet="utf-8" />
+        <title>Configurações · Meu portfólio · Mublin</title>
+        <link rel="canonical" href="https://mublin.com/settings/portfolio" />
+      </Helmet>
       <Stack gap="lg">
         <div>
           <Text fw={600} size="sm" tt="uppercase" lts="0.05em">
@@ -535,12 +480,12 @@ export default function Portfolio() {
 
         <Box>
           <Button
-            size="xs"
+            size="sm"
             variant="filled"
             leftSection={<IconPlus size={14} />}
             onClick={openModal}
           >
-            Adicionar projeto ao portfólio
+            Adicionar novo item ao portfólio
           </Button>
         </Box>
 
@@ -552,16 +497,13 @@ export default function Portfolio() {
           </Stack>
         ) : userPortfolio.length > 0 ? (
           <DragDropContext onDragEnd={handleDragEnd}>
-            <Droppable droppableId="portfolio-list">
+            <Droppable droppableId="portfolio-list" isDragDisabled={isReordering}>
               {(provided) => (
                 <Stack gap="xs" ref={provided.innerRef} {...provided.droppableProps}>
                   {userPortfolio.map((item, index) => {
-                    const entity = item.projects || item.artists
-                    const isProject = !!item.projects
+                    const entity = item.projects
                     const picture = entity?.picture
-                      ? (isProject
-                          ? `${PROJECTS_PATH}${item.project_id}/`
-                          : ARTISTS_PATH) + entity.picture
+                      ? `${PROJECTS_PATH}${item.project_id}/${entity.picture}`
                       : undefined
 
                     return (
@@ -599,11 +541,15 @@ export default function Portfolio() {
                                   marginTop: 10,
                                 }}
                               >
-                                <IconGripVertical
-                                  size={14}
-                                  opacity={0.4}
-                                  style={{ cursor: 'grab' }}
-                                />
+                                {isReordering ? (
+                                  <Loader size="xs" />
+                                ) : (
+                                  <IconGripVertical
+                                    size={14}
+                                    opacity={0.4}
+                                    style={{ cursor: 'grab' }}
+                                  />
+                                )}
                               </Box>
                               <Avatar
                                 size={40}
@@ -678,7 +624,7 @@ export default function Portfolio() {
                                 onClick={() => handleOpenEditModal(item)}
                                 title="Editar item"
                               >
-                                <IconPencil size={14} />
+                                <IconPencil size={18} />
                               </ActionIcon>
                               <ActionIcon
                                 size="md"
@@ -687,7 +633,7 @@ export default function Portfolio() {
                                 onClick={() => handleDeletePortfolioItem(item.id)}
                                 title="Remover item"
                               >
-                                <IconTrash size={14} />
+                                <IconTrash size={18} />
                               </ActionIcon>
                             </Group>
                           </Group>
@@ -745,195 +691,94 @@ export default function Portfolio() {
             size="sm"
           />
 
-          <Radio.Group
-            label="O que você está adicionando?"
-            value={entryType}
-            onChange={(value) => {
-              setEntryType(value)
-              setSelectedProject(null)
-              setSelectedArtist(null)
-            }}
-          >
-            <Group gap="xs" mt={6}>
-              <Radio value="project" label="Projeto cadastrado no Mublin" size="sm" />
-              <Radio
-                value="artist"
-                label="Artista ou projeto externo"
-                description="Artistas mainstream e outras figuras do mercado"
+          <Text size="sm" fw={500}>
+            Onde você atuou?
+          </Text>
+
+          {selectedProject ? (
+            <Group
+              gap="sm"
+              justify="space-between"
+              p={6}
+              style={{
+                borderRadius: 'var(--mantine-radius-sm)',
+              }}
+            >
+              <Group gap="sm">
+                <Avatar
+                  size={32}
+                  radius="xl"
+                  src={
+                    selectedProject.picture
+                      ? `${PROJECTS_PATH}${selectedProject.id}/${selectedProject.picture}`
+                      : undefined
+                  }
+                >
+                  <IconDisc size={16} />
+                </Avatar>
+                <Text size="sm" fw={600}>
+                  {selectedProject.name}
+                </Text>
+              </Group>
+              <ActionIcon
                 size="sm"
-              />
+                variant="subtle"
+                onClick={() => setSelectedProject(null)}
+              >
+                <IconTrash size={14} />
+              </ActionIcon>
             </Group>
-          </Radio.Group>
-
-          {entryType === 'project' &&
-            (selectedProject ? (
-              <Group
-                gap="sm"
-                justify="space-between"
-                p={6}
-                style={{
-                  borderRadius: 'var(--mantine-radius-sm)',
-                }}
-              >
-                <Group gap="sm">
-                  <Avatar
-                    size={32}
-                    radius="xl"
-                    src={
-                      selectedProject.picture
-                        ? `${PROJECTS_PATH}${selectedProject.id}/${selectedProject.picture}`
-                        : undefined
-                    }
-                  >
-                    <IconDisc size={16} />
-                  </Avatar>
-                  <Text size="sm" fw={600}>
-                    {selectedProject.name}
-                  </Text>
-                </Group>
-                <ActionIcon
-                  size="sm"
-                  variant="subtle"
-                  onClick={() => setSelectedProject(null)}
-                >
-                  <IconTrash size={14} />
-                </ActionIcon>
-              </Group>
-            ) : (
-              <Stack gap="xs">
-                <TextInput
-                  placeholder="Buscar projeto cadastrado no Mublin..."
-                  leftSection={<IconSearch size={15} />}
-                  rightSection={searchingProjects ? <Loader size="xs" /> : undefined}
-                  value={projectSearch}
-                  onChange={(e) => handleProjectSearch(e.target.value)}
-                />
-                {projectResults.length > 0 && (
-                  <Stack gap="xs" mah={220} style={{ overflowY: 'auto' }}>
-                    {projectResults.map((project) => (
-                      <Group key={project.id} gap="sm" justify="space-between">
-                        <Group gap="sm">
-                          <Avatar
-                            size={32}
-                            radius="xl"
-                            src={
-                              project.picture
-                                ? `${PROJECTS_PATH}${project.id}/${project.picture}`
-                                : undefined
-                            }
-                          >
-                            <IconDisc size={16} />
-                          </Avatar>
-                          <Text size="sm">{project.name}</Text>
-                        </Group>
-                        <Button
-                          size="xs"
-                          variant="light"
-                          onClick={() => {
-                            setSelectedProject(project)
-                            setProjectSearch('')
-                            setProjectResults([])
-                          }}
+          ) : (
+            <Stack gap="xs">
+              <TextInput
+                placeholder="Buscar projeto, banda ou artista..."
+                leftSection={<IconSearch size={15} />}
+                rightSection={searchingProjects ? <Loader size="xs" /> : undefined}
+                value={projectSearch}
+                onChange={(e) => handleProjectSearch(e.target.value)}
+              />
+              {projectResults.length > 0 && (
+                <Stack gap="xs" mah={220} style={{ overflowY: 'auto' }}>
+                  {projectResults.map((project) => (
+                    <Group key={project.id} gap="sm" justify="space-between">
+                      <Group gap="sm">
+                        <Avatar
+                          size={32}
+                          radius="xl"
+                          src={
+                            project.picture
+                              ? `${PROJECTS_PATH}${project.id}/${project.picture}`
+                              : undefined
+                          }
                         >
-                          Selecionar
-                        </Button>
+                          <IconDisc size={16} />
+                        </Avatar>
+                        <Text size="sm">{project.name}</Text>
                       </Group>
-                    ))}
-                  </Stack>
-                )}
-                {projectSearch.length >= 2 &&
-                  !searchingProjects &&
-                  projectResults.length === 0 && (
-                    <Text size="sm" c="dimmed" ta="center">
-                      Nenhum projeto encontrado.
-                    </Text>
-                  )}
-              </Stack>
-            ))}
-
-          {entryType === 'artist' &&
-            (selectedArtist ? (
-              <Group
-                gap="sm"
-                justify="space-between"
-                p={6}
-                style={{
-                  borderRadius: 'var(--mantine-radius-sm)',
-                }}
-              >
-                <Group gap="sm">
-                  <Avatar
-                    size={32}
-                    radius="xl"
-                    src={
-                      selectedArtist.picture
-                        ? ARTISTS_PATH + selectedArtist.picture
-                        : undefined
-                    }
-                  >
-                    <IconMicrophone2 size={16} />
-                  </Avatar>
-                  <Text size="sm" fw={600}>
-                    {selectedArtist.name}
+                      <Button
+                        size="xs"
+                        variant="light"
+                        onClick={() => {
+                          setSelectedProject(project)
+                          setProjectSearch('')
+                          setProjectResults([])
+                        }}
+                      >
+                        Selecionar
+                      </Button>
+                    </Group>
+                  ))}
+                </Stack>
+              )}
+              {projectSearch.length >= 2 &&
+                !searchingProjects &&
+                projectResults.length === 0 && (
+                  <Text size="sm" c="dimmed" ta="center">
+                    Nenhum projeto ou artista encontrado.
                   </Text>
-                </Group>
-                <ActionIcon
-                  size="sm"
-                  variant="subtle"
-                  onClick={() => setSelectedArtist(null)}
-                >
-                  <IconTrash size={14} />
-                </ActionIcon>
-              </Group>
-            ) : (
-              <Stack gap="xs">
-                <TextInput
-                  placeholder="Buscar artista por nome..."
-                  leftSection={<IconSearch size={15} />}
-                  rightSection={searchingArtists ? <Loader size="xs" /> : undefined}
-                  value={artistSearch}
-                  onChange={(e) => handleArtistSearch(e.target.value)}
-                />
-                {artistResults.length > 0 && (
-                  <Stack gap="xs" mah={220} style={{ overflowY: 'auto' }}>
-                    {artistResults.map((artist) => (
-                      <Group key={artist.id} gap="sm" justify="space-between">
-                        <Group gap="sm">
-                          <Avatar
-                            size={32}
-                            radius="xl"
-                            src={
-                              artist.picture ? ARTISTS_PATH + artist.picture : undefined
-                            }
-                          >
-                            <IconMicrophone2 size={16} />
-                          </Avatar>
-                          <Text size="sm">{artist.name}</Text>
-                        </Group>
-                        <Button
-                          size="xs"
-                          variant="light"
-                          onClick={() => {
-                            setSelectedArtist(artist)
-                            setArtistSearch('')
-                            setArtistResults([])
-                          }}
-                        >
-                          Selecionar
-                        </Button>
-                      </Group>
-                    ))}
-                  </Stack>
                 )}
-                {artistSearch.length >= 2 &&
-                  !searchingArtists &&
-                  artistResults.length === 0 && (
-                    <Text size="sm" c="dimmed" ta="center">
-                      Nenhum artista encontrado.
-                    </Text>
-                  )}
-              </Stack>
-            ))}
+            </Stack>
+          )}
 
           <Switch
             label="Colaboro esporadicamente"
@@ -996,9 +841,7 @@ export default function Portfolio() {
             mt="xs"
             size="sm"
             loading={isSavingItem}
-            disabled={
-              selectedRoleIds.length === 0 || (!selectedProject && !selectedArtist)
-            }
+            disabled={selectedRoleIds.length === 0 || !selectedProject}
             onClick={editingItemId ? handleUpdatePortfolioItem : handleAddPortfolioItem}
           >
             {editingItemId ? 'Salvar alterações' : 'Adicionar ao meu portfólio'}

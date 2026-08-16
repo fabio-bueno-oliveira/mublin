@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react'
+import { Helmet } from 'react-helmet-async'
 import { useAuth } from '../../hooks/useAuth'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabaseClient'
@@ -37,8 +38,8 @@ import {
 } from '@tabler/icons-react'
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd'
 
-const ARTISTS_PATH =
-  'https://ik.imagekit.io/mublin/artists/tr:h-96,w-96,c-maintain_ratio/'
+const PROJECTS_PATH =
+  'https://ik.imagekit.io/mublin/projects/tr:h-96,w-96,c-maintain_ratio/'
 
 // ── Queries locais ────────────────────────────────────────
 
@@ -60,13 +61,13 @@ async function fetchUserInspirations(profileId) {
       `
       id,
       order_show,
-      artists (
+      projects (
         id,
         name,
         slug,
         picture,
-        is_band,
-        genre:genres!artists_genre_id_fkey ( name, name_ptbr )
+        type:project_types ( name_ptbr ),
+        genre:genres ( name, name_ptbr )
       )
     `,
     )
@@ -119,8 +120,9 @@ export default function MusicalPreferences() {
   const [artistResults, setArtistResults] = useState([])
   const [searchingArtists, setSearchingArtists] = useState(false)
   const [isDeletingInspiration, setIsDeletingInspiration] = useState(false)
-  const [editingOrder, setEditingOrder] = useState(null) // { id, order_show }
+  const [editingOrder, setEditingOrder] = useState(null)
   const [isSavingOrder, setIsSavingOrder] = useState(false)
+  const [isReordering, setIsReordering] = useState(false)
 
   // ── Modais ────────────────────────────────────────────
   const [modalGenresOpened, { open: openGenresModal, close: closeGenresModal }] =
@@ -190,7 +192,7 @@ export default function MusicalPreferences() {
 
   const selectedGenreIds = userGenres.map((g) => g.id_genre)
   const selectedRoleIds = userRoles.map((r) => r.id_role)
-  const selectedArtistIds = userInspirations.map((i) => i.artists?.id)
+  const selectedArtistIds = userInspirations.map((i) => i.projects?.id)
 
   // ── Handlers: gêneros ─────────────────────────────────
 
@@ -318,11 +320,11 @@ export default function MusicalPreferences() {
     debouncedSearch(keyword)
   }
 
-  async function handleAddInspiration(artistId) {
+  async function handleAddInspiration(projectId) {
     const nextOrder = userInspirations.length + 1
     const { error } = await supabase.from('profile_inspirations').insert({
       profile_id: user.id,
-      artist_id: artistId,
+      project_id: projectId,
       order_show: nextOrder,
     })
     if (error) {
@@ -338,7 +340,6 @@ export default function MusicalPreferences() {
         position: 'top-center',
         message: 'Inspiração adicionada!',
       })
-      // Limpa busca e FECHA O MODAL após a seleção
       setArtistSearch('')
       setArtistResults([])
       closeInspirationsModal()
@@ -348,7 +349,6 @@ export default function MusicalPreferences() {
   async function handleDeleteInspiration(inspirationId) {
     setIsDeletingInspiration(true)
 
-    // 1. Deleta o registro selecionado do banco
     const { error: deleteError } = await supabase
       .from('profile_inspirations')
       .delete()
@@ -364,10 +364,8 @@ export default function MusicalPreferences() {
       return
     }
 
-    // 2. Filtra a lista local removendo o artista que acabou de ser deletado
     const remainingItems = userInspirations.filter((item) => item.id !== inspirationId)
 
-    // 3. Se ainda sobrarem artistas, reordena todos sequencialmente (1, 2, 3...)
     if (remainingItems.length > 0) {
       try {
         const promises = remainingItems.map((item, index) => {
@@ -381,11 +379,9 @@ export default function MusicalPreferences() {
         await Promise.all(promises)
       } catch (orderError) {
         console.error('Erro ao reordenar remanescentes:', orderError)
-        // Não bloqueia o fluxo principal pois o item principal já foi deletado
       }
     }
 
-    // 4. Atualiza o cache do React Query para renderizar a nova lista
     await queryClient.refetchQueries({ queryKey: ['user-inspirations', user.id] })
     setIsDeletingInspiration(false)
   }
@@ -411,47 +407,32 @@ export default function MusicalPreferences() {
 
   // Handler para reordenar via arrastar e soltar (Drag and Drop)
   async function handleDragEnd(result) {
-    // Se foi arrastado para fora de uma área válida, ignora
     if (!result.destination) {
       return
     }
-
-    // Se a posição não mudou, ignora
     if (result.source.index === result.destination.index) {
       return
     }
 
-    // 1. Cria uma cópia do estado atual para manipulação local
     const items = Array.from(userInspirations)
-
-    // 2. Remove o item movido da posição original e insere na nova posição
     const [reorderedItem] = items.splice(result.source.index, 1)
     items.splice(result.destination.index, 0, reorderedItem)
 
-    // 3. Otimisticamente atualiza o cache local para a interface mover instantaneamente
-    // Substitua 'user-inspirations' pela chave exata que está utilizando na sua query
-    queryClient.setQueryData(['user-inspirations', user.id], items)
+    const previous = userInspirations
 
+    // otimista - já com order_show correto
+    const optimistic = items.map((it, idx) => ({ ...it, order_show: idx + 1 }))
+    queryClient.setQueryData(['user-inspirations', user.id], optimistic)
+
+    setIsReordering(true)
     try {
-      // 4. Mapeia e gera uma lista de promises para reescrever o 'order_show' de forma sequencial limpa (1, 2, 3...)
-      const promises = items
-        .map((item, index) => {
-          const correctOrder = index + 1
+      const orderedIds = optimistic.map((it) => it.id)
 
-          // Só dispara o update se o valor de ordem realmente mudou no banco
-          if (item.order_show !== correctOrder) {
-            return supabase
-              .from('profile_inspirations')
-              .update({ order_show: correctOrder })
-              .eq('id', item.id)
-          }
-          return null
-        })
-        .filter(Boolean) // Remove valores nulos
-
-      // Executa as atualizações em paralelo no Supabase
-      if (promises.length > 0) {
-        await Promise.all(promises)
+      const { error } = await supabase.rpc('reorder_inspirations', {
+        p_ordered_ids: orderedIds,
+      })
+      if (error) {
+        throw error
       }
 
       notifications.show({
@@ -461,13 +442,16 @@ export default function MusicalPreferences() {
       })
     } catch (error) {
       console.error('Erro ao salvar nova ordenação:', error)
+      // rollback
+      queryClient.setQueryData(['user-inspirations', user.id], previous)
       notifications.show({
         color: 'red',
         position: 'top-center',
         message: 'Houve um erro ao sincronizar a ordem com o servidor.',
       })
     } finally {
-      // 5. Invalida a query para garantir sincronia total com os dados finais do banco
+      setIsReordering(false)
+      // opcional - você pode remover esse invalidate se confiar no otimista
       await queryClient.invalidateQueries({ queryKey: ['user-inspirations', user.id] })
     }
   }
@@ -539,6 +523,11 @@ export default function MusicalPreferences() {
 
   return (
     <>
+      <Helmet>
+        <meta charSet="utf-8" />
+        <title>Configurações · Preferências musicais · Mublin</title>
+        <link rel="canonical" href="https://mublin.com/settings/portfolio" />
+      </Helmet>
       <Stack gap="lg">
         {/* ── Gêneros e estilos ────────────────────────── */}
         <Stack gap="md">
@@ -698,7 +687,8 @@ export default function MusicalPreferences() {
               Inspirações
             </Text>
             <Text size="xs" c="dimmed" mt={2}>
-              Artistas que inspiram sua trajetória musical (arraste para reordenar)
+              Artistas e figuras que inspiram sua trajetória musical (arraste para
+              reordenar)
             </Text>
           </div>
 
@@ -713,7 +703,7 @@ export default function MusicalPreferences() {
             </Flex>
           ) : userInspirations.length > 0 ? (
             <DragDropContext onDragEnd={handleDragEnd}>
-              <Droppable droppableId="inspirations-list">
+              <Droppable droppableId="inspirations-list" isDropDisabled={isReordering}>
                 {(provided) => (
                   <Stack gap="xs" ref={provided.innerRef} {...provided.droppableProps}>
                     {userInspirations.map((inspiration, index) => (
@@ -721,6 +711,7 @@ export default function MusicalPreferences() {
                         key={String(inspiration.id)}
                         draggableId={String(inspiration.id)}
                         index={index}
+                        isDragDisabled={isReordering}
                       >
                         {(providedDrag) => (
                           <Group
@@ -737,35 +728,41 @@ export default function MusicalPreferences() {
                             }}
                           >
                             <Group gap="sm" align="center">
-                              {/* O IconGripVertical agora vira o handle do Drag */}
                               <Box
                                 {...providedDrag.dragHandleProps}
                                 style={{ display: 'flex', alignWith: 'center' }}
                               >
-                                <IconGripVertical
-                                  size={14}
-                                  opacity={0.4}
-                                  style={{ cursor: 'grab' }}
-                                />
+                                {isReordering ? (
+                                  <Loader size="xs" />
+                                ) : (
+                                  <IconGripVertical
+                                    size={14}
+                                    opacity={0.4}
+                                    style={{ cursor: 'grab' }}
+                                  />
+                                )}
                               </Box>
                               <Avatar
                                 size={40}
                                 radius="xl"
                                 src={
-                                  inspiration.artists?.picture
-                                    ? ARTISTS_PATH + inspiration.artists.picture
+                                  inspiration.projects?.picture
+                                    ? `${PROJECTS_PATH}/${inspiration.projects.id}/${inspiration.projects.picture}`
                                     : undefined
                                 }
                               />
                               <Stack gap={0}>
                                 <Text size="sm" fw={600}>
-                                  {inspiration.artists?.name}
+                                  {inspiration.projects?.name}
                                 </Text>
-                                {inspiration.artists?.genres?.name_ptbr && (
-                                  <Text size="xs" c="dimmed">
-                                    {inspiration.artists.genres.name_ptbr}
-                                  </Text>
-                                )}
+                                <Text size="xs" c="dimmed">
+                                  {inspiration.projects.type?.name_ptbr}{' '}
+                                  {inspiration.projects.genre?.name_ptbr && (
+                                    <Text span>
+                                      · {inspiration.projects.genre?.name_ptbr}
+                                    </Text>
+                                  )}
+                                </Text>
                               </Stack>
                             </Group>
                             <Group gap="xs">
@@ -823,13 +820,13 @@ export default function MusicalPreferences() {
                                 </Text>
                               )}
                               <ActionIcon
-                                size="sm"
+                                size="md"
                                 variant="subtle"
                                 color="red"
                                 onClick={() => handleDeleteInspiration(inspiration.id)}
                                 title="Remover inspiração"
                               >
-                                <IconTrash size={14} />
+                                <IconTrash size={18} />
                               </ActionIcon>
                             </Group>
                           </Group>
@@ -967,7 +964,11 @@ export default function MusicalPreferences() {
                       <Avatar
                         size={36}
                         radius="xl"
-                        src={artist.picture ? ARTISTS_PATH + artist.picture : undefined}
+                        src={
+                          artist.picture
+                            ? `${PROJECTS_PATH}/${artist.id}/${artist.picture}`
+                            : undefined
+                        }
                       />
                       <Box>
                         <Text size="sm" fw={600}>

@@ -15,9 +15,6 @@
     "lint": "eslint .",
     "preview": "vite preview"
   },
-  "overrides": {
-    "js-yaml": "^4.1.1"
-  },
   "dependencies": {
     "@hello-pangea/dnd": "^18.0.1",
     "@imagekit/react": "^5.0.2",

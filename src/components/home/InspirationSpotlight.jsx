@@ -54,31 +54,9 @@ export default function InspirationSpotlight() {
 
   const { artist, profiles, totalCount } = data
 
-  const getInitials = (name) => {
-    if (!name) {
-      return ''
-    }
-    const parts = name.trim().split(/\s+/)
-    const first = parts[0]?.[0] ?? ''
-    const last = parts.length > 1 ? parts[parts.length - 1][0] : ''
-    return (first + last).toUpperCase()
-  }
-
   return (
     <Box>
-      {/* <Title order={3} fw={600} fz="lg" mb="sm">
-        Em alta
-      </Title> */}
-      <Card
-        withBorder
-        radius="md"
-        p="sm"
-        mb="md"
-        // style={{
-        //   background: 'light-dark(#ffffff, #1c1c1c)',
-        //   borderColor: 'light-dark(#dde1e7, #2a2a2a)',
-        // }}
-      >
+      <Card withBorder radius="md" p="sm" mt="xs" mb="md">
         <Group align="center" wrap="nowrap">
           <Box pos="relative">
             <Link to={`/artist/${artist.slug}`}>
