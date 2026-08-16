@@ -213,13 +213,14 @@ export default function Home() {
                                   <Stack align="center" gap={3}>
                                     <Indicator
                                       position="top-end"
-                                      offset={8}
+                                      offset={{ x: 2, y: 14 }}
                                       color="transparent"
                                       size={20}
                                       disabled={!p.is_verified}
                                       label={
                                         <IconRosetteDiscountCheckFilled
-                                          size={20}
+                                          size={24}
+                                          color="var(--mantine-color-text)"
                                           style={{ display: 'block' }}
                                         />
                                       }
