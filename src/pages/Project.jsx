@@ -730,7 +730,6 @@ export default function Project() {
           <AppNavbarMobile
             pageName={`${project?.name} (${project?.project_type})`}
             // profile={profile}
-            // featured={profile.is_open_to_work}
           />
         </Affix>
       )}

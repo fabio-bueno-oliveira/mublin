@@ -16,10 +16,14 @@ import { useDisclosure } from '@mantine/hooks'
 import {
   useMantineColorScheme,
   useComputedColorScheme,
-  Box,
-  Modal,
+  ScrollArea,
+  Stack,
+  Flex,
   Group,
+  Modal,
+  Box,
   Menu,
+  Badge,
   Text,
   TextInput,
   ActionIcon,
@@ -28,11 +32,8 @@ import {
   Container,
   Combobox,
   useCombobox,
-  Stack,
   Image,
   Indicator,
-  ScrollArea,
-  Flex,
 } from '@mantine/core'
 import {
   IconSearch,
@@ -187,14 +188,30 @@ export default function AppNavbar({ children }) {
             {/* Logo + Nav items */}
             <Group gap="md">
               {children}
-              <Link to="/home">
-                <Image
-                  src={colorScheme === 'light' ? MublinLogoBlack : MublinLogoWhite}
-                  h={28}
-                  w="auto"
-                  fit="contain"
-                />
-              </Link>
+              <Group gap={2}>
+                <Link to="/home">
+                  <Image
+                    src={colorScheme === 'light' ? MublinLogoBlack : MublinLogoWhite}
+                    h={28}
+                    w="auto"
+                    fit="contain"
+                  />
+                </Link>
+                <Badge
+                  variant="gradient"
+                  gradient={{ from: 'mublinColor', to: 'blue', deg: 96 }}
+                  size="sm"
+                  mt={4}
+                  px={6}
+                  py={1}
+                  component={Link}
+                  to="/home"
+                  tt="capitalize"
+                  style={{ cursor: 'pointer' }}
+                >
+                  Beta
+                </Badge>
+              </Group>
               {/* Nav items — apenas desktop */}
               <Group gap="lg" ml="lg" align="center" visibleFrom="sm">
                 {NAV_ITEMS.map((item) => {

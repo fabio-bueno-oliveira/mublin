@@ -690,7 +690,6 @@ export default function Profile() {
           <AppNavbarMobile
             pageName={profile.username}
             profile={profile}
-            // featured={profile.is_open_to_work}
           />
         </Affix>
       )}

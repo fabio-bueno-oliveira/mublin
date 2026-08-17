@@ -149,7 +149,6 @@ export default function ProfileGear() {
           <AppNavbarMobile
             pageName={`Equipamento de ${profile.username}`}
             // profile={profile}
-            // featured={profile.is_open_to_work}
           />
         </Affix>
       )}

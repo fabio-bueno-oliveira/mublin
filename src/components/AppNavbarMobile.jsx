@@ -7,6 +7,7 @@ import MublinLogoWhite from '../assets/svg/mublin-logo-white.svg'
 import {
   useComputedColorScheme,
   Flex,
+  Group,
   Box,
   Image,
   ActionIcon,
@@ -24,7 +25,6 @@ import {
 export default function AppNavbarMobile({
   pageName = undefined,
   profile = undefined,
-  featured = false,
   fixed = true,
 }) {
   const { pathname } = useLocation()
@@ -77,15 +77,11 @@ export default function AppNavbarMobile({
             <Text size="18px" lh={1} fw={600} truncate="end">
               {pageName}
             </Text>
-
-            {featured && profile && (
-              <Badge variant="light" color="teal" px={6} mt={2} style={{ flexShrink: 0 }}>
-                Disponível para gigs!
-              </Badge>
-            )}
           </Flex>
         ) : (
-          <Box
+          <Group
+            gap={3}
+            mt={2}
             component={Link}
             to="/home"
             style={{
@@ -96,11 +92,25 @@ export default function AppNavbarMobile({
           >
             <Image
               src={isDark ? MublinLogoWhite : MublinLogoBlack}
-              h={24}
+              h={28}
               w="auto"
               fit="contain"
             />
-          </Box>
+            <Badge
+              variant="gradient"
+              gradient={{ from: 'mublinColor', to: 'blue', deg: 96 }}
+              size="md"
+              mt={3}
+              px={5}
+              py={1}
+              component={Link}
+              to="/home"
+              tt="capitalize"
+              style={{ cursor: 'pointer' }}
+            >
+              Beta
+            </Badge>
+          </Group>
         )}
 
         {/* Elemento da Direita (Menu/Ações) */}
