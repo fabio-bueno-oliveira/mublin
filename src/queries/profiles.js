@@ -478,7 +478,6 @@ export async function fetchProfilePortfolio(profileId) {
       order_number,
       notes,
       project_id,
-      artist_id,
       year_start,
       year_end,
       is_sporadic,
@@ -487,16 +486,6 @@ export async function fetchProfilePortfolio(profileId) {
         id, name, slug, picture, description,
         type:project_types ( name_ptbr ),
         genre:genres ( name_ptbr )
-      ),
-      artist:artists (
-        id,
-        name,
-        slug,
-        picture,
-        is_band,
-        is_verified,
-        genre:genres!artists_genre_id_fkey ( name, name_ptbr ),
-        countries ( name )
       ),
       roles:portfolio_roles (
         role:roles ( id, name_ptbr )

@@ -46,7 +46,7 @@ export default function Home() {
   const navigate = useNavigate()
   const isMobile = useMediaQuery('(max-width: 48em)')
   const isDesktop = useMediaQuery('(min-width: 48em)')
-  const peopleScroller = useScroller()
+  const peopleScroller = useScroller({ scrollAmount: 400 })
   const eventsScroller = useScroller()
 
   useEffect(() => {
@@ -62,7 +62,7 @@ export default function Home() {
 
   const { data: recentProfiles = [], isLoading: loadingRecentProfiles } = useQuery({
     queryKey: ['recent-profiles'],
-    queryFn: () => fetchRecentProfiles(10),
+    queryFn: () => fetchRecentProfiles(7),
     staleTime: 1000 * 60 * 5,
   })
 
@@ -127,30 +127,28 @@ export default function Home() {
                   <Title order={3} fw={600} fz="lg">
                     Novos por aqui
                   </Title>
-                  {recentProfiles?.length > 4 && (
-                    <Group>
-                      <ThemeIcon
-                        variant="default"
-                        style={{
-                          cursor: peopleScroller.canScrollStart ? 'pointer' : 'default',
-                        }}
-                        onClick={peopleScroller.scrollStart}
-                        opacity={peopleScroller.canScrollStart ? 1 : 0.5}
-                      >
-                        <IconChevronLeft style={{ width: '70%', height: '70%' }} />
-                      </ThemeIcon>
-                      <ThemeIcon
-                        variant="default"
-                        style={{
-                          cursor: peopleScroller.canScrollEnd ? 'pointer' : 'default',
-                        }}
-                        onClick={peopleScroller.scrollEnd}
-                        opacity={peopleScroller.canScrollEnd ? 1 : 0.5}
-                      >
-                        <IconChevronRight style={{ width: '70%', height: '70%' }} />
-                      </ThemeIcon>
-                    </Group>
-                  )}
+                  <Group visibleFrom="sm">
+                    <ThemeIcon
+                      variant="default"
+                      style={{
+                        cursor: peopleScroller.canScrollStart ? 'pointer' : 'default',
+                      }}
+                      onClick={peopleScroller.scrollStart}
+                      opacity={peopleScroller.canScrollStart ? 1 : 0.5}
+                    >
+                      <IconChevronLeft style={{ width: '70%', height: '70%' }} />
+                    </ThemeIcon>
+                    <ThemeIcon
+                      variant="default"
+                      style={{
+                        cursor: peopleScroller.canScrollEnd ? 'pointer' : 'default',
+                      }}
+                      onClick={peopleScroller.scrollEnd}
+                      opacity={peopleScroller.canScrollEnd ? 1 : 0.5}
+                    >
+                      <IconChevronRight style={{ width: '70%', height: '70%' }} />
+                    </ThemeIcon>
+                  </Group>
                 </Group>
 
                 <Box>
@@ -181,9 +179,6 @@ export default function Home() {
                                 ? `${p.regions.name}${p.regions.uf ? ` - ${p.regions.uf}` : ''}`
                                 : null
 
-                            // const mainRole = p.profile_roles?.find((r) => r.main_activity)
-                            //   ?.roles?.description_ptbr
-
                             return (
                               <Link
                                 key={p.id}
@@ -196,15 +191,15 @@ export default function Home() {
                                   h={140}
                                   shadow="sm"
                                   withBorder
-                                  style={{ flexShrink: 0 }}
                                   pos="relative"
+                                  style={{ flexShrink: 0 }}
                                 >
                                   {p.is_live && (
                                     <Badge
                                       size="xs"
                                       color="red.9"
                                       pos="absolute"
-                                      right={5}
+                                      left={5}
                                       top={5}
                                     >
                                       Live
@@ -590,7 +585,7 @@ export default function Home() {
               </>
             )}
           </Grid.Col>
-          <Grid.Col span={{ base: 12, md: 4, lg: 4 }}>
+          <Grid.Col span={{ base: 12, md: 4, lg: 4 }} visibleFrom="sm">
             <Title order={3} fw={600} fz="lg" mt={{ base: 'md', sm: 'xs' }} mb="sm">
               Notícias recentes
             </Title>

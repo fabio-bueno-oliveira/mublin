@@ -39,7 +39,7 @@ export default function AppLayout({ children }) {
         </AppShell.Header>
       )}
 
-      <AppShell.Main pb={{ base: 'calc(130px + var(--mantine-spacing-md))', sm: '60px' }}>
+      <AppShell.Main pb={{ base: 'calc(80px + var(--mantine-spacing-md))', sm: '60px' }}>
         <Container size="lg" px={0}>
           <Flex gap="xs" align="flex-start">
             {isDesktop && (

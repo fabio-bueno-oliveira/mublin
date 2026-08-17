@@ -1,5 +1,6 @@
 import { IconArrowBigUpLine, IconArrowBigUpLineFilled } from '@tabler/icons-react'
 import { Button, Tooltip } from '@mantine/core'
+import { notifications } from '@mantine/notifications'
 
 export default function PortfolioUpvote({
   count,
@@ -11,13 +12,30 @@ export default function PortfolioUpvote({
   const countLabel = `${count} endosso${count !== 1 ? 's' : ''}`
 
   const buildTitle = () => {
-    if (isOwnPortfolio) {
-      return 'Você não pode endossar sua própria participação'
-    }
     if (disabled) {
       return countLabel
     }
+
     return hasUpvoted ? 'Remover endosso' : 'Endossar esta participação'
+  }
+
+  const handleClick = () => {
+    if (disabled) {
+      return
+    }
+
+    if (isOwnPortfolio) {
+      notifications.show({
+        title: 'Ops...',
+        message: 'Você não pode endossar sua própria participação',
+        color: 'yellow',
+        position: 'top-center',
+        id: 'own-upvote-not-allowed',
+      })
+      return
+    }
+
+    onToggle?.()
   }
 
   return (
@@ -28,6 +46,7 @@ export default function PortfolioUpvote({
       position="bottom"
       offset={5}
       color="dark"
+      disabled={disabled}
     >
       <Button.Group
         component="span"
@@ -41,8 +60,8 @@ export default function PortfolioUpvote({
           variant="default"
           size="compact-xs"
           px={2}
-          onClick={disabled ? undefined : onToggle}
-          disabled={isOwnPortfolio}
+          onClick={handleClick}
+          disabled={disabled}
           aria-disabled={disabled}
           aria-pressed={hasUpvoted}
           aria-label={

@@ -67,7 +67,6 @@ import {
   IconTrophy, IconGuitarPick,
   IconSend, IconEye, IconLink,
   IconUserPlus, IconUserX,
-  IconChevronLeft, IconChevronRight,
   IconPencil, IconBookmark, IconBookmarkFilled,
   IconRosetteDiscountCheckFilled,
   IconSchool, IconUserCircle,
@@ -78,11 +77,12 @@ import ProfileHeaderMobile from '../components/profile/ProfileHeaderMobile'
 import AppNavbarMobile from '../components/AppNavbarMobile'
 import ProPlanBadge from '../components/ProPlanBadge'
 import SimilarProfiles from '../components/SimilarProfiles'
+import { ScrollerArrows } from '../components/profile/ScrollerArrows'
+import SocialLinks from '../components/profile/SocialLinks'
 import { formatPortfolioPeriod, getAvatarUrl } from '../utils/profile'
 import { openImagePreviewModal } from '../utils/openImagePreviewModal'
 import { isProfileLive } from '../utils/live'
 import { isMublinOG } from '../utils/badges'
-import { SOCIAL_CONFIG } from '../constants/socialConfig'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import MublinMLogo from '../assets/svg/mublin-m-logo-silver.svg'
 import dayjs from 'dayjs'
@@ -419,7 +419,7 @@ export default function Profile() {
     staleTime: 1000 * 60 * 5,
   })
 
-  const { data: travelPreference = [], isLoading: loadingTravelPreference } = useQuery({
+  const { data: travelPreference = [] } = useQuery({
     queryKey: ['user-travel-preference', profile?.id],
     queryFn: () => fetchProfileTravelPreference(profile.id),
     enabled: !!profile?.id,
@@ -695,12 +695,7 @@ export default function Profile() {
         </Affix>
       )}
 
-      <Container
-        size="xl"
-        py="sm"
-        px={0}
-        mt={!profile.cover_image ? { base: 51, sm: 10 } : 0}
-      >
+      <Container size="xl" px={0} mt={!profile.cover_image ? { base: 70, sm: 20 } : 0}>
         <Grid>
           <Grid.Col span={{ base: 12, md: 9 }} pos="relative">
             {profile.cover_image && (
@@ -1120,16 +1115,15 @@ export default function Profile() {
                           {isOwnProfile && (
                             <ActionIcon
                               variant="subtle"
-                              color="gray"
+                              color="var(--mantine-color-text)"
                               radius="xl"
-                              size="sm"
-                              p={0}
+                              size="md"
                               aria-label="Editar meus dados"
                               title="Editar meus dados"
                               component={Link}
                               to="/settings/profile"
                             >
-                              <IconPencil style={{ width: '94%', height: '94%' }} />
+                              <IconPencil size={20} />
                             </ActionIcon>
                           )}
                         </Group>
@@ -1257,34 +1251,10 @@ export default function Profile() {
                           <Title order={3} fz="sm" fw={300} opacity={0.8}>
                             Demonstrou interesse nos eventos
                           </Title>
-                          <Group gap={4}>
-                            <ThemeIcon
-                              variant="default"
-                              size="sm"
-                              style={{
-                                cursor: upcomingEventsScroller.canScrollStart
-                                  ? 'pointer'
-                                  : 'default',
-                              }}
-                              onClick={upcomingEventsScroller.scrollStart}
-                              opacity={upcomingEventsScroller.canScrollStart ? 1 : 0.5}
-                            >
-                              <IconChevronLeft style={{ width: '70%', height: '70%' }} />
-                            </ThemeIcon>
-                            <ThemeIcon
-                              variant="default"
-                              size="sm"
-                              style={{
-                                cursor: upcomingEventsScroller.canScrollEnd
-                                  ? 'pointer'
-                                  : 'default',
-                              }}
-                              onClick={upcomingEventsScroller.scrollEnd}
-                              opacity={upcomingEventsScroller.canScrollEnd ? 1 : 0.5}
-                            >
-                              <IconChevronRight style={{ width: '70%', height: '70%' }} />
-                            </ThemeIcon>
-                          </Group>
+                          <ScrollerArrows
+                            scroller={upcomingEventsScroller}
+                            sizePreset="lg"
+                          />
                         </Group>
                         <div
                           ref={upcomingEventsScroller.ref}
@@ -1373,16 +1343,15 @@ export default function Profile() {
                       {isOwnProfile && (
                         <ActionIcon
                           variant="subtle"
-                          color="gray"
+                          color="var(--mantine-color-text)"
                           radius="xl"
-                          size="sm"
-                          p={0}
+                          size="md"
                           aria-label="Editar meu portfólio"
                           title="Editar meu portfólio"
                           component={Link}
                           to="/settings/portfolio"
                         >
-                          <IconPencil style={{ width: '94%', height: '94%' }} />
+                          <IconPencil size={20} />
                         </ActionIcon>
                       )}
                     </Group>
@@ -1391,38 +1360,28 @@ export default function Profile() {
                     ) : portfolio.length > 0 ? (
                       <Stack mt="md" gap="lg">
                         {portfolio.map((item) => {
-                          const isArtist = !!item.artist?.name
-                          const isProject = !!item.project?.name
-                          const entity = isArtist ? item.artist : item.project
-                          const url = isArtist
-                            ? `/artist/${item.artist?.slug}`
-                            : `/project/${item.project?.slug}`
-
+                          const entity = item.project
                           if (!entity) {
                             return null
                           }
-
+                          const url = `/artist/${entity.slug}`
                           const roleNames =
                             item.roles?.map((r) => r.role?.name_ptbr).filter(Boolean) ??
                             []
-
-                          const genre = item.project?.genre?.name_ptbr
-
+                          const typeName = entity.type?.name_ptbr
+                          const genre = entity.genre?.name_ptbr
                           const engagementNames =
                             item.engagement_types
                               ?.map((e) => e.engagement_type?.name_ptbr)
                               .filter(Boolean) ?? []
-
                           const period = formatPortfolioPeriod(
                             item.year_start,
                             item.year_end,
                           )
-
                           const upvoteInfo = upvotesByPortfolioId[item.id]
                           const upvoteCount = upvoteInfo?.upvote_count ?? 0
                           const hasUpvoted = upvoteInfo?.has_upvoted ?? false
                           const isOwnPortfolio = user?.id === profile.id
-
                           return (
                             <Box key={item.id}>
                               <Group gap="xs" align="flex-start" wrap="nowrap">
@@ -1432,9 +1391,9 @@ export default function Profile() {
                                       radius="md"
                                       size={60}
                                       src={
-                                        isArtist
-                                          ? ARTISTS_PATH + entity.picture
-                                          : `https://ik.imagekit.io/mublin/projects/${entity.id}/tr:h-120,w-120,c-maintain_ratio/${entity.picture}`
+                                        entity.picture
+                                          ? `https://ik.imagekit.io/mublin/projects/${entity.id}/tr:h-120,w-120,c-maintain_ratio/${entity.picture}`
+                                          : undefined
                                       }
                                     />
                                   </Link>
@@ -1442,7 +1401,7 @@ export default function Profile() {
                                     count={upvoteCount}
                                     hasUpvoted={hasUpvoted}
                                     isOwnPortfolio={isOwnPortfolio}
-                                    disabled={isOwnPortfolio || !user?.id}
+                                    disabled={!user?.id}
                                     onToggle={() =>
                                       handleToggleUpvote({
                                         portfolioId: item.id,
@@ -1458,6 +1417,7 @@ export default function Profile() {
                                       fw={600}
                                       component={Link}
                                       to={url}
+                                      w="fit-content"
                                       style={{
                                         display: 'inline',
                                         textDecoration: 'none',
@@ -1472,6 +1432,7 @@ export default function Profile() {
                                     align="center"
                                     wrap="wrap"
                                     component={Link}
+                                    w="fit-content"
                                     to={url}
                                     style={{
                                       display: 'inline',
@@ -1482,15 +1443,11 @@ export default function Profile() {
                                     <Text size="sm">
                                       <Text span>{entity.name}</Text>{' '}
                                       <Text span>
-                                        (
-                                        {isProject
-                                          ? item.project?.type?.name_ptbr
-                                          : item.artist?.genre?.name_ptbr}
+                                        ({typeName}
                                         {genre && ` · ${genre}`})
                                       </Text>
                                     </Text>
                                   </Group>
-
                                   {engagementNames.length > 0 && (
                                     <Text size="xs" opacity={0.7} mt={2} mb={4} lh={1}>
                                       {engagementNames.length === 1
@@ -1499,7 +1456,6 @@ export default function Profile() {
                                       {engagementNames.join(', ')}
                                     </Text>
                                   )}
-
                                   {item.is_sporadic ? (
                                     <Text size="xs" opacity={0.7}>
                                       Colaboração esporádica
@@ -1511,7 +1467,6 @@ export default function Profile() {
                                       </Text>
                                     )
                                   )}
-
                                   {item.is_mublin_facilitated && (
                                     <Flex gap={4} align="center" mt={4} mb={4}>
                                       <Image
@@ -1526,7 +1481,6 @@ export default function Profile() {
                                       </Text>
                                     </Flex>
                                   )}
-
                                   {item.notes && (
                                     <Spoiler
                                       maxHeight={42}
@@ -1565,22 +1519,24 @@ export default function Profile() {
                       {isOwnProfile && (
                         <ActionIcon
                           variant="subtle"
-                          color="gray"
+                          color="var(--mantine-color-text)"
                           radius="xl"
-                          size="sm"
-                          p={0}
+                          size="md"
+                          mr={{ base: 'xs', md: 0 }}
                           aria-label="Editar minha formação"
                           title="Editar minha formação"
                           component={Link}
                           to="/settings/education"
                         >
-                          <IconPencil style={{ width: '94%', height: '94%' }} />
+                          <IconPencil size={20} />
                         </ActionIcon>
                       )}
                     </Group>
 
                     {loadingEducation ? (
-                      <Text mt="md">Carregando...</Text>
+                      <Text size="sm" mt="md" c="dimmed">
+                        Carregando...
+                      </Text>
                     ) : education.length > 0 ? (
                       <Stack mt="md" gap="lg">
                         {education.map((item) => {
@@ -1602,19 +1558,19 @@ export default function Profile() {
                               >
                                 <IconSchool size={24} />
                               </Avatar>
-                              <Stack gap={2} style={{ flex: 1, minWidth: 0 }}>
-                                <Text size="15px" fw={600}>
+                              <Stack gap={1} style={{ flex: 1, minWidth: 0 }}>
+                                <Text size="sm" fw={600}>
                                   {item.institution_name}
                                 </Text>
                                 {(item.course_name || item.field_of_study) && (
-                                  <Text size="sm" opacity={0.9}>
+                                  <Text size="xs" opacity={0.9}>
                                     {[item.course_name, item.field_of_study]
                                       .filter(Boolean)
                                       .join(' — ')}
                                   </Text>
                                 )}
                                 {(item.education_levels?.name_ptbr || period) && (
-                                  <Text size="xs" opacity={0.7}>
+                                  <Text size="xs" c="dimmed">
                                     {[
                                       item.education_levels?.name_ptbr,
                                       item.is_current
@@ -1631,7 +1587,7 @@ export default function Profile() {
                                     showLabel={<Text size="sm">Ver mais</Text>}
                                     hideLabel={<Text size="sm">Ver menos</Text>}
                                   >
-                                    <Text size="sm" style={{ whiteSpace: 'pre-line' }}>
+                                    <Text size="xs" style={{ whiteSpace: 'pre-line' }}>
                                       {item.description}
                                     </Text>
                                   </Spoiler>
@@ -1706,13 +1662,17 @@ export default function Profile() {
                   ) : (
                     <>
                       {profilePosts.length > 0 ? (
-                        <SectionPanel mt="sm">
+                        <SectionPanel>
                           <Group justify="space-between" align="center" mb="sm">
                             <SectionTitle text="Postagens" id="posts" />
-                            <Group>
+                            <Group
+                              gap={4}
+                              visibleFrom="sm"
+                              style={{ userSelect: 'none' }}
+                            >
                               <ActionIcon
-                                variant="light"
-                                color="gray"
+                                variant="subtle"
+                                color="var(--mantine-color-text)"
                                 radius="xl"
                                 size="md"
                                 aria-label="Criar nova postagem"
@@ -1720,37 +1680,11 @@ export default function Profile() {
                                 component={Link}
                                 to="/new/post"
                                 mr="sm"
+                                style={{ userSelect: 'none' }}
                               >
                                 <IconPlus size={18} />
                               </ActionIcon>
-                              <ThemeIcon
-                                variant="default"
-                                style={{
-                                  cursor: postsScroller.canScrollStart
-                                    ? 'pointer'
-                                    : 'default',
-                                }}
-                                onClick={postsScroller.scrollStart}
-                                opacity={postsScroller.canScrollStart ? 1 : 0.5}
-                              >
-                                <IconChevronLeft
-                                  style={{ width: '70%', height: '70%' }}
-                                />
-                              </ThemeIcon>
-                              <ThemeIcon
-                                variant="default"
-                                style={{
-                                  cursor: postsScroller.canScrollEnd
-                                    ? 'pointer'
-                                    : 'default',
-                                }}
-                                onClick={postsScroller.scrollEnd}
-                                opacity={postsScroller.canScrollEnd ? 1 : 0.5}
-                              >
-                                <IconChevronRight
-                                  style={{ width: '70%', height: '70%' }}
-                                />
-                              </ThemeIcon>
+                              <ScrollerArrows scroller={postsScroller} sizePreset="md" />
                             </Group>
                           </Group>
                           <div
@@ -1802,7 +1736,7 @@ export default function Profile() {
                                         <Link to={`/post/${post.id}`}>
                                           <Image
                                             src={`https://ik.imagekit.io/mublin/posts/tr:h-134/${post.image}`}
-                                            radius={false}
+                                            radius="md"
                                             h={134}
                                             w="auto"
                                             fit="contain"
@@ -1852,7 +1786,7 @@ export default function Profile() {
                   )}
 
                   {isProfilePro && (
-                    <SectionPanel mt="sm">
+                    <SectionPanel id="gear">
                       {loadingGear ? (
                         <Box>
                           <SectionTitle text="Equipamento" mb="md" />
@@ -1870,15 +1804,14 @@ export default function Profile() {
                                 justify="space-between"
                                 align="center"
                                 gap="xs"
-                                mb="sm"
+                                mb="md"
                               >
-                                <SectionTitle id="gear" text="Equipamento" />
-
-                                <Group mr={{ base: 'sm', md: 0 }}>
+                                <SectionTitle text="Equipamento" />
+                                <Group gap={4}>
                                   {isOwnProfile && (
                                     <ActionIcon
-                                      variant="light"
-                                      color="gray"
+                                      variant="subtle"
+                                      color="var(--mantine-color-text)"
                                       radius="xl"
                                       size="md"
                                       aria-label="Gerenciar meu equipamento"
@@ -1887,37 +1820,13 @@ export default function Profile() {
                                       to="/settings/gear"
                                       mr="sm"
                                     >
-                                      <IconPencil size={18} />
+                                      <IconPencil size={20} />
                                     </ActionIcon>
                                   )}
-                                  <ThemeIcon
-                                    variant="default"
-                                    style={{
-                                      cursor: gearScroller.canScrollStart
-                                        ? 'pointer'
-                                        : 'default',
-                                    }}
-                                    onClick={gearScroller.scrollStart}
-                                    opacity={gearScroller.canScrollStart ? 1 : 0.5}
-                                  >
-                                    <IconChevronLeft
-                                      style={{ width: '70%', height: '70%' }}
-                                    />
-                                  </ThemeIcon>
-                                  <ThemeIcon
-                                    variant="default"
-                                    style={{
-                                      cursor: gearScroller.canScrollEnd
-                                        ? 'pointer'
-                                        : 'default',
-                                    }}
-                                    onClick={gearScroller.scrollEnd}
-                                    opacity={gearScroller.canScrollEnd ? 1 : 0.5}
-                                  >
-                                    <IconChevronRight
-                                      style={{ width: '70%', height: '70%' }}
-                                    />
-                                  </ThemeIcon>
+                                  <ScrollerArrows
+                                    scroller={gearScroller}
+                                    sizePreset="md"
+                                  />
                                 </Group>
                               </Group>
                               <Box h="100%">
@@ -1937,9 +1846,6 @@ export default function Profile() {
                                     gap="xs"
                                     wrap="nowrap"
                                   >
-                                    {/* {isMobile && (
-                                  <Box style={{ flexShrink: 10, width: '5px' }} />
-                                )} */}
                                     {gear.map((item) => (
                                       <Flex
                                         key={item.id_product}
@@ -2143,30 +2049,7 @@ export default function Profile() {
                 >
                   <SectionTitle text="Inspirações" />
 
-                  <Group>
-                    <ThemeIcon
-                      variant="default"
-                      style={{
-                        cursor: inspirationsScroller.canScrollStart
-                          ? 'pointer'
-                          : 'default',
-                      }}
-                      onClick={inspirationsScroller.scrollStart}
-                      opacity={inspirationsScroller.canScrollStart ? 1 : 0.5}
-                    >
-                      <IconChevronLeft style={{ width: '70%', height: '70%' }} />
-                    </ThemeIcon>
-                    <ThemeIcon
-                      variant="default"
-                      style={{
-                        cursor: inspirationsScroller.canScrollEnd ? 'pointer' : 'default',
-                      }}
-                      onClick={inspirationsScroller.scrollEnd}
-                      opacity={inspirationsScroller.canScrollEnd ? 1 : 0.5}
-                    >
-                      <IconChevronRight style={{ width: '70%', height: '70%' }} />
-                    </ThemeIcon>
-                  </Group>
+                  <ScrollerArrows scroller={inspirationsScroller} sizePreset="sm" />
                 </Group>
                 {inspirations.length > 0 && (
                   <Text size="xs" c="dimmed" mb="sm">
@@ -2174,7 +2057,9 @@ export default function Profile() {
                   </Text>
                 )}
                 {loadingInspirations ? (
-                  <Text size="sm">Carregando...</Text>
+                  <Text size="sm" c="dimmed">
+                    Carregando...
+                  </Text>
                 ) : inspirations.length > 0 ? (
                   <div
                     ref={inspirationsScroller.ref}
@@ -2242,33 +2127,12 @@ export default function Profile() {
               <SectionPanel id="partners">
                 <Group justify="space-between" align="center" mb="sm">
                   <SectionTitle text="Parceiros" />
-                  {partners.length > 4 && (
-                    <Group>
-                      <ThemeIcon
-                        variant="default"
-                        style={{
-                          cursor: partnersScroller.canScrollStart ? 'pointer' : 'default',
-                        }}
-                        onClick={partnersScroller.scrollStart}
-                        opacity={partnersScroller.canScrollStart ? 1 : 0.5}
-                      >
-                        <IconChevronLeft style={{ width: '70%', height: '70%' }} />
-                      </ThemeIcon>
-                      <ThemeIcon
-                        variant="default"
-                        style={{
-                          cursor: partnersScroller.canScrollEnd ? 'pointer' : 'default',
-                        }}
-                        onClick={partnersScroller.scrollEnd}
-                        opacity={partnersScroller.canScrollEnd ? 1 : 0.5}
-                      >
-                        <IconChevronRight style={{ width: '70%', height: '70%' }} />
-                      </ThemeIcon>
-                    </Group>
-                  )}
+                  <ScrollerArrows scroller={partnersScroller} sizePreset="sm" />
                 </Group>
                 {loadingPartners ? (
-                  <Text size="sm">Carregando...</Text>
+                  <Text size="sm" c="dimmed">
+                    Carregando...
+                  </Text>
                 ) : partners.length > 0 ? (
                   <div
                     ref={partnersScroller.ref}
@@ -2324,48 +2188,7 @@ export default function Profile() {
 
               <SectionPanel id="social">
                 <SectionTitle text="Redes sociais" mb="sm" />
-                {profile.profile_social_links.length > 0 ? (
-                  <Group gap={10} wrap="wrap">
-                    {profile.profile_social_links.map((link) => {
-                      const config = SOCIAL_CONFIG[link.platform]
-                      if (!config) {
-                        return null
-                      }
-                      const Icon = config.icon
-                      const href = `${config.base}${link.handle}`
-                      return (
-                        <Group
-                          key={link.platform}
-                          gap="xs"
-                          component="a"
-                          href={href}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          style={{ textDecoration: 'none', color: 'inherit' }}
-                          pl={6}
-                        >
-                          <Icon
-                            color="var(--mantine-color-text)"
-                            stroke={1.5}
-                            size={25}
-                          />
-                          <Stack pl={6} gap={2} w={180}>
-                            <Text size="sm" fw={600} tt="capitalize">
-                              {link.platform}
-                            </Text>
-                            <Text size="xs" truncate="end" c="dimmed">
-                              {href.replace(/^https?:\/\//, '')}
-                            </Text>
-                          </Stack>
-                        </Group>
-                      )
-                    })}
-                  </Group>
-                ) : (
-                  <Text size="sm" c="dimmed">
-                    Nenhuma rede informada
-                  </Text>
-                )}
+                <SocialLinks profile={profile} loading={isLoadingProfileInfo} />
               </SectionPanel>
               <SectionPanel id="suggested-profiles">
                 <SectionTitle text="Mais perfis parecidos" mb="md" />
