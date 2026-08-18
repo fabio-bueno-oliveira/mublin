@@ -11,7 +11,7 @@ import {
 import { IconExternalLink } from '@tabler/icons-react'
 import dayjs from 'dayjs'
 
-export default function NewsCard({ item, width }) {
+export default function NewsCard({ item, width, subtle = false }) {
   const timeAgo = item.published_at ? dayjs(item.published_at).fromNow() : ''
 
   const CATEGORY_COLORS = {
@@ -27,11 +27,12 @@ export default function NewsCard({ item, width }) {
       w={width ?? '100%'}
       radius="md"
       withBorder
-      padding="sm"
+      padding={subtle ? 0 : 'sm'}
       component="a"
       href={item.url}
       target="_blank"
       rel="noopener noreferrer"
+      bg={subtle ? 'transparent' : undefined}
       style={{ textDecoration: 'none', display: 'block', cursor: 'pointer' }}
       styles={{
         root: {

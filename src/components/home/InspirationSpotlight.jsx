@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { Card, Group, Text, Avatar, Skeleton, Box } from '@mantine/core'
+import { Card, Group, Title, Text, Avatar, Skeleton, Box } from '@mantine/core'
 import { fetchTopInspiredArtist } from '../../queries/inspirations'
 
 const CDN_ARTISTS = 'https://ik.imagekit.io/mublin/tr:h-200,c-maintain_ratio/artists/'
@@ -56,6 +56,9 @@ export default function InspirationSpotlight() {
 
   return (
     <Box>
+      <Title order={3} fw={600} fz="lg" mt="md">
+        Em alta por aqui
+      </Title>
       <Card withBorder radius="md" p="sm" mt="xs" mb="md">
         <Group align="center" wrap="nowrap">
           <Box pos="relative">

@@ -11,6 +11,7 @@ import NewsCard from '../components/feed/NewsCard'
 import ScenesScroller from '../components/scenes/ScenesScroller'
 // import FeaturedCard from '../components/home/FeaturedCard'
 import ProfileChecklistCard from '../components/home/ProfileChecklistCard'
+import MusicianDashboard from '../components/home/MusicianDashboard'
 import InspirationSpotlight from '../components/home/InspirationSpotlight'
 // prettier-ignore
 import {
@@ -102,7 +103,7 @@ export default function Home() {
       {isMobile && <AppNavbarMobile fixed={false} />}
 
       <Container size="xl" px={{ base: 'sm', sm: 0 }} mt={{ base: 16, sm: 0 }}>
-        <Grid>
+        <Grid gap="lg">
           <Grid.Col span={{ base: 12, md: 8, lg: 8 }}>
             {loading ? (
               <>
@@ -119,9 +120,9 @@ export default function Home() {
 
                 {/* <FeaturedCard /> */}
 
-                <ProfileChecklistCard />
+                <MusicianDashboard />
 
-                <InspirationSpotlight />
+                <ProfileChecklistCard />
 
                 <Group justify="space-between" align="center" mt="md" mb="xs">
                   <Title order={3} fw={600} fz="lg">
@@ -287,6 +288,134 @@ export default function Home() {
                   </>
                 )}
 
+                <InspirationSpotlight />
+
+                {globalEvents?.length > 0 && (
+                  <>
+                    <Group justify="space-between" align="center" mt="lg" mb="xs">
+                      <Title order={3} fw={600} fz="lg">
+                        Eventos próximos
+                      </Title>
+                      {globalEvents?.length > 2 && (
+                        <Group>
+                          <ThemeIcon
+                            variant="default"
+                            onClick={eventsScroller.scrollStart}
+                            opacity={eventsScroller.canScrollStart ? 1 : 0.5}
+                          >
+                            <IconChevronLeft style={{ width: '70%', height: '70%' }} />
+                          </ThemeIcon>
+                          <ThemeIcon
+                            variant="default"
+                            onClick={eventsScroller.scrollEnd}
+                            opacity={eventsScroller.canScrollEnd ? 1 : 0.5}
+                          >
+                            <IconChevronRight style={{ width: '70%', height: '70%' }} />
+                          </ThemeIcon>
+                        </Group>
+                      )}
+                    </Group>
+
+                    {loadingGlobalEvents ? (
+                      <Group wrap="nowrap" gap="md">
+                        {[1, 2].map((i) => (
+                          <Skeleton key={i} width={160} height={240} />
+                        ))}
+                      </Group>
+                    ) : (
+                      <Box>
+                        <div
+                          ref={eventsScroller.ref}
+                          {...eventsScroller.dragHandlers}
+                          className="scrollerHidden"
+                          style={{
+                            overflow: 'auto',
+                            cursor: eventsScroller.isDragging ? 'grabbing' : 'default',
+                          }}
+                        >
+                          <Group wrap="nowrap" gap="md">
+                            {globalEvents.map((event) => (
+                              <Link
+                                key={event.id}
+                                to={`/event/${event.slug}`}
+                                style={{ textDecoration: 'none', color: 'inherit' }}
+                              >
+                                <Card
+                                  p="xs"
+                                  w={160}
+                                  h={280}
+                                  shadow="sm"
+                                  padding="lg"
+                                  withBorder
+                                  style={{ position: 'relative' }}
+                                >
+                                  <Card.Section style={{ position: 'relative' }}>
+                                    <Image
+                                      src={EVENTS_IMG_PATH + event.picture_url}
+                                      height={160}
+                                      alt={event.name}
+                                    />
+                                    <Box
+                                      style={{
+                                        position: 'absolute',
+                                        top: 16,
+                                        right: 16,
+                                        backgroundColor: 'rgba(0, 0, 0, 0.75)',
+                                        borderRadius: 6,
+                                        padding: '4px 6px',
+                                        textAlign: 'center',
+                                        lineHeight: 1.1,
+                                      }}
+                                    >
+                                      <Text size="sm" fw={700} c="white" ta="center">
+                                        {dayjs(event.date_start).format('DD')}
+                                      </Text>
+                                      <Text
+                                        size="9px"
+                                        fw={600}
+                                        c="white"
+                                        ta="center"
+                                        tt="uppercase"
+                                      >
+                                        {dayjs(event.date_start)
+                                          .locale('pt-br')
+                                          .format('MMM')}
+                                      </Text>
+                                    </Box>
+                                  </Card.Section>
+                                  <Text fw={600} fz="sm" mt="xs" mb={5} lineClamp={1}>
+                                    {event.name}
+                                  </Text>
+                                  <Text size="10px" mb={8}>
+                                    {dayjs(event.date_start).format('DD/MM/YYYY')} {' a '}
+                                    {dayjs(event.date_end).format('DD/MM/YYYY')}
+                                  </Text>
+                                  <Text lineClamp={2} size="xs" c="dimmed">
+                                    {event.description}
+                                  </Text>
+                                  <Flex gap={6} align="center" mt={6}>
+                                    <Text size="10px" span c="dimmed">
+                                      Criado por
+                                    </Text>
+                                    <Avatar
+                                      src={AVATAR_PATH + event.author?.avatar}
+                                      size={20}
+                                      title={event.author?.full_name}
+                                    />
+                                    <Text size="10px" span lineClamp={1}>
+                                      {event.author?.username}
+                                    </Text>
+                                  </Flex>
+                                </Card>
+                              </Link>
+                            ))}
+                          </Group>
+                        </div>
+                      </Box>
+                    )}
+                  </>
+                )}
+
                 {/* ── Banner: Setup em destaque ── */}
                 <Card
                   radius="lg"
@@ -447,132 +576,6 @@ export default function Home() {
                   </Box>
                 </Card>
 
-                {globalEvents?.length > 0 && (
-                  <>
-                    <Group justify="space-between" align="center" mt="lg" mb="xs">
-                      <Title order={3} fw={600} fz="lg">
-                        Eventos próximos
-                      </Title>
-                      {globalEvents?.length > 2 && (
-                        <Group>
-                          <ThemeIcon
-                            variant="default"
-                            onClick={eventsScroller.scrollStart}
-                            opacity={eventsScroller.canScrollStart ? 1 : 0.5}
-                          >
-                            <IconChevronLeft style={{ width: '70%', height: '70%' }} />
-                          </ThemeIcon>
-                          <ThemeIcon
-                            variant="default"
-                            onClick={eventsScroller.scrollEnd}
-                            opacity={eventsScroller.canScrollEnd ? 1 : 0.5}
-                          >
-                            <IconChevronRight style={{ width: '70%', height: '70%' }} />
-                          </ThemeIcon>
-                        </Group>
-                      )}
-                    </Group>
-
-                    {loadingGlobalEvents ? (
-                      <Group wrap="nowrap" gap="md">
-                        {[1, 2].map((i) => (
-                          <Skeleton key={i} width={160} height={240} />
-                        ))}
-                      </Group>
-                    ) : (
-                      <Box>
-                        <div
-                          ref={eventsScroller.ref}
-                          {...eventsScroller.dragHandlers}
-                          className="scrollerHidden"
-                          style={{
-                            overflow: 'auto',
-                            cursor: eventsScroller.isDragging ? 'grabbing' : 'default',
-                          }}
-                        >
-                          <Group wrap="nowrap" gap="md">
-                            {globalEvents.map((event) => (
-                              <Link
-                                key={event.id}
-                                to={`/event/${event.slug}`}
-                                style={{ textDecoration: 'none', color: 'inherit' }}
-                              >
-                                <Card
-                                  p="xs"
-                                  w={160}
-                                  h={280}
-                                  shadow="sm"
-                                  padding="lg"
-                                  withBorder
-                                  style={{ position: 'relative' }}
-                                >
-                                  <Card.Section style={{ position: 'relative' }}>
-                                    <Image
-                                      src={EVENTS_IMG_PATH + event.picture_url}
-                                      height={160}
-                                      alt={event.name}
-                                    />
-                                    <Box
-                                      style={{
-                                        position: 'absolute',
-                                        top: 16,
-                                        right: 16,
-                                        backgroundColor: 'rgba(0, 0, 0, 0.75)',
-                                        borderRadius: 6,
-                                        padding: '4px 6px',
-                                        textAlign: 'center',
-                                        lineHeight: 1.1,
-                                      }}
-                                    >
-                                      <Text size="sm" fw={700} c="white" ta="center">
-                                        {dayjs(event.date_start).format('DD')}
-                                      </Text>
-                                      <Text
-                                        size="9px"
-                                        fw={600}
-                                        c="white"
-                                        ta="center"
-                                        tt="uppercase"
-                                      >
-                                        {dayjs(event.date_start)
-                                          .locale('pt-br')
-                                          .format('MMM')}
-                                      </Text>
-                                    </Box>
-                                  </Card.Section>
-                                  <Text fw={600} fz="sm" mt="xs" mb={5} lineClamp={1}>
-                                    {event.name}
-                                  </Text>
-                                  <Text size="10px" mb={8}>
-                                    {dayjs(event.date_start).format('DD/MM/YYYY')} {' a '}
-                                    {dayjs(event.date_end).format('DD/MM/YYYY')}
-                                  </Text>
-                                  <Text lineClamp={2} size="xs" c="dimmed">
-                                    {event.description}
-                                  </Text>
-                                  <Flex gap={6} align="center" mt={6}>
-                                    <Text size="10px" span c="dimmed">
-                                      Criado por
-                                    </Text>
-                                    <Avatar
-                                      src={AVATAR_PATH + event.author?.avatar}
-                                      size={20}
-                                      title={event.author?.full_name}
-                                    />
-                                    <Text size="10px" span lineClamp={1}>
-                                      {event.author?.username}
-                                    </Text>
-                                  </Flex>
-                                </Card>
-                              </Link>
-                            ))}
-                          </Group>
-                        </div>
-                      </Box>
-                    )}
-                  </>
-                )}
-
                 {/* <Card bg="mublinColor.9">
                   <Title order={2}>Guitarrista</Title>
                   <Title order={4}>Guitarrista para show cover anos 80</Title>
@@ -589,7 +592,7 @@ export default function Home() {
             <Title order={3} fw={600} fz="lg" mt={{ base: 'md', sm: 'xs' }} mb="sm">
               Notícias recentes
             </Title>
-            <Stack gap="xs" wrap="nowrap">
+            <Stack gap="lg" wrap="nowrap">
               {loadingNews
                 ? [1, 2, 3, 4, 5].map((i) => (
                     <Skeleton
@@ -601,7 +604,7 @@ export default function Home() {
                   ))
                 : news.map((item) => (
                     <Box key={item.id} style={{ flexShrink: 0 }}>
-                      <NewsCard item={item} width="100%" />
+                      <NewsCard item={item} width="100%" subtle />
                     </Box>
                   ))}
             </Stack>

@@ -234,6 +234,7 @@ export async function fetchRecentProfiles(limit = 10) {
   const { data: otherProfiles, error } = await supabase
     .from('profiles')
     .select(PROFILE_SELECT)
+    .eq('onboarding_completed', true)
     .neq('username', 'mublin')
     .neq('id', FOUNDER_PROFILE_ID)
     .eq('is_shadow_hidden', false)
@@ -292,6 +293,8 @@ export async function fetchGenreCategories() {
     .select('id, name, name_ptbr, color, color_hex')
     .order('name_ptbr', { ascending: true })
 
-  if (error) throw error
+  if (error) {
+    throw error
+  }
   return data
 }

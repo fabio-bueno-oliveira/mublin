@@ -219,6 +219,41 @@ export async function fetchUserGearCount(userId) {
   return count ?? 0
 }
 
+export async function fetchUserRecentGear(userId) {
+  if (!userId) {
+    return null
+  }
+
+  const { data, error } = await supabase
+    .from('profile_gear')
+    .select(
+      `
+      id,
+      created_at,
+      id_product,
+      photo,
+      products (
+        id,
+        name,
+        picture,
+        brands (
+          name
+        )
+      )
+    `,
+    )
+    .eq('id_user', userId)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  return data
+}
+
 export async function fetchUserGigsCount(userId) {
   const { count, error } = await supabase
     .from('gig_applications')

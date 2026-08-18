@@ -107,6 +107,7 @@ export default function AppNavbarMobile({
               to="/home"
               tt="capitalize"
               style={{ cursor: 'pointer' }}
+              lts={-0.5}
             >
               Beta
             </Badge>

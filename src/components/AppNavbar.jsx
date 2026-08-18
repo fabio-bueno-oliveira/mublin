@@ -208,6 +208,7 @@ export default function AppNavbar({ children }) {
                   to="/home"
                   tt="capitalize"
                   style={{ cursor: 'pointer' }}
+                  lts={-0.5}
                 >
                   Beta
                 </Badge>
