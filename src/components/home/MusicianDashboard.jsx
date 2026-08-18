@@ -220,7 +220,7 @@ export default function MusicianDashboard() {
               p={8}
               // style={{ borderRadius: 8, boxShadow: 'none', background: subtleBg }}
               component={Link}
-              to={`/${profile.username}`}
+              to={`/${profile?.username}`}
               style={{
                 borderRadius: 8,
                 boxShadow: 'none',
@@ -230,17 +230,19 @@ export default function MusicianDashboard() {
               }}
               className="musician-dashboard-goal-card noDecoration"
             >
-              <Image
-                src={
-                  recentGear?.products?.picture
-                    ? PATH_GEAR_ITEM_IMG + recentGear?.products?.picture
-                    : undefined
-                }
-                fit="contain"
-                h={35}
-                w={35}
-                radius="sm"
-              />
+              {recentGear && (
+                <Image
+                  src={
+                    recentGear?.products?.picture
+                      ? PATH_GEAR_ITEM_IMG + recentGear?.products?.picture
+                      : undefined
+                  }
+                  fit="contain"
+                  h={35}
+                  w={35}
+                  radius="sm"
+                />
+              )}
               <Stack gap={1} style={{ flex: 1 }}>
                 <Text size="xs" fw={500} tt="uppercase" c="dimmed" lineClamp={1}>
                   Último item adicionado
