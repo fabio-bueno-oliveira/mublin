@@ -7,7 +7,7 @@ export async function fetchScenes(limit = 8) {
       `
       id,
       video_url,
-      thumbnail_filename,
+      thumbnail_path,
       caption,
       views_count,
       created_at,
@@ -31,7 +31,7 @@ export async function fetchScenesByProfile(profileId, limit = 20) {
       `
       id,
       video_url,
-      thumbnail_filename,
+      thumbnail_path,
       caption,
       views_count,
       is_active,

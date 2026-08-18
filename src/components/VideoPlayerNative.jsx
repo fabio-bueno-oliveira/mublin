@@ -24,7 +24,6 @@ export default function VideoPlayerNative({
   const [muted, setMuted] = useState(true)
   const [ready, setReady] = useState(false)
 
-  // Pausa automaticamente ao sair da viewport
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -33,10 +32,11 @@ export default function VideoPlayerNative({
           setPlaying(false)
         }
       },
-      { threshold: 0.3 }, // pausa quando menos de 30% do player estiver visível
+      { threshold: 0.3 },
     )
 
     const wrap = wrapRef.current
+
     if (wrap) {
       observer.observe(wrap)
     }
@@ -52,13 +52,14 @@ export default function VideoPlayerNative({
     if (autoPlay && ready && videoRef.current) {
       videoRef.current.muted = false
       setMuted(false)
+
       videoRef.current
         .play()
         .then(() => setPlaying(true))
         .catch(() => {
-          // se o navegador bloquear autoplay com som, tenta mudo
           videoRef.current.muted = true
           setMuted(true)
+
           videoRef.current
             .play()
             .then(() => setPlaying(true))
@@ -69,6 +70,7 @@ export default function VideoPlayerNative({
 
   const togglePlay = () => {
     const v = videoRef.current
+
     if (v.paused) {
       v.play()
       setPlaying(true)
@@ -80,12 +82,14 @@ export default function VideoPlayerNative({
 
   const onTimeUpdate = () => {
     const v = videoRef.current
+
     if (!v.duration) {
       return
     }
+
     const ratio = (v.currentTime / v.duration) * 100
     setProgress(ratio)
-    onProgress?.(ratio) // avisa o componente pai, se houver
+    onProgress?.(ratio)
   }
 
   const seek = (e) => {
@@ -102,6 +106,7 @@ export default function VideoPlayerNative({
 
   const fullscreen = () => {
     const wrap = videoRef.current.closest('.mublin-player')
+
     if (!document.fullscreenElement) {
       wrap?.requestFullscreen()
     } else {
@@ -110,7 +115,11 @@ export default function VideoPlayerNative({
   }
 
   return (
-    <Box ref={wrapRef} style={isVertical ? s.wrapVertical : s.wrapHorizontal}>
+    <Box
+      ref={wrapRef}
+      className="mublin-player"
+      style={isVertical ? s.wrapVertical : s.wrapHorizontal}
+    >
       {!ready && (
         <Center mt={280}>
           <Loader />
@@ -124,20 +133,17 @@ export default function VideoPlayerNative({
         muted
         playsInline
         preload="metadata"
-        onClick={togglePlay}
-        onLoadedMetadata={() => {
-          setReady(true)
-        }}
+        onLoadedData={() => setReady(true)}
         onTimeUpdate={onTimeUpdate}
         onEnded={() => setPlaying(false)}
+        onError={() => setReady(false)}
+        onLoadStart={() => setReady(false)}
       >
         <track kind="captions" srcLang="pt" label="Português" default />
       </video>
 
-      {/* Badge com título — só no vertical */}
       {isVertical && title && !hideCaptionOnVideo && <div style={s.badge}>{title}</div>}
 
-      {/* Overlay de play central */}
       {!playing && ready && progress > 0 && (
         <button
           type="button"
@@ -154,7 +160,6 @@ export default function VideoPlayerNative({
         </button>
       )}
 
-      {/* Controles */}
       {!hideBottomControls && (
         <div style={s.controls}>
           <div
@@ -162,9 +167,11 @@ export default function VideoPlayerNative({
             onClick={seek}
             onKeyDown={(e) => {
               const v = videoRef.current
+
               if (e.key === 'ArrowRight') {
                 v.currentTime = Math.min(v.duration, v.currentTime + 5)
               }
+
               if (e.key === 'ArrowLeft') {
                 v.currentTime = Math.max(0, v.currentTime - 5)
               }
@@ -178,6 +185,7 @@ export default function VideoPlayerNative({
           >
             <div style={{ ...s.progressFill, width: `${progress}%` }} />
           </div>
+
           <div style={s.bottomRow}>
             <button type="button" style={s.btn} onClick={togglePlay}>
               {playing ? (
@@ -186,10 +194,13 @@ export default function VideoPlayerNative({
                 <IconPlayerPlayFilled size={18} />
               )}
             </button>
+
             <button type="button" style={s.btn} onClick={toggleMute}>
               {muted ? <IconVolumeOff stroke={2} /> : <IconVolume stroke={2} />}
             </button>
+
             <span style={s.time}> </span>
+
             <button type="button" style={s.btn} onClick={fullscreen}>
               <IconMaximize size={18} stroke={2} />
             </button>

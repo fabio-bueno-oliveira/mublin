@@ -15,9 +15,13 @@ import {
   Slider,
   Button,
   Switch,
+  Image,
 } from '@mantine/core'
 import { IconChevronRight } from '@tabler/icons-react'
 import { fetchUserRecentGear } from '../../queries/user'
+
+const PATH_GEAR_ITEM_IMG =
+  'https://ik.imagekit.io/mublin/products/tr:w-70,h-70,cm-pad_resize,bg-FFFFFF,fo-x/'
 
 export default function MusicianDashboard() {
   const { user, profile } = useAuth()
@@ -212,7 +216,7 @@ export default function MusicianDashboard() {
           <Grid.Col span={12}>
             <Group
               wrap="nowrap"
-              gap={6}
+              gap={8}
               p={8}
               // style={{ borderRadius: 8, boxShadow: 'none', background: subtleBg }}
               component={Link}
@@ -226,9 +230,20 @@ export default function MusicianDashboard() {
               }}
               className="musician-dashboard-goal-card noDecoration"
             >
+              <Image
+                src={
+                  recentGear?.products?.picture
+                    ? PATH_GEAR_ITEM_IMG + recentGear?.products?.picture
+                    : undefined
+                }
+                fit="contain"
+                h={35}
+                w={35}
+                radius="sm"
+              />
               <Stack gap={1} style={{ flex: 1 }}>
                 <Text size="xs" fw={500} tt="uppercase" c="dimmed" lineClamp={1}>
-                  Último item adicionado ao equipamento
+                  Último item adicionado
                 </Text>
                 {recentGear ? (
                   <Text size="xs" lineClamp={1}>

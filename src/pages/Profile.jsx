@@ -687,10 +687,7 @@ export default function Profile() {
 
       {isMobile && (
         <Affix position={{ top: 0, left: 0 }} w="100%">
-          <AppNavbarMobile
-            pageName={profile.username}
-            profile={profile}
-          />
+          <AppNavbarMobile pageName={profile.username} profile={profile} />
         </Affix>
       )}
 
@@ -1087,7 +1084,7 @@ export default function Profile() {
                         >
                           <Text size="sm" c="dimmed">
                             {profileViewCount === 0
-                              ? 'Ninguém visualizou seu perfil ainda'
+                              ? 'Ninguém visualizou seu perfil ainda.'
                               : profileViewCount === 1
                                 ? '1 pessoa visualizou seu perfil'
                                 : `${profileViewCount} pessoas visualizaram seu perfil`}

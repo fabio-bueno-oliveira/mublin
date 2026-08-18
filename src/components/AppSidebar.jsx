@@ -78,7 +78,7 @@ export default function AppSidebar() {
                   src={
                     profile?.avatar
                       ? getAvatarUrl(profile?.avatar, profile?.is_open_to_work, 70)
-                      : `https://api.dicebear.com/10.x/initials/svg?seed=${profile.full_name}`
+                      : `https://api.dicebear.com/10.x/initials/svg?seed=${profile?.full_name}`
                   }
                   component={Link}
                   to={`/${profile?.username}`}
