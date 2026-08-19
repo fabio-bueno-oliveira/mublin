@@ -1,21 +1,22 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useAuth } from '../hooks/useAuth'
 import { Helmet } from 'react-helmet-async'
 import { useQuery } from '@tanstack/react-query'
 import { fetchUserProjects } from '../queries/user'
 import { fetchAllRoles } from '../queries/roles'
-import { useMediaQuery } from '@mantine/hooks'
+import { fetchEventTypes, searchVenues, fetchDressCodeTypes } from '../queries/events'
+import { searchEvents, searchProfiles } from '../queries/search'
+import { supabase } from '../lib/supabaseClient'
 import { useForm } from '@mantine/form'
 import { notifications } from '@mantine/notifications'
+import GigRoleCombobox from '../components/gigs/GigRoleCombobox'
 import {
   Container,
   Grid,
   Flex,
   Group,
-  Loader,
   Divider,
   Avatar,
-  Box,
   Stack,
   Combobox,
   InputBase,
@@ -23,180 +24,441 @@ import {
   Select,
   TextInput,
   Textarea,
-  Switch,
   Title,
   Text,
   Button,
-  Image,
+  Paper,
   ActionIcon,
+  Badge,
+  NumberInput,
+  Checkbox,
+  Box,
+  CloseButton,
+  Loader,
+  Center,
 } from '@mantine/core'
+import { useDebouncedCallback } from '@mantine/hooks'
 import { TimeInput } from '@mantine/dates'
 import {
+  IconPlus,
+  IconTrash,
   IconSend,
-  IconChevronDown,
-  IconX,
-  IconMapPin,
-  IconClock,
   IconCalendar,
+  IconClock,
+  IconMapPin,
+  IconShirt,
+  IconMicrophone2,
 } from '@tabler/icons-react'
 
-const AVATAR_PATH =
-  'https://ik.imagekit.io/mublin/tr:h-200,w-200,c-maintain_ratio/users/avatars/'
 const PROJECT_IMAGE_PATH = 'https://ik.imagekit.io/mublin/projects/'
 
-// ── Project Option (custom render inside Combobox) ────────────────────────────
-function ProjectOption({ project, selected }) {
-  const imageUrl = project.picture
-    ? `${PROJECT_IMAGE_PATH}${project.id}/tr:h-80/${project.picture}`
-    : undefined
-
-  const location = [project.cities?.name, project.cities?.regions?.name]
-    .filter(Boolean)
-    .join(', ')
-
-  return (
-    <Flex align="center" gap="sm" py={4}>
-      <Avatar src={imageUrl} size={40} radius="sm" alt={project.name}>
-        {project.name?.[0]}
-      </Avatar>
-      <Box style={{ flex: 1, minWidth: 0 }}>
-        <Text size="sm" fw={500} lineClamp={1}>
-          {project.name}
+function VenueCombobox({ selected, onSelect, onClear, disabled, label = 'Local' }) {
+  const combobox = useCombobox()
+  const [value, setValue] = useState('')
+  const [results, setResults] = useState([])
+  const [searching, setSearching] = useState(false)
+  const fetchVenues = useDebouncedCallback(async (val) => {
+    if (val.trim().length < 2) {
+      setResults([])
+      setSearching(false)
+      return
+    }
+    const data = await searchVenues(val)
+    setResults(data)
+    combobox.openDropdown()
+    setSearching(false)
+  }, 500)
+  if (selected) {
+    return (
+      <Box>
+        <Text size="sm" fw={500}>
+          {label}
         </Text>
-        <Text size="xs" c="dimmed" lineClamp={1}>
-          {[project.project_types?.name_ptbr, project.genres?.name]
-            .filter(Boolean)
-            .join(' · ')}
-          {location && ` — ${location}`}
-        </Text>
+        <Group gap="xs" mt={4}>
+          <IconMapPin size={14} />
+          <Text size="sm" fw={500}>
+            {selected.name}
+          </Text>
+          <CloseButton
+            size="sm"
+            onClick={() => {
+              onClear()
+              setValue('')
+            }}
+            disabled={disabled}
+          />
+        </Group>
       </Box>
-    </Flex>
+    )
+  }
+  return (
+    <Combobox
+      store={combobox}
+      onOptionSubmit={(val) => {
+        const item = results.find((r) => String(r.id) === val)
+        if (item) {
+          onSelect(item)
+          setValue('')
+          setResults([])
+        }
+        combobox.closeDropdown()
+      }}
+    >
+      <Combobox.Target>
+        <InputBase
+          label={label}
+          placeholder="Buscar local..."
+          leftSection={<IconMapPin size={14} />}
+          value={value}
+          onChange={(e) => {
+            setValue(e.currentTarget.value)
+            setSearching(true)
+            fetchVenues(e.currentTarget.value)
+          }}
+          rightSection={searching ? <Loader size="xs" /> : <Combobox.Chevron />}
+          disabled={disabled}
+        />
+      </Combobox.Target>
+      <Combobox.Dropdown>
+        <Combobox.Options>
+          {results.map((i) => (
+            <Combobox.Option key={i.id} value={String(i.id)}>
+              {i.name} ({i.cities?.name})
+            </Combobox.Option>
+          ))}
+        </Combobox.Options>
+      </Combobox.Dropdown>
+    </Combobox>
+  )
+}
+
+function EventCombobox({ selected, onSelect, onClear }) {
+  const combobox = useCombobox()
+  const [value, setValue] = useState('')
+  const [results, setResults] = useState([])
+  const fetch = useDebouncedCallback(async (val) => {
+    if (val.length < 2) {
+      return
+    }
+    const data = await searchEvents(val)
+    setResults(data)
+    combobox.openDropdown()
+  }, 400)
+  if (selected) {
+    return (
+      <Group gap="xs">
+        <Text size="md" fw={600}>
+          Evento: {selected.name}
+        </Text>
+        <CloseButton size="sm" onClick={onClear} />
+      </Group>
+    )
+  }
+  return (
+    <Combobox
+      store={combobox}
+      onOptionSubmit={(val) => {
+        const item = results.find((r) => String(r.id) === val)
+        if (item) {
+          onSelect(item)
+          setValue('')
+          setResults([])
+        }
+        combobox.closeDropdown()
+      }}
+    >
+      <Combobox.Target>
+        <InputBase
+          label="Evento relacionado (opcional)"
+          placeholder="Buscar evento..."
+          value={value}
+          onChange={(e) => {
+            setValue(e.currentTarget.value)
+            fetch(e.currentTarget.value)
+          }}
+        />
+      </Combobox.Target>
+      <Combobox.Dropdown>
+        <Combobox.Options>
+          {results.map((i) => (
+            <Combobox.Option key={i.id} value={String(i.id)}>
+              {i.name}
+            </Combobox.Option>
+          ))}
+        </Combobox.Options>
+      </Combobox.Dropdown>
+    </Combobox>
+  )
+}
+
+function SubForCombobox({ onSelect, selected }) {
+  const combobox = useCombobox()
+  const [value, setValue] = useState('')
+  const [results, setResults] = useState([])
+  const fetch = useDebouncedCallback(async (val) => {
+    if (val.length < 2) {
+      return
+    }
+    const data = await searchProfiles(val)
+    setResults(data)
+    combobox.openDropdown()
+  }, 400)
+  if (selected) {
+    return (
+      <Group gap="xs" mt="xs">
+        <Avatar
+          size="sm"
+          src={
+            selected.avatar
+              ? `https://ik.imagekit.io/mublin/users/avatars/tr:h-60,w-60/${selected.avatar}`
+              : null
+          }
+        />
+        <Text size="sm">@{selected.username}</Text>
+        <CloseButton size="xs" onClick={() => onSelect(null)} />
+      </Group>
+    )
+  }
+  return (
+    <Combobox
+      store={combobox}
+      onOptionSubmit={(val) => {
+        const item = results.find((r) => r.id === val)
+        if (item) {
+          onSelect(item)
+          setValue('')
+          setResults([])
+        }
+        combobox.closeDropdown()
+      }}
+    >
+      <Combobox.Target>
+        <InputBase
+          placeholder="Buscar @username..."
+          value={value}
+          onChange={(e) => {
+            setValue(e.currentTarget.value)
+            fetch(e.currentTarget.value)
+          }}
+        />
+      </Combobox.Target>
+      <Combobox.Dropdown>
+        <Combobox.Options>
+          {results.map((i) => (
+            <Combobox.Option key={i.id} value={i.id}>
+              @{i.username} - {i.full_name}
+            </Combobox.Option>
+          ))}
+        </Combobox.Options>
+      </Combobox.Dropdown>
+    </Combobox>
   )
 }
 
 export default function NewGig() {
   const { user } = useAuth()
-  const isDesktop = useMediaQuery('(min-width: 48em)')
-
-  // ── Local States ──────────────────────────────────────
-  const [projectSearch, setProjectSearch] = useState('')
   const [selectedProject, setSelectedProject] = useState(null)
+  const [selectedVenue, setSelectedVenue] = useState(null)
+  const [selectedEvent, setSelectedEvent] = useState(null)
+  const [projectSearch, setProjectSearch] = useState('')
+  const [showManualVenue, setShowManualVenue] = useState(false)
+
+  const [gigRoles, setGigRoles] = useState([
+    {
+      tempId: Date.now(),
+      role_id: null,
+      description: '',
+      fee: null,
+      fee_not_informed: false,
+      experience_level: 2,
+      assigned: null,
+      is_sub: false,
+      sub_for_profile: null,
+    },
+  ])
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [hasRemuneration, setHasRemuneration] = useState(false)
-  const [isRecurring, setIsRecurring] = useState(false)
-
-  const combobox = useCombobox({
-    onDropdownClose: () => combobox.resetSelectedOption(),
-  })
-
-  // ── Queries ───────────────────────────────────────────
-  const { data: userProjects = [], isLoading: loadingProjects } = useQuery({
+  const combobox = useCombobox()
+  const { data: userProjects = [] } = useQuery({
     queryKey: ['user-projects', user?.id],
     queryFn: () => fetchUserProjects(user.id),
     enabled: !!user?.id,
-    staleTime: 1000 * 60 * 4,
   })
 
-  const { data: roles = [], isLoading: loadingRoles } = useQuery({
-    queryKey: ['roles'],
-    queryFn: fetchAllRoles,
-    staleTime: 1000 * 60 * 30,
+  const { data: roles = [] } = useQuery({ queryKey: ['roles'], queryFn: fetchAllRoles })
+
+  const { data: eventTypes = [] } = useQuery({
+    queryKey: ['event-types'],
+    queryFn: fetchEventTypes,
+  })
+  const { data: dressCodeTypes = [] } = useQuery({
+    queryKey: ['dress_code_types'],
+    queryFn: fetchDressCodeTypes,
   })
 
-  const filteredProjects = userProjects.filter((item) =>
-    !projectSearch?.trim()
-      ? true
-      : item.projects?.name.toLowerCase().includes(projectSearch.trim().toLowerCase()),
-  )
+  const isAdminOfSelected = useMemo(() => {
+    if (!selectedProject) {
+      return true
+    }
+    const member = userProjects.find((p) => p.projects?.id === selectedProject.id)
+    return member?.is_admin === true
+  }, [selectedProject, userProjects])
 
-  // ── Form Management ────────────────────────────────────
-  const formNewGig = useForm({
+  const form = useForm({
     initialValues: {
       project_id: '',
       title: '',
-      slug: '',
       description: '',
+      event_type_id: '1',
+      dress_code_id: '11',
+      event_id: '',
+      venue_id: '',
       date: '',
       time_stage_start: '',
       time_stage_end: '',
-      stage_name: 'Palco Principal',
-      has_remuneration: false,
-      is_recurring: false,
-      recurrence_rule: '',
       venue_name: '',
       venue_address: '',
-      event_id: '',
-      dress_code_id: '',
-      iteration_id: '',
-      hiring_notes: '',
-      hiring_confirmed: false,
     },
-    validate: {
-      title: (v) => (v.length < 2 ? 'Mínimo de 2 caracteres' : null),
-      project_id: (v) => (!v ? 'Selecione um projeto' : null),
-    },
+    validate: { title: (v) => (v.length < 2 ? 'Mínimo 2 caracteres' : null) },
   })
 
-  // ── Handlers ───────────────────────────────────────────
+  const filteredProjects = userProjects.filter(
+    (item) =>
+      item.projects?.id != null &&
+      (!projectSearch.trim() ||
+        item.projects?.name.toLowerCase().includes(projectSearch.toLowerCase())),
+  )
+
   function handleSelectProject(item) {
-    const project = item.projects
-    setSelectedProject(project)
-    formNewGig.setFieldValue('project_id', String(project.id))
-    setProjectSearch(project.name)
+    setSelectedProject(item.projects)
+    form.setFieldValue('project_id', String(item.projects.id))
+    setProjectSearch(item.projects.name)
     combobox.closeDropdown()
   }
 
-  function handleClearProject() {
-    setSelectedProject(null)
-    formNewGig.setFieldValue('project_id', '')
-    setProjectSearch('')
+  function addRole() {
+    setGigRoles([
+      ...gigRoles,
+      {
+        tempId: Date.now(),
+        role_id: null,
+        description: '',
+        fee: null,
+        fee_not_informed: false,
+        experience_level: 2,
+        assigned: null,
+        is_sub: false,
+        sub_for_profile: null,
+      },
+    ])
+  }
+  function updateRole(tempId, patch) {
+    setGigRoles(gigRoles.map((r) => (r.tempId === tempId ? { ...r, ...patch } : r)))
+  }
+  function removeRole(tempId) {
+    setGigRoles(gigRoles.filter((r) => r.tempId !== tempId))
   }
 
   async function handleSubmit(values) {
     setIsSubmitting(true)
     try {
-      // TODO: integrar com Supabase
-      console.log('Submitting gig:', values)
-      notifications.show({
-        title: 'Gig criada!',
-        message: 'A gig foi cadastrada com sucesso.',
-        color: 'green',
-      })
-    } catch (err) {
-      notifications.show({
-        title: 'Erro ao criar gig',
-        message: 'Tente novamente em instantes.',
-        color: 'red',
-      })
+      const { data: gig, error } = await supabase
+        .from('gigs')
+        .insert({
+          title: values.title,
+          description: values.description,
+          project_id: values.project_id ? Number(values.project_id) : null,
+          event_type_id: values.event_type_id ? Number(values.event_type_id) : 1,
+          dress_code_id: values.dress_code_id ? Number(values.dress_code_id) : null,
+          event_id: selectedEvent?.id || null,
+          venue_id: selectedVenue?.id || null,
+          date: values.date || null,
+          time_stage_start: values.time_stage_start || null,
+          time_stage_end: values.time_stage_end || null,
+          venue_name: selectedVenue ? null : values.venue_name,
+          venue_address: selectedVenue ? null : values.venue_address,
+          created_by: user.id,
+        })
+        .select()
+        .single()
+      if (error) {
+        throw error
+      }
+
+      const normalized = gigRoles.map((r) => ({
+        gig_id: gig.id,
+        role_id: r.role_id,
+        description: r.description,
+        fee: r.fee_not_informed ? null : r.fee ? Number(r.fee) : null,
+        experience_level: r.experience_level,
+        is_sub: r.is_sub,
+        sub_for: r.is_sub ? r.sub_for_profile?.id || null : null,
+      }))
+      const { error: rolesError } = await supabase.from('gig_roles').insert(normalized)
+      if (rolesError) {
+        throw rolesError
+      }
+      notifications.show({ title: 'Gig criada!', color: 'green' })
+    } catch (e) {
+      notifications.show({ title: 'Erro', message: e.message, color: 'red' })
     } finally {
       setIsSubmitting(false)
     }
   }
 
-  // ── Project Combobox options ──────────────────────────
-  const projectOptions = filteredProjects.map((item) => (
-    <Combobox.Option value={String(item.projects?.id)} key={item.projects?.id}>
-      <ProjectOption
-        project={item.projects}
-        selected={selectedProject?.id === item.projects?.id}
-      />
-    </Combobox.Option>
-  ))
+  const groupedRolesData = useMemo(() => {
+    const management = []
+    const instruments = []
+    const other = []
+
+    roles.forEach((r) => {
+      const item = { value: String(r.id), label: r.name_ptbr || r.name_en }
+      const cat = (r.category || r.type || '').toLowerCase()
+      if (cat.includes('manag') || cat.includes('prod') || cat.includes('gest')) {
+        management.push(item)
+      } else if (cat.includes('music') || cat.includes('instr')) {
+        instruments.push(item)
+      } else {
+        const name = (r.name_ptbr || '').toLowerCase()
+        if (
+          ['produtor', 'técnico', 'manager', 'roadie', 'iluminação', 'som', 'staff'].some(
+            (k) => name.includes(k),
+          )
+        ) {
+          management.push(item)
+        } else {
+          instruments.push(item)
+        }
+      }
+    })
+
+    const groups = []
+    if (management.length) {
+      groups.push({ group: 'Gestão, produção e outros', items: management })
+    }
+    if (instruments.length) {
+      groups.push({ group: 'Instrumentos', items: instruments })
+    }
+    if (other.length) {
+      groups.push({ group: 'Outros', items: other })
+    }
+    return groups.length
+      ? groups
+      : roles
+          .filter((r) => r?.id != null)
+          .map((r) => ({ value: String(r.id), label: r.name_ptbr || r.name_en }))
+  }, [roles])
 
   return (
     <>
       <Helmet>
         <title>Cadastrar gig · Mublin</title>
-        <link rel="canonical" href="https://mublin.com/new/gig" />
       </Helmet>
-      <Container size="sm" py="md" px={{ base: 'md', sm: 'lg' }}>
-        <Title order={1} fz="h3" fw={600} mb="lg">
+      <Container size="sm" py="md">
+        <Title order={3} mb="lg">
           Cadastrar nova gig
         </Title>
-        <form onSubmit={formNewGig.onSubmit(handleSubmit)}>
-          <Stack gap="md">
-            {/* ── Projeto ─────────────────────────────────────── */}
-
+        <form onSubmit={form.onSubmit(handleSubmit)}>
+          <Stack gap="sm">
             <Combobox
               store={combobox}
               onOptionSubmit={(val) => {
@@ -208,242 +470,313 @@ export default function NewGig() {
             >
               <Combobox.Target>
                 <InputBase
-                  label="Projeto"
-                  withAsterisk
-                  rightSection={
-                    selectedProject ? (
-                      <ActionIcon
-                        size="sm"
-                        variant="transparent"
-                        color="gray"
-                        onClick={handleClearProject}
-                        aria-label="Limpar projeto"
-                      >
-                        <IconX size={14} />
-                      </ActionIcon>
-                    ) : loadingProjects ? (
-                      <Loader size="xs" />
-                    ) : (
-                      <Combobox.Chevron />
-                    )
-                  }
-                  rightSectionPointerEvents={selectedProject ? 'all' : 'none'}
+                  label="Selecione o projeto, artista, banda, etc"
+                  description="Exibindo apenas projetos que sou administrador"
+                  placeholder="Selecione seu projeto..."
                   value={projectSearch}
-                  placeholder="Buscar projeto..."
-                  onChange={(e) => {
-                    setProjectSearch(e.currentTarget.value)
-                    if (selectedProject) {
-                      handleClearProject()
-                    }
-                    combobox.openDropdown()
-                    combobox.updateSelectedOptionIndex()
-                  }}
-                  onClick={() => combobox.openDropdown()}
+                  onChange={(e) => setProjectSearch(e.currentTarget.value)}
                   onFocus={() => combobox.openDropdown()}
-                  onBlur={() => combobox.closeDropdown()}
-                  error={formNewGig.errors.project_id}
+                  rightSection={<Combobox.Chevron />}
                 />
               </Combobox.Target>
-
               <Combobox.Dropdown>
                 <Combobox.Options>
-                  {loadingProjects ? (
-                    <Combobox.Empty>
-                      <Loader size="xs" />
-                    </Combobox.Empty>
-                  ) : projectOptions.length === 0 ? (
-                    <Combobox.Empty>Nenhum projeto encontrado</Combobox.Empty>
-                  ) : (
-                    projectOptions
-                  )}
+                  {filteredProjects.map((item) => (
+                    <Combobox.Option
+                      key={item.projects.id}
+                      value={String(item.projects.id)}
+                    >
+                      <Flex gap="sm" align="center">
+                        <Avatar
+                          size={36}
+                          src={
+                            item.projects.picture
+                              ? `${PROJECT_IMAGE_PATH}${item.projects.id}/tr:h-36/${item.projects.picture}`
+                              : null
+                          }
+                        />
+                        <Text size="sm">{item.projects.name}</Text>
+                      </Flex>
+                    </Combobox.Option>
+                  ))}
                 </Combobox.Options>
               </Combobox.Dropdown>
             </Combobox>
 
-            {/* ── Informações básicas ──────────────────────────── */}
-            <Divider label="Informações básicas" labelPosition="center" mt="xs" />
-
-            <TextInput
-              withAsterisk
-              label="Título"
-              placeholder="Ex: Show de lançamento"
-              {...formNewGig.getInputProps('title')}
-            />
-
-            <Textarea
-              label="Descrição"
-              placeholder="Informações sobre a gig..."
-              minRows={2}
-              autosize
-              maxRows={5}
-              {...formNewGig.getInputProps('description')}
-            />
+            {selectedProject && (
+              <Center>
+                <Flex gap="sm" align="center">
+                  <Avatar
+                    size={50}
+                    src={
+                      selectedProject?.picture
+                        ? `${PROJECT_IMAGE_PATH}${selectedProject.id}/tr:h-50/${selectedProject.picture}`
+                        : null
+                    }
+                  />
+                  <Stack gap={0}>
+                    <Text size="md" lh={1}>
+                      {selectedProject?.name}
+                    </Text>
+                    <Text size="sm" c="dimmed">
+                      {selectedProject?.project_types?.name_ptbr}
+                    </Text>
+                  </Stack>
+                </Flex>
+              </Center>
+            )}
 
             <Grid>
-              <Grid.Col span={{ base: 12, md: 6 }}>
+              <Grid.Col span={{ base: 12, sm: 6 }}>
                 <Select
-                  label="Tipo de evento"
-                  placeholder="Selecione..."
-                  data={[
-                    { value: '1', label: 'Show' },
-                    { value: '2', label: 'Ensaio' },
-                    { value: '3', label: 'Gravação' },
-                    { value: '4', label: 'Festival' },
-                    { value: '5', label: 'Evento corporativo' },
-                  ]}
-                  key={formNewGig.key('event_type')}
-                  {...formNewGig.getInputProps('event_type')}
-                />
-              </Grid.Col>
-              <Grid.Col span={{ base: 12, md: 6 }}>
-                <Select
-                  label="Iteração / Edição"
-                  placeholder="Opcional"
-                  data={[
-                    { value: '1', label: '1ª edição' },
-                    { value: '2', label: '2ª edição' },
-                    { value: '3', label: '3ª edição' },
-                  ]}
-                  key={formNewGig.key('iteration_id')}
-                  {...formNewGig.getInputProps('iteration_id')}
-                />
-              </Grid.Col>
-            </Grid>
-
-            {/* ── Data e horário ───────────────────────────────── */}
-            <Divider label="Data e horário" labelPosition="center" mt="xs" />
-
-            <Grid>
-              <Grid.Col span={{ base: 12, md: 4 }}>
-                <TextInput
-                  type="date"
-                  label="Data"
-                  leftSection={<IconCalendar size={16} />}
-                  key={formNewGig.key('date')}
-                  {...formNewGig.getInputProps('date')}
-                />
-              </Grid.Col>
-              <Grid.Col span={{ base: 6, md: 4 }}>
-                <TimeInput
-                  label="Início no palco"
-                  leftSection={<IconClock size={16} />}
-                  key={formNewGig.key('time_stage_start')}
-                  {...formNewGig.getInputProps('time_stage_start')}
-                />
-              </Grid.Col>
-              <Grid.Col span={{ base: 6, md: 4 }}>
-                <TimeInput
-                  label="Fim no palco"
-                  leftSection={<IconClock size={16} />}
-                  key={formNewGig.key('time_stage_end')}
-                  {...formNewGig.getInputProps('time_stage_end')}
-                />
-              </Grid.Col>
-            </Grid>
-
-            <Grid>
-              <Grid.Col span={{ base: 12, md: 6 }}>
-                <TextInput
-                  label="Nome do palco"
-                  placeholder="Ex: Palco Principal"
-                  {...formNewGig.getInputProps('stage_name')}
+                  key={`gig-type-${eventTypes.length}`}
+                  label="Tipo da gig"
+                  leftSection={<IconMicrophone2 size={14} />}
+                  data={eventTypes
+                    .filter((et) => et?.id != null)
+                    .map((et) => ({ value: String(et.id), label: et.name }))}
+                  value={form.values.event_type_id}
+                  onChange={(v) => form.setFieldValue('event_type_id', v)}
                 />
               </Grid.Col>
               <Grid.Col span={{ base: 12, md: 6 }}>
                 <Select
                   label="Dress code"
-                  placeholder="Selecione..."
-                  data={[
-                    { value: '10', label: 'Sem definição' },
-                    { value: '1', label: 'Casual' },
-                    { value: '2', label: 'Esporte fino' },
-                    { value: '3', label: 'Social' },
-                    { value: '4', label: 'Black tie' },
-                  ]}
-                  key={formNewGig.key('dress_code_id')}
-                  {...formNewGig.getInputProps('dress_code_id')}
+                  placeholder="Opcional"
+                  leftSection={<IconShirt size={14} />}
+                  data={dressCodeTypes.map((d) => ({
+                    value: String(d.id),
+                    label: d.name,
+                  }))}
+                  value={form.values.dress_code_id}
+                  onChange={(v) => form.setFieldValue('dress_code_id', v)}
                 />
               </Grid.Col>
             </Grid>
 
-            {/* ── Recorrência ──────────────────────────────────── */}
-            <Switch
-              label="Gig recorrente"
-              description="Marque se esta gig se repete periodicamente"
-              checked={isRecurring}
-              onChange={(e) => {
-                setIsRecurring(e.currentTarget.checked)
-                formNewGig.setFieldValue('is_recurring', e.currentTarget.checked)
+            <EventCombobox
+              selected={selectedEvent}
+              onSelect={(ev) => {
+                setSelectedEvent(ev)
+                setSelectedVenue(
+                  ev.venue_id ? { id: ev.venue_id, name: ev.venues?.name } : null,
+                )
+                setShowManualVenue(false)
+              }}
+              onClear={() => {
+                setSelectedEvent(null)
+                setSelectedVenue(null)
               }}
             />
-            {isRecurring && (
-              <Select
-                label="Regra de recorrência"
-                placeholder="Selecione a frequência..."
-                data={[
-                  { value: 'FREQ=WEEKLY', label: 'Semanal' },
-                  { value: 'FREQ=BIWEEKLY', label: 'Quinzenal' },
-                  { value: 'FREQ=MONTHLY', label: 'Mensal' },
-                ]}
-                key={formNewGig.key('recurrence_rule')}
-                {...formNewGig.getInputProps('recurrence_rule')}
+
+            <TextInput label="Título da gig" {...form.getInputProps('title')} />
+            <Textarea
+              label="Descrição"
+              autosize
+              minRows={2}
+              {...form.getInputProps('description')}
+            />
+
+            <Divider label="Data e local" />
+            <Grid>
+              <Grid.Col span={4}>
+                <TextInput
+                  type="date"
+                  label="Data"
+                  leftSection={<IconCalendar size={16} />}
+                  {...form.getInputProps('date')}
+                />
+              </Grid.Col>
+              <Grid.Col span={4}>
+                <TimeInput
+                  label="Início"
+                  leftSection={<IconClock size={16} />}
+                  {...form.getInputProps('time_stage_start')}
+                />
+              </Grid.Col>
+              <Grid.Col span={4}>
+                <TimeInput
+                  label="Fim"
+                  leftSection={<IconClock size={16} />}
+                  {...form.getInputProps('time_stage_end')}
+                />
+              </Grid.Col>
+            </Grid>
+
+            <VenueCombobox
+              selected={selectedVenue}
+              onSelect={(venue) => {
+                setSelectedVenue(venue)
+                setShowManualVenue(false)
+              }}
+              onClear={() => {
+                setSelectedVenue(null)
+              }}
+              disabled={!!selectedEvent}
+            />
+
+            {!selectedVenue && !selectedEvent && (
+              <Checkbox
+                label="Não encontrei o local, preencher manualmente"
+                checked={showManualVenue}
+                onChange={(e) => setShowManualVenue(e.currentTarget.checked)}
+                mt="xs"
               />
             )}
 
-            {/* ── Local ────────────────────────────────────────── */}
-            <Divider label="Local" labelPosition="center" mt="xs" />
+            {showManualVenue && !selectedVenue && !selectedEvent && (
+              <Grid>
+                <Grid.Col span={6}>
+                  <TextInput
+                    label="Nome do local (caso não encontrado acima)"
+                    placeholder="Ex: Estúdio do Seu Zé"
+                    {...form.getInputProps('venue_name')}
+                  />
+                </Grid.Col>
+                <Grid.Col span={6}>
+                  <TextInput
+                    label="Endereço"
+                    placeholder="Rua, bairro, cidade"
+                    {...form.getInputProps('venue_address')}
+                  />
+                </Grid.Col>
+              </Grid>
+            )}
 
-            <Grid>
-              <Grid.Col span={{ base: 12, md: 6 }}>
-                <TextInput
-                  label="Nome do local / venue"
-                  placeholder="Ex: Audio Club"
-                  leftSection={<IconMapPin size={16} />}
-                  {...formNewGig.getInputProps('venue_name')}
-                />
-              </Grid.Col>
-              <Grid.Col span={{ base: 12, md: 6 }}>
-                <TextInput
-                  label="Endereço"
-                  placeholder="Rua, número..."
-                  {...formNewGig.getInputProps('venue_address')}
-                />
-              </Grid.Col>
-            </Grid>
-
-            {/* ── Remuneração ──────────────────────────────────── */}
-            <Divider label="Remuneração e contratação" labelPosition="center" mt="xs" />
-
-            <Switch
-              label="Esta gig tem remuneração"
-              checked={hasRemuneration}
-              onChange={(e) => {
-                setHasRemuneration(e.currentTarget.checked)
-                formNewGig.setFieldValue('has_remuneration', e.currentTarget.checked)
-              }}
-            />
-
-            <Textarea
-              label="Notas sobre a contratação"
-              placeholder="Informações adicionais sobre a contratação, cachê, etc..."
-              minRows={2}
-              autosize
-              maxRows={4}
-              {...formNewGig.getInputProps('hiring_notes')}
-            />
-
-            <Switch
-              label="Contratação confirmada"
-              description="Marque se a gig já está contratada / confirmada"
-              key={formNewGig.key('hiring_confirmed')}
-              {...formNewGig.getInputProps('hiring_confirmed', { type: 'checkbox' })}
-            />
-
-            {/* ── Ações ────────────────────────────────────────── */}
-            <Group justify="flex-end" mt="sm">
+            <Divider label={`Vagas (${gigRoles.length})`} />
+            <Stack gap="sm">
+              {gigRoles.map((gr) => (
+                <Paper key={gr.tempId} p="sm" withBorder radius="md">
+                  <Grid>
+                    <Grid.Col span={6}>
+                      <Select
+                        label="Atividade"
+                        placeholder="Selecione..."
+                        data={groupedRolesData}
+                        value={gr.role_id ? String(gr.role_id) : null}
+                        onChange={(v) =>
+                          updateRole(gr.tempId, { role_id: v ? Number(v) : null })
+                        }
+                        searchable
+                        comboboxProps={{ withinPortal: true }}
+                      />
+                    </Grid.Col>
+                    <Grid.Col span={3}>
+                      <Select
+                        label="Nível"
+                        data={[
+                          { value: '1', label: 'Iniciante' },
+                          { value: '2', label: 'Intermediário' },
+                          { value: '3', label: 'Avançado' },
+                        ]}
+                        value={String(gr.experience_level)}
+                        onChange={(v) =>
+                          updateRole(gr.tempId, { experience_level: Number(v) })
+                        }
+                      />
+                    </Grid.Col>
+                    <Grid.Col span={3}>
+                      <NumberInput
+                        label="Cachê"
+                        placeholder="R$ 0,00"
+                        // leftSection={<IconCurrencyDollar size={14} />}
+                        min={0}
+                        decimalScale={2}
+                        fixedDecimalScale
+                        thousandSeparator="."
+                        decimalSeparator=","
+                        prefix="R$ "
+                        value={gr.fee}
+                        onChange={(v) => updateRole(gr.tempId, { fee: v })}
+                        disabled={gr.fee_not_informed}
+                      />
+                      <Checkbox
+                        mt={6}
+                        size="xs"
+                        label="Não informado"
+                        checked={gr.fee_not_informed}
+                        onChange={(e) =>
+                          updateRole(gr.tempId, {
+                            fee_not_informed: e.currentTarget.checked,
+                            fee: e.currentTarget.checked ? null : gr.fee,
+                          })
+                        }
+                      />
+                    </Grid.Col>
+                    <Grid.Col span={12}>
+                      {gr.role_id && selectedProject && (
+                        <GigRoleCombobox
+                          projectId={selectedProject.id}
+                          roleId={gr.role_id}
+                          onSelect={(profile) =>
+                            updateRole(gr.tempId, { assigned: profile })
+                          }
+                        />
+                      )}
+                      {gr.assigned && (
+                        <Group mt="xs" gap="xs">
+                          <Badge color="teal" variant="light">
+                            @{gr.assigned.username}
+                          </Badge>
+                          <ActionIcon
+                            size="xs"
+                            variant="subtle"
+                            onClick={() => updateRole(gr.tempId, { assigned: null })}
+                          >
+                            x
+                          </ActionIcon>
+                        </Group>
+                      )}
+                    </Grid.Col>
+                    <Grid.Col span={12}>
+                      <Divider mb="sm" />
+                      <Checkbox
+                        label="A vaga é um sub (substituição)"
+                        checked={gr.is_sub}
+                        onChange={(e) =>
+                          updateRole(gr.tempId, { is_sub: e.currentTarget.checked })
+                        }
+                      />
+                      {gr.is_sub && (
+                        <Box mt="xs">
+                          <Text size="xs" fw={500} mb={4}>
+                            Quem será substituído nesta vaga?
+                          </Text>
+                          <SubForCombobox
+                            selected={gr.sub_for_profile}
+                            onSelect={(profile) =>
+                              updateRole(gr.tempId, { sub_for_profile: profile })
+                            }
+                          />
+                        </Box>
+                      )}
+                    </Grid.Col>
+                  </Grid>
+                  <Group justify="flex-end" mt="xs">
+                    <Button
+                      size="xs"
+                      variant="subtle"
+                      color="red"
+                      leftSection={<IconTrash size={14} />}
+                      onClick={() => removeRole(gr.tempId)}
+                      disabled={gigRoles.length === 1}
+                    >
+                      Remover vaga
+                    </Button>
+                  </Group>
+                </Paper>
+              ))}
+              <Button
+                variant="default"
+                leftSection={<IconPlus size={16} />}
+                onClick={addRole}
+              >
+                Adicionar outra vaga
+              </Button>
+            </Stack>
+            <Group justify="flex-end" mt="md">
               <Button
                 type="submit"
-                size="sm"
                 leftSection={<IconSend size={15} />}
                 loading={isSubmitting}
               >

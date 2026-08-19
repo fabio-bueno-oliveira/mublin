@@ -106,7 +106,7 @@ export async function fetchEventTypes() {
   if (error) {
     throw new Error(error.message)
   }
-  return data.map((t) => ({ value: String(t.id), label: t.name }))
+  return data
 }
 
 export async function searchVenues(keyword) {
@@ -265,4 +265,15 @@ export async function deleteEventInterest(eventId, userId) {
   if (error) {
     throw new Error(error.message)
   }
+}
+
+export async function fetchDressCodeTypes() {
+  const { data, error } = await supabase
+    .from('dress_code_types')
+    .select('id, name')
+    .order('name')
+  if (error) {
+    throw error
+  }
+  return data
 }
