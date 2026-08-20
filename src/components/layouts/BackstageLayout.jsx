@@ -6,7 +6,6 @@ import { useUI } from '../../contexts/UIContext'
 import AppNavbar from '../AppNavbar'
 import BackstageSidebar from '../backstage/BackstageSidebar'
 import AppFooterMobile from '../AppFooterMobile'
-import Dashbar from '../Dashbar'
 
 export default function AppLayout({ children }) {
   const { session, loading } = useAuth()
@@ -58,7 +57,6 @@ export default function AppLayout({ children }) {
         </Container>
       </AppShell.Main>
 
-      {/* <Dashbar /> */}
       {!hideFooter && <AppFooterMobile />}
     </AppShell>
   )

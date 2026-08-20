@@ -1,27 +1,28 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuth } from '../../hooks/useAuth'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabaseClient'
 import {
   Stack,
-  Box,
   Text,
   Divider,
   Switch,
   Skeleton,
-  Indicator,
   Avatar,
   Checkbox,
   Radio,
   Group,
   Loader,
+  NumberInput,
+  Select,
+  Paper,
+  Box,
+  Flex,
 } from '@mantine/core'
+import { useDebouncedCallback } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
+import { getAvatarUrl } from '../../utils/profile'
 
-const AVATAR_PATH =
-  'https://ik.imagekit.io/mublin/tr:h-60,w-60,c-maintain_ratio/users/avatars/'
-
-// Mapeamento de valores do banco para labels exibidos ao usuário
 const AVAILABLE_FROM_OPTIONS = [
   { value: 'not_available', label: 'Não disponível no momento' },
   { value: 'immediate', label: 'Disponibilidade imediata' },
@@ -33,11 +34,20 @@ const AVAILABLE_FROM_OPTIONS = [
   { value: 'one_year', label: 'Daqui a 1 ano' },
 ]
 
-// ── Queries locais ────────────────────────────────────────
-
 async function fetchWorkTypes() {
   const { data, error } = await supabase
     .from('work_types')
+    .select('id, name_ptbr')
+    .order('id')
+  if (error) {
+    throw new Error(error.message)
+  }
+  return data
+}
+
+async function fetchRateTypes() {
+  const { data, error } = await supabase
+    .from('rate_types')
     .select('id, name_ptbr')
     .order('id')
   if (error) {
@@ -60,7 +70,17 @@ async function fetchWorkFocuses() {
 async function fetchUserWorkAvailability(profileId) {
   const { data, error } = await supabase
     .from('profile_work_availability')
-    .select('id, id_work_type, work_types(id, name_ptbr)')
+    .select(
+      `
+      id,
+      id_work_type,
+      avg_rate,
+      rate_currency,
+      rate_type_id,
+      work_types(id, name_ptbr),
+      rate_types(id, name_ptbr)
+    `,
+    )
     .eq('id_profile', profileId)
   if (error) {
     throw new Error(error.message)
@@ -79,8 +99,6 @@ async function fetchUserWorkFocus(profileId) {
   return data
 }
 
-// ── Componente principal ──────────────────────────────────
-
 export default function Availability() {
   const { user, profile: authProfile } = useAuth()
   const queryClient = useQueryClient()
@@ -93,13 +111,19 @@ export default function Availability() {
   const [isDeletingWorkFocus, setIsDeletingWorkFocus] = useState(null)
   const [isAddingWorkFocus, setIsAddingWorkFocus] = useState(null)
 
-  // ── Queries ───────────────────────────────────────────
+  // draft local para edição de preço/tipo antes de salvar no banco
+  const [draftRates, setDraftRates] = useState({})
+
   const { data: workTypes = [] } = useQuery({
     queryKey: ['work-types'],
     queryFn: fetchWorkTypes,
     staleTime: Infinity,
   })
-
+  const { data: rateTypes = [] } = useQuery({
+    queryKey: ['rate-types'],
+    queryFn: fetchRateTypes,
+    staleTime: Infinity,
+  })
   const { data: workFocuses = [] } = useQuery({
     queryKey: ['work-focuses'],
     queryFn: fetchWorkFocuses,
@@ -120,15 +144,26 @@ export default function Availability() {
     staleTime: 1000 * 60 * 5,
   })
 
-  const showErrorAlert = () => {
+  // popula draftRates quando carrega do banco
+  useEffect(() => {
+    const mapped = {}
+    userWorkAvailability.forEach((item) => {
+      mapped[item.id_work_type] = {
+        avg_rate: item.avg_rate,
+        rate_type_id: item.rate_type_id ? String(item.rate_type_id) : null,
+        rate_currency: item.rate_currency || 'BRL',
+      }
+    })
+    setDraftRates(mapped)
+  }, [userWorkAvailability])
+
+  const showErrorAlert = () =>
     notifications.show({
       color: 'red',
       position: 'top-center',
       message: 'Erro ao atualizar. Tente novamente.',
     })
-  }
 
-  // ── Handler: Show availability info on profile ────────
   const [showAvailabilityInfo, setShowAvailabilityInfo] = useState(
     () => authProfile?.show_availability_info ?? false,
   )
@@ -148,12 +183,9 @@ export default function Availability() {
     setIsSavingShowAvailabilityInfo(false)
   }
 
-  // ── Popula is_open_to_work do authProfile ─────────────
   const [isOpenToWork, setIsOpenToWork] = useState(
     () => authProfile?.is_open_to_work ?? false,
   )
-
-  // ── Handler: Open to Work ─────────────────────────────
   async function handleToggleOpenToWork(checked) {
     setIsOpenToWork(checked)
     setIsSavingOpenToWork(true)
@@ -170,9 +202,11 @@ export default function Availability() {
     setIsSavingOpenToWork(false)
   }
 
-  // ── Handler: Available From ───────────────────────────
   async function handleAvailableFromChange(value) {
     setIsSavingAvailableFrom(true)
+    if (value === 'not_available') {
+      setIsOpenToWork(false)
+    }
     const { error } = await supabase
       .from('profiles')
       .update({ available_from: value })
@@ -185,7 +219,6 @@ export default function Availability() {
     setIsSavingAvailableFrom(false)
   }
 
-  // ── Handler: Work Types ───────────────────────────────
   async function handleDeleteWorkType(id) {
     setIsDeletingWorkType(id)
     const { error } = await supabase
@@ -204,16 +237,49 @@ export default function Availability() {
     setIsDeletingWorkType(null)
   }
 
-  // ── Handlers: vínculo de preferência ─────────────────
-  async function handleDeleteWorkFocus(id) {
-    setIsDeletingWorkFocus(id)
-    const { error } = await supabase.from('profile_work_focus').delete().eq('id', id)
+  async function handleAddWorkType(workTypeId) {
+    setIsAddingWorkType(workTypeId)
+    const draft = draftRates[workTypeId] || {}
+    const { error } = await supabase.from('profile_work_availability').insert({
+      id_profile: user.id,
+      id_work_type: workTypeId,
+      avg_rate: draft.avg_rate || null,
+      rate_currency: 'BRL',
+      rate_type_id: draft.rate_type_id ? Number(draft.rate_type_id) : null,
+    })
     if (error) {
       notifications.show({
         color: 'red',
         position: 'top-center',
-        message: 'Erro ao remover. Tente novamente.',
+        message: 'Erro ao adicionar. Tente novamente.',
       })
+    } else {
+      await queryClient.refetchQueries({ queryKey: ['user-work-availability', user.id] })
+    }
+    setIsAddingWorkType(null)
+  }
+
+  const debouncedUpdate = useDebouncedCallback(async (workTypeId, patch) => {
+    const existing = userWorkAvailability.find((i) => i.id_work_type === workTypeId)
+    if (!existing) {
+      return
+    }
+    const { error } = await supabase
+      .from('profile_work_availability')
+      .update(patch)
+      .eq('id', existing.id)
+    if (error) {
+      showErrorAlert()
+    } else {
+      queryClient.invalidateQueries({ queryKey: ['user-work-availability', user.id] })
+    }
+  }, 600)
+
+  async function handleDeleteWorkFocus(id) {
+    setIsDeletingWorkFocus(id)
+    const { error } = await supabase.from('profile_work_focus').delete().eq('id', id)
+    if (error) {
+      showErrorAlert()
     } else {
       await queryClient.refetchQueries({ queryKey: ['user-work-focus', user.id] })
     }
@@ -222,31 +288,41 @@ export default function Availability() {
 
   return (
     <>
-      <Stack gap="md">
-        {/* ── Informações de disponibilidade no perfil ─────── */}
-        <Stack gap="md">
-          <div>
-            <Text fw={600} size="sm" tt="uppercase" lts="0.05em">
-              Informações de disponibilidade
-            </Text>
-            <Text size="xs" c="dimmed" mt={2}>
-              Exibe disponibilidade, tipos de trabalho, vínculos de preferência, etc
-            </Text>
-          </div>
+      <Stack gap="lg">
+        <div>
+          <Text fw={600} size="sm" tt="uppercase" lts="0.05em">
+            Disponibilidade geral
+          </Text>
+          <Text size="xs" c="dimmed" mt={2}>
+            Quando você estará disponível para novos trabalhos?
+          </Text>
+        </div>
+        <Radio.Group
+          value={authProfile?.available_from || 'not_available'}
+          onChange={handleAvailableFromChange}
+        >
+          <Stack gap="xs">
+            {AVAILABLE_FROM_OPTIONS.map((opt) => (
+              <Radio
+                key={opt.value}
+                value={opt.value}
+                label={opt.label}
+                disabled={isSavingAvailableFrom}
+              />
+            ))}
+          </Stack>
+        </Radio.Group>
 
-          <Switch
-            label="Exibir informações de disponibilidade no meu perfil"
-            checked={showAvailabilityInfo}
-            disabled={isSavingShowAvailabilityInfo}
-            color="mublinColor"
-            onChange={(e) => handleShowAvailabilityInfo(e.currentTarget.checked)}
-            mb="sm"
-          />
-        </Stack>
-
+        <Switch
+          label="Exibir informações de disponibilidade no meu perfil"
+          checked={showAvailabilityInfo}
+          disabled={isSavingShowAvailabilityInfo}
+          color="mublinColor"
+          onChange={(e) => handleShowAvailabilityInfo(e.currentTarget.checked)}
+          mb="sm"
+        />
         <Divider />
 
-        {/* ── Open to Work ────────────────────────────── */}
         <Stack gap="md">
           <div>
             <Text fw={600} size="sm" tt="uppercase" lts="0.05em">
@@ -256,7 +332,6 @@ export default function Availability() {
               Exibe um indicador de disponibilidade em locais estratégicos do Mublin
             </Text>
           </div>
-
           <Switch
             label="Estou disponível para trabalhos e gigs"
             checked={isOpenToWork}
@@ -264,73 +339,29 @@ export default function Availability() {
             color="green"
             onChange={(e) => handleToggleOpenToWork(e.currentTarget.checked)}
           />
-
-          <Box h={70}>
-            <Indicator
-              inline
-              position="bottom-center"
-              pos="absolute"
-              color="green"
-              size={16}
-              label={<Text size="8px">Disponível</Text>}
-              withBorder
-              disabled={!isOpenToWork}
-            >
-              <Avatar
-                size={60}
-                radius="xl"
-                src={authProfile?.avatar ? AVATAR_PATH + authProfile.avatar : undefined}
-                opacity={isSavingOpenToWork ? 0.3 : 1}
-              />
-            </Indicator>
-          </Box>
+          <Avatar
+            size={70}
+            radius="xl"
+            src={
+              authProfile?.avatar
+                ? getAvatarUrl(authProfile?.avatar, isOpenToWork, 70)
+                : `https://api.dicebear.com/10.x/initials/svg?seed=${authProfile?.full_name}`
+            }
+            style={{ border: '2px solid var(--mantine-color-body)' }}
+          />
         </Stack>
 
         <Divider />
 
-        {/* ── Disponibilidade a partir de ──────────────── */}
-        <Stack gap="md">
-          <div>
-            <Group gap="xs" align="center">
-              <Text fw={600} size="sm" tt="uppercase" lts="0.05em">
-                Disponível a partir de
-              </Text>
-              {isSavingAvailableFrom && <Loader size={12} />}
-            </Group>
-            <Text size="xs" c="dimmed" mt={2}>
-              Quando você estaria disponível para iniciar novos trabalhos?
-            </Text>
-          </div>
-
-          <Radio.Group
-            key={authProfile?.available_from || 'loading'}
-            defaultValue={authProfile?.available_from ?? ''}
-            onChange={handleAvailableFromChange}
-          >
-            <Stack gap="xs">
-              {AVAILABLE_FROM_OPTIONS.map((opt) => (
-                <Radio
-                  key={opt.value}
-                  value={opt.value}
-                  label={opt.label}
-                  color="indigo"
-                  disabled={isSavingAvailableFrom}
-                />
-              ))}
-            </Stack>
-          </Radio.Group>
-        </Stack>
-
-        <Divider />
-
-        {/* ── Tipos de trabalho ────────────────────────── */}
+        {/* ── Tipos de trabalho com preço e rate_type ── */}
         <Stack gap="md">
           <div>
             <Text fw={600} size="sm" tt="uppercase" lts="0.05em">
               Tipos de trabalho
             </Text>
             <Text size="xs" c="dimmed" mt={2}>
-              Para quais tipos de trabalho você está disponível?
+              Para quais tipos de trabalho você está disponível? Informe valor médio
+              opcional.
             </Text>
           </div>
           {loadingAvailability ? (
@@ -340,7 +371,7 @@ export default function Availability() {
               ))}
             </Stack>
           ) : (
-            <Stack gap="xs">
+            <Stack gap="sm">
               {workTypes.map((type) => {
                 const existing = userWorkAvailability.find(
                   (i) => i.id_work_type === type.id,
@@ -348,36 +379,103 @@ export default function Availability() {
                 const isChecked = !!existing
                 const isLoading =
                   isDeletingWorkType === existing?.id || isAddingWorkType === type.id
+                const draft = draftRates[type.id] || {
+                  avg_rate: null,
+                  rate_type_id: null,
+                }
+
                 return (
-                  <Checkbox
+                  <Paper
                     key={type.id}
-                    label={type.name_ptbr}
-                    color="indigo"
-                    checked={isChecked}
-                    disabled={isLoading}
-                    onChange={async () => {
-                      if (isChecked) {
-                        await handleDeleteWorkType(existing.id)
-                      } else {
-                        setIsAddingWorkType(type.id)
-                        const { error } = await supabase
-                          .from('profile_work_availability')
-                          .insert({ id_profile: user.id, id_work_type: type.id })
-                        if (error) {
-                          notifications.show({
-                            color: 'red',
-                            position: 'top-center',
-                            message: 'Erro ao adicionar. Tente novamente.',
+                    withBorder
+                    p="sm"
+                    radius="md"
+                    style={{
+                      background: isChecked
+                        ? 'light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6))'
+                        : undefined,
+                    }}
+                  >
+                    <Checkbox
+                      label={type.name_ptbr}
+                      color="indigo"
+                      checked={isChecked}
+                      disabled={isLoading}
+                      onChange={async () => {
+                        if (isChecked) {
+                          await handleDeleteWorkType(existing.id)
+                          setDraftRates((prev) => {
+                            const n = { ...prev }
+                            delete n[type.id]
+                            return n
                           })
                         } else {
-                          await queryClient.refetchQueries({
-                            queryKey: ['user-work-availability', user.id],
-                          })
+                          setDraftRates((prev) => ({
+                            ...prev,
+                            [type.id]: {
+                              avg_rate: null,
+                              rate_type_id: null,
+                              rate_currency: 'BRL',
+                            },
+                          }))
+                          await handleAddWorkType(type.id)
                         }
-                        setIsAddingWorkType(null)
-                      }
-                    }}
-                  />
+                      }}
+                    />
+                    {isChecked && (
+                      <Flex
+                        gap="sm"
+                        mt="xs"
+                        direction={{ base: 'column', sm: 'row' }}
+                        align={{ sm: 'flex-end' }}
+                      >
+                        <NumberInput
+                          label="Valor médio"
+                          placeholder="R$ 0,00"
+                          size="xs"
+                          w={{ base: '100%', sm: 160 }}
+                          min={0}
+                          decimalScale={2}
+                          fixedDecimalScale
+                          thousandSeparator="."
+                          decimalSeparator=","
+                          prefix="R$ "
+                          value={draft.avg_rate}
+                          onChange={(v) => {
+                            setDraftRates((prev) => ({
+                              ...prev,
+                              [type.id]: { ...prev[type.id], avg_rate: v },
+                            }))
+                            debouncedUpdate(type.id, {
+                              avg_rate: v || null,
+                              rate_currency: 'BRL',
+                            })
+                          }}
+                        />
+                        <Select
+                          label="Cobrança"
+                          placeholder="Como cobra?"
+                          size="xs"
+                          w={{ base: '100%', sm: 180 }}
+                          data={rateTypes.map((rt) => ({
+                            value: String(rt.id),
+                            label: rt.name_ptbr,
+                          }))}
+                          value={draft.rate_type_id}
+                          onChange={(v) => {
+                            setDraftRates((prev) => ({
+                              ...prev,
+                              [type.id]: { ...prev[type.id], rate_type_id: v },
+                            }))
+                            debouncedUpdate(type.id, {
+                              rate_type_id: v ? Number(v) : null,
+                            })
+                          }}
+                          clearable
+                        />
+                      </Flex>
+                    )}
+                  </Paper>
                 )
               })}
             </Stack>
@@ -386,7 +484,6 @@ export default function Availability() {
 
         <Divider />
 
-        {/* ── Vínculo de preferência ───────────────────── */}
         <Stack gap="md">
           <div>
             <Text fw={600} size="sm" tt="uppercase" lts="0.05em">
@@ -425,11 +522,7 @@ export default function Availability() {
                           .from('profile_work_focus')
                           .insert({ id_profile: user.id, id_work_focus: focus.id })
                         if (error) {
-                          notifications.show({
-                            color: 'red',
-                            position: 'top-center',
-                            message: 'Erro ao adicionar. Tente novamente.',
-                          })
+                          showErrorAlert()
                         } else {
                           await queryClient.refetchQueries({
                             queryKey: ['user-work-focus', user.id],

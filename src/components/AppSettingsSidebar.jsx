@@ -7,11 +7,11 @@ import {
   IconMusic,
   IconLock,
   IconHeartHandshake,
-  IconRadar,
   IconBox,
   IconSchool,
   IconCamera,
   IconListCheckFilled,
+  IconCalendarCheck,
 } from '@tabler/icons-react'
 import classes from '../pages/settings/settings.module.css'
 
@@ -21,6 +21,12 @@ const SETTINGS_TABS = [
     label: 'Meus dados',
     icon: IconUser,
     path: '/settings/profile',
+  },
+  {
+    value: 'availability',
+    label: 'Disponibilidade',
+    icon: IconCalendarCheck,
+    path: '/settings/availability',
   },
   {
     value: 'plan',
@@ -69,12 +75,6 @@ const SETTINGS_TABS = [
     label: 'Equipamentos',
     icon: IconBox,
     path: '/settings/gear',
-  },
-  {
-    value: 'availability',
-    label: 'Disponibilidade',
-    icon: IconRadar,
-    path: '/settings/availability',
   },
 ]
 

@@ -1,6 +1,6 @@
 import { supabase } from '../lib/supabaseClient'
 
-export async function fetchProjectProfile(slug) {
+export async function fetchProjectDetails(slug) {
   const { data, error } = await supabase
     .from('projects')
     .select(
@@ -17,6 +17,7 @@ export async function fetchProjectProfile(slug) {
       instagram,
       spotify_id,
       soundcloud,
+      is_verified,
       genres ( id, name_ptbr ),
       project_types ( id, name_ptbr ),
       activity_status,
@@ -209,6 +210,7 @@ export async function fetchProjectBackstageInfo(projectId) {
       picture,
       cover_picture,
       on_tour,
+      activity_status,
       genres ( id, name_ptbr ),
       cities (
         id,
@@ -216,6 +218,13 @@ export async function fetchProjectBackstageInfo(projectId) {
         regions (
           name, uf
         )
+      ),
+      project_members (
+        id,
+        profile_id,
+        is_founder,
+        is_admin,
+        status
       )
     `,
     )
@@ -224,7 +233,10 @@ export async function fetchProjectBackstageInfo(projectId) {
   if (error) {
     throw new Error(error.message)
   }
-  return data
+  return {
+    ...data,
+    members: data.project_members ?? [],
+  }
 }
 
 export async function fetchProjectDashboardInfo(projectSlug) {
@@ -381,13 +393,17 @@ export async function fetchMyProjectAdminRequest(projectId, profileId) {
   return data
 }
 
-export async function requestProjectAdminAccess(projectId) {
-  const { data, error } = await supabase.rpc('request_project_admin_access', {
-    p_project_id: projectId,
-  })
-
+export async function requestProjectAdminAccess(projectId, endorsementMessage) {
+  const { data, error } = await supabase
+    .from('project_admin_requests')
+    .insert({
+      project_id: projectId,
+      endorsement_message: endorsementMessage?.trim() || null,
+    })
+    .select()
+    .single()
   if (error) {
-    throw new Error(error.message)
+    throw error
   }
   return data
 }
@@ -412,6 +428,33 @@ export async function updateProjectProfile(projectId, updates) {
     .select()
     .single()
 
+  if (error) {
+    throw new Error(error.message)
+  }
+  return data
+}
+
+export async function fetchProjectClaimPolicy(projectId) {
+  const { data, error } = await supabase.rpc('get_project_claim_policy', {
+    p_project_id: projectId,
+  })
+  if (error) {
+    throw error
+  }
+  return data // { requires_curation, auto_approval_hours, associates_count }
+}
+
+export async function fetchprojectsInspirated(projectId) {
+  const { data, error } = await supabase
+    .from('profile_inspirations')
+    .select(
+      `
+      id,
+      profiles ( id, full_name, username, avatar, title )
+    `,
+    )
+    .eq('project_id', projectId)
+    .order('created_at', { ascending: true })
   if (error) {
     throw new Error(error.message)
   }

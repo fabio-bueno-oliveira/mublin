@@ -26,6 +26,7 @@ export default function AppNavbarMobile({
   pageName = undefined,
   profile = undefined,
   fixed = true,
+  transparent = false,
 }) {
   const { pathname } = useLocation()
   const navigate = useNavigate()
@@ -62,7 +63,7 @@ export default function AppNavbarMobile({
         pt={4}
         px={{ base: '0.8rem', sm: 0 }}
         pos={fixed ? 'fixed' : 'relative'}
-        bg="var(--mantine-color-body)"
+        bg={transparent ? 'transparent' : 'var(--mantine-color-body)'}
         w="100%"
         h={50}
       >

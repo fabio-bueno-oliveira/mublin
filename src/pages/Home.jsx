@@ -470,23 +470,11 @@ export default function Home() {
                       <Badge
                         size="sm"
                         radius="sm"
-                        color="yellow"
+                        color="mublinColor"
                         variant="filled"
                         leftSection={<IconSparklesFilled size={12} />}
                       >
                         Setup em destaque
-                      </Badge>
-                      <Badge
-                        size="sm"
-                        radius="sm"
-                        color="gray"
-                        variant="filled"
-                        style={{
-                          backgroundColor: 'rgba(255,255,255,0.15)',
-                          color: 'white',
-                        }}
-                      >
-                        Novo
                       </Badge>
                     </Group>
 

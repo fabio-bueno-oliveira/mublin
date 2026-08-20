@@ -1,13 +1,21 @@
 import { useParams, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { fetchProjectProfile } from '../queries/projects'
+import { fetchProjectDetails } from '../queries/projects'
 import {
-  Container, Flex, Box,
-  Avatar, Image,
-  Title, Text, Badge,
-  Skeleton, Divider,
-  Group, Stack,
-  Tooltip, ActionIcon,
+  Container,
+  Flex,
+  Box,
+  Avatar,
+  Image,
+  Title,
+  Text,
+  Badge,
+  Skeleton,
+  Divider,
+  Group,
+  Stack,
+  Tooltip,
+  ActionIcon,
 } from '@mantine/core'
 import {
   IconBrandInstagram,
@@ -20,63 +28,70 @@ import {
 export default function Project() {
   const { slug } = useParams()
 
-  const { data: project, isLoading, isError } = useQuery({
+  const {
+    data: project,
+    isLoading,
+    isError,
+  } = useQuery({
     queryKey: ['project', slug],
-    queryFn: () => fetchProjectProfile(slug),
+    queryFn: () => fetchProjectDetails(slug),
     enabled: !!slug,
     staleTime: 1000 * 60 * 5,
     retry: 1,
   })
 
   // Membros confirmados (status 2)
-  const confirmedMembers = project?.members?.filter(m => m.status === 2) ?? []
+  const confirmedMembers = project?.members?.filter((m) => m.status === 2) ?? []
 
   if (isError) {
     return (
       <Container size="md" py="xl">
-        <Text c="dimmed" ta="center">Projeto não encontrado.</Text>
+        <Text c="dimmed" ta="center">
+          Projeto não encontrado.
+        </Text>
       </Container>
     )
   }
 
-  const PICTURE_AVATAR_PATH = 'https://ik.imagekit.io/mublin/projects/tr:h-160,w-160,c-maintain_ratio/'
-  const PICTURE_COVER_PATH = 'https://ik.imagekit.io/mublin/projects/tr:h-180,w-800,c-maintain_ratio/'
-  const AVATAR_PATH = 'https://ik.imagekit.io/mublin/tr:h-200,c-maintain_ratio/users/avatars/'
-  const DEFAULT_COVER_PICTURE = 'https://ik.imagekit.io/mublin/bg/tr:w-1920,h-200,bg-F3F3F3,fo-bottom/open-air-concert.jpg'
+  const PICTURE_AVATAR_PATH =
+    'https://ik.imagekit.io/mublin/projects/tr:h-160,w-160,c-maintain_ratio/'
+  const PICTURE_COVER_PATH =
+    'https://ik.imagekit.io/mublin/projects/tr:h-180,w-800,c-maintain_ratio/'
+  const AVATAR_PATH =
+    'https://ik.imagekit.io/mublin/tr:h-200,c-maintain_ratio/users/avatars/'
+  const DEFAULT_COVER_PICTURE =
+    'https://ik.imagekit.io/mublin/bg/tr:w-1920,h-200,bg-F3F3F3,fo-bottom/open-air-concert.jpg'
 
   return (
     <Container size="md" py="lg">
-
       {/* ── Cabeçalho / Cover ── */}
       <Box pos="relative" mb={60}>
-
         {/* Imagem de capa (usa a picture do projeto em proporção paisagem) */}
         {isLoading ? (
           <Skeleton height={220} radius="md" />
         ) : (
           <Image
-            src={project?.cover_picture ? PICTURE_COVER_PATH + project?.cover_picture : DEFAULT_COVER_PICTURE}
+            src={
+              project?.cover_picture
+                ? PICTURE_COVER_PATH + project?.cover_picture
+                : DEFAULT_COVER_PICTURE
+            }
             fallbackSrc="https://placehold.co/800x180?text=."
             height={180}
             radius="md"
             fit="cover"
             w="100%"
-            alt='Imagem de capa'
+            alt="Imagem de capa"
           />
         )}
 
         {/* Avatar do projeto sobreposto */}
-        <Box
-          pos="absolute"
-          bottom={-40}
-          left={20}
-          style={{ zIndex: 1 }}
-        >
+        <Box pos="absolute" bottom={-40} left={20} style={{ zIndex: 1 }}>
           {isLoading ? (
             <Skeleton circle height={80} width={80} />
           ) : (
             <Avatar
-              src={PICTURE_AVATAR_PATH+project?.picture}
+              src={PICTURE_AVATAR_PATH + project?.picture}
               size={80}
               radius="md"
               style={{ border: '3px solid var(--mantine-color-body)' }}
@@ -98,19 +113,30 @@ export default function Project() {
               <Group gap={8}>
                 <Title order={2}>{project?.name}</Title>
                 {project?.on_tour && (
-                  <Badge color="green" variant="light" size="sm" leftSection={<IconMapPin size={10} />}>
+                  <Badge
+                    color="green"
+                    variant="light"
+                    size="sm"
+                    leftSection={<IconMapPin size={10} />}
+                  >
                     Em turnê
                   </Badge>
                 )}
               </Group>
               <Group gap={6}>
                 {project?.project_type && (
-                  <Text size="sm" c="dimmed">{project.project_type}</Text>
+                  <Text size="sm" c="dimmed">
+                    {project.project_type}
+                  </Text>
                 )}
                 {project?.genre && (
                   <>
-                    <Text size="sm" c="dimmed">·</Text>
-                    <Text size="sm" c="dimmed">{project.genre}</Text>
+                    <Text size="sm" c="dimmed">
+                      ·
+                    </Text>
+                    <Text size="sm" c="dimmed">
+                      {project.genre}
+                    </Text>
                   </>
                 )}
               </Group>
@@ -176,11 +202,11 @@ export default function Project() {
               </>
             ) : (
               <>
-                {project?.description && (
-                  <Text size="sm">{project.description}</Text>
-                )}
+                {project?.description && <Text size="sm">{project.description}</Text>}
                 {project?.purpose && (
-                  <Text size="sm" c="dimmed" fs="italic">{project.purpose}</Text>
+                  <Text size="sm" c="dimmed" fs="italic">
+                    {project.purpose}
+                  </Text>
                 )}
               </>
             )}
@@ -193,7 +219,9 @@ export default function Project() {
       <Stack gap="sm">
         <Group gap={6}>
           <IconUsers size={16} />
-          <Text fw={600} size="sm">Integrantes e Staff ({confirmedMembers.length})</Text>
+          <Text fw={600} size="sm">
+            Integrantes e Staff ({confirmedMembers.length})
+          </Text>
         </Group>
 
         {isLoading && (
@@ -208,12 +236,14 @@ export default function Project() {
         )}
 
         {!isLoading && confirmedMembers.length === 0 && (
-          <Text size="sm" c="dimmed">Nenhum integrante confirmado.</Text>
+          <Text size="sm" c="dimmed">
+            Nenhum integrante confirmado.
+          </Text>
         )}
 
         {!isLoading && confirmedMembers.length > 0 && (
           <Flex gap={16} wrap="wrap">
-            {confirmedMembers.map(member => (
+            {confirmedMembers.map((member) => (
               <Flex
                 key={member.id}
                 direction="column"
@@ -223,11 +253,7 @@ export default function Project() {
                 to={`/u/${member.username}`}
                 style={{ textDecoration: 'none', color: 'inherit', cursor: 'pointer' }}
               >
-                <Avatar
-                  src={AVATAR_PATH + member.avatar}
-                  size={50}
-                  radius="xl"
-                />
+                <Avatar src={AVATAR_PATH + member.avatar} size={50} radius="xl" />
                 <Stack gap={1} align="center">
                   <Text size="0.7rem" fw={500} ta="center" w={60} lineClamp={1}>
                     {member.name}
@@ -238,14 +264,15 @@ export default function Project() {
                   </Text>
                 </Stack>
                 {member.is_founder && (
-                  <Badge size="xs" variant="dot" color="yellow">Fundador</Badge>
+                  <Badge size="xs" variant="dot" color="yellow">
+                    Fundador
+                  </Badge>
                 )}
               </Flex>
             ))}
           </Flex>
         )}
       </Stack>
-
     </Container>
   )
 }

@@ -24,7 +24,7 @@ const ARTISTS_PATH =
   'https://ik.imagekit.io/mublin/artists/tr:h-120,w-120,c-maintain_ratio/'
 
 export default function MyProjects() {
-  const { user } = useAuth()
+  const { user, profile } = useAuth()
   const [searchQuery, setSearchQuery] = useState('')
   const searchInputRef = useRef(null)
   const normalizedQuery = searchQuery.trim().toLowerCase()
@@ -111,15 +111,84 @@ export default function MyProjects() {
             Carregando seus projetos...
           </Text>
         ) : (
-          <Tabs defaultValue="admin">
+          <Tabs defaultValue="portfolio">
             <Tabs.List>
-              <Tabs.Tab value="admin">
-                Sou administrador ({filteredProjects.length})
-              </Tabs.Tab>
               <Tabs.Tab value="portfolio">
                 Portfolio ({filteredPortfolio.length})
               </Tabs.Tab>
+              <Tabs.Tab value="admin">
+                Sou administrador ({filteredProjects.length})
+              </Tabs.Tab>
             </Tabs.List>
+
+            <Tabs.Panel value="portfolio" mt="sm">
+              {userPortfolio.length > 0 ? (
+                <>
+                  {filteredPortfolio.length > 0 ? (
+                    <Stack gap={0}>
+                      {filteredPortfolio.map((item, index) => {
+                        const isProject = !!item.projects
+                        const entity = item.projects || item.artists
+                        const url = isProject
+                          ? `/project/${item.projects?.slug}`
+                          : `/artist/${item.artists?.slug}`
+
+                        return (
+                          <NavLink
+                            key={index}
+                            component={Link}
+                            to={url}
+                            label={entity?.name || 'Sem título'}
+                            description={
+                              <Group gap={3} wrap="nowrap">
+                                <Avatar
+                                  size={16}
+                                  src={
+                                    profile?.avatar
+                                      ? `https://ik.imagekit.io/mublin/tr:h-16,w-16,r-max,c-maintain_ratio/users/avatars/${profile.avatar}`
+                                      : undefined
+                                  }
+                                  alt={profile?.username}
+                                />
+                                <Text size="xs" c="dimmed">
+                                  {item.portfolio_roles
+                                    ?.slice(0, 3)
+                                    .map((pr) => pr.roles?.name_ptbr)
+                                    .filter(Boolean)
+                                    .join(', ')}
+                                </Text>
+                              </Group>
+                            }
+                            leftSection={
+                              <Avatar
+                                size={40}
+                                radius="md"
+                                src={
+                                  isProject
+                                    ? `https://ik.imagekit.io/mublin/projects/${entity.id}/tr:h-120,w-120,c-maintain_ratio/${entity.picture}`
+                                    : ARTISTS_PATH + entity.picture
+                                }
+                                title={entity?.name}
+                              >
+                                <IconDisc size={18} />
+                              </Avatar>
+                            }
+                          />
+                        )
+                      })}
+                    </Stack>
+                  ) : (
+                    <Text size="sm" c="dimmed">
+                      Nenhum projeto encontrado
+                    </Text>
+                  )}
+                </>
+              ) : (
+                <Text size="xs" c="dimmed">
+                  Você ainda não possui projetos no seu portfólio
+                </Text>
+              )}
+            </Tabs.Panel>
 
             <Tabs.Panel value="admin" mt="sm">
               {userProjects.length > 0 ? (
@@ -164,60 +233,6 @@ export default function MyProjects() {
               ) : (
                 <Text size="xs" c="dimmed">
                   Você não é administrador de nenhum projeto no momento
-                </Text>
-              )}
-            </Tabs.Panel>
-            <Tabs.Panel value="portfolio" mt="sm">
-              {userPortfolio.length > 0 ? (
-                <>
-                  {filteredPortfolio.length > 0 ? (
-                    <Stack gap={0}>
-                      {filteredPortfolio.map((item, index) => {
-                        const isProject = !!item.projects
-                        const entity = item.projects || item.artists
-                        const url = isProject
-                          ? `/project/${item.projects?.slug}`
-                          : `/artist/${item.artists?.slug}`
-
-                        return (
-                          <NavLink
-                            key={index}
-                            // href={url}
-                            component={Link}
-                            to={url}
-                            label={entity?.name || 'Sem título'}
-                            description={item.portfolio_roles
-                              ?.slice(0, 3)
-                              .map((pr) => pr.roles?.name_ptbr)
-                              .filter(Boolean)
-                              .join(', ')}
-                            leftSection={
-                              <Avatar
-                                size={40}
-                                radius="md"
-                                src={
-                                  isProject
-                                    ? `https://ik.imagekit.io/mublin/projects/${entity.id}/tr:h-120,w-120,c-maintain_ratio/${entity.picture}`
-                                    : ARTISTS_PATH + entity.picture
-                                }
-                                title={entity?.name}
-                              >
-                                <IconDisc size={18} />
-                              </Avatar>
-                            }
-                          />
-                        )
-                      })}
-                    </Stack>
-                  ) : (
-                    <Text size="sm" c="dimmed">
-                      Nenhum projeto encontrado
-                    </Text>
-                  )}
-                </>
-              ) : (
-                <Text size="xs" c="dimmed">
-                  Você ainda não possui projetos no seu portfólio
                 </Text>
               )}
             </Tabs.Panel>

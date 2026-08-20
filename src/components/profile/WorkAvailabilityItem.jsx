@@ -1,4 +1,4 @@
-import { Group, Text, Badge, ThemeIcon } from '@mantine/core'
+import { Group, Text, ThemeIcon } from '@mantine/core'
 import { IconCheck } from '@tabler/icons-react'
 
 export default function WorkAvailabilityItem({ item }) {
@@ -34,11 +34,11 @@ export default function WorkAvailabilityItem({ item }) {
             : 'Valor a combinar'}
         </Text>
       </div>
-      {hasRate && (
+      {/* {hasRate && (
         <Badge variant="light" size="xs" color="gray">
           {rate_currency || 'BRL'}
         </Badge>
-      )}
+      )} */}
     </Group>
   )
 }

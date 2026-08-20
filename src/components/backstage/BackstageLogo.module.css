@@ -1,0 +1,28 @@
+/* components/backstage/BackstageLogo.module.css */
+.logo {
+  display: inline-block;
+  font-family: 'Anton', sans-serif;
+  font-weight: 400; /* Anton só existe em um peso — já nasce "bold" */
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: clamp(1.85rem, 2.4vw, 1.4rem);
+  line-height: 1;
+  white-space: nowrap;
+  user-select: none;
+
+  background: linear-gradient(
+    180deg,
+    #f2f3f4 0%,
+    #cfd2d6 30%,
+    #9aa0a6 50%,
+    #e6e8ea 70%,
+    #b7bbc0 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+
+  filter: drop-shadow(0 1px 0 rgba(255, 255, 255, 0.45))
+    drop-shadow(0 -1px 0.5px rgba(0, 0, 0, 0.3));
+}

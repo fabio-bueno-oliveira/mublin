@@ -26,19 +26,18 @@ export default function NewsCard({ item, width, subtle = false }) {
     <Card
       w={width ?? '100%'}
       radius="md"
-      withBorder
+      withBorder={!subtle}
       padding={subtle ? 0 : 'sm'}
       component="a"
       href={item.url}
       target="_blank"
       rel="noopener noreferrer"
       bg={subtle ? 'transparent' : undefined}
-      style={{ textDecoration: 'none', display: 'block', cursor: 'pointer' }}
-      styles={{
-        root: {
-          '&:hover': { borderColor: 'var(--mantine-color-blue-4)' },
-          transition: 'border-color 150ms ease',
-        },
+      style={{
+        textDecoration: 'none',
+        display: 'block',
+        cursor: 'pointer',
+        boxShadow: 'none',
       }}
     >
       {/* Conteúdo */}
@@ -57,26 +56,28 @@ export default function NewsCard({ item, width, subtle = false }) {
             fallbackSrc="https://placehold.co/80x80?text=🎵"
           />
         )}
-        <Group justify="space-between" wrap="nowrap" gap="xs">
-          <Badge
-            size="xs"
-            variant="light"
-            color={CATEGORY_COLORS[item.category] ?? 'gray'}
-          >
-            {item.category}
-          </Badge>
-          <Tooltip label="Abrir fonte" withArrow position="top">
-            <ActionIcon
+        {!subtle && (
+          <Group justify="space-between" wrap="nowrap" gap="xs">
+            <Badge
               size="xs"
-              variant="subtle"
-              color="gray"
-              component="span"
-              onClick={(e) => e.stopPropagation()}
+              variant="light"
+              color={CATEGORY_COLORS[item.category] ?? 'gray'}
             >
-              <IconExternalLink size={12} />
-            </ActionIcon>
-          </Tooltip>
-        </Group>
+              {item.category}
+            </Badge>
+            <Tooltip label="Abrir fonte" withArrow position="top">
+              <ActionIcon
+                size="xs"
+                variant="subtle"
+                color="gray"
+                component="span"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <IconExternalLink size={12} />
+              </ActionIcon>
+            </Tooltip>
+          </Group>
+        )}
 
         <Text fw={600} size="sm" lineClamp={2} style={{ lineHeight: 1.3 }}>
           {item.title}

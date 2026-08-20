@@ -13,7 +13,12 @@ import {
   Avatar,
   Anchor,
 } from '@mantine/core'
-import { IconRosetteDiscountCheck, IconEye, IconBookmark } from '@tabler/icons-react'
+import {
+  IconRosetteDiscountCheck,
+  IconEye,
+  IconBookmark,
+  IconRocket,
+} from '@tabler/icons-react'
 import { getAvatarUrl } from '../utils/profile'
 
 export default function AppSidebar() {
@@ -135,9 +140,12 @@ export default function AppSidebar() {
                 Plano atual: {profile?.plan === 'Pro' ? 'Mublin Pro' : 'Mublin Free'}
               </Text>
               {profile?.plan === 'Pro' && (
-                <Text c="dimmed" size="11px">
-                  Experiência otimizada
-                </Text>
+                <Group gap={4}>
+                  <IconRocket color="gray" size={14} />
+                  <Text c="dimmed" size="11px">
+                    Experiência otimizada
+                  </Text>
+                </Group>
               )}
             </Stack>
           </Card>
