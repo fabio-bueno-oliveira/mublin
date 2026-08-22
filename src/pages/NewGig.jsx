@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react'
+import { useState, useEffect, useMemo } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { Helmet } from 'react-helmet-async'
 import { useQuery } from '@tanstack/react-query'
@@ -10,10 +11,10 @@ import { supabase } from '../lib/supabaseClient'
 import { useForm } from '@mantine/form'
 import { notifications } from '@mantine/notifications'
 import GigRoleCombobox from '../components/gigs/GigRoleCombobox'
+import SetlistManager from '../components/setlist/SetlistManager'
 import {
   Container,
   Grid,
-  Flex,
   Group,
   Divider,
   Avatar,
@@ -35,7 +36,10 @@ import {
   Box,
   CloseButton,
   Loader,
-  Center,
+  ScrollArea,
+  UnstyledButton,
+  Collapse,
+  Alert,
 } from '@mantine/core'
 import { useDebouncedCallback } from '@mantine/hooks'
 import { TimeInput } from '@mantine/dates'
@@ -48,9 +52,160 @@ import {
   IconMapPin,
   IconShirt,
   IconMicrophone2,
+  IconCheckFilled,
+  IconCheck,
+  IconLock,
+  IconChevronRightFilled,
 } from '@tabler/icons-react'
+import { getDateSuggestions } from '../utils/dates'
+
+function slugify(text) {
+  return (text || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // remove acentos
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+}
+
+function generateGigSlug(title) {
+  const base = slugify(title) || 'gig'
+  const suffix = Math.random().toString(36).slice(2, 8)
+  return `${base}-${suffix}`
+}
 
 const PROJECT_IMAGE_PATH = 'https://ik.imagekit.io/mublin/projects/'
+
+function StepPlaceholder({ number, title, id }) {
+  return (
+    <Paper
+      id={id}
+      withBorder
+      p="md"
+      radius="md"
+      opacity={0.6}
+      style={{ borderStyle: 'dashed' }}
+    >
+      <Group>
+        <Badge size="lg" variant="filled" color="gray">
+          Passo {number}
+        </Badge>
+        <Title order={4} c="dimmed" className="cursorDefault">
+          {title}
+        </Title>
+      </Group>
+    </Paper>
+  )
+}
+
+const UPCOMING_STEPS = [
+  { number: 2, title: 'Detalhes da gig', id: 'gig-details-placeholder' },
+  { number: 3, title: 'Vagas para a gig', id: 'gig-roles-placeholder' },
+  { number: 4, title: 'Repertório / Setlist', id: 'gig-setlist-placeholder' },
+]
+
+function ProjectScrollerSelector({ loading, projects, selected, onSelect }) {
+  if (loading) {
+    return (
+      <Text size="sm" c="dimmed" ta="center" py="md">
+        Buscando seus projetos...
+      </Text>
+    )
+  }
+
+  if (!projects.length) {
+    return (
+      <Stack gap={6} align="center" justify="center">
+        <Text size="sm" c="dimmed" ta="center" py="md">
+          Nenhum projeto encontrado
+        </Text>
+        <Button
+          size="xs"
+          variant="outline"
+          color="var(--mantine-color-text)"
+          w="fit-content"
+          rightSection={<IconChevronRightFilled size={14} />}
+          component={Link}
+          to="/new/project"
+        >
+          Cadastrar novo
+        </Button>
+      </Stack>
+    )
+  }
+
+  return (
+    <ScrollArea type="hover" offsetScrollbars>
+      <Group gap="sm" wrap="nowrap" py="xs" px={2}>
+        {projects.map((project) => {
+          const isSelected = selected?.id === project.id
+          return (
+            <UnstyledButton
+              key={project.id}
+              onClick={() => onSelect(project)}
+              style={{
+                border: isSelected
+                  ? '2px solid var(--mantine-color-indigo-5)'
+                  : '1px solid var(--mantine-color-default-border)',
+                borderRadius: 'var(--mantine-radius-md)',
+                padding: 8,
+                minWidth: 120,
+                background: isSelected
+                  ? 'var(--mantine-color-indigo-0)'
+                  : 'var(--mantine-color-body)',
+                transition: 'all 150ms ease',
+              }}
+            >
+              <Stack gap={6} align="center">
+                <Box pos="relative">
+                  <Avatar
+                    src={
+                      project.picture
+                        ? `${PROJECT_IMAGE_PATH}/${project.id}/${project.picture}`
+                        : null
+                    }
+                    size={64}
+                    radius="xl"
+                    style={{
+                      border: isSelected
+                        ? '2px solid var(--mantine-color-indigo-5)'
+                        : undefined,
+                    }}
+                  />
+                  {isSelected && (
+                    <Box
+                      pos="absolute"
+                      bottom={-4}
+                      right={-4}
+                      bg="indigo"
+                      style={{ borderRadius: '50%', padding: 2, lineHeight: 0 }}
+                    >
+                      <IconCheckFilled size={16} color="white" />
+                    </Box>
+                  )}
+                </Box>
+                <Text
+                  size="xs"
+                  fw={isSelected ? 700 : 500}
+                  ta="center"
+                  lineClamp={2}
+                  w={100}
+                >
+                  {project.name}
+                </Text>
+                <Text size="10px" c="dimmed" ta="center" lineClamp={1}>
+                  @{project.slug}
+                </Text>
+              </Stack>
+            </UnstyledButton>
+          )
+        })}
+      </Group>
+    </ScrollArea>
+  )
+}
 
 function VenueCombobox({ selected, onSelect, onClear, disabled, label = 'Local' }) {
   const combobox = useCombobox()
@@ -169,8 +324,8 @@ function EventCombobox({ selected, onSelect, onClear }) {
     >
       <Combobox.Target>
         <InputBase
-          label="Evento relacionado (opcional)"
-          placeholder="Buscar evento..."
+          label="Será em um evento (opcional)"
+          placeholder="Digite o nome do evento..."
           value={value}
           onChange={(e) => {
             setValue(e.currentTarget.value)
@@ -257,7 +412,11 @@ function SubForCombobox({ onSelect, selected }) {
 
 export default function NewGig() {
   const { user } = useAuth()
+  const navigate = useNavigate()
   const [selectedProject, setSelectedProject] = useState(null)
+  const [step, setStep] = useState(1) // 1 = projeto, 2 = detalhes, 3 = vagas, 4 = repertório
+  const [selectedSetlistId, setSelectedSetlistId] = useState(null)
+  const [isTitleManuallyEdited, setIsTitleManuallyEdited] = useState(false)
   const [selectedVenue, setSelectedVenue] = useState(null)
   const [selectedEvent, setSelectedEvent] = useState(null)
   const [projectSearch, setProjectSearch] = useState('')
@@ -277,8 +436,8 @@ export default function NewGig() {
     },
   ])
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const combobox = useCombobox()
-  const { data: userProjects = [] } = useQuery({
+
+  const { data: userProjects = [], isLoading: loadingUserProjects } = useQuery({
     queryKey: ['user-projects', user?.id],
     queryFn: () => fetchUserProjects(user.id),
     enabled: !!user?.id,
@@ -295,13 +454,24 @@ export default function NewGig() {
     queryFn: fetchDressCodeTypes,
   })
 
-  const isAdminOfSelected = useMemo(() => {
-    if (!selectedProject) {
-      return true
+  const getGigTitleSuggestion = (eventTypeId, projectName) => {
+    if (!projectName) {
+      return ''
     }
-    const member = userProjects.find((p) => p.projects?.id === selectedProject.id)
-    return member?.is_admin === true
-  }, [selectedProject, userProjects])
+    const type = eventTypes.find((t) => String(t.id) === String(eventTypeId))
+    const typeName = type?.name_ptbr || type?.name_en || 'Gig'
+
+    // templates mais naturais em PT-BR
+    const templates = {
+      1: `Ensaio de ${projectName}`, // Ensaio
+      2: `Show de ${projectName}`, // Show
+      3: `Apresentação de ${projectName}`, // Apresentação
+      4: `Gravação com ${projectName}`, // Gravação
+    }
+
+    // se não tiver template específico, usa "Tipo + de Projeto"
+    return templates[String(eventTypeId)] || `${typeName} de ${projectName}`
+  }
 
   const form = useForm({
     initialValues: {
@@ -317,6 +487,7 @@ export default function NewGig() {
       time_stage_end: '',
       venue_name: '',
       venue_address: '',
+      stage_name: '',
     },
     validate: { title: (v) => (v.length < 2 ? 'Mínimo 2 caracteres' : null) },
   })
@@ -330,9 +501,60 @@ export default function NewGig() {
 
   function handleSelectProject(item) {
     setSelectedProject(item.projects)
+    setStep(2)
     form.setFieldValue('project_id', String(item.projects.id))
-    setProjectSearch(item.projects.name)
-    combobox.closeDropdown()
+    setProjectSearch('')
+    if (!isTitleManuallyEdited || !form.values.title) {
+      const suggestion = getGigTitleSuggestion(
+        form?.values?.event_type_id,
+        item.projects?.name,
+      )
+      form.setFieldValue('title', suggestion)
+    }
+  }
+
+  const handleBack = () => {
+    setProjectSearch('')
+    setSelectedProject(null)
+    setStep(1)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const handleContinueToRoles = () => {
+    setStep(3)
+    setTimeout(() => {
+      document.getElementById('gig-roles')?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      })
+    }, 100)
+  }
+
+  const handleContinueToSetlist = () => {
+    setStep(4)
+    setTimeout(() => {
+      document.getElementById('gig-setlist')?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      })
+    }, 100)
+  }
+
+  function handleSelectEvent(ev) {
+    setSelectedEvent(ev)
+    // ev.venue não traz "id" (só dados pra exibição) — então não dá pra vincular
+    // via venue_id aqui. O VenueCombobox fica oculto e o local do evento é só exibido
+    // como leitura (ver JSX abaixo), sem popular selectedVenue/venue_id.
+    setSelectedVenue(null)
+    setShowManualVenue(false)
+
+    if (ev.date_start) {
+      form.setFieldValue('date', ev.date_start) // já vem em "YYYY-MM-DD"
+    }
+    if (ev.time_event_start) {
+      form.setFieldValue('time_stage_start', ev.time_event_start.slice(0, 5)) // "HH:MM:SS" -> "HH:MM"
+    }
+    form.setFieldValue('time_stage_end', '')
   }
 
   function addRole() {
@@ -365,9 +587,11 @@ export default function NewGig() {
         .from('gigs')
         .insert({
           title: values.title,
+          slug: generateGigSlug(values.title),
           description: values.description,
+          stage_name: values.stage_name || null,
           project_id: values.project_id ? Number(values.project_id) : null,
-          event_type_id: values.event_type_id ? Number(values.event_type_id) : 1,
+          event_type: values.event_type_id ? Number(values.event_type_id) : 1,
           dress_code_id: values.dress_code_id ? Number(values.dress_code_id) : null,
           event_id: selectedEvent?.id || null,
           venue_id: selectedVenue?.id || null,
@@ -376,6 +600,7 @@ export default function NewGig() {
           time_stage_end: values.time_stage_end || null,
           venue_name: selectedVenue ? null : values.venue_name,
           venue_address: selectedVenue ? null : values.venue_address,
+          setlist_id: selectedSetlistId || null,
           created_by: user.id,
         })
         .select()
@@ -402,6 +627,7 @@ export default function NewGig() {
       notifications.show({ title: 'Erro', message: e.message, color: 'red' })
     } finally {
       setIsSubmitting(false)
+      navigate('/gigs')
     }
   }
 
@@ -410,26 +636,34 @@ export default function NewGig() {
     const instruments = []
     const other = []
 
-    roles.forEach((r) => {
-      const item = { value: String(r.id), label: r.name_ptbr || r.name_en }
-      const cat = (r.category || r.type || '').toLowerCase()
-      if (cat.includes('manag') || cat.includes('prod') || cat.includes('gest')) {
-        management.push(item)
-      } else if (cat.includes('music') || cat.includes('instr')) {
-        instruments.push(item)
-      } else {
-        const name = (r.name_ptbr || '').toLowerCase()
-        if (
-          ['produtor', 'técnico', 'manager', 'roadie', 'iluminação', 'som', 'staff'].some(
-            (k) => name.includes(k),
-          )
-        ) {
+    roles
+      .filter((r) => r.applies_to_a_project)
+      .forEach((r) => {
+        const item = { value: String(r.id), label: r.description_ptbr || r.name_en }
+        const cat = (r.category || r.type || '').toLowerCase()
+        if (cat.includes('manag') || cat.includes('prod') || cat.includes('gest')) {
           management.push(item)
-        } else {
+        } else if (cat.includes('music') || cat.includes('instr')) {
           instruments.push(item)
+        } else {
+          const name = (r.name_ptbr || '').toLowerCase()
+          if (
+            [
+              'produtor',
+              'técnico',
+              'manager',
+              'roadie',
+              'iluminação',
+              'som',
+              'staff',
+            ].some((k) => name.includes(k))
+          ) {
+            management.push(item)
+          } else {
+            instruments.push(item)
+          }
         }
-      }
-    })
+      })
 
     const groups = []
     if (management.length) {
@@ -448,6 +682,27 @@ export default function NewGig() {
           .map((r) => ({ value: String(r.id), label: r.name_ptbr || r.name_en }))
   }, [roles])
 
+  useEffect(() => {
+    if (!selectedProject || isTitleManuallyEdited) {
+      return
+    }
+    const suggestion = getGigTitleSuggestion(
+      form.values.event_type_id,
+      selectedProject.name,
+    )
+
+    if (
+      !form.values.title ||
+      form.values.title.startsWith('Ensaio de ') ||
+      form.values.title.startsWith('Show de ') ||
+      form.values.title.includes(` de ${selectedProject.name}`) ||
+      form.values.title.includes(` com ${selectedProject.name}`)
+    ) {
+      form.setFieldValue('title', suggestion)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.values.event_type_id, selectedProject])
+
   return (
     <>
       <Helmet>
@@ -457,332 +712,552 @@ export default function NewGig() {
         <Title order={3} mb="lg">
           Cadastrar nova gig
         </Title>
-        <form onSubmit={form.onSubmit(handleSubmit)}>
-          <Stack gap="sm">
-            <Combobox
-              store={combobox}
-              onOptionSubmit={(val) => {
-                const item = userProjects.find((p) => String(p.projects?.id) === val)
-                if (item) {
-                  handleSelectProject(item)
-                }
-              }}
+
+        {/* PASSO 1 */}
+        <Paper withBorder p="md" radius="md" mb="md">
+          <Group justify="space-between" mb="xs">
+            <Badge
+              size="lg"
+              variant="filled"
+              color={step === 1 ? 'indigo' : 'green'}
+              rightSection={step > 1 && <IconCheck size={18} />}
             >
-              <Combobox.Target>
-                <InputBase
-                  label="Selecione o projeto, artista, banda, etc"
-                  description="Exibindo apenas projetos que sou administrador"
-                  placeholder="Selecione seu projeto..."
-                  value={projectSearch}
-                  onChange={(e) => setProjectSearch(e.currentTarget.value)}
-                  onFocus={() => combobox.openDropdown()}
-                  rightSection={<Combobox.Chevron />}
-                />
-              </Combobox.Target>
-              <Combobox.Dropdown>
-                <Combobox.Options>
-                  {filteredProjects.map((item) => (
-                    <Combobox.Option
-                      key={item.projects.id}
-                      value={String(item.projects.id)}
-                    >
-                      <Flex gap="sm" align="center">
-                        <Avatar
-                          size={36}
-                          src={
-                            item.projects.picture
-                              ? `${PROJECT_IMAGE_PATH}${item.projects.id}/tr:h-36/${item.projects.picture}`
-                              : null
-                          }
-                        />
-                        <Text size="sm">{item.projects.name}</Text>
-                      </Flex>
-                    </Combobox.Option>
-                  ))}
-                </Combobox.Options>
-              </Combobox.Dropdown>
-            </Combobox>
-
-            {selectedProject && (
-              <Center>
-                <Flex gap="sm" align="center">
-                  <Avatar
-                    size={50}
-                    src={
-                      selectedProject?.picture
-                        ? `${PROJECT_IMAGE_PATH}${selectedProject.id}/tr:h-50/${selectedProject.picture}`
-                        : null
-                    }
-                  />
-                  <Stack gap={0}>
-                    <Text size="md" lh={1}>
-                      {selectedProject?.name}
-                    </Text>
-                    <Text size="sm" c="dimmed">
-                      {selectedProject?.project_types?.name_ptbr}
-                    </Text>
-                  </Stack>
-                </Flex>
-              </Center>
+              Passo 1
+            </Badge>
+            {selectedProject && step > 1 && (
+              <Button variant="subtle" size="xs" onClick={handleBack}>
+                Trocar projeto
+              </Button>
             )}
+          </Group>
 
-            <Grid>
-              <Grid.Col span={{ base: 12, sm: 6 }}>
-                <Select
-                  key={`gig-type-${eventTypes.length}`}
-                  label="Tipo da gig"
-                  leftSection={<IconMicrophone2 size={14} />}
-                  data={eventTypes
-                    .filter((et) => et?.id != null)
-                    .map((et) => ({ value: String(et.id), label: et.name }))}
-                  value={form.values.event_type_id}
-                  onChange={(v) => form.setFieldValue('event_type_id', v)}
-                />
-              </Grid.Col>
-              <Grid.Col span={{ base: 12, md: 6 }}>
-                <Select
-                  label="Dress code"
-                  placeholder="Opcional"
-                  leftSection={<IconShirt size={14} />}
-                  data={dressCodeTypes.map((d) => ({
-                    value: String(d.id),
-                    label: d.name,
-                  }))}
-                  value={form.values.dress_code_id}
-                  onChange={(v) => form.setFieldValue('dress_code_id', v)}
-                />
-              </Grid.Col>
-            </Grid>
+          <Stack gap={1} mt={4} mb="xs">
+            <Title order={4}>Selecione o projeto</Title>
+            <Group gap={4}>
+              <Text size="xs" c="dimmed">
+                Exibindo apenas projetos que sou membro administrador ou staff
+              </Text>
+              <IconLock color="gray" size={15} />
+            </Group>
+          </Stack>
 
-            <EventCombobox
-              selected={selectedEvent}
-              onSelect={(ev) => {
-                setSelectedEvent(ev)
-                setSelectedVenue(
-                  ev.venue_id ? { id: ev.venue_id, name: ev.venues?.name } : null,
-                )
-                setShowManualVenue(false)
-              }}
-              onClear={() => {
-                setSelectedEvent(null)
-                setSelectedVenue(null)
-              }}
-            />
-
-            <TextInput label="Título da gig" {...form.getInputProps('title')} />
-            <Textarea
-              label="Descrição"
-              autosize
-              minRows={2}
-              {...form.getInputProps('description')}
-            />
-
-            <Divider label="Data e local" />
-            <Grid>
-              <Grid.Col span={4}>
-                <TextInput
-                  type="date"
-                  label="Data"
-                  leftSection={<IconCalendar size={16} />}
-                  {...form.getInputProps('date')}
-                />
-              </Grid.Col>
-              <Grid.Col span={4}>
-                <TimeInput
-                  label="Início"
-                  leftSection={<IconClock size={16} />}
-                  {...form.getInputProps('time_stage_start')}
-                />
-              </Grid.Col>
-              <Grid.Col span={4}>
-                <TimeInput
-                  label="Fim"
-                  leftSection={<IconClock size={16} />}
-                  {...form.getInputProps('time_stage_end')}
-                />
-              </Grid.Col>
-            </Grid>
-
-            <VenueCombobox
-              selected={selectedVenue}
-              onSelect={(venue) => {
-                setSelectedVenue(venue)
-                setShowManualVenue(false)
-              }}
-              onClear={() => {
-                setSelectedVenue(null)
-              }}
-              disabled={!!selectedEvent}
-            />
-
-            {!selectedVenue && !selectedEvent && (
-              <Checkbox
-                label="Não encontrei o local, preencher manualmente"
-                checked={showManualVenue}
-                onChange={(e) => setShowManualVenue(e.currentTarget.checked)}
-                mt="xs"
+          {step === 1 ? (
+            <Stack gap="xs">
+              <TextInput
+                placeholder="Filtrar por nome..."
+                value={projectSearch}
+                onChange={(e) => setProjectSearch(e.currentTarget.value)}
+                leftSection={<IconMicrophone2 size={14} />}
+                rightSection={
+                  projectSearch && <CloseButton onClick={() => setProjectSearch('')} />
+                }
               />
-            )}
+              <ProjectScrollerSelector
+                loading={loadingUserProjects}
+                projects={filteredProjects.map((fp) => fp.projects)}
+                selected={selectedProject}
+                onSelect={(proj) => {
+                  const wrapper = filteredProjects.find(
+                    (fp) => fp.projects.id === proj.id,
+                  )
+                  if (wrapper) {
+                    handleSelectProject(wrapper)
+                  }
+                }}
+              />
+              {/* <Button
+                size="xs"
+                variant="subtle"
+                w="fit-content"
+                rightSection={<IconChevronRightFilled size={14} />}
+              >
+                Cadastrar novo
+              </Button> */}
+            </Stack>
+          ) : (
+            <Group gap="sm">
+              <Avatar
+                src={
+                  selectedProject?.picture
+                    ? `${PROJECT_IMAGE_PATH}/${selectedProject.id}/${
+                        selectedProject.picture
+                      }`
+                    : undefined
+                }
+                size={42}
+                radius="xl"
+              />
+              <Box>
+                <Text fw={600}>{selectedProject?.name}</Text>
+                <Text size="xs" c="dimmed">
+                  @{selectedProject?.slug} · {selectedProject?.project_types?.name_ptbr}
+                </Text>
+              </Box>
+              {selectedProject?.end_year && (
+                <Alert variant="light" color="orange" p="xs">
+                  Este projeto foi encerrado em {selectedProject?.end_year}. Antes de
+                  continuar o cadastro, vale a pena confirmar a viabilidade real desta
+                  gig.
+                </Alert>
+              )}
+            </Group>
+          )}
+        </Paper>
 
-            {showManualVenue && !selectedVenue && !selectedEvent && (
-              <Grid>
-                <Grid.Col span={6}>
-                  <TextInput
-                    label="Nome do local (caso não encontrado acima)"
-                    placeholder="Ex: Estúdio do Seu Zé"
-                    {...form.getInputProps('venue_name')}
-                  />
-                </Grid.Col>
-                <Grid.Col span={6}>
-                  <TextInput
-                    label="Endereço"
-                    placeholder="Rua, bairro, cidade"
-                    {...form.getInputProps('venue_address')}
-                  />
-                </Grid.Col>
-              </Grid>
-            )}
-
-            <Divider label={`Vagas (${gigRoles.length})`} />
-            <Stack gap="sm">
-              {gigRoles.map((gr) => (
-                <Paper key={gr.tempId} p="sm" withBorder radius="md">
+        <form onSubmit={form.onSubmit(handleSubmit)}>
+          <Collapse expanded={step >= 2}>
+            <Paper id="gig-details" withBorder p="md" radius="md" mb="md">
+              <Group justify="space-between" mb="xs">
+                <Badge
+                  size="lg"
+                  variant="filled"
+                  color={step === 2 ? 'indigo' : 'green'}
+                  rightSection={step === 3 && <IconCheck size={18} />}
+                >
+                  Passo 2
+                </Badge>
+                {step >= 3 && (
+                  <Button variant="subtle" size="xs" onClick={() => setStep(2)}>
+                    Editar detalhes
+                  </Button>
+                )}
+              </Group>
+              <Title order={4}>Detalhes da gig</Title>
+              {step === 2 && (
+                <Stack gap="sm" mt="md">
                   <Grid>
-                    <Grid.Col span={6}>
+                    <Grid.Col span={{ base: 12, sm: 6 }}>
                       <Select
-                        label="Atividade"
-                        placeholder="Selecione..."
-                        data={groupedRolesData}
-                        value={gr.role_id ? String(gr.role_id) : null}
-                        onChange={(v) =>
-                          updateRole(gr.tempId, { role_id: v ? Number(v) : null })
-                        }
-                        searchable
-                        comboboxProps={{ withinPortal: true }}
+                        key={`gig-type-${eventTypes.length}`}
+                        label="Tipo da gig"
+                        leftSection={<IconMicrophone2 size={14} />}
+                        data={eventTypes
+                          .filter((et) => et?.id != null)
+                          .map((et) => ({ value: String(et.id), label: et.name }))}
+                        value={form.values.event_type_id}
+                        onChange={(v) => form.setFieldValue('event_type_id', v)}
+                        // withScrollArea={false}
+                        // styles={{ dropdown: { maxHeight: 200, overflowY: 'auto' } }}
                       />
                     </Grid.Col>
-                    <Grid.Col span={3}>
+                    <Grid.Col span={{ base: 12, md: 6 }}>
                       <Select
-                        label="Nível"
-                        data={[
-                          { value: '1', label: 'Iniciante' },
-                          { value: '2', label: 'Intermediário' },
-                          { value: '3', label: 'Avançado' },
-                        ]}
-                        value={String(gr.experience_level)}
-                        onChange={(v) =>
-                          updateRole(gr.tempId, { experience_level: Number(v) })
-                        }
+                        label="Dress code"
+                        placeholder="Opcional"
+                        leftSection={<IconShirt size={14} />}
+                        data={dressCodeTypes.map((d) => ({
+                          value: String(d.id),
+                          label: d.name,
+                        }))}
+                        value={form.values.dress_code_id}
+                        onChange={(v) => form.setFieldValue('dress_code_id', v)}
                       />
-                    </Grid.Col>
-                    <Grid.Col span={3}>
-                      <NumberInput
-                        label="Cachê"
-                        placeholder="R$ 0,00"
-                        // leftSection={<IconCurrencyDollar size={14} />}
-                        min={0}
-                        decimalScale={2}
-                        fixedDecimalScale
-                        thousandSeparator="."
-                        decimalSeparator=","
-                        prefix="R$ "
-                        value={gr.fee}
-                        onChange={(v) => updateRole(gr.tempId, { fee: v })}
-                        disabled={gr.fee_not_informed}
-                      />
-                      <Checkbox
-                        mt={6}
-                        size="xs"
-                        label="Não informado"
-                        checked={gr.fee_not_informed}
-                        onChange={(e) =>
-                          updateRole(gr.tempId, {
-                            fee_not_informed: e.currentTarget.checked,
-                            fee: e.currentTarget.checked ? null : gr.fee,
-                          })
-                        }
-                      />
-                    </Grid.Col>
-                    <Grid.Col span={12}>
-                      {gr.role_id && selectedProject && (
-                        <GigRoleCombobox
-                          projectId={selectedProject.id}
-                          roleId={gr.role_id}
-                          onSelect={(profile) =>
-                            updateRole(gr.tempId, { assigned: profile })
-                          }
-                        />
-                      )}
-                      {gr.assigned && (
-                        <Group mt="xs" gap="xs">
-                          <Badge color="teal" variant="light">
-                            @{gr.assigned.username}
-                          </Badge>
-                          <ActionIcon
-                            size="xs"
-                            variant="subtle"
-                            onClick={() => updateRole(gr.tempId, { assigned: null })}
-                          >
-                            x
-                          </ActionIcon>
-                        </Group>
-                      )}
-                    </Grid.Col>
-                    <Grid.Col span={12}>
-                      <Divider mb="sm" />
-                      <Checkbox
-                        label="A vaga é um sub (substituição)"
-                        checked={gr.is_sub}
-                        onChange={(e) =>
-                          updateRole(gr.tempId, { is_sub: e.currentTarget.checked })
-                        }
-                      />
-                      {gr.is_sub && (
-                        <Box mt="xs">
-                          <Text size="xs" fw={500} mb={4}>
-                            Quem será substituído nesta vaga?
-                          </Text>
-                          <SubForCombobox
-                            selected={gr.sub_for_profile}
-                            onSelect={(profile) =>
-                              updateRole(gr.tempId, { sub_for_profile: profile })
-                            }
-                          />
-                        </Box>
-                      )}
                     </Grid.Col>
                   </Grid>
-                  <Group justify="flex-end" mt="xs">
+
+                  <TextInput label="Título da gig" {...form.getInputProps('title')} />
+                  <Textarea
+                    label="Descrição"
+                    autosize
+                    minRows={2}
+                    {...form.getInputProps('description')}
+                  />
+
+                  <Divider label="Data e local" />
+
+                  <EventCombobox
+                    selected={selectedEvent}
+                    onSelect={handleSelectEvent}
+                    onClear={() => {
+                      setSelectedEvent(null)
+                      setSelectedVenue(null)
+                    }}
+                  />
+
+                  {!selectedEvent && (
+                    <ScrollArea type="never" scrollbarSize={0} offsetScrollbars>
+                      <Group gap="xs" wrap="nowrap" py={4}>
+                        {getDateSuggestions().map((suggestion) => (
+                          <Button
+                            key={suggestion.label}
+                            size="xs"
+                            variant={
+                              form.values.date === suggestion.value ? 'light' : 'default'
+                            }
+                            onClick={() => {
+                              form.setFieldValue('date', suggestion.value)
+
+                              if (suggestion.label === 'Hoje') {
+                                const now = new Date()
+                                now.setHours(now.getHours() + 1)
+
+                                const hours = String(now.getHours()).padStart(2, '0')
+                                const minutes = String(now.getMinutes()).padStart(2, '0')
+                                const startTime = `${hours}:${minutes}`
+
+                                const end = new Date(now)
+                                end.setHours(end.getHours() + 2)
+
+                                const endHours = String(end.getHours()).padStart(2, '0')
+                                const endMinutes = String(end.getMinutes()).padStart(
+                                  2,
+                                  '0',
+                                )
+                                const endTime = `${endHours}:${endMinutes}`
+
+                                form.setFieldValue('time_stage_start', startTime)
+                                form.setFieldValue('time_stage_end', endTime)
+                              } else {
+                                form.setFieldValue('time_stage_start', '15:00')
+                                form.setFieldValue('time_stage_end', '17:00')
+                              }
+                            }}
+                            style={{ flexShrink: 0 }}
+                          >
+                            {suggestion.label}
+                          </Button>
+                        ))}
+                      </Group>
+                    </ScrollArea>
+                  )}
+
+                  <Grid>
+                    <Grid.Col span={{ base: 12, sm: 4 }}>
+                      <TextInput
+                        type="date"
+                        label="Data"
+                        leftSection={<IconCalendar size={16} />}
+                        {...form.getInputProps('date')}
+                      />
+                    </Grid.Col>
+
+                    <Grid.Col span={{ base: 6, sm: 4 }}>
+                      <TimeInput
+                        label="Início"
+                        leftSection={<IconClock size={16} />}
+                        {...form.getInputProps('time_stage_start')}
+                      />
+                    </Grid.Col>
+
+                    <Grid.Col span={{ base: 6, sm: 4 }}>
+                      <TimeInput
+                        label="Fim"
+                        leftSection={<IconClock size={16} />}
+                        {...form.getInputProps('time_stage_end')}
+                      />
+                    </Grid.Col>
+                  </Grid>
+
+                  {selectedEvent && (
+                    <TextInput
+                      label="Nome do palco"
+                      description="Palco ou local onde será a gig no evento"
+                      placeholder="Ex: Palco Principal"
+                      {...form.getInputProps('stage_name')}
+                    />
+                  )}
+
+                  {selectedEvent?.venue && (
+                    <Group gap={6}>
+                      <IconMapPin size={14} />
+                      <Text size="sm" c="dimmed">
+                        {selectedEvent.venue.name}
+                        {selectedEvent.venue.city?.name &&
+                          ` — ${selectedEvent.venue.city.name}/${selectedEvent.venue.city.region?.uf || ''}`}
+                      </Text>
+                    </Group>
+                  )}
+
+                  {!selectedEvent && (
+                    <VenueCombobox
+                      selected={selectedVenue}
+                      onSelect={(venue) => {
+                        setSelectedVenue(venue)
+                        setShowManualVenue(false)
+                      }}
+                      onClear={() => {
+                        setSelectedVenue(null)
+                      }}
+                      disabled={!!selectedEvent}
+                    />
+                  )}
+
+                  {!selectedVenue && !selectedEvent && (
+                    <Checkbox
+                      label="Não encontrei o local, preencher manualmente"
+                      checked={showManualVenue}
+                      onChange={(e) => setShowManualVenue(e.currentTarget.checked)}
+                      mt="xs"
+                    />
+                  )}
+
+                  {showManualVenue && !selectedVenue && !selectedEvent && (
+                    <Grid>
+                      <Grid.Col span={6}>
+                        <TextInput
+                          label="Nome do local (caso não encontrado acima)"
+                          placeholder="Ex: Estúdio do Seu Zé"
+                          {...form.getInputProps('venue_name')}
+                        />
+                      </Grid.Col>
+                      <Grid.Col span={6}>
+                        <TextInput
+                          label="Endereço"
+                          placeholder="Rua, bairro, cidade"
+                          {...form.getInputProps('venue_address')}
+                        />
+                      </Grid.Col>
+                    </Grid>
+                  )}
+
+                  {step === 2 && (
+                    <Group justify="flex-end" mt="md">
+                      <Button
+                        rightSection={<IconChevronRightFilled size={14} />}
+                        onClick={handleContinueToRoles}
+                        disabled={
+                          !form.values.title?.trim() ||
+                          !form.values.date ||
+                          !form.values.time_stage_start
+                        }
+                      >
+                        Continuar
+                      </Button>
+                    </Group>
+                  )}
+                </Stack>
+              )}
+            </Paper>
+          </Collapse>
+
+          <Collapse expanded={step >= 3}>
+            <Paper id="gig-roles" withBorder p="md" radius="md" mb="md">
+              <Group justify="space-between" mb="xs">
+                <Badge
+                  size="lg"
+                  variant="filled"
+                  color={step === 3 ? 'indigo' : 'green'}
+                  rightSection={step === 4 && <IconCheck size={18} />}
+                >
+                  Passo 3
+                </Badge>
+                {step === 4 && (
+                  <Button variant="subtle" size="xs" onClick={() => setStep(3)}>
+                    Editar vagas
+                  </Button>
+                )}
+              </Group>
+              <Title order={4}>Vagas para a gig ({gigRoles?.length})</Title>
+              {step > 3 && (
+                <Text size="xs" mt="xs">
+                  {gigRoles
+                    ?.map(
+                      (gigRole) =>
+                        roles?.find((role) => role.id === gigRole.role_id)
+                          ?.description_ptbr,
+                    )
+                    .filter(Boolean)
+                    .join(', ')}
+                </Text>
+              )}
+              {step === 3 && (
+                <Stack gap="xs" mt="md">
+                  <Stack gap="xs">
+                    {gigRoles.map((gr) => (
+                      <Paper key={gr.tempId} p="sm" withBorder radius="md">
+                        <Grid>
+                          <Grid.Col span={{ base: 12, sm: 4 }}>
+                            <Select
+                              label="Atividade"
+                              placeholder="Selecione..."
+                              data={groupedRolesData}
+                              value={gr.role_id ? String(gr.role_id) : null}
+                              onChange={(v) =>
+                                updateRole(gr.tempId, { role_id: v ? Number(v) : null })
+                              }
+                              searchable
+                              comboboxProps={{ withinPortal: true }}
+                            />
+                          </Grid.Col>
+                          <Grid.Col span={{ base: 6, sm: 4 }}>
+                            <Select
+                              label="Nível"
+                              data={[
+                                { value: '1', label: 'Iniciante' },
+                                { value: '2', label: 'Intermediário' },
+                                { value: '3', label: 'Avançado' },
+                              ]}
+                              value={String(gr.experience_level)}
+                              onChange={(v) =>
+                                updateRole(gr.tempId, { experience_level: Number(v) })
+                              }
+                            />
+                          </Grid.Col>
+                          <Grid.Col span={{ base: 6, sm: 4 }}>
+                            <NumberInput
+                              label="Cachê"
+                              placeholder="R$ 0,00"
+                              // leftSection={<IconCurrencyDollar size={14} />}
+                              min={0}
+                              decimalScale={2}
+                              fixedDecimalScale
+                              thousandSeparator="."
+                              decimalSeparator=","
+                              prefix="R$ "
+                              value={gr.fee}
+                              onChange={(v) => updateRole(gr.tempId, { fee: v })}
+                              disabled={gr.fee_not_informed}
+                            />
+                            <Checkbox
+                              mt={6}
+                              size="xs"
+                              label="Não informado"
+                              checked={gr.fee_not_informed}
+                              onChange={(e) =>
+                                updateRole(gr.tempId, {
+                                  fee_not_informed: e.currentTarget.checked,
+                                  fee: e.currentTarget.checked ? null : gr.fee,
+                                })
+                              }
+                            />
+                          </Grid.Col>
+                          <Grid.Col span={12}>
+                            <Textarea
+                              label="Sobre a atuação"
+                              description="Detalhes opcionais sobre esta atuação"
+                              minRows={2}
+                              maxRows={2}
+                              onChange={(e) =>
+                                updateRole(gr.tempId, {
+                                  description: e.currentTarget.value,
+                                })
+                              }
+                            />
+                          </Grid.Col>
+                          <Grid.Col span={12}>
+                            {gr.role_id && selectedProject && (
+                              <GigRoleCombobox
+                                projectId={selectedProject.id}
+                                roleId={gr.role_id}
+                                onSelect={(profile) =>
+                                  updateRole(gr.tempId, { assigned: profile })
+                                }
+                              />
+                            )}
+                            {gr.assigned && (
+                              <Group mt="xs" gap="xs">
+                                <Badge color="teal" variant="light">
+                                  @{gr.assigned.username}
+                                </Badge>
+                                <ActionIcon
+                                  size="xs"
+                                  variant="subtle"
+                                  onClick={() =>
+                                    updateRole(gr.tempId, { assigned: null })
+                                  }
+                                >
+                                  x
+                                </ActionIcon>
+                              </Group>
+                            )}
+                          </Grid.Col>
+                          <Grid.Col span={12}>
+                            <Divider mb="sm" />
+                            <Checkbox
+                              label="A vaga é um sub (substituição)"
+                              checked={gr.is_sub}
+                              onChange={(e) =>
+                                updateRole(gr.tempId, { is_sub: e.currentTarget.checked })
+                              }
+                            />
+                            {gr.is_sub && (
+                              <Box mt="xs">
+                                <Text size="xs" fw={500} mb={4}>
+                                  Quem será substituído nesta vaga?
+                                </Text>
+                                <SubForCombobox
+                                  selected={gr.sub_for_profile}
+                                  onSelect={(profile) =>
+                                    updateRole(gr.tempId, { sub_for_profile: profile })
+                                  }
+                                />
+                              </Box>
+                            )}
+                          </Grid.Col>
+                        </Grid>
+                        <Group justify="flex-end" mt="xs">
+                          <Button
+                            size="xs"
+                            variant="subtle"
+                            color="red"
+                            leftSection={<IconTrash size={14} />}
+                            onClick={() => removeRole(gr.tempId)}
+                            disabled={gigRoles.length === 1}
+                          >
+                            Remover vaga
+                          </Button>
+                        </Group>
+                      </Paper>
+                    ))}
                     <Button
-                      size="xs"
-                      variant="subtle"
-                      color="red"
-                      leftSection={<IconTrash size={14} />}
-                      onClick={() => removeRole(gr.tempId)}
-                      disabled={gigRoles.length === 1}
+                      variant="light"
+                      color="var(--mantine-color-text)"
+                      leftSection={<IconPlus size={16} />}
+                      onClick={addRole}
                     >
-                      Remover vaga
+                      Adicionar outra vaga
+                    </Button>
+                  </Stack>
+                  <Group justify="flex-end" mt="md">
+                    <Button
+                      rightSection={<IconChevronRightFilled size={14} />}
+                      onClick={handleContinueToSetlist}
+                      disabled={!gigRoles.some((r) => r.role_id)}
+                    >
+                      Continuar
                     </Button>
                   </Group>
-                </Paper>
-              ))}
-              <Button
-                variant="default"
-                leftSection={<IconPlus size={16} />}
-                onClick={addRole}
-              >
-                Adicionar outra vaga
-              </Button>
-            </Stack>
-            <Group justify="flex-end" mt="md">
-              <Button
-                type="submit"
-                leftSection={<IconSend size={15} />}
-                loading={isSubmitting}
-              >
-                Criar gig
-              </Button>
-            </Group>
+                </Stack>
+              )}
+            </Paper>
+          </Collapse>
+
+          <Collapse expanded={step === 4}>
+            <Paper id="gig-setlist" withBorder p="md" radius="md">
+              <Badge size="lg" variant="filled" color="indigo" mb="xs">
+                Passo 4
+              </Badge>
+              <Title order={4} mb="md">
+                Repertório / Setlist
+              </Title>
+              <Stack gap="md">
+                <SetlistManager
+                  projectId={selectedProject?.id}
+                  value={selectedSetlistId}
+                  onChange={setSelectedSetlistId}
+                />
+                <Group justify="flex-end" mt="md">
+                  <Button
+                    type="submit"
+                    leftSection={<IconSend size={15} />}
+                    loading={isSubmitting}
+                  >
+                    Criar gig
+                  </Button>
+                </Group>
+              </Stack>
+            </Paper>
+          </Collapse>
+          {/* Exibe os steps desativados para situar o usuário */}
+          <Stack gap="xs">
+            {UPCOMING_STEPS.filter((s) => step < s.number).map((s) => (
+              <StepPlaceholder
+                key={s.number}
+                number={s.number}
+                title={s.title}
+                id={s.id}
+              />
+            ))}
           </Stack>
         </form>
       </Container>

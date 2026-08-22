@@ -39,20 +39,20 @@ export default function MyProjects() {
   const userProjects = projects
     .filter((x) => x.is_admin)
     .map((p) => ({
-      id: p.project.id,
-      name: p.project.name,
-      slug: p.project.slug,
-      end_year: p.project.end_year,
-      is_admin: p.is_admin,
-      is_founder: p.is_founder,
-      picture: p.project.picture,
-      request_status: p.status,
-      activity_status: p.project.activity_status,
-      activity_status_name: p.project.status?.description_ptbr,
-      activity_status_color: p.project.status?.color,
-      genre: p.project.genre?.name,
-      type: p.project.type?.name_ptbr,
-      totalMembers: p.project.members?.length || 0,
+      id: p?.project?.id,
+      name: p?.project?.name,
+      slug: p?.project?.slug,
+      end_year: p?.project?.end_year,
+      is_admin: p?.is_admin,
+      is_founder: p?.is_founder,
+      picture: p?.project?.picture,
+      request_status: p?.status,
+      activity_status: p?.project?.activity_status,
+      activity_status_name: p?.project?.status?.description_ptbr,
+      activity_status_color: p?.project?.status?.color,
+      genre: p?.project?.genre?.name,
+      type: p?.project?.type?.name_ptbr,
+      totalMembers: p?.project?.members?.length || 0,
     }))
 
   const filteredProjects = normalizedQuery

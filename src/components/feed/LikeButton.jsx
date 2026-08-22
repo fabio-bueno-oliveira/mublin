@@ -1,88 +1,115 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import {
-  Button
-} from '@mantine/core'
-import {
-  IconHeart, IconHeartFilled
-} from '@tabler/icons-react'
-import { 
-  toggleLike
-} from '../../queries/feed'
+import { Button } from '@mantine/core'
+import { IconHeart, IconHeartFilled } from '@tabler/icons-react'
+import { toggleLike } from '../../queries/feed'
 
-export default function LikeButton({ postId, userId, likedPostIds, likesCount }) {
+export default function LikeButton({ postId, userId, liked = false, likesCount = 0 }) {
   const queryClient = useQueryClient()
-  const liked = likedPostIds.includes(postId)
 
   const { mutate, isPending } = useMutation({
     mutationFn: () => toggleLike({ postId, userId, liked }),
     onMutate: async () => {
-      await queryClient.cancelQueries({ queryKey: ['likedPosts', userId] })
-      await queryClient.cancelQueries({ queryKey: ['likesCount'] })
+      // Cancela refetch do feed e do post detalhe
+      await queryClient.cancelQueries({ queryKey: ['feed'] })
+      await queryClient.cancelQueries({ queryKey: ['post', String(postId)] })
+      await queryClient.cancelQueries({ queryKey: ['post', postId] })
 
-      const previousLiked = queryClient.getQueryData(['likedPosts', userId])
-      const previousCount = queryClient.getQueryData(
-        queryClient.getQueryCache().findAll({ queryKey: ['likesCount'] })[0]?.queryKey
-      )
+      // Snapshot para rollback
+      const previousFeed = queryClient.getQueriesData({ queryKey: ['feed'] })
+      const previousPost =
+        queryClient.getQueryData(['post', String(postId), userId]) ||
+        queryClient.getQueryData(['post', String(postId)])
 
-      // Atualiza lista de posts curtidos
-      queryClient.setQueryData(['likedPosts', userId], (old = []) =>
-        liked ? old.filter(id => id !== postId) : [...old, postId]
-      )
+      // 1. Atualiza feed infinito
+      queryClient.setQueriesData({ queryKey: ['feed'] }, (old) => {
+        if (!old) {
+          return old
+        }
+        // old pode ser { pages: [...] } do useInfiniteQuery
+        if (old.pages) {
+          return {
+            ...old,
+            pages: old.pages.map((page) =>
+              page.map((p) =>
+                p.id === postId
+                  ? {
+                      ...p,
+                      likes_count: Math.max(0, (p.likes_count ?? 0) + (liked ? -1 : 1)),
+                      viewer_has_liked: !liked,
+                      likesCount: Math.max(
+                        0,
+                        (p.likesCount ?? p.likes_count ?? 0) + (liked ? -1 : 1),
+                      ),
+                    }
+                  : p,
+              ),
+            ),
+          }
+        }
+        return old
+      })
 
-      // Atualiza o mapa de contagens
-      const countKey = queryClient.getQueryCache()
-        .findAll({ queryKey: ['likesCount'] })[0]?.queryKey
-      if (countKey) {
-        queryClient.setQueryData(countKey, (old = {}) => ({
+      // 2. Atualiza post único (Post.jsx)
+      queryClient.setQueriesData({ queryKey: ['post'] }, (old) => {
+        if (!old || old.id !== postId) {
+          return old
+        }
+        return {
           ...old,
-          [postId]: Math.max(0, (old[postId] ?? 0) + (liked ? -1 : 1)),
-        }))
-      }
+          likes_count: Math.max(0, (old.likes_count ?? 0) + (liked ? -1 : 1)),
+          viewer_has_liked: !liked,
+        }
+      })
 
-      return { previousLiked, previousCount, countKey }
+      return { previousFeed, previousPost }
     },
     onError: (_err, _vars, context) => {
-      if (context?.previousLiked !== undefined) {
-        queryClient.setQueryData(['likedPosts', userId], context.previousLiked)
+      if (context?.previousFeed) {
+        context.previousFeed.forEach(([key, data]) => {
+          queryClient.setQueryData(key, data)
+        })
       }
-      if (context?.countKey && context?.previousCount !== undefined) {
-        queryClient.setQueryData(context.countKey, context.previousCount)
+      if (context?.previousPost) {
+        queryClient.setQueriesData({ queryKey: ['post'] }, context.previousPost)
       }
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['likedPosts', userId] })
-      queryClient.invalidateQueries({ queryKey: ['likesCount'] })
+      // Não invalida tudo de imediato pra manter o optimistic liso
+      // Se quiser garantir consistência final, descomente:
+      // queryClient.invalidateQueries({ queryKey: ['post', String(postId)] })
     },
   })
 
   return (
-      <Button
-        variant="subtle"
-        color="gray"
-        size="sm"
-        radius="md"
-        px={10}
-        leftSection={
-          (likesCount > 0) 
-            ?
-              liked
-                ? <IconHeartFilled size={20} color="red" />
-                : <IconHeart size={20} />
-            : undefined
-        }
-        aria-label={liked ? 'Descurtir' : 'Curtir'}
-        title={liked ? 'Descurtir' : 'Curtir'}
-        loading={isPending}
-        onClick={() => mutate()}
-        style={{ cursor: isPending ? 'default' : 'pointer' }}
-      >
-        {(likesCount === 0) ? 
-          liked
-            ? <IconHeartFilled size={24} color="red" />
-            : <IconHeart size={24} />
-          : undefined
-        }
-        {likesCount > 0 ? likesCount : ''}
-      </Button>
+    <Button
+      variant="subtle"
+      color="gray"
+      size="sm"
+      radius="md"
+      px={10}
+      leftSection={
+        likesCount > 0 ? (
+          liked ? (
+            <IconHeartFilled size={20} color="red" />
+          ) : (
+            <IconHeart size={20} />
+          )
+        ) : undefined
+      }
+      aria-label={liked ? 'Descurtir' : 'Curtir'}
+      title={liked ? 'Descurtir' : 'Curtir'}
+      loading={isPending}
+      onClick={() => mutate()}
+      style={{ cursor: isPending ? 'default' : 'pointer' }}
+    >
+      {likesCount === 0 ? (
+        liked ? (
+          <IconHeartFilled size={24} color="red" />
+        ) : (
+          <IconHeart size={24} />
+        )
+      ) : undefined}
+      {likesCount > 0 ? likesCount : ''}
+    </Button>
   )
 }

@@ -423,3 +423,85 @@ export async function fetchUserInspirationsCount(profileId) {
   }
   return count ?? 0
 }
+
+export async function fetchUserGigs(userId, limit = 30) {
+  const { data, error } = await supabase
+    .from('gig_applications')
+    .select(
+      `
+      id,
+      created_at,
+      gig_id,
+      gig_role_id,
+      status_request_appliant,
+      status_request_gig_owner,
+      gig:gigs (
+        id,
+        title,
+        date
+      )
+    `,
+    )
+    .eq('profile_id', userId)
+    .eq('status_request_appliant', 2)
+    .eq('status_request_gig_owner', 2)
+    .order('date', {
+      ascending: false,
+      foreignTable: 'gigs',
+    })
+    .limit(limit)
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  return data
+}
+
+export async function fetchUserGigGoals(userId) {
+  const { data, error } = await supabase
+    .from('gig_goals')
+    .select(
+      `
+      id,
+      profile_id,
+      monthly_total_gigs,
+      annual_total_gigs,
+      monthly_income,
+      annual_income
+    `,
+    )
+    .eq('profile_id', userId)
+    .maybeSingle()
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  return data
+}
+
+export async function upsertUserGigGoals(userId, goals) {
+  const { data, error } = await supabase
+    .from('gig_goals')
+    .upsert(
+      {
+        profile_id: userId,
+        monthly_total_gigs: goals.monthly_total_gigs,
+        annual_total_gigs: goals.annual_total_gigs,
+        monthly_income: goals.monthly_income,
+        annual_income: goals.annual_income,
+      },
+      {
+        onConflict: 'profile_id',
+      },
+    )
+    .select()
+    .single()
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  return data
+}

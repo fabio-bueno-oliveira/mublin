@@ -1,70 +1,28 @@
 import { supabase } from '../lib/supabaseClient'
 
-export async function fetchFeed(limit = 20, offset = 0, userId = null) {
-  // Define qual RPC chamar baseado na presença do userId
-  const rpcName = userId ? 'get_following_feed' : 'get_feed'
-  const rpcParams = userId
-    ? { limit_count: limit, offset_count: offset, viewer_id: userId }
-    : { limit_count: limit, offset_count: offset }
+export async function fetchFeed(limit = 20, offset = 0, viewerId = null) {
+  const rpcName = viewerId ? 'get_following_feed' : 'get_feed'
 
-  const { data, error } = await supabase.rpc(rpcName, rpcParams)
-
+  const { data, error } = await supabase.rpc(rpcName, {
+    limit_count: limit,
+    offset_count: offset,
+    viewer_id: viewerId,
+  })
   if (error) {
     throw new Error(error.message)
   }
   return data
 }
 
-export async function fetchPostDetailsById(id) {
-  const { data, error } = await supabase.rpc('get_feed_post', { post_id: id })
+export async function fetchPostDetailsById(id, viewerId = null) {
+  const { data, error } = await supabase.rpc('get_feed_post', {
+    post_id: Number(id),
+    viewer_id: viewerId,
+  })
   if (error) {
     throw new Error(error.message)
   }
   return data?.[0] ?? null
-}
-
-export async function fetchPostLikes(postId) {
-  const { count, error } = await supabase
-    .from('feed_likes')
-    .select('*', { count: 'exact', head: true })
-    .eq('id_post', postId)
-  if (error) {
-    throw new Error(error.message)
-  }
-  return count ?? 0
-}
-
-export async function fetchLikesCountByPosts(postIds) {
-  if (!postIds.length) {
-    return {}
-  }
-  const { data, error } = await supabase
-    .from('feed_likes')
-    .select('id_post')
-    .in('id_post', postIds)
-  if (error) {
-    throw new Error(error.message)
-  }
-  // Agrupa e conta no cliente
-  return data.reduce((acc, row) => {
-    acc[row.id_post] = (acc[row.id_post] ?? 0) + 1
-    return acc
-  }, {})
-}
-
-export async function fetchUserLikedPosts(userId, postIds) {
-  if (!postIds.length) {
-    return []
-  }
-  const { data, error } = await supabase
-    .from('feed_likes')
-    .select('id_post')
-    .eq('id_user', userId)
-    .in('id_post', postIds)
-  if (error) {
-    throw new Error(error.message)
-  }
-  return data.map((r) => r.id_post)
 }
 
 export async function toggleLike({ postId, userId, liked }) {

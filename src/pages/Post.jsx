@@ -4,13 +4,7 @@ import { supabase } from '../lib/supabaseClient'
 import { Link, useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../hooks/useAuth'
-import {
-  fetchPostDetailsById,
-  fetchUserLikedPosts,
-  fetchPostLikes,
-  fetchPostComments,
-  postComment,
-} from '../queries/feed'
+import { fetchPostDetailsById, fetchPostComments, postComment } from '../queries/feed'
 import {
   useMantineColorScheme,
   Container,
@@ -18,7 +12,6 @@ import {
   Flex,
   Stack,
   Box,
-  Badge,
   Text,
   Avatar,
   Card,
@@ -92,26 +85,13 @@ export default function Post() {
   ] = useDisclosure(false)
 
   const { data: post, isLoading } = useQuery({
-    queryKey: ['post', id],
-    queryFn: () => fetchPostDetailsById(id),
+    queryKey: ['post', id, user?.id],
+    queryFn: () => fetchPostDetailsById(id, user?.id),
     staleTime: 1000 * 60 * 5,
+    enabled: !!id,
   })
 
   const postIdNum = post?.id ? Number(post.id) : null
-
-  const { data: likedPostIds = [] } = useQuery({
-    queryKey: ['likedPosts', user?.id],
-    queryFn: () => fetchUserLikedPosts(user.id, [postIdNum]),
-    enabled: !!user?.id && !!postIdNum,
-    staleTime: 1000 * 60 * 2,
-  })
-
-  const { data: likesCount = 0 } = useQuery({
-    queryKey: ['postLikes', postIdNum],
-    queryFn: () => fetchPostLikes(postIdNum),
-    enabled: !!postIdNum,
-    staleTime: 1000 * 60 * 2,
-  })
 
   const { data: comments = [], isLoading: loadingComments } = useQuery({
     queryKey: ['post-comments', postIdNum],
@@ -394,10 +374,10 @@ export default function Post() {
             <LinkedItem post={post} />
             <Group mt={12} ml={-4}>
               <LikeButton
-                postId={postIdNum}
+                postId={post.id}
                 userId={user?.id}
-                likedPostIds={likedPostIds}
-                likesCount={likesCount}
+                liked={post.viewer_has_liked}
+                likesCount={post.likes_count}
               />
               {!post.comments_disabled && (
                 <Group gap={10} align="center">

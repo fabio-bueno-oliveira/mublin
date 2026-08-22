@@ -1,14 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Helmet } from 'react-helmet-async'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
-import { useQuery, useInfiniteQuery, useQueryClient } from '@tanstack/react-query'
-import {
-  fetchFeed,
-  fetchUserLikedPosts,
-  fetchLikesCountByPosts,
-  deletePost,
-} from '../queries/feed'
+import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query'
+import { fetchFeed, deletePost } from '../queries/feed'
 import MublinLogoBlack from '../assets/svg/mublin-logo-black.svg'
 import MublinLogoWhite from '../assets/svg/mublin-logo-white.svg'
 import {
@@ -21,7 +16,6 @@ import {
   Center,
   Box,
   SegmentedControl,
-  ActionIcon,
   Card,
   Paper,
   Text,
@@ -29,7 +23,7 @@ import {
   Image,
   Avatar,
   Menu,
-  Loader,
+  ActionIcon,
   Modal,
   Skeleton,
   Divider,
@@ -55,10 +49,8 @@ import parse from 'html-react-parser'
 import linkifyStr from 'linkify-string'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
-// import 'dayjs/locale/pt-br'
 
 dayjs.extend(relativeTime)
-// dayjs.locale('pt-br')
 
 const AVATAR_PATH =
   'https://ik.imagekit.io/mublin/tr:h-68,c-maintain_ratio/users/avatars/'
@@ -67,15 +59,14 @@ export default function Feed({ from = '' }) {
   const navigate = useNavigate()
   const { colorScheme } = useMantineColorScheme()
   const isDesktop = useMediaQuery('(min-width: 48em)')
-
   const queryClient = useQueryClient()
-  const { profile, user, loading } = useAuth()
+  const { profile, user } = useAuth()
   const [isStale, setIsStale] = useState(false)
   const [feedType, setFeedType] = useState('explore')
 
   const {
     data: feedData,
-    error: error,
+    error,
     isLoading: loadingFeed,
     fetchNextPage,
     hasNextPage,
@@ -91,8 +82,6 @@ export default function Feed({ from = '' }) {
       lastPage.length === 10 ? allPages.flat().length : undefined,
     staleTime: 1000 * 60 * 2,
     retry: 1,
-    // refetchInterval: 1000 * 60 * 10,
-    // refetchIntervalInBackground: false,
   })
 
   useEffect(() => {
@@ -108,29 +97,14 @@ export default function Feed({ from = '' }) {
     if (error) {
       notifications.show({
         title: 'Erro ao carregar feed',
-        message: 'Não conseguimos atualizar as postagens. Tente novamente em instantes.',
+        message: 'Não conseguimos atualizar as postagens. Tente novamente.',
         color: 'red',
         position: 'top-center',
       })
     }
   }, [error])
 
-  const feedPosts = feedData?.pages.flat() ?? []
-  const feedPostIds = feedPosts.map((p) => p.id)
-
-  const { data: likedPostIds = [] } = useQuery({
-    queryKey: ['likedPosts', user?.id],
-    queryFn: () => fetchUserLikedPosts(user.id, feedPostIds),
-    enabled: !!user?.id && feedPostIds.length > 0,
-    staleTime: 1000 * 60 * 2,
-  })
-
-  const { data: likesCountMap = {} } = useQuery({
-    queryKey: ['likesCount', feedPostIds],
-    queryFn: () => fetchLikesCountByPosts(feedPostIds),
-    enabled: feedPostIds.length > 0,
-    staleTime: 1000 * 60 * 2,
-  })
+  const feedPosts = useMemo(() => feedData?.pages.flat() ?? [], [feedData])
 
   const [postToDelete, setPostToDelete] = useState(null)
   const [isDeletingPost, setIsDeletingPost] = useState(false)
@@ -165,17 +139,13 @@ export default function Feed({ from = '' }) {
     if (event.target.tagName === 'A') {
       return
     }
-
     navigate(`/post/${postId}`)
   }
 
   const formatLinkText = (value, type) => {
     const maxLength = 30
-
     if (type === 'url' && value.length > maxLength) {
-      // const cleanUrl = value.replace(/^https?:\/\/(www\.)?/, '')
-
-      return value.length > maxLength ? `${value.substring(0, maxLength)}...` : value
+      return `${value.substring(0, maxLength)}...`
     }
     return value
   }
@@ -183,10 +153,7 @@ export default function Feed({ from = '' }) {
   return (
     <>
       <Helmet>
-        <meta charSet="utf-8" />
         <title>Feed · Mublin</title>
-        <link rel="canonical" href="https://mublin.com/feed" />
-        <meta name="description" content="Feed de postagens e notícias no Mublin" />
       </Helmet>
       <Grid px={0}>
         <Grid.Col span={{ base: 12, md: 8 }}>
@@ -226,10 +193,12 @@ export default function Feed({ from = '' }) {
               ]}
             />
           </Flex>
-          {loading ? (
-            <Center my={40}>
-              <Loader />
-            </Center>
+
+          {loadingFeed ? (
+            <Stack>
+              <Skeleton h={200} />
+              <Skeleton h={200} />
+            </Stack>
           ) : (
             <>
               {(feedType === 'explore' || feedType === 'following') && (
@@ -527,13 +496,13 @@ export default function Feed({ from = '' }) {
                                 <LinkedItem post={post} />
                               </Box>
                             )}
-                            {/* Ações */}
+
                             <Group gap={4} mt={6} px={{ base: '0.4rem', sm: 0 }}>
                               <LikeButton
                                 postId={post.id}
                                 userId={user?.id}
-                                likedPostIds={likedPostIds}
-                                likesCount={likesCountMap[post.id] ?? 0}
+                                liked={post.viewer_has_liked}
+                                likesCount={post.likes_count}
                               />
                               {!post.comments_disabled && (
                                 <Button

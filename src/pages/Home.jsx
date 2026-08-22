@@ -24,6 +24,7 @@ import {
   ThemeIcon,
   Badge,
   Indicator,
+  Scroller,
 } from '@mantine/core'
 import { useMediaQuery, useScroller } from '@mantine/hooks'
 import AppNavbarMobile from '../components/AppNavbarMobile'
@@ -36,6 +37,8 @@ import {
   IconRosetteDiscountCheckFilled,
   IconRoute,
   IconSparklesFilled,
+  IconSquareRoundedArrowLeftFilled,
+  IconSquareRoundedArrowRightFilled,
 } from '@tabler/icons-react'
 
 const CDN_PREFIX = 'https://ik.imagekit.io/mublin'
@@ -47,7 +50,6 @@ export default function Home() {
   const navigate = useNavigate()
   const isMobile = useMediaQuery('(max-width: 48em)')
   const isDesktop = useMediaQuery('(min-width: 48em)')
-  const peopleScroller = useScroller({ scrollAmount: 400 })
   const eventsScroller = useScroller()
 
   useEffect(() => {
@@ -124,43 +126,26 @@ export default function Home() {
 
                 <ProfileChecklistCard />
 
-                <Group justify="space-between" align="center" mt="md" mb="xs">
-                  <Title order={3} fw={600} fz="lg">
+                <Box mt="md" mb="xs">
+                  <Title order={3} fw={600} fz="lg" mb="xs">
                     Novos por aqui
                   </Title>
-                  <Group visibleFrom="sm">
-                    <ThemeIcon
-                      variant="default"
-                      style={{
-                        cursor: peopleScroller.canScrollStart ? 'pointer' : 'default',
-                      }}
-                      onClick={peopleScroller.scrollStart}
-                      opacity={peopleScroller.canScrollStart ? 1 : 0.5}
-                    >
-                      <IconChevronLeft style={{ width: '70%', height: '70%' }} />
-                    </ThemeIcon>
-                    <ThemeIcon
-                      variant="default"
-                      style={{
-                        cursor: peopleScroller.canScrollEnd ? 'pointer' : 'default',
-                      }}
-                      onClick={peopleScroller.scrollEnd}
-                      opacity={peopleScroller.canScrollEnd ? 1 : 0.5}
-                    >
-                      <IconChevronRight style={{ width: '70%', height: '70%' }} />
-                    </ThemeIcon>
-                  </Group>
-                </Group>
 
-                <Box>
-                  <div
-                    ref={peopleScroller.ref}
-                    {...peopleScroller.dragHandlers}
-                    className="scrollerHidden"
-                    style={{
-                      overflow: 'auto',
-                      cursor: peopleScroller.isDragging ? 'grabbing' : 'default',
-                    }}
+                  <Scroller
+                    controlSize="xl"
+                    startControlIcon={
+                      <IconSquareRoundedArrowLeftFilled
+                        size={34}
+                        style={{ marginLeft: '14px' }}
+                      />
+                    }
+                    endControlIcon={
+                      <IconSquareRoundedArrowRightFilled
+                        size={34}
+                        style={{ marginRight: '14px' }}
+                      />
+                    }
+                    // showEndControl
                   >
                     <Group wrap="nowrap" gap="md">
                       {loadingRecentProfiles
@@ -168,7 +153,7 @@ export default function Home() {
                             <Skeleton
                               key={i}
                               width={140}
-                              height={190}
+                              height={140}
                               radius="md"
                               style={{ flexShrink: 0 }}
                             />
@@ -238,11 +223,23 @@ export default function Home() {
                                         {!p.avatar && <IconUser size={28} />}
                                       </Avatar>
                                     </Indicator>
-                                    <Text size="sm" fw={600} ta="center" lineClamp={1}>
+                                    <Text
+                                      w={1180}
+                                      size="sm"
+                                      fw={600}
+                                      ta="center"
+                                      lineClamp={1}
+                                    >
                                       {p?.full_name || p?.username}
                                     </Text>
                                     {p?.title && (
-                                      <Text size="10px" ta="center" lineClamp={1} mb={3}>
+                                      <Text
+                                        w={110}
+                                        size="10px"
+                                        ta="center"
+                                        lineClamp={1}
+                                        mb={3}
+                                      >
                                         {p.title}
                                       </Text>
                                     )}
@@ -266,8 +263,9 @@ export default function Home() {
                               </Link>
                             )
                           })}
+                      <Box w={32} h={140} />
                     </Group>
-                  </div>
+                  </Scroller>
                 </Box>
 
                 {(loadingScenes || scenes?.length > 0) && (

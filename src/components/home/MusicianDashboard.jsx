@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query'
 import {
   Grid,
   Card,
@@ -18,31 +18,67 @@ import {
   Image,
 } from '@mantine/core'
 import { IconChevronRight } from '@tabler/icons-react'
-import { fetchUserRecentGear } from '../../queries/user'
+import {
+  fetchUserGigs,
+  fetchUserRecentGear,
+  fetchUserGigGoals,
+  upsertUserGigGoals,
+} from '../../queries/user'
+import dayjs from 'dayjs'
 
 const PATH_GEAR_ITEM_IMG =
   'https://ik.imagekit.io/mublin/products/tr:w-70,h-70,cm-pad_resize,bg-FFFFFF,fo-x/'
 
 export default function MusicianDashboard() {
   const { user, profile } = useAuth()
+  const queryClient = useQueryClient()
 
-  const [goal, setGoal] = useState(10)
   const [tempGoal, setTempGoal] = useState(10)
-  const [noGoal, setNoGoal] = useState(false)
+  const [tempNoGoal, setTempNoGoal] = useState(false)
   const [popoverOpened, setPopoverOpened] = useState(false)
 
-  const currentGigs = 3
-  const progress = noGoal ? 0 : Math.min((currentGigs / goal) * 100, 100)
+  const saveGigGoalMutation = useMutation({
+    mutationFn: (goals) => upsertUserGigGoals(user.id, goals),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['user-gig-goals', user.id],
+      })
+
+      setPopoverOpened(false)
+    },
+  })
 
   const handleSave = () => {
-    setGoal(noGoal ? null : tempGoal)
-    setPopoverOpened(false)
+    saveGigGoalMutation.mutate({
+      monthly_total_gigs: tempNoGoal ? null : tempGoal,
+      annual_total_gigs: null,
+      monthly_income: null,
+      annual_income: null,
+    })
   }
 
   const handleOpen = () => {
     setTempGoal(goal || 10)
+    setTempNoGoal(!goal)
     setPopoverOpened(true)
   }
+
+  const { data: gigs = [], isLoading: loadingGigs } = useQuery({
+    queryKey: ['user-gigs', user?.id],
+    queryFn: () => fetchUserGigs(user.id),
+    enabled: !!user?.id,
+    staleTime: 1000 * 60 * 5,
+  })
+
+  const { data: gigGoals, isLoading: loadingGigGoals } = useQuery({
+    queryKey: ['user-gig-goals', user?.id],
+    queryFn: () => fetchUserGigGoals(user.id),
+    enabled: !!user?.id,
+    staleTime: 1000 * 60 * 5,
+  })
+
+  const goal = gigGoals?.monthly_total_gigs ?? null
+  const noGoal = !goal
 
   const { data: recentGear, isLoading: loadingRecentGear } = useQuery({
     queryKey: ['user-recent-gear', user?.id],
@@ -50,6 +86,11 @@ export default function MusicianDashboard() {
     enabled: !!user?.id,
     staleTime: 1000 * 60 * 5,
   })
+
+  const gigsTotal = gigs.length
+  const progress = noGoal ? 0 : Math.min((gigsTotal / goal) * 100, 100)
+
+  const nextGig = gigs[0]
 
   const subtleBg = 'light-dark(rgba(0,0,0,0.01), rgba(0,0,0,0.09))'
 
@@ -79,11 +120,17 @@ export default function MusicianDashboard() {
               <Text size="xs" fw={500} tt="uppercase" c="dimmed">
                 Próxima gig
               </Text>
-              <Group gap={6} mt={5} mb={4} wrap="nowrap">
-                <Text size="sm" fw={600} lineClamp={1}>
-                  Nenhuma gig próxima
+              <Stack gap={0} mt={4}>
+                <Text size="md" fw={600} lineClamp={1}>
+                  {nextGig ? nextGig?.gig?.title : 'Nenhuma gig no momento'}
                 </Text>
-              </Group>
+                {nextGig && (
+                  <Text size="xs" c="dimmed" lineClamp={1}>
+                    {dayjs(nextGig?.gig?.date).format('DD [de] MMMM [de] YYYY')} (
+                    {dayjs(nextGig?.gig?.date).fromNow()})
+                  </Text>
+                )}
+              </Stack>
               {/* <Text size="xs" c="dimmed">
                 Em 4 dias • Estúdio Aurora
               </Text> */}
@@ -119,7 +166,7 @@ export default function MusicianDashboard() {
                     Gigs este mês
                   </Text>
                   <Text size="sm" fw={600}>
-                    {currentGigs} gigs
+                    {gigs.length} gigs
                   </Text>
 
                   {!noGoal && goal ? (
@@ -158,7 +205,7 @@ export default function MusicianDashboard() {
                     min={1}
                     max={20}
                     step={1}
-                    disabled={noGoal}
+                    disabled={tempNoGoal}
                     marks={[
                       { value: 1, label: '1' },
                       { value: 10, label: '10' },
@@ -169,10 +216,11 @@ export default function MusicianDashboard() {
                     <Text size="xs" c="dimmed">
                       Sem meta
                     </Text>
+
                     <Switch
                       size="sm"
-                      checked={noGoal}
-                      onChange={(e) => setNoGoal(e.currentTarget.checked)}
+                      checked={tempNoGoal}
+                      onChange={(e) => setTempNoGoal(e.currentTarget.checked)}
                     />
                   </Group>
                   <Group gap="xs" grow>
@@ -183,7 +231,11 @@ export default function MusicianDashboard() {
                     >
                       Cancelar
                     </Button>
-                    <Button size="xs" onClick={handleSave}>
+                    <Button
+                      size="xs"
+                      onClick={handleSave}
+                      loading={saveGigGoalMutation.isPending}
+                    >
                       Salvar
                     </Button>
                   </Group>

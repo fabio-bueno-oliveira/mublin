@@ -14,7 +14,11 @@ function fmt(s) {
   return `${m}:${sec.toString().padStart(2, '0')}`
 }
 
-export default function VideoPlayerNative({ src, title, isVertical = false }) {
+export default function VideoPlayerNativeFullControls({
+  src,
+  title,
+  isVertical = false,
+}) {
   const videoRef = useRef(null)
   const [playing, setPlaying] = useState(false)
   const [progress, setProgress] = useState(0)

@@ -14,10 +14,10 @@ import {
   Anchor,
 } from '@mantine/core'
 import {
-  IconRosetteDiscountCheck,
   IconEye,
   IconBookmark,
   IconRocket,
+  IconRosetteDiscountCheckFilled,
 } from '@tabler/icons-react'
 import { getAvatarUrl } from '../utils/profile'
 
@@ -108,7 +108,7 @@ export default function AppSidebar() {
                     {profile?.full_name}
                   </Anchor>
                   {!!profile?.is_verified && (
-                    <IconRosetteDiscountCheck
+                    <IconRosetteDiscountCheckFilled
                       className="iconVerified"
                       title="Perfil verificado"
                     />
