@@ -214,7 +214,7 @@ export default function AppNavbar({ children }) {
                 </Badge>
               </Group>
               {/* Nav items — apenas desktop */}
-              <Group gap="lg" ml="lg" align="center" visibleFrom="sm">
+              <Group gap="sm" ml="lg" align="center" visibleFrom="sm">
                 {NAV_ITEMS.map((item) => {
                   const Icon = item.icon
                   return (

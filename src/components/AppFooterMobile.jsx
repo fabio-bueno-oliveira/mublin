@@ -13,6 +13,7 @@ import {
   IconCalendar,
   IconMicrophone2,
   IconMusic,
+  IconMovie,
 } from '@tabler/icons-react'
 import './AppFooterMobile.css'
 
@@ -40,6 +41,17 @@ export default function AppFooterMobile() {
             <IconHome />
             <Text size="10px" lh={1.2}>
               Home
+            </Text>
+          </UnstyledButton>
+
+          <UnstyledButton
+            className={navItemClass(isActive('/scenes'))}
+            onClick={() => navigate('/scenes')}
+            opacity={isActive('/scenes') && !drawerOpen ? 1 : 0.65}
+          >
+            <IconMovie />
+            <Text size="10px" lh={1.2}>
+              Scenes
             </Text>
           </UnstyledButton>
 
@@ -137,6 +149,19 @@ export default function AppFooterMobile() {
             onClick={() => setDrawerOpen(false)}
           >
             Novo post
+          </Button>
+
+          <Button
+            component={Link}
+            to="/new/scene"
+            variant="transparent"
+            size="md"
+            radius="md"
+            leftSection={<IconMovie size={19} />}
+            fullWidth
+            onClick={() => setDrawerOpen(false)}
+          >
+            Nova Scene
           </Button>
 
           <Button

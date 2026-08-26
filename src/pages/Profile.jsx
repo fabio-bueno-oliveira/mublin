@@ -70,7 +70,7 @@ import {
   IconPencil, IconBookmark, IconBookmarkFilled,
   IconRosetteDiscountCheckFilled,
   IconSchool, IconUserCircle,
-  IconExternalLink,
+  IconExternalLink, IconRoute,
   IconArrowRight,
 } from '@tabler/icons-react'
 import ProfileHeaderMobile from '../components/profile/ProfileHeaderMobile'
@@ -1900,11 +1900,14 @@ export default function Profile() {
                                   </Button>
                                 </Group>
                                 <Box ml={{ base: 'sm', md: 0 }} mt="sm">
-                                  <Text fw={600} size="sm">
-                                    Setups de {profile.full_name}{' '}
-                                    {!!gearSetups.length && `(${gearSetups.length})`}
-                                  </Text>
-                                  {gearSetups.length > 0 && (
+                                  <Group gap={6}>
+                                    <IconRoute size={14} />
+                                    <Text fw={600} size="sm">
+                                      Setups de {profile.full_name}{' '}
+                                      {!!gearSetups.length && `(${gearSetups.length})`}
+                                    </Text>
+                                  </Group>
+                                  {gearSetups.length > 0 ? (
                                     <Flex gap={12} mt={18}>
                                       {gearSetups.map((setup) => (
                                         <Box key={setup.id}>
@@ -1939,6 +1942,10 @@ export default function Profile() {
                                         </Box>
                                       ))}
                                     </Flex>
+                                  ) : (
+                                    <Text c="dimmed" size="sm" mt={4}>
+                                      Nenhum setup criado até o momento
+                                    </Text>
                                   )}
                                 </Box>
                               </Box>
@@ -2044,8 +2051,9 @@ export default function Profile() {
                   mb={inspirations.length > 0 ? 4 : 'sm'}
                 >
                   <SectionTitle text="Inspirações" />
-
-                  <ScrollerArrows scroller={inspirationsScroller} sizePreset="sm" />
+                  {inspirations.length > 0 && (
+                    <ScrollerArrows scroller={inspirationsScroller} sizePreset="sm" />
+                  )}
                 </Group>
                 {inspirations.length > 0 && (
                   <Text size="xs" c="dimmed" mb="sm">
@@ -2123,7 +2131,9 @@ export default function Profile() {
               <SectionPanel id="partners">
                 <Group justify="space-between" align="center" mb="sm">
                   <SectionTitle text="Parceiros" />
-                  <ScrollerArrows scroller={partnersScroller} sizePreset="sm" />
+                  {partners.length > 0 && (
+                    <ScrollerArrows scroller={partnersScroller} sizePreset="sm" />
+                  )}
                 </Group>
                 {loadingPartners ? (
                   <Text size="sm" c="dimmed">
@@ -2210,7 +2220,7 @@ export default function Profile() {
                         lh={1}
                         mt={3}
                         component={Link}
-                        to="/settings/plan"
+                        to="/pro"
                         style={{ textDecoration: 'none', color: 'inherit' }}
                       >
                         {profile?.full_name} possui uma conta Pro

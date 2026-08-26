@@ -2,6 +2,7 @@ import { createBrowserRouter, Navigate } from 'react-router-dom'
 import PublicLayout from './components/layouts/PublicLayout'
 import AppLayout from './components/layouts/AppLayout'
 import AppProfileLayout from './components/layouts/AppProfileLayout'
+import FullScreenLayout from './components/layouts/FullScreenLayout'
 import BackstageLayout from './components/layouts/BackstageLayout'
 import AppSettingsLayout from './components/layouts/AppSettingsLayout'
 // Public pages
@@ -58,6 +59,11 @@ import Institution from './pages/Institution'
 // -- Feed pages
 import Post from './pages/Post'
 import NewPost from './pages/NewPost'
+// -- Scene pages
+import Scenes from './pages/Scenes'
+import NewScene from './pages/NewScene'
+// -- Pro page
+import Pro from './pages/Pro'
 // -- Settings pages
 import SettingsLayout from './pages/settings'
 import EditMyProfile from './pages/settings/EditMyProfile'
@@ -137,8 +143,10 @@ export const router = createBrowserRouter([
       { path: 'new/venue', element: <NewVenue /> },
       { path: 'venue/:slug', element: <Venue /> },
       { path: 'school/:slug', element: <Institution /> },
+      { path: 'new/scene', element: <NewScene /> },
       { path: 'saved', element: <MySavedFavorites /> },
       { path: 'profile-visitors', element: <ProfileVisitors /> },
+      { path: 'pro', element: <Pro /> },
     ],
   },
   // ── Subpáginas de perfil ──────────────
@@ -147,8 +155,13 @@ export const router = createBrowserRouter([
     children: [
       { path: '/:username/bio', element: <ProfileBio /> },
       { path: '/:username/gear', element: <ProfileGear /> },
-      { path: '/:username/gear/:profileGearItemId', element: <ProfileGearItem /> }, // adicionando agora este aqui
+      { path: '/:username/gear/:profileGearItemId', element: <ProfileGearItem /> },
     ],
+  },
+  // ── Cenas (FullScreen) ──────────────
+  {
+    element: <FullScreenLayout />,
+    children: [{ path: 'scenes', element: <Scenes /> }],
   },
   // ── Backstage ──────────────────────────
   {

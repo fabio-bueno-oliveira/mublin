@@ -1,7 +1,7 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { ScrollArea, Group, Box, Skeleton, Image } from '@mantine/core'
 import { IconPlayerPlayFilled } from '@tabler/icons-react'
-import ScenePlayer from './ScenePlayer'
+import { useNavigate } from 'react-router-dom'
 import { getSceneMediaUrl } from './sceneMedia'
 
 function SceneThumb({ scene, onOpen }) {
@@ -17,35 +17,26 @@ function SceneThumb({ scene, onOpen }) {
   useEffect(() => {
     const container = containerRef.current
     const video = videoRef.current
-
     if (!container || !video) {
       return
     }
-
     const observer = new IntersectionObserver(
       ([entry]) => {
         const visible = entry.isIntersecting && entry.intersectionRatio >= 0.4
         setIsVisible(visible)
-
         if (visible) {
           if (!video.src) {
             video.src = previewUrl
             video.load()
           }
-
           video.play().catch(() => {})
         } else {
           video.pause()
         }
       },
-      {
-        threshold: [0, 0.4],
-        rootMargin: '200px',
-      },
+      { threshold: [0, 0.4], rootMargin: '200px' },
     )
-
     observer.observe(container)
-
     return () => observer.disconnect()
   }, [previewUrl])
 
@@ -71,7 +62,6 @@ function SceneThumb({ scene, onOpen }) {
           animate={isVisible}
         />
       )}
-
       {hasError ? (
         <Image src={posterUrl} w={130} h={230} fit="cover" />
       ) : (
@@ -93,7 +83,6 @@ function SceneThumb({ scene, onOpen }) {
           }}
         />
       )}
-
       <Box
         style={{
           position: 'absolute',
@@ -109,7 +98,6 @@ function SceneThumb({ scene, onOpen }) {
       >
         por <b>@{scene.profile?.username || scene.profile?.full_name}</b>
       </Box>
-
       <Box
         style={{
           position: 'absolute',
@@ -131,58 +119,26 @@ function SceneThumb({ scene, onOpen }) {
   )
 }
 
+// Agora navega para /scenes?start=ID ao invés de abrir modal
 export default function ScenesScroller({ scenes, isMobile }) {
-  const [activeIndex, setActiveIndex] = useState(null)
-
-  const handleOpen = useCallback((index) => {
-    setActiveIndex(index)
-
-    if (window.history.state?.scenesOpen !== true) {
-      window.history.pushState({ scenesOpen: true }, '', window.location.href)
-    }
-  }, [])
-
-  const handleClose = useCallback(() => {
-    if (window.history.state?.scenesOpen === true) {
-      window.history.back()
-    } else {
-      setActiveIndex(null)
-    }
-  }, [])
-
-  useEffect(() => {
-    const onPopState = () => {
-      if (activeIndex !== null) {
-        setActiveIndex(null)
-      }
-    }
-
-    window.addEventListener('popstate', onPopState)
-    return () => window.removeEventListener('popstate', onPopState)
-  }, [activeIndex])
+  const navigate = useNavigate()
 
   if (!scenes?.length) {
     return null
   }
 
-  return (
-    <>
-      <ScrollArea type={isMobile ? 'never' : 'scroll'} scrollbarSize={6} offsetScrollbars>
-        <Group wrap="nowrap" gap={10} py={4}>
-          {scenes.map((scene, index) => (
-            <SceneThumb key={scene.id} scene={scene} onOpen={() => handleOpen(index)} />
-          ))}
-        </Group>
-      </ScrollArea>
+  const handleOpen = (scene) => {
+    // Leva para página vertical com esse scene em primeiro
+    navigate(`/scenes?start=${scene.id}`)
+  }
 
-      {activeIndex !== null && (
-        <ScenePlayer
-          scenes={scenes}
-          initialIndex={activeIndex}
-          onClose={handleClose}
-          onForceClose={() => setActiveIndex(null)}
-        />
-      )}
-    </>
+  return (
+    <ScrollArea type={isMobile ? 'never' : 'always'} scrollbarSize={16} offsetScrollbars>
+      <Group wrap="nowrap" gap={10} py={4}>
+        {scenes.map((scene) => (
+          <SceneThumb key={scene.id} scene={scene} onOpen={() => handleOpen(scene)} />
+        ))}
+      </Group>
+    </ScrollArea>
   )
 }

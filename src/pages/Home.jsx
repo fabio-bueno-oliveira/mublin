@@ -83,7 +83,7 @@ export default function Home() {
 
   const { data: scenes = [], isLoading: loadingScenes } = useQuery({
     queryKey: ['scenes'],
-    queryFn: () => fetchScenes(8),
+    queryFn: () => fetchScenes(6),
     staleTime: 1000 * 60 * 5,
   })
 
@@ -207,7 +207,6 @@ export default function Home() {
                                       }
                                     >
                                       <Avatar
-                                        // src={p.avatar ? AVATAR_PATH + p.avatar : null}
                                         src={
                                           p?.avatar
                                             ? getAvatarUrl(
@@ -224,7 +223,7 @@ export default function Home() {
                                       </Avatar>
                                     </Indicator>
                                     <Text
-                                      w={1180}
+                                      w={114}
                                       size="sm"
                                       fw={600}
                                       ta="center"
@@ -271,7 +270,7 @@ export default function Home() {
                 {(loadingScenes || scenes?.length > 0) && (
                   <>
                     <Title order={3} fw={600} fz="lg" mt="lg">
-                      Cenas
+                      Scenes
                     </Title>
 
                     {loadingScenes ? (

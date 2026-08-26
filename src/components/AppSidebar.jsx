@@ -134,7 +134,7 @@ export default function AppSidebar() {
               <Text
                 size="xs"
                 component={Link}
-                to="/settings/plan"
+                to="/pro"
                 style={{ textDecoration: 'none', color: 'inherit' }}
               >
                 Plano atual: {profile?.plan === 'Pro' ? 'Mublin Pro' : 'Mublin Free'}

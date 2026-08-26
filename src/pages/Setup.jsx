@@ -72,11 +72,9 @@ import {
   IconX,
   IconLogout2,
   IconRoute,
-  IconPhoto,
   IconArrowsMaximize,
   IconMessageCircle,
   IconSend,
-  IconSearch,
   IconHeart,
   IconHeartFilled,
 } from '@tabler/icons-react'
