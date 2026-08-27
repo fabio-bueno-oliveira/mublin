@@ -4,6 +4,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
 import { supabase } from '../lib/supabaseClient'
 import { useAuth } from '../hooks/useAuth'
+import { notifications } from '@mantine/notifications'
 import {
   Box,
   Avatar,
@@ -26,6 +27,8 @@ import {
   IconVolumeOff,
   IconHeartFilled,
   IconMovie,
+  IconChevronUp,
+  IconChevronDown,
 } from '@tabler/icons-react'
 import { getSceneMediaUrl } from '../components/scenes/sceneMedia'
 
@@ -40,12 +43,15 @@ function SceneItem({
   initialLikesCount,
   onLikeChange,
   autoUnmute,
+  muted,
+  setMuted,
+  index,
+  totalCount,
+  onNavigate,
 }) {
   const videoRef = useRef(null)
   const { profile: currentUser } = useAuth()
   const [progress, setProgress] = useState(0)
-  // 1) Se veio com startId, começa com som ativo
-  const [muted, setMuted] = useState(!autoUnmute)
   const [liked, setLiked] = useState(initialLiked)
   const [likesCount, setLikesCount] = useState(initialLikesCount)
   const [likeLoading, setLikeLoading] = useState(false)
@@ -112,6 +118,43 @@ function SceneItem({
       setLikeLoading(false)
     }
   }, [currentUser?.id, liked, likesCount, likeLoading, scene.id, onLikeChange])
+
+  const handleShare = useCallback(async () => {
+    const shareUrl = `${window.location.origin}/scenes?start=${scene.id}`
+
+    // Em dispositivos com suporte (majoritariamente mobile), usa o menu
+    // nativo de compartilhamento do sistema.
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Mublin Scenes',
+          text:
+            scene.caption ||
+            `Dá uma olhada nessa cena de @${scene.profile?.username} no Mublin!`,
+          url: shareUrl,
+        })
+      } catch {
+        // usuário cancelou o compartilhamento — não é um erro
+      }
+      return
+    }
+
+    // Fallback (principalmente desktop): copia o link pra área de transferência
+    try {
+      await navigator.clipboard.writeText(shareUrl)
+      notifications.show({
+        color: 'green',
+        position: 'top-center',
+        message: 'Link da Cena copiado!',
+      })
+    } catch {
+      notifications.show({
+        color: 'red',
+        position: 'top-center',
+        message: 'Não foi possível copiar o link.',
+      })
+    }
+  }, [scene.id, scene.caption, scene.profile?.username])
 
   const viewedRef = useRef(false)
   useEffect(() => {
@@ -318,6 +361,7 @@ function SceneItem({
           </Text>
         </Box>
         <ActionIcon
+          onClick={handleShare}
           size={48}
           radius="xl"
           variant="filled"
@@ -325,6 +369,32 @@ function SceneItem({
           style={{ backdropFilter: 'blur(8px)' }}
         >
           <IconShare size={22} color="white" />
+        </ActionIcon>
+
+        {/* Navegação por botão, exclusiva de telas maiores (desktop já tem scroll) */}
+        <ActionIcon
+          visibleFrom="sm"
+          onClick={() => onNavigate?.(index - 1)}
+          disabled={index === 0}
+          size={44}
+          radius="xl"
+          variant="filled"
+          bg="rgba(255,255,255,0.18)"
+          style={{ backdropFilter: 'blur(8px)' }}
+        >
+          <IconChevronUp size={22} color="white" />
+        </ActionIcon>
+        <ActionIcon
+          visibleFrom="sm"
+          onClick={() => onNavigate?.(index + 1)}
+          disabled={index === totalCount - 1}
+          size={44}
+          radius="xl"
+          variant="filled"
+          bg="rgba(255,255,255,0.18)"
+          style={{ backdropFilter: 'blur(8px)' }}
+        >
+          <IconChevronDown size={22} color="white" />
         </ActionIcon>
       </Box>
     </Box>
@@ -338,6 +408,11 @@ export default function Scenes() {
   const containerRef = useRef(null)
   const [activeId, setActiveId] = useState(startId || null)
   const { profile: currentUser } = useAuth()
+
+  // Estado de mute único e compartilhado entre todas as Scenes: ao trocar de
+  // vídeo (scroll), o som escolhido pelo usuário deve persistir, em vez de
+  // cada vídeo nascer com seu próprio "muted" isolado.
+  const [muted, setMuted] = useState(!startId)
 
   // 2) Modal de boas-vindas com localStorage
   const [welcomeOpened, setWelcomeOpened] = useState(false)
@@ -409,6 +484,21 @@ export default function Scenes() {
   const scenes = startScene
     ? [startScene, ...fetchedScenes.filter((s) => s.id !== startScene.id)]
     : fetchedScenes
+
+  // Navega até a Cena de um índice específico (usada pelos botões up/down do desktop)
+  const scrollToIndex = useCallback(
+    (idx) => {
+      if (idx < 0 || idx >= scenes.length || !containerRef.current) {
+        return
+      }
+      const targetId = scenes[idx]?.id
+      const el = containerRef.current.querySelector(`[data-scene-id="${targetId}"]`)
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth' })
+      }
+    },
+    [scenes],
+  )
 
   const sceneIds = useMemo(() => scenes.map((s) => s.id), [scenes])
   const { data: likesBatch } = useQuery({
@@ -613,6 +703,11 @@ export default function Scenes() {
             initialLikesCount={localLikes.countMap[scene.id] || 0}
             onLikeChange={handleLikeChange}
             autoUnmute={!!startId && scene.id === startId}
+            muted={muted}
+            setMuted={setMuted}
+            index={i}
+            totalCount={scenes.length}
+            onNavigate={scrollToIndex}
           />
         ))}
         {isFetchingNextPage && (
