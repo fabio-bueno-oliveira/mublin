@@ -5,6 +5,7 @@ export async function fetchRandomRoles() {
     .from('roles')
     .select('id, description_ptbr')
     .not('description_ptbr', 'is', null)
+    .eq('applies_to_a_project', true)
     .order('id')
     .limit(30)
 

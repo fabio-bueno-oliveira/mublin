@@ -1,9 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate, Navigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
-import { useQuery } from '@tanstack/react-query'
-import { useInViewport } from '@mantine/hooks'
-import { fetchRandomRoles } from '../queries/roles'
+import { useInViewport, useMediaQuery } from '@mantine/hooks'
 import {
   Skeleton,
   Box,
@@ -15,11 +13,12 @@ import {
   Stack,
   Container,
   SimpleGrid,
-  Marquee,
+  Image,
   Badge,
   ThemeIcon,
   RollingNumber,
   Center,
+  Grid,
 } from '@mantine/core'
 import {
   IconMusic,
@@ -44,9 +43,6 @@ const FEATURES = [
   },
 ]
 
-// Quantidade de itens de equipamento atualmente cadastrados na plataforma.
-// TODO: substituir por valor vindo de uma query real (ex: fetchEquipmentCount)
-// assim que o endpoint/contagem estiver disponível no Supabase.
 const EQUIPMENT_COUNT = 3247
 
 function useCountUp(target, { duration = 1600, active = true } = {}) {
@@ -82,27 +78,13 @@ function useCountUp(target, { duration = 1600, active = true } = {}) {
 export default function Landing() {
   const { session, loading: authLoading } = useAuth()
   const navigate = useNavigate()
-
-  const { data: roles = [], isLoading: loadingRoles } = useQuery({
-    queryKey: ['landing-roles'],
-    queryFn: fetchRandomRoles,
-    staleTime: 1000 * 60 * 10,
-    enabled: !authLoading && !session, // não executa se já tiver sessão
-  })
+  const isMobile = useMediaQuery('(max-width: 48em)')
 
   const { ref: equipmentSectionRef, inViewport: equipmentInView } = useInViewport()
   const animatedEquipmentCount = useCountUp(EQUIPMENT_COUNT, {
     active: equipmentInView,
     duration: 1800,
   })
-
-  // Velocidade do marquee proporcional à quantidade de itens, pra manter
-  // uma percepção de ritmo consistente independente de quantas roles vierem.
-  const marqueeDuration = useMemo(() => {
-    const base = 4000
-    const perItem = 3600
-    return roles.length ? base + roles.length * perItem : 26000
-  }, [roles.length])
 
   if (authLoading) {
     return (
@@ -126,87 +108,84 @@ export default function Landing() {
         style={{
           display: 'flex',
           alignItems: 'center',
-          minHeight: '60vh',
+          minHeight: '54vh',
           width: '100%',
         }}
       >
-        <Container size="sm" py={50} w="100%">
-          <Stack gap="lg" align="center">
-            <Badge color="mublinColor" radius="xl" variant="light" size="md" fw={360}>
-              The professional network for musicians
-            </Badge>
-            <Title
-              order={1}
-              ta="center"
-              lts="-0.03em"
-              lh={1.1}
-              fz="clamp(40px, 6vw, 72px)"
-              fw="800"
-            >
-              Sua carreira musical,{' '}
-              <Text
-                component="span"
-                inherit
-                variant="gradient"
-                gradient={{ from: 'mublinColor', to: 'blue', deg: 96 }}
-              >
-                conectada.
-              </Text>
-            </Title>
-            <Text ta="center" size="xl" c="dimmed" maw={500} lh={1.5}>
-              Mublin é a rede profissional para músicos, produtores, roadies e todos que
-              fazem a música acontecer.
-            </Text>
-            <Group gap="sm" my="xs" justify="center">
-              <Button
-                size="md"
-                radius="xl"
-                fw="700"
-                variant="gradient"
-                gradient={{ from: 'mublinColor.9', to: 'blue.8', deg: 96 }}
-                onClick={() => navigate('/signup')}
-                rightSection={<IconArrowRight size={16} />}
-              >
-                Criar conta grátis
-              </Button>
-              <Button
-                size="md"
-                radius="xl"
-                variant="subtle"
-                color="gray"
-                onClick={() => navigate('/login')}
-              >
-                Já tenho conta
-              </Button>
-            </Group>
-            {loadingRoles ? (
-              <Group gap="xs" justify="center">
-                {Array.from({ length: 6 }).map((_, i) => (
-                  <Skeleton key={i} height={32} width={80 + i * 10} radius="xl" />
-                ))}
-              </Group>
-            ) : (
-              <Marquee gap="md" mt="md" duration={marqueeDuration} pauseOnHover>
-                {roles.map((role, i) => (
-                  <Badge
-                    key={role.id ?? `${role.description_ptbr}-${i}`}
-                    variant="light"
-                    size="md"
-                    fw="500"
-                    color="gray"
-                    c="dimmed"
+        <Container size="lg" py={50} w="100%">
+          <Grid p={0}>
+            <Grid.Col span={{ base: 12, sm: 8 }}>
+              <Stack gap="lg" align={isMobile ? 'center' : 'flex-start'}>
+                <Badge color="mublinColor" radius="xl" variant="light" size="md" fw={360}>
+                  The professional network for musicians
+                </Badge>
+                <Title
+                  order={1}
+                  ta={isMobile ? 'center' : 'left'}
+                  lts="-0.03em"
+                  lh={1.1}
+                  fz="clamp(40px, 6vw, 72px)"
+                  fw={700}
+                >
+                  Sua carreira musical, <br />
+                  <Text
+                    component="span"
+                    inherit
+                    variant="gradient"
+                    gradient={{ from: 'mublinColor', to: 'blue', deg: 96 }}
                   >
-                    {role.description_ptbr}
-                  </Badge>
-                ))}
-              </Marquee>
-            )}
-          </Stack>
+                    conectada.
+                  </Text>
+                </Title>
+                <Text
+                  ta={isMobile ? 'center' : 'left'}
+                  size="xl"
+                  c="dimmed"
+                  maw={500}
+                  lh={1.5}
+                >
+                  Mublin é a rede profissional para músicos, produtores, roadies e todos
+                  que fazem a música acontecer.
+                </Text>
+                <Group gap="sm" my="xs" justify="center">
+                  <Button
+                    size="md"
+                    radius="xl"
+                    fw="700"
+                    variant="gradient"
+                    gradient={{ from: 'mublinColor.9', to: 'blue.8', deg: 96 }}
+                    onClick={() => navigate('/signup')}
+                    rightSection={<IconArrowRight size={16} />}
+                  >
+                    Criar conta grátis
+                  </Button>
+                  <Button
+                    size="md"
+                    radius="xl"
+                    variant="subtle"
+                    color="gray"
+                    onClick={() => navigate('/login')}
+                  >
+                    Já tenho conta
+                  </Button>
+                </Group>
+              </Stack>
+            </Grid.Col>
+            <Grid.Col span={{ base: 12, sm: 4 }} pt={{ base: 30, sm: 80 }}>
+              <Image
+                src="https://ik.imagekit.io/mublin/misc/musicians-rehearsal.webp?updatedAt=1787789689619"
+                w={400}
+                h="auto"
+                fit="cover"
+                ml={-24}
+              />
+            </Grid.Col>
+          </Grid>
         </Container>
       </Box>
 
       {/* ── Features ───────────────────────────────── */}
-      <Box py={96} style={{ width: '100%' }}>
+      <Box py={54} style={{ width: '100%' }}>
         <Container size="md" w="100%">
           <Stack gap={48} align="center">
             <Stack gap={8} align="center" ta="center">
