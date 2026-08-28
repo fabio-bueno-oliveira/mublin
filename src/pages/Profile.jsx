@@ -91,8 +91,8 @@ dayjs.locale('pt-br')
 
 const AVATAR_PATH =
   'https://ik.imagekit.io/mublin/tr:h-200,c-maintain_ratio/users/avatars/'
-const ARTISTS_PATH =
-  'https://ik.imagekit.io/mublin/artists/tr:h-120,w-120,c-maintain_ratio/'
+const PROJECTS_PATH =
+  'https://ik.imagekit.io/mublin/projects/tr:h-120,w-120,c-maintain_ratio/'
 const COMPANY_PATH =
   'https://ik.imagekit.io/mublin/products/brands/tr:h-96,w-96,cm-pad_resize,bg-FFFFFF,fo-x/'
 const EVENTS_PATH =
@@ -755,105 +755,150 @@ export default function Profile() {
             <Grid>
               <Grid.Col span={{ base: 12, md: 2.7 }} visibleFrom="sm" pos="relative">
                 <Box
-                  top={profile.cover_image ? -22 : 6}
-                  left={0}
+                  top={profile.cover_image ? -26 : 6}
+                  left={10}
                   pos={profile.cover_image ? 'absolute' : 'inherit'}
                 >
-                  <Center mb="sm">
-                    <Avatar
-                      size={140}
-                      src={
-                        profile.avatar
-                          ? getAvatarUrl(profile.avatar, profile.is_open_to_work, 140)
-                          : `https://api.dicebear.com/10.x/initials/svg?seed=${profile.full_name}`
-                      }
-                      style={{ cursor: profile.avatar ? 'pointer' : 'default' }}
-                      onClick={() =>
-                        profile.avatar &&
-                        openImagePreviewModal(
-                          getAvatarUrl(profile.avatar, profile.is_open_to_work, 600),
-                          profile.full_name,
-                          { circular: true },
-                        )
-                      }
+                  <Card
+                    withBorder={false}
+                    shadow="xs"
+                    radius="md"
+                    p={6}
+                    mb="md"
+                    w={164}
+                    pos="relative"
+                    className="buttonContentToLeft"
+                  >
+                    <Card.Section
+                      h={52}
+                      withBorder
+                      style={{
+                        border: isDark
+                          ? '1px solid var(--mantine-color-dark-9)'
+                          : '1px solid var(--mantine-color-gray-2)',
+                        background: isDark
+                          ? 'var(--mantine-color-dark-9)'
+                          : 'var(--mantine-color-gray-0)',
+                      }}
                     />
-                  </Center>
-
-                  <SectionPanel p={0} className="buttonContentToLeft">
-                    <Button.Group orientation="vertical">
-                      {isOwnProfile ? (
-                        <Button
-                          component={Link}
-                          to="/settings/profile"
-                          size="sm"
-                          radius="md"
-                          variant="subtle"
-                          color="gray"
-                          leftSection={<IconPencil size={16} />}
-                        >
-                          Editar meu perfil
-                        </Button>
-                      ) : (
-                        <>
-                          {followingInfo?.id ? (
+                    <Center mt={-24} mb="xs">
+                      <Avatar
+                        size={120}
+                        radius="md"
+                        src={
+                          profile.avatar
+                            ? getAvatarUrl(profile.avatar, profile.is_open_to_work, 120)
+                            : `https://api.dicebear.com/10.x/initials/svg?seed=${profile.full_name}`
+                        }
+                        style={{ cursor: profile.avatar ? 'pointer' : 'default' }}
+                        onClick={() =>
+                          profile.avatar &&
+                          openImagePreviewModal(
+                            getAvatarUrl(profile.avatar, profile.is_open_to_work, 600),
+                            profile.full_name,
+                            { circular: true },
+                          )
+                        }
+                      />
+                    </Center>
+                    <Card.Section pb="xs">
+                      <Button.Group orientation="vertical">
+                        {isOwnProfile ? (
+                          <Button
+                            component={Link}
+                            to="/settings/profile"
+                            size="xs"
+                            radius="md"
+                            variant="subtle"
+                            color="gray"
+                            leftSection={<IconPencil size={16} />}
+                            justify="flex-start"
+                            pl={20}
+                          >
+                            Editar meu perfil
+                          </Button>
+                        ) : (
+                          <>
+                            {followingInfo?.id ? (
+                              <Button
+                                size="xs"
+                                variant="subtle"
+                                color="gray"
+                                radius="md"
+                                onClick={() => unfollowProfile(user.id, profile.id)}
+                                disabled={loadingFollowingInfo}
+                                justify="flex-start"
+                                pl={20}
+                              >
+                                Deixar de seguir
+                              </Button>
+                            ) : (
+                              <Button
+                                radius="md"
+                                size="xs"
+                                variant="subtle"
+                                color="gray"
+                                onClick={() => followProfile(user.id, profile.id)}
+                                disabled={loadingFollowingInfo}
+                                loading={loadingFollowingInfo}
+                                leftSection={<IconUserPlus size={16} />}
+                                justify="flex-start"
+                                pl={20}
+                              >
+                                Seguir
+                              </Button>
+                            )}
                             <Button
-                              size="sm"
+                              size="xs"
                               variant="subtle"
                               color="gray"
                               radius="md"
-                              onClick={() => unfollowProfile(user.id, profile.id)}
-                              disabled={loadingFollowingInfo}
+                              onClick={openInvite}
+                              leftSection={<IconSend size={16} />}
+                              justify="flex-start"
+                              pl={20}
                             >
-                              Deixar de seguir
+                              Convidar para gig
                             </Button>
-                          ) : (
                             <Button
-                              size="sm"
+                              size="xs"
                               radius="md"
-                              variant="gradient"
-                              gradient={{
-                                from: 'grape.8',
-                                to: 'mublinColor.8',
-                                deg: 55,
-                              }}
-                              onClick={() => followProfile(user.id, profile.id)}
-                              disabled={loadingFollowingInfo}
-                              loading={loadingFollowingInfo}
-                              leftSection={<IconUserPlus size={16} />}
+                              variant="subtle"
+                              color="gray"
+                              leftSection={
+                                favoriteInfo?.id ? (
+                                  <IconBookmarkFilled size={16} />
+                                ) : (
+                                  <IconBookmark size={16} />
+                                )
+                              }
+                              onClick={() => handleToggleFavorite(!!favoriteInfo?.id)}
+                              disabled={loadingFavoriteInfo || togglingFavorite}
+                              justify="flex-start"
+                              pl={20}
                             >
-                              Seguir
+                              {favoriteInfo?.id ? 'Salvo' : 'Salvar'}
                             </Button>
-                          )}
-                          <Button
-                            size="sm"
-                            variant="subtle"
-                            color="gray"
-                            radius="md"
-                            onClick={openInvite}
-                          >
-                            Convidar para gig
-                          </Button>
-                          <Button
-                            size="sm"
-                            radius="md"
-                            variant="subtle"
-                            color="gray"
-                            leftSection={
-                              favoriteInfo?.id ? (
-                                <IconBookmarkFilled size={16} />
-                              ) : (
-                                <IconBookmark size={16} />
-                              )
-                            }
-                            onClick={() => handleToggleFavorite(!!favoriteInfo?.id)}
-                            disabled={loadingFavoriteInfo || togglingFavorite}
-                          >
-                            {favoriteInfo?.id ? 'Salvo' : 'Salvar'}
-                          </Button>
-                        </>
-                      )}
-                    </Button.Group>
-                  </SectionPanel>
+                          </>
+                        )}
+                      </Button.Group>
+                    </Card.Section>
+
+                    {profile?.plan === 'Pro' && (
+                      <Flex pl={6} mb={8} gap={6} align="center" visibleFrom="sm">
+                        <Text
+                          fz="11px"
+                          c="dimmed"
+                          lh={1}
+                          component={Link}
+                          to="/pro"
+                          style={{ textDecoration: 'none', color: 'inherit' }}
+                        >
+                          Perfil otimizado com Pro
+                        </Text>
+                      </Flex>
+                    )}
+                  </Card>
                 </Box>
               </Grid.Col>
               <Grid.Col span={{ base: 12, md: 9.3 }}>
@@ -904,59 +949,64 @@ export default function Profile() {
                 <Stack
                   gap={0}
                   flex={1}
-                  mb="xs"
+                  mb={6}
                   visibleFrom="sm"
                   mt={profile.cover_image ? { base: 0, sm: 14 } : 0}
                 >
-                  <Flex align="center" gap={4} wrap="wrap">
-                    <Title
-                      order={1}
-                      fw={600}
-                      size="26px"
-                      // lh="1"
-                      component={Text}
-                      lineClamp={2}
-                    >
-                      {profile.full_name}
-                    </Title>
-                    {!!profile.is_verified && (
-                      <IconRosetteDiscountCheckFilled
-                        className="iconVerified"
-                        title="Perfil verificado"
-                      />
-                    )}
-                    {profile.is_fake_profile && (
-                      <ThemeIcon
-                        variant="gradient"
-                        gradient={{
-                          from: 'grape.8',
-                          to: 'mublinColor.8',
-                          deg: 55,
-                        }}
-                        fz={12}
-                        px={4}
-                        py={4}
-                        ml={4}
+                  <Group justify="space-between" pr="md">
+                    <Flex align="center" gap={4} wrap="wrap">
+                      <Title
+                        order={1}
+                        fw={600}
+                        size="26px"
+                        // lh="1"
+                        component={Text}
+                        lineClamp={2}
                       >
-                        IA
-                      </ThemeIcon>
-                    )}
-                  </Flex>
+                        {profile.full_name}
+                      </Title>
+                      {!!profile.is_verified && (
+                        <IconRosetteDiscountCheckFilled
+                          className="iconVerified"
+                          title="Perfil verificado"
+                        />
+                      )}
+                      {profile.is_fake_profile && (
+                        <ThemeIcon
+                          variant="gradient"
+                          gradient={{
+                            from: 'grape.8',
+                            to: 'mublinColor.8',
+                            deg: 55,
+                          }}
+                          fz={12}
+                          px={4}
+                          py={4}
+                          ml={4}
+                        >
+                          IA
+                        </ThemeIcon>
+                      )}
+                    </Flex>
+                    <ProPlanBadge />
+                  </Group>
                   {profile.title && (
                     <Text size="15px" fw={400} maw={420} lh={1.2} my={3}>
                       {profile.title}
                     </Text>
                   )}
-                  <Flex align="center" gap={4} opacity={0.8}>
+                  <Flex align="center" gap={4}>
                     {/* <Text span size="sm">
                         @{profile.username}
                       </Text> */}
                     {(city || region) && (
                       <Group gap={4}>
-                        <Text size="xs" fw={300}>
+                        <Text size="xs" c="var(--mantine-color-gray-5)" fw={300}>
                           {[city, region, country].filter(Boolean).join(', ')}
                         </Text>
-                        <Text size="xs">·</Text>
+                        <Text size="xs" c="var(--mantine-color-gray-5)">
+                          ·
+                        </Text>
                       </Group>
                     )}
                     <Anchor
@@ -980,11 +1030,12 @@ export default function Profile() {
                     )}
                   </Flex>
                   {profileLinks.length > 0 && (
-                    <Flex align="center" gap={4} opacity={0.8} mt={6}>
+                    <Flex align="center" gap={4} opacity={1} mt={6}>
                       <IconLink size={13} style={{ flexShrink: 0 }} />
                       <Anchor
                         size="xs"
-                        fw={300}
+                        fz="14px"
+                        fw={500}
                         onClick={openLinksModal}
                         c="var(--mantine-color-text)"
                         underline="never"
@@ -2091,7 +2142,9 @@ export default function Profile() {
                             size={60}
                             radius="xl"
                             src={
-                              artist?.picture ? ARTISTS_PATH + artist.picture : undefined
+                              artist?.picture
+                                ? `${PROJECTS_PATH}/${artist.id}/${artist.picture}`
+                                : undefined
                             }
                             alt={`Foto de ${artist?.name}`}
                           />

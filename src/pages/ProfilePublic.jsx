@@ -14,12 +14,15 @@ import {
   Flex,
   Paper,
   Stack,
+  SimpleGrid,
   Skeleton,
   Alert,
   Badge,
-  SimpleGrid,
+  Modal,
+  Center,
 } from '@mantine/core'
 import { IconArrowRight, IconMoodSad } from '@tabler/icons-react'
+import { useDisclosure } from '@mantine/hooks'
 
 const AVATAR_PATH =
   'https://ik.imagekit.io/mublin/tr:h-200,c-maintain_ratio/users/avatars/'
@@ -28,6 +31,7 @@ export default function ProfilePublic() {
   const { username } = useParams()
   const navigate = useNavigate()
   const { session, loading: authLoading } = useAuth()
+  const [ctaOpened, { close: closeCta }] = useDisclosure(true)
 
   const {
     data: profile,
@@ -90,7 +94,7 @@ export default function ProfilePublic() {
       <Container size="sm" py={48}>
         <Alert
           icon={<IconMoodSad size={18} />}
-          title="P />ão encontrado"
+          title="Perfil não encontrado"
           color="gray"
           radius="md"
         >
@@ -102,42 +106,89 @@ export default function ProfilePublic() {
 
   return (
     <>
+      {/* Modal CTA - abre automaticamente igual Instagram */}
+      <Modal
+        opened={ctaOpened}
+        onClose={closeCta}
+        centered
+        radius="lg"
+        size="sm"
+        withCloseButton
+      >
+        <Stack align="center" gap="md" pt="xs">
+          <Center>
+            <Avatar
+              size={88}
+              radius="xl"
+              src={profile.avatar ? AVATAR_PATH + profile.avatar : undefined}
+              style={{ border: '3px solid var(--mantine-color-default-border)' }}
+            />
+          </Center>
+          <Stack gap={4} align="center">
+            <Text ta="center" size="lg" fw={300} lh={1.2}>
+              Veja o perfil completo de{' '}
+              <Text span fw={600}>
+                {profile.username}
+              </Text>
+            </Text>
+            <Text ta="center" size="sm" c="dimmed" mt={6} maw={300}>
+              Entre para ver projetos, gigs, equipamento e muito mais no Mublin
+            </Text>
+          </Stack>
+
+          <Stack w="100%" gap="xs" mt="xs">
+            <Button
+              size="sm"
+              radius="xl"
+              fullWidth
+              rightSection={<IconArrowRight size={16} />}
+              onClick={() => navigate('/signup')}
+            >
+              Criar conta grátis
+            </Button>
+            <Button
+              variant="transparent"
+              color="var(--mantine-color-text)"
+              size="sm"
+              radius="xl"
+              fullWidth
+              onClick={() => navigate('/login')}
+            >
+              Entrar
+            </Button>
+          </Stack>
+        </Stack>
+      </Modal>
+
       <Container size="sm" mt={60}>
-        <Stack gap="xl">
-          <Group align="center" gap="md">
+        <Stack gap="md">
+          <Group align="center" gap="md" wrap="nowrap">
             <Avatar
               radius="xl"
               size={100}
               src={profile.avatar ? AVATAR_PATH + profile.avatar : undefined}
             />
             <Stack gap={0}>
-              <Badge
-                size="md"
-                color="var(--mantine-color-text)"
-                c="gray"
-                variant="light"
-                tt="lowercase"
-                fw={300}
-                mb={2}
-              >
+              <Text size="sm" c="dimmed" tt="lowercase" fw={300}>
                 @{profile.username}
-              </Badge>
+              </Text>
               <Flex align="center" gap="xs" wrap="wrap">
                 <Title order={1} size="h2">
                   {profile.full_name}
                 </Title>
               </Flex>
               {rolesOrdered && rolesOrdered.length > 0 && (
-                <Text size="sm" c="dimmed">
+                <Text size="xs" c="dimmed">
                   {rolesOrdered
                     .map((role) => role?.roles?.description_ptbr)
                     .filter(Boolean)
                     .join(', ')}
                 </Text>
               )}
-              {profile.title && <Text size="sm">{profile.title}</Text>}
             </Stack>
           </Group>
+
+          {profile.title && <Text size="sm">{profile.title}</Text>}
 
           {gear.length >= 2 && (
             <Flex mx="sm" gap="xs" justify="flex-start" align="center" id="gear">
@@ -150,11 +201,10 @@ export default function ProfilePublic() {
                   w={60}
                 >
                   <Image
-                    src={`https://ik.imagekit.io/mublin/products/tr:w-80,h-80,cm-pad_resize,bg-FFFFFF,fo-x/${item.products?.picture}`}
+                    src={`https://ik.imagekit.io/mublin/products/tr:w-80,h-80,fo-auto,b-10_FFFFFF:r-max/${item.products?.picture}`}
                     h={40}
-                    mah={40}
-                    w="auto"
-                    fit="inherit"
+                    w={40}
+                    fit="contain"
                     mb={8}
                     radius="xl"
                   />
@@ -183,6 +233,7 @@ export default function ProfilePublic() {
 
           {/* CTA */}
           <Box
+            mt="lg"
             p="lg"
             style={{
               borderRadius: 12,

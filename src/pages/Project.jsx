@@ -29,6 +29,7 @@ import {
   Tabs,
   Tooltip,
   Popover,
+  ActionIcon,
 } from '@mantine/core'
 import { useMediaQuery, useDisclosure } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
@@ -40,12 +41,11 @@ import {
   IconInfoCircle,
   IconRosetteDiscountCheckFilled,
   IconArrowUpRight,
+  IconPencil,
 } from '@tabler/icons-react'
 import AppNavbarMobile from '../components/AppNavbarMobile'
 import { MEMBER_REQUEST_STATUS } from '../constants/projects'
 
-// TODO: mover para '../constants/projects', ao lado de MEMBER_REQUEST_STATUS,
-// já que reflete os mesmos IDs de applications_statuses (1 pendente, 2 aceito, 3 recusado)
 const ADMIN_REQUEST_STATUS = {
   PENDING: 1,
   ACCEPTED: 2,
@@ -404,9 +404,7 @@ export default function Project() {
           <Tabs.List>
             <Scroller>
               <Tabs.Tab value="about">Sobre</Tabs.Tab>
-              <Tabs.Tab value="people">
-                Pessoas associadas ({projectPeople.length})
-              </Tabs.Tab>
+              <Tabs.Tab value="people">Pessoas ({projectPeople.length})</Tabs.Tab>
               <Tabs.Tab value="discography">Discografia</Tabs.Tab>
               <Tabs.Tab value="jobs">Vagas</Tabs.Tab>
               <Tabs.Tab value="gigs">Gigs</Tabs.Tab>
@@ -444,143 +442,133 @@ export default function Project() {
 
         {activeTab === 'people' && (
           <>
-            <Tabs mx="md" color="dark" variant="outline" defaultValue="associated">
-              <Tabs.List>
-                <Tabs.Tab value="associated">Pessoas ({projectPeople?.length})</Tabs.Tab>
-                <Tabs.Tab value="admins">
-                  Admins & Staff ({projectAdmins?.length})
-                </Tabs.Tab>
-              </Tabs.List>
-
-              <Tabs.Panel value="associated" pt="md">
-                {loadingProjectPeople ? (
-                  <Text size="sm">Carregando...</Text>
-                ) : (
-                  <>
-                    {projectPeople.length > 0 ? (
-                      <SimpleGrid
-                        cols={{ base: 2, sm: 3, md: 5 }}
-                        spacing="sm"
-                        verticalSpacing="sm"
-                      >
-                        {projectPeople.map((person) => (
-                          <Paper
+            <Title fw={600} size="16px" mx="md" mb={6}>
+              Administradores ({projectAdmins?.length})
+            </Title>
+            <Stack gap="xs" mx="md" mb="sm">
+              {loadingProjectAdmins ? (
+                <Text size="sm">Carregando...</Text>
+              ) : (
+                <>
+                  {projectAdmins.length > 0 ? (
+                    <Scroller>
+                      <Group gap="xs" wrap="nowrap">
+                        {projectAdmins.map((person) => (
+                          <Flex
                             key={person.id}
-                            withBorder
-                            radius="md"
-                            p="sm"
+                            gap={6}
+                            direction="column"
+                            w={85}
+                            justify="center"
+                          >
+                            <Center>
+                              <Link to={`/${person?.profile?.username}`}>
+                                <Avatar
+                                  size={35}
+                                  src={`${AVATAR_MINI_PATH}${person?.profile?.avatar}`}
+                                />
+                              </Link>
+                            </Center>
+                            <Text size="11px" ta="center" truncate="end">
+                              {person?.profile?.full_name}
+                            </Text>
+                          </Flex>
+                        ))}
+                      </Group>
+                    </Scroller>
+                  ) : userIsAdmin ? null : myAdminRequestIsPending ? (
+                    <Text span c="dimmed" size="sm">
+                      Nenhum administrador neste projeto. Sua solicitação está sendo
+                      processada.
+                    </Text>
+                  ) : (
+                    <Text span c="dimmed" size="sm">
+                      Nenhum administrador neste projeto.{' '}
+                      <Text
+                        span
+                        fw={500}
+                        c="var(--mantine-color-text)"
+                        style={{ cursor: 'pointer' }}
+                        onClick={handleOpenClaimModal}
+                      >
+                        Quero ser administrador
+                      </Text>
+                    </Text>
+                  )}
+                </>
+              )}
+            </Stack>
+            <Title fw={600} size="16px" mx="md" mt="xl" mb="sm">
+              Pessoas associadas ({projectPeople?.length})
+            </Title>
+            {loadingProjectPeople ? (
+              <Text size="sm" mx="md">
+                Carregando...
+              </Text>
+            ) : (
+              <>
+                {projectPeople.length > 0 ? (
+                  <SimpleGrid
+                    cols={{ base: 2, sm: 3, md: 5 }}
+                    spacing="sm"
+                    verticalSpacing="sm"
+                    mx="md"
+                  >
+                    {projectPeople.map((person) => (
+                      <Paper key={person.id} withBorder radius="md" p="sm" pos="relative">
+                        <ActionIcon
+                          pos="absolute"
+                          top={4}
+                          right={4}
+                          variant="subtle"
+                          color="var(--mantine-color-text)"
+                          aria-label="Edit portfolio item"
+                          component={Link}
+                          to="/settings/portfolio"
+                        >
+                          <IconPencil style={{ width: '70%', height: '70%' }} />
+                        </ActionIcon>
+                        <Stack gap={4} align="center">
+                          <Link to={`/${person?.profile?.username}`}>
+                            <Avatar
+                              size={56}
+                              src={`${AVATAR_PATH}${person.profile.avatar}`}
+                            />
+                          </Link>
+                          <Text
+                            fz="13px"
+                            fw={500}
+                            ta="center"
+                            lineClamp={1}
                             component={Link}
                             to={`/${person?.profile?.username}`}
-                            style={{
-                              textDecoration: 'none',
-                              color: 'inherit',
-                              transition: 'box-shadow 150ms ease, transform 150ms ease',
-                            }}
-                            className="person-card"
+                            style={{ textDecoration: 'none', color: 'inherit' }}
                           >
-                            <Stack gap={4} align="center">
-                              <Avatar
-                                size={56}
-                                src={`${AVATAR_PATH}${person.profile.avatar}`}
-                              />
-                              <Text fz="13px" fw={500} ta="center" lineClamp={1}>
-                                {person.profile.full_name}
-                              </Text>
-                              <Badge size="xs" fw={300} variant="light">
-                                {person.engagement_types
-                                  .map((e) => e.engagement_type.name_ptbr)
-                                  .join(', ')}
-                              </Badge>
-                              <Text
-                                fz="11px"
-                                ta="center"
-                                c="dimmed"
-                                lh={1.2}
-                                lineClamp={2}
-                              >
-                                {person.roles.map((r) => r.role.name_ptbr).join(', ')}
-                              </Text>
-                              <Text fz="11px" ta="center" opacity={0.7}>
-                                {person.year_start} ›{' '}
-                                {person.year_end ? person.year_end : 'Atualmente'}
-                              </Text>
-                            </Stack>
-                          </Paper>
-                        ))}
-                      </SimpleGrid>
-                    ) : (
-                      <Text span c="dimmed" size="sm">
-                        Nenhum perfil associado a este projeto até o momento
-                      </Text>
-                    )}
-                  </>
-                )}
-              </Tabs.Panel>
-
-              <Tabs.Panel value="admins" pt="md">
-                <Stack gap="xs" mx="md" mb="md">
-                  {loadingProjectAdmins ? (
-                    <Text size="sm">Carregando...</Text>
-                  ) : (
-                    <>
-                      {projectAdmins.length > 0 ? (
-                        <Scroller>
-                          <Group gap="xs" wrap="nowrap">
-                            {projectAdmins.map((person) => (
-                              <Flex
-                                key={person.id}
-                                gap={6}
-                                direction="column"
-                                w={85}
-                                justify="center"
-                              >
-                                <Center>
-                                  <Link to={`/${person?.profile?.username}`}>
-                                    <Avatar
-                                      size={35}
-                                      src={`${AVATAR_MINI_PATH}${person?.profile?.avatar}`}
-                                    />
-                                  </Link>
-                                </Center>
-                                <Text size="11px" ta="center" truncate="end">
-                                  {person?.profile?.full_name}
-                                </Text>
-                              </Flex>
-                            ))}
-                          </Group>
-                        </Scroller>
-                      ) : userIsAdmin ? null : myAdminRequestIsPending ? (
-                        <Text span c="dimmed" size="sm">
-                          Nenhum administrador neste projeto. Sua solicitação está sendo
-                          processada.
-                        </Text>
-                      ) : (
-                        <Text span c="dimmed" size="sm">
-                          Nenhum administrador neste projeto.{' '}
-                          <Text
-                            span
-                            fw={600}
-                            c="var(--mantine-color-text)"
-                            style={{ cursor: 'pointer' }}
-                            onClick={handleOpenClaimModal}
-                          >
-                            Quero ser administrador
+                            {person.profile.full_name}
                           </Text>
-                        </Text>
-                      )}
-                    </>
-                  )}
-                </Stack>
-              </Tabs.Panel>
-            </Tabs>
-            {/* <Group mx="md">
-              <Text fw={600} size="18px">
-                Pessoas associadas
-              </Text>
-              <Text fw={600} size="18px">
-                Administradores
-              </Text>
-            </Group> */}
+                          <Badge size="xs" fw={300} variant="light">
+                            {person.engagement_types
+                              .map((e) => e.engagement_type.name_ptbr)
+                              .join(', ')}
+                          </Badge>
+                          <Text fz="11px" ta="center" c="dimmed" lh={1.2} lineClamp={2}>
+                            {person.roles.map((r) => r.role.name_ptbr).join(', ')}
+                          </Text>
+                          <Text fz="11px" ta="center" opacity={0.7}>
+                            {person.year_start} ›{' '}
+                            {person.year_end ? person.year_end : 'Atualmente'}
+                          </Text>
+                        </Stack>
+                      </Paper>
+                    ))}
+                  </SimpleGrid>
+                ) : (
+                  <Text span c="dimmed" size="sm" mx="md">
+                    Nenhum perfil associado a este projeto até o momento
+                  </Text>
+                )}
+              </>
+            )}
           </>
         )}
 

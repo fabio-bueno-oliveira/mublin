@@ -7,9 +7,7 @@ import {
   Badge,
   Button,
   Box,
-  ThemeIcon,
   Divider,
-  Alert,
   Skeleton,
 } from '@mantine/core'
 import { useAuth } from '../../hooks/useAuth'
@@ -23,12 +21,13 @@ import {
   IconAlertTriangle,
   IconInfinity,
 } from '@tabler/icons-react'
+import { Link } from 'react-router-dom'
 
 const ORIGIN_META = {
   purchase: { label: 'Compra • Stripe', color: 'blue', icon: IconBrandStripe },
   courtesy: { label: 'Cortesia', color: 'orange', icon: IconGift },
   partner: { label: 'Parceiro', color: 'teal', icon: IconHeartHandshake },
-  none: { label: 'Gratuito', color: 'gray', icon: null, extra: 'origem não informada' },
+  none: { label: 'Gratuito', color: 'gray', icon: null, extra: 'Staff' },
 }
 
 function formatDate(iso) {
@@ -44,7 +43,7 @@ function formatDate(iso) {
 
 function expiryInfo(expiresAt) {
   if (!expiresAt) {
-    return { label: 'Vitalício', color: 'teal', icon: IconInfinity, expired: false }
+    return { label: 'Vitalício', color: 'blue', icon: IconInfinity, expired: false }
   }
   const diff = Math.ceil((new Date(expiresAt) - new Date()) / 86400000)
   if (diff < 0) {
@@ -111,24 +110,23 @@ export default function Plan() {
           withBorder
           radius="md"
           padding="lg"
-          style={{ borderColor: isPro ? 'var(--mantine-color-teal-3)' : undefined }}
+          style={{ borderColor: isPro ? 'var(--mantine-color-gray-9)' : undefined }}
         >
           <Group justify="space-between" align="flex-start" mb="md">
             <Group gap="sm">
-              <ThemeIcon
-                size={36}
-                radius="md"
-                variant="light"
-                color={isPro ? 'teal' : 'gray'}
-              >
-                <IconCrown size={20} />
-              </ThemeIcon>
               <Box>
                 <Group gap={8}>
                   <Text fw={700} size="lg">
                     {isPro ? 'Mublin Pro' : 'Mublin Free'}
                   </Text>
-                  <Badge color={isPro ? 'yellow' : 'gray'} variant="light">
+                  <Badge
+                    variant="gradient"
+                    gradient={
+                      isPro
+                        ? { from: 'brown', to: 'yellow.9', deg: 96 }
+                        : { from: 'mublinColor.8', to: 'blue.9', deg: 96 }
+                    }
+                  >
                     {isPro ? 'PRO' : 'FREE'}
                   </Badge>
                 </Group>
@@ -165,7 +163,7 @@ export default function Plan() {
                   Validade
                 </Text>
                 <Group gap={4}>
-                  <exp.icon size={14} color={`var(--mantine-color-${exp.color}-6)`} />
+                  <exp.icon size={18} color={`var(--mantine-color-${exp.color}-6)`} />
                   <Text size="sm" fw={500} c={exp.expired ? 'red' : undefined}>
                     {exp.label}
                   </Text>
@@ -199,13 +197,14 @@ export default function Plan() {
                 Você está no plano Free. Com o Pro você desbloqueia selo verificado,
                 destaque nas buscas, estatísticas avançadas e mais.
               </Text>
-              <Button disabled color="yellow" leftSection={<IconCrown size={16} />}>
+              <Button
+                component={Link}
+                to="/pro"
+                color="mublinColor"
+                leftSection={<IconCrown size={16} />}
+              >
                 Adquirir Plano Pro
               </Button>
-              <Alert color="grape" variant="light" icon={<IconClock size={22} />}>
-                A assinatura do Mublin Pro via Stripe será disponibilizada em breve.
-                Estamos finalizando os ajustes de pagamento.
-              </Alert>
             </Stack>
           )}
         </Card>
@@ -225,7 +224,7 @@ export default function Plan() {
                 'Suporte personalizado',
               ].map((item) => (
                 <Group key={item} gap={6}>
-                  <IconCheck size={14} color="var(--mantine-color-teal-6)" />
+                  <IconCheck size={14} color="var(--mantine-color-green-7)" />
                   <Text size="sm">{item}</Text>
                 </Group>
               ))}

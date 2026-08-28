@@ -26,22 +26,23 @@ import { notifications } from '@mantine/notifications'
 import {
   IconCrown,
   IconCheck,
-  IconStar,
   IconSearch,
   IconChartBar,
-  IconVideo,
-  IconPhoto,
   IconDeviceSpeaker,
   IconHeadset,
   IconBellRinging,
   IconSparkles,
+  IconArrowLeft,
+  IconRosetteDiscountCheck,
+  IconMovie,
+  IconIdBadge,
 } from '@tabler/icons-react'
 import MublinLogoBlack from '../assets/svg/mublin-m-logo-black.svg'
 import MublinLogoWhite from '../assets/svg/mublin-m-logo-white-squared.svg'
 
 const BENEFITS = [
   {
-    icon: IconStar,
+    icon: IconRosetteDiscountCheck,
     title: 'Selo Pro no perfil',
     description: 'Mostre pra todo mundo que seu trabalho é levado a sério.',
   },
@@ -51,7 +52,7 @@ const BENEFITS = [
     description: 'Apareça na frente quando bandas e contratantes procurarem por músicos.',
   },
   {
-    icon: IconVideo,
+    icon: IconMovie,
     title: 'Upload de vídeos no Scenes',
     description: 'Suba vídeos verticais e apareça na vitrine de Cenas do Mublin.',
   },
@@ -61,7 +62,7 @@ const BENEFITS = [
     description: 'Veja quantas vezes seu perfil foi visitado e por quem.',
   },
   {
-    icon: IconPhoto,
+    icon: IconIdBadge,
     title: 'Mais espaço no portfólio',
     description: 'Publique mais fotos e vídeos pra mostrar seu trabalho.',
   },
@@ -176,7 +177,7 @@ export default function Pro() {
     <>
       <Helmet>
         <meta charSet="utf-8" />
-        <title>Mublin Pro · Mublin</title>
+        <title>Mublin Pro | Mublin</title>
         <meta
           name="description"
           content="Conheça o Mublin Pro: selo verificado, prioridade nas buscas, Scenes e mais recursos para músicos e staff."
@@ -194,21 +195,18 @@ export default function Pro() {
         </Link>
       </Center>
 
-      <Center px="md" mt="sm" style={{ flexDirection: 'column', minHeight: '100vh' }}>
-        <Stack align="center" gap="xl" maw={640} w="100%">
+      <Center px="md" mt="sm" style={{ flexDirection: 'column', minHeight: '46vh' }}>
+        <Stack align="center" gap="lg" maw={640} w="100%">
           {/* Hero */}
           <Stack align="center" gap="md">
             <Badge
               size="lg"
               radius="xl"
               variant="gradient"
-              gradient={{
-                from: 'mublinColor.9',
-                to: 'teal.8',
-                deg: 62,
-              }}
+              fw={300}
+              gradient={{ from: 'brown', to: 'yellow.9', deg: 96 }}
             >
-              MUBLIN PRO
+              MUBLIN <span style={{ fontWeight: '700' }}>PRO</span>
             </Badge>
 
             <Title order={1} size="h2" ta="center">
@@ -247,11 +245,7 @@ export default function Pro() {
                         size={36}
                         radius="md"
                         variant="gradient"
-                        gradient={{
-                          from: 'mublinColor.9',
-                          to: 'teal.8',
-                          deg: 62,
-                        }}
+                        gradient={{ from: 'brown', to: 'yellow.9', deg: 96 }}
                       >
                         <item.icon size={18} />
                       </ThemeIcon>
@@ -318,7 +312,8 @@ export default function Pro() {
                     </Group>
                   ) : (
                     <Button
-                      variant="light"
+                      variant="filled"
+                      color="mublinColor.8"
                       radius="xl"
                       loading={joining}
                       onClick={handleJoinWaitlist}
@@ -341,7 +336,13 @@ export default function Pro() {
             </>
           )}
 
-          <Button variant="subtle" color="gray" size="xs" onClick={() => navigate(-1)}>
+          <Button
+            variant="subtle"
+            color="gray"
+            size="sm"
+            onClick={() => navigate(-1)}
+            leftSection={<IconArrowLeft size={16} />}
+          >
             Voltar
           </Button>
         </Stack>

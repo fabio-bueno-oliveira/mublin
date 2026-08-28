@@ -171,8 +171,8 @@ export default function AppSidebar() {
                     {profileViewCount === 0
                       ? 'Ninguém visualizou seu perfil ainda'
                       : profileViewCount === 1
-                        ? '1 pessoa visualizou seu perfil'
-                        : `${profileViewCount} pessoas visualizaram seu perfil`}
+                        ? '1 visualização ao perfil'
+                        : `${profileViewCount} visualizações ao perfil`}
                   </Text>
                 </Link>
               )}

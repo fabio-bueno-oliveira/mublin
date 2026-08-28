@@ -171,14 +171,15 @@ export default function Landing() {
                 </Group>
               </Stack>
             </Grid.Col>
-            <Grid.Col span={{ base: 12, sm: 4 }} pt={{ base: 30, sm: 80 }}>
-              <Image
-                src="https://ik.imagekit.io/mublin/misc/musicians-rehearsal.webp?updatedAt=1787789689619"
-                w={400}
-                h="auto"
-                fit="cover"
-                ml={-24}
-              />
+            <Grid.Col span={{ base: 12, sm: 4 }} pt={{ base: 30, sm: 40 }}>
+              <Center>
+                <Image
+                  src="https://ik.imagekit.io/mublin/misc/isometric-theatre-backstage-crew-vector-illustration-flat_7068130.webp"
+                  w={300}
+                  h="auto"
+                  fit="cover"
+                />
+              </Center>
             </Grid.Col>
           </Grid>
         </Container>
