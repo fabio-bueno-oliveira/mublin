@@ -16,7 +16,6 @@ import {
   Progress,
   ActionIcon,
   Avatar,
-  Center,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import {
@@ -31,8 +30,8 @@ import {
 const AVATAR_PATH =
   'https://ik.imagekit.io/mublin/tr:h-68,c-maintain_ratio/users/avatars/'
 
-const MAX_DURATION_SECONDS = 50 // precisa bater com o CHECK da tabela scenes (duration_seconds <= 50)
-const MAX_SIZE_MB = 30
+const MAX_DURATION_SECONDS = 50
+const MAX_SIZE_MB = 50
 const MAX_CAPTION_LENGTH = 150
 
 // Lê metadados do vídeo (duração e orientação) usando um <video> temporário,
@@ -66,17 +65,21 @@ function ProUpsell() {
   return (
     <Container size="xs" py="xl">
       <Stack align="center" gap="sm" ta="center" py={40}>
-        <Center mb="xl">
-          <IconMovie size={56} stroke={1} color="var(--mantine-color-text)" />
-        </Center>
+        <Box
+          style={{
+            width: 56,
+            height: 56,
+            borderRadius: 999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'var(--mantine-color-yellow-light)',
+          }}
+        >
+          <IconLock size={26} stroke={1.5} />
+        </Box>
 
-        <Center>
-          <IconLock size={26} stroke={1.5} color="var(--mantine-color-dimmed)" />
-        </Center>
-
-        <Title order={3} mx="lg">
-          A publicação de cenas é exclusiva para Mublin Pro
-        </Title>
+        <Title order={3}>Cenas são exclusivas do Mublin Pro</Title>
 
         <Text c="dimmed" size="sm" maw={320}>
           Assine o Mublin Pro para publicar vídeos verticais de até {MAX_DURATION_SECONDS}{' '}
@@ -98,6 +101,29 @@ function ProUpsell() {
       </Stack>
     </Container>
   )
+}
+
+// Gera um slug simples (sem acentos, minúsculo, só letras/números/hífen)
+function slugify(value) {
+  return (value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+}
+
+// Nome do arquivo no padrão "usuario--descricao.mp4", priorizando a legenda
+// e caindo pro nome original do arquivo selecionado quando não há legenda.
+function buildSceneFileName({ username, caption, originalFileName, fallbackId }) {
+  const usernameSlug = slugify(username) || slugify(fallbackId).slice(0, 8) || 'mublin'
+  const originalBase = (originalFileName || '').replace(/\.[^/.]+$/, '')
+  const descriptionSlug = (slugify(caption) || slugify(originalBase) || 'cena').slice(
+    0,
+    60,
+  )
+
+  return `${usernameSlug}--${descriptionSlug}.mp4`
 }
 
 // ── Página principal ──────────────────────────────────────
@@ -208,7 +234,12 @@ export default function NewScene() {
 
       const response = await upload({
         file,
-        fileName: `${user.id}_scene`,
+        fileName: buildSceneFileName({
+          username: profile?.username,
+          caption,
+          originalFileName: file.name,
+          fallbackId: user.id,
+        }),
         folder: '/scenes/',
         tags: ['scene'],
         useUniqueFileName: true,
@@ -315,7 +346,7 @@ export default function NewScene() {
               textAlign: 'center',
             }}
           >
-            <IconVideo size={32} stroke={1.4} />
+            <IconMovie size={54} stroke={1.2} />
             <Text size="sm" fw={600}>
               Toque para escolher um vídeo
             </Text>
@@ -377,7 +408,7 @@ export default function NewScene() {
               <Group gap={6} justify="center" wrap="nowrap">
                 <IconAlertTriangle size={14} color="var(--mantine-color-yellow-6)" />
                 <Text size="xs" c="dimmed" ta="center">
-                  Vídeos verticais (9:16) ficam melhores nas Cenas.
+                  Vídeos verticais (9:16) ficam melhores no Scenes.
                 </Text>
               </Group>
             )}

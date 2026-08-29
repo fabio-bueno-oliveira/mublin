@@ -44,7 +44,7 @@ export default function AppFooterMobile() {
             </Text>
           </UnstyledButton>
 
-          <UnstyledButton
+          {/* <UnstyledButton
             className={navItemClass(isActive('/scenes'))}
             onClick={() => navigate('/scenes')}
             opacity={isActive('/scenes') && !drawerOpen ? 1 : 0.65}
@@ -53,7 +53,7 @@ export default function AppFooterMobile() {
             <Text size="10px" lh={1.2}>
               Scenes
             </Text>
-          </UnstyledButton>
+          </UnstyledButton> */}
 
           <UnstyledButton
             className={navItemClass(isActive('/feed') || isActive('/post'))}
@@ -151,7 +151,7 @@ export default function AppFooterMobile() {
             Novo post
           </Button>
 
-          <Button
+          {/* <Button
             component={Link}
             to="/new/scene"
             variant="transparent"
@@ -162,7 +162,7 @@ export default function AppFooterMobile() {
             onClick={() => setDrawerOpen(false)}
           >
             Nova Scene
-          </Button>
+          </Button> */}
 
           <Button
             component={Link}

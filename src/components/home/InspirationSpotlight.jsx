@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Card, Group, Title, Text, Avatar, Skeleton, Box } from '@mantine/core'
 import { fetchTopInspiredArtist } from '../../queries/inspirations'
 
-const CDN_ARTISTS = 'https://ik.imagekit.io/mublin/tr:h-200,c-maintain_ratio/artists/'
+const CDN_ARTISTS = 'https://ik.imagekit.io/mublin/tr:h-200,c-maintain_ratio/projects/'
 
 function formatInspirationText(profiles, totalCount) {
   if (!profiles?.length) {
@@ -64,7 +64,11 @@ export default function InspirationSpotlight() {
           <Box pos="relative">
             <Link to={`/artist/${artist.slug}`}>
               <Avatar
-                src={artist.picture ? CDN_ARTISTS + artist.picture : undefined}
+                src={
+                  artist.picture
+                    ? `${CDN_ARTISTS}/${artist.id}/${artist.picture}`
+                    : undefined
+                }
                 size={80}
                 radius="md"
                 alt={artist.name}

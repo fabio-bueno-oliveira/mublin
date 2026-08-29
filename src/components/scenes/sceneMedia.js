@@ -8,12 +8,22 @@ function getImageKitBaseUrl(originalUrl) {
   return originalUrl.split('/tr:')[0].split('?')[0].replace(/\/$/, '')
 }
 
+// O ImageKit só reconhece e transforma vídeo (thumbnail, resize, qualidade)
+// se a URL terminar em .mp4/.mov. Registros sem extensão (ex: upload sem o
+// sufixo correto) quebram tanto o poster quanto o player. Nesses casos, o
+// próprio ImageKit recomenda "dar a dica" adicionando /ik-video.mp4 ao final.
+// Ver: https://imagekit.io/docs/transformations
+function ensureVideoExtensionHint(baseUrl) {
+  const hasVideoExtension = /\.(mp4|mov)$/i.test(baseUrl)
+  return hasVideoExtension ? baseUrl : `${baseUrl}/ik-video.mp4`
+}
+
 export function getSceneMediaUrl(originalUrl, type) {
   if (!originalUrl?.includes(IMAGEKIT_HOST)) {
     return originalUrl
   }
 
-  const base = getImageKitBaseUrl(originalUrl)
+  const base = ensureVideoExtensionHint(getImageKitBaseUrl(originalUrl))
 
   switch (type) {
     case 'poster':

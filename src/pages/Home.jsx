@@ -8,7 +8,7 @@ import { fetchUpcomingEvents } from '../queries/events'
 import { fetchNewsFeed } from '../queries/feed'
 import { fetchScenes } from '../queries/scenes'
 import NewsCard from '../components/feed/NewsCard'
-import ScenesScroller from '../components/scenes/ScenesScroller'
+// import ScenesScroller from '../components/scenes/ScenesScroller'
 // import FeaturedCard from '../components/home/FeaturedCard'
 import ProfileChecklistCard from '../components/home/ProfileChecklistCard'
 import MusicianDashboard from '../components/home/MusicianDashboard'
@@ -81,11 +81,11 @@ export default function Home() {
     staleTime: 1000 * 60 * 5,
   })
 
-  const { data: scenes = [], isLoading: loadingScenes } = useQuery({
-    queryKey: ['scenes'],
-    queryFn: () => fetchScenes(6),
-    staleTime: 1000 * 60 * 5,
-  })
+  // const { data: scenes = [], isLoading: loadingScenes } = useQuery({
+  //   queryKey: ['scenes'],
+  //   queryFn: () => fetchScenes(6),
+  //   staleTime: 1000 * 60 * 5,
+  // })
 
   if (loading) {
     return null
@@ -267,7 +267,7 @@ export default function Home() {
                   </Scroller>
                 </Box>
 
-                {(loadingScenes || scenes?.length > 0) && (
+                {/* {(loadingScenes || scenes?.length > 0) && (
                   <>
                     <Title order={3} fw={600} fz="lg" mt="lg">
                       Scenes
@@ -283,7 +283,7 @@ export default function Home() {
                       <ScenesScroller scenes={scenes} isMobile={isMobile} />
                     )}
                   </>
-                )}
+                )} */}
 
                 <InspirationSpotlight />
 
