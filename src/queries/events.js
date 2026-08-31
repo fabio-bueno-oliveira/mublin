@@ -1,7 +1,9 @@
 import { supabase } from '../lib/supabaseClient'
+import dayjs from 'dayjs'
 
 export async function fetchUpcomingEvents(limit = 10) {
-  const today = new Date().toISOString().split('T')[0]
+  const today = dayjs().format('YYYY-MM-DD')
+  const nowTime = dayjs().format('HH:mm:ss')
 
   const { data, error } = await supabase
     .from('events')
@@ -15,18 +17,20 @@ export async function fetchUpcomingEvents(limit = 10) {
       privacy:event_privacy_types ( name ),
       author:profiles!events_author_id_fkey ( full_name, username, title, avatar, is_verified ),
       venue:venues (
-        name, slug,
-        address, address_number, neighborhood,
-        latitude, longitude, 
-        website_url, capacity,
+        name, slug, address, address_number, neighborhood,
+        latitude, longitude, website_url, capacity,
         venue_type:venue_types ( name ),
         city:cities ( id, name, region:regions ( id, name, uf ) )
       )
     `,
     )
-    .gte('date_start', today)
+    .or(
+      `date_end.gt.${today},and(date_end.eq.${today},time_event_end.gte.${nowTime}),and(date_end.eq.${today},time_event_end.is.null)`,
+    )
     .order('date_start', { ascending: true })
+    .order('time_event_start', { ascending: true })
     .limit(limit)
+
   if (error) {
     throw new Error(error.message)
   }

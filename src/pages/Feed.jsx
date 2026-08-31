@@ -2,31 +2,24 @@ import { useState, useEffect, useMemo } from 'react'
 import { Helmet } from 'react-helmet-async'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
-import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useInfiniteQuery, useQueryClient } from '@tanstack/react-query'
 import { fetchFeed, deletePost } from '../queries/feed'
+import { fetchScenes } from '../queries/scenes'
 import MublinLogoBlack from '../assets/svg/mublin-logo-black.svg'
 import MublinLogoWhite from '../assets/svg/mublin-logo-white.svg'
+// prettier-ignore
 import {
   useMantineColorScheme,
-  Grid,
-  ScrollArea,
-  Flex,
-  Group,
-  Stack,
-  Center,
-  Box,
+  ScrollArea, Menu, Skeleton,
+  Grid, Group, Flex,
+  Stack, Center,
+  Box, Card, Paper,
   SegmentedControl,
-  Card,
-  Paper,
-  Text,
+  Title, Text,
   Button,
-  Image,
-  Avatar,
-  Menu,
+  Image, Avatar,
   ActionIcon,
-  Modal,
-  Skeleton,
-  Divider,
+  Modal, Divider,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { useMediaQuery, useDisclosure } from '@mantine/hooks'
@@ -45,6 +38,7 @@ import VideoPlayerNative from '../components/VideoPlayerNative'
 import VideoPlayerYoutube from '../components/feed/VideoPlayerYoutube'
 import LikeButton from '../components/feed/LikeButton'
 import NewsFeed from '../components/feed/NewsFeed'
+import ScenesScroller from '../components/scenes/ScenesScroller'
 import parse from 'html-react-parser'
 import linkifyStr from 'linkify-string'
 import dayjs from 'dayjs'
@@ -59,6 +53,7 @@ export default function Feed({ from = '' }) {
   const navigate = useNavigate()
   const { colorScheme } = useMantineColorScheme()
   const isDesktop = useMediaQuery('(min-width: 48em)')
+  const isMobile = useMediaQuery('(max-width: 48em)')
   const queryClient = useQueryClient()
   const { profile, user } = useAuth()
   const [isStale, setIsStale] = useState(false)
@@ -82,6 +77,12 @@ export default function Feed({ from = '' }) {
       lastPage.length === 10 ? allPages.flat().length : undefined,
     staleTime: 1000 * 60 * 2,
     retry: 1,
+  })
+
+  const { data: scenes = [], isLoading: loadingScenes } = useQuery({
+    queryKey: ['scenes'],
+    queryFn: () => fetchScenes(6),
+    staleTime: 1000 * 60 * 5,
   })
 
   useEffect(() => {
@@ -194,6 +195,25 @@ export default function Feed({ from = '' }) {
             />
           </Flex>
 
+          {(loadingScenes || scenes?.length > 0) && (
+            <Box mb="xs" mt="sm">
+              {loadingScenes ? (
+                <Group wrap="nowrap" gap={10}>
+                  {[1, 2, 3, 4].map((i) => (
+                    <Skeleton key={i} radius="md" width={78} height={138} />
+                  ))}
+                </Group>
+              ) : (
+                <ScenesScroller
+                  scenes={scenes}
+                  isMobile={isMobile}
+                  medium
+                  showButtonAddNewScene
+                />
+              )}
+            </Box>
+          )}
+
           {loadingFeed ? (
             <Stack>
               <Skeleton h={200} />
@@ -212,7 +232,7 @@ export default function Feed({ from = '' }) {
                     mb="sm"
                     mt="xs"
                     py="xs"
-                    px={{ base: 'md', md: 0 }}
+                    px={{ base: 'md', md: 14 }}
                   >
                     <Flex gap={10} align="center">
                       <Link to={`/${profile?.username}`}>

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
-import { Drawer, Button, Avatar, Stack, UnstyledButton, Text } from '@mantine/core'
+import { Drawer, Button, Avatar, Stack, UnstyledButton, Text, Box } from '@mantine/core'
 import {
   IconBulb,
   IconCubePlus,
@@ -15,7 +15,58 @@ import {
   IconMusic,
   IconMovie,
 } from '@tabler/icons-react'
+import { motion } from 'motion/react'
 import './AppFooterMobile.css'
+
+function ScenesAnimatedIcon({ isActive }) {
+  if (isActive) {
+    return <IconMovie stroke={1} />
+  }
+
+  return (
+    <Box className="scenes-swipe-container">
+      {/* Ícone 1: sai rápido por cima */}
+      <motion.div
+        className="scenes-swipe-icon"
+        initial={{ y: 0, opacity: 1, filter: 'blur(0px)' }}
+        animate={{
+          y: [0, -28, -28],
+          opacity: [1, 0, 0],
+          filter: ['blur(0px)', 'blur(16px)', 'blur(16px)'],
+        }}
+        transition={{
+          duration: 0.65,
+          times: [0, 0.55, 1],
+          ease: [0.7, 0, 0.84, 0],
+          repeat: Infinity,
+          repeatDelay: 3,
+        }}
+      >
+        <IconMovie stroke={1} />
+      </motion.div>
+
+      {/* Ícone 2: entra QUASE logo em seguida */}
+      <motion.div
+        className="scenes-swipe-icon"
+        initial={{ y: 22, opacity: 0, filter: 'blur(5px)' }}
+        animate={{
+          y: [22, 22, 0],
+          opacity: [0, 0, 1],
+          filter: ['blur(5px)', 'blur(5px)', 'blur(0px)'],
+        }}
+        transition={{
+          duration: 0.65,
+          times: [0, 0.5, 0.75],
+          ease: [0.16, 1, 1.3, 1],
+          repeat: Infinity,
+          repeatDelay: 3,
+        }}
+      >
+        <IconMovie stroke={1} />
+      </motion.div>
+    </Box>
+  )
+}
 
 export default function AppFooterMobile() {
   const { profile } = useAuth()
@@ -24,7 +75,7 @@ export default function AppFooterMobile() {
   const [drawerOpen, setDrawerOpen] = useState(false)
 
   const isActive = (path) => pathname === path || pathname.startsWith(`${path}/`)
-  // const isActivePrefix = (prefix) => pathname.startsWith(prefix)
+  const isScenesActive = isActive('/scenes')
 
   const navItemClass = (active) =>
     ['nav-item', active ? 'active' : ''].filter(Boolean).join(' ')
@@ -44,23 +95,22 @@ export default function AppFooterMobile() {
             </Text>
           </UnstyledButton>
 
-          {/* <UnstyledButton
-            className={navItemClass(isActive('/scenes'))}
+          <UnstyledButton
+            className={`${navItemClass(isScenesActive)} scenes-nav-item`}
             onClick={() => navigate('/scenes')}
-            opacity={isActive('/scenes') && !drawerOpen ? 1 : 0.65}
+            opacity={isScenesActive && !drawerOpen ? 1 : 0.65}
           >
-            <IconMovie />
+            <ScenesAnimatedIcon isActive={isScenesActive} />
             <Text size="10px" lh={1.2}>
               Scenes
             </Text>
-          </UnstyledButton> */}
+          </UnstyledButton>
 
           <UnstyledButton
             className={navItemClass(isActive('/feed') || isActive('/post'))}
             onClick={() => navigate('/feed')}
             opacity={(isActive('/feed') || isActive('/post')) && !drawerOpen ? 1 : 0.65}
           >
-            {/* <Indicator color="red" size={8} top="3px" left={14} /> */}
             <IconRss />
             <Text size="10px" lh={1.2}>
               Feed
@@ -102,15 +152,6 @@ export default function AppFooterMobile() {
             </Text>
           </UnstyledButton>
 
-          {/* <UnstyledButton
-            className={navItemClass(
-              isActive('/projects') || isActivePrefix('/project'),
-            )}
-            onClick={() => navigate('/projects')}
-          >
-            <IconMusic />
-          </UnstyledButton> */}
-
           <UnstyledButton
             className={navItemClass(isActive('/menu'))}
             onClick={() => navigate(`/${profile?.username}`)}
@@ -150,8 +191,7 @@ export default function AppFooterMobile() {
           >
             Novo post
           </Button>
-
-          {/* <Button
+          <Button
             component={Link}
             to="/new/scene"
             variant="transparent"
@@ -162,8 +202,7 @@ export default function AppFooterMobile() {
             onClick={() => setDrawerOpen(false)}
           >
             Nova Scene
-          </Button> */}
-
+          </Button>
           <Button
             component={Link}
             to="/new/gig"
@@ -176,7 +215,6 @@ export default function AppFooterMobile() {
           >
             Nova gig
           </Button>
-
           <Button
             component={Link}
             to="/new/project"
@@ -189,7 +227,6 @@ export default function AppFooterMobile() {
           >
             Novo projeto
           </Button>
-
           <Button
             component={Link}
             to="/new/event"
@@ -202,7 +239,6 @@ export default function AppFooterMobile() {
           >
             Novo evento
           </Button>
-
           <Button
             component={Link}
             to="/new/gear"

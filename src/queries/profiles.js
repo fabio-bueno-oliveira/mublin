@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabaseClient'
+import dayjs from 'dayjs'
 
 export async function fetchProfileDetails(profileUsername) {
   const { data, error } = await supabase
@@ -44,9 +45,10 @@ export async function fetchProfileDetails(profileUsername) {
         roles (
           id,
           name_ptbr,
-          name_en,
           description_ptbr,
-          instrumentalist
+          instrumentalist,
+          category_id,
+          role_categories ( id, slug, name_ptbr, family )
         )
       ),
       profile_genres (
@@ -64,7 +66,6 @@ export async function fetchProfileDetails(profileUsername) {
   if (error) {
     throw new Error(error.message)
   }
-
   return data
 }
 
@@ -674,8 +675,9 @@ export async function fetchProfileGearItemById(gearId) {
 }
 
 // Busca eventos futuros nos quais o perfil demonstrou interesse
-export async function fetchProfileUpcomingEvents(profileId, limit = 12) {
-  const today = new Date().toISOString().split('T')[0]
+export async function fetchProfileUpcomingEvents(profileId) {
+  const today = dayjs().format('YYYY-MM-DD')
+  const nowTime = dayjs().format('HH:mm:ss')
 
   const { data, error } = await supabase
     .from('event_interest')
@@ -686,23 +688,44 @@ export async function fetchProfileUpcomingEvents(profileId, limit = 12) {
       event:events (
         id, name, slug, picture_url,
         date_start, date_end,
+        time_event_start, time_event_end,
         venue:venues ( name, city:cities ( name ) )
       )
     `,
     )
     .eq('user_id', profileId)
     .eq('is_interested', true)
+    .gte('event.date_end', today)
     .limit(30)
 
   if (error) {
     throw new Error(error.message)
   }
 
-  return data
-    .map(({ event, is_confirmed }) => (event ? { ...event, is_confirmed } : null))
-    .filter((event) => event && event.date_start >= today)
-    .sort((a, b) => (a.date_start < b.date_start ? -1 : 1))
-    .slice(0, limit)
+  const filtered = data.filter(({ event }) => {
+    if (!event) {
+      return false
+    }
+    if (event.date_end > today) {
+      return true
+    }
+    if (event.date_end === today) {
+      if (!event.time_event_end) {
+        return true
+      }
+      return event.time_event_end >= nowTime
+    }
+    return false
+  })
+
+  // Mais próximo primeiro
+  filtered.sort((a, b) => {
+    const dateA = dayjs(`${a.event.date_start} ${a.event.time_event_start || '00:00:00'}`)
+    const dateB = dayjs(`${b.event.date_start} ${b.event.time_event_start || '00:00:00'}`)
+    return dateA.diff(dateB)
+  })
+
+  return filtered
 }
 
 export async function fetchProfileLinks(profileId) {
@@ -711,6 +734,21 @@ export async function fetchProfileLinks(profileId) {
     .select('id, label, url, position')
     .eq('profile_id', profileId)
     .order('position', { ascending: true })
+  if (error) {
+    throw new Error(error.message)
+  }
+  return data
+}
+
+export async function fetchProfileScenes(profileId) {
+  const { data, error } = await supabase
+    .from('scenes')
+    .select(
+      'id, video_url, caption, is_active, profile:profiles ( id, avatar, full_name, username )',
+    )
+    .eq('profile_id', profileId)
+    .order('created_at', { ascending: true })
+    .limit(25)
   if (error) {
     throw new Error(error.message)
   }

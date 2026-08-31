@@ -32,3 +32,42 @@ export const formatPortfolioPeriod = (yearStart, yearEnd) => {
   const totalYears = yearEnd - yearStart
   return `${yearStart} › ${yearEnd} (${totalYears} ${totalYears === 1 ? 'ano' : 'anos'})`
 }
+
+export const formatMemberSince = (createdAt) => {
+  if (!createdAt) {
+    return null
+  }
+  const date = new Date(createdAt)
+
+  // Formato longo: 18 de julho de 2025
+  const long = new Intl.DateTimeFormat('pt-BR', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+  }).format(date)
+
+  // Formato curto: julho de 2025
+  const short = new Intl.DateTimeFormat('pt-BR', {
+    month: 'long',
+    year: 'numeric',
+  }).format(date)
+
+  // Tempo relativo: há 2 anos, há 3 meses, etc
+  const now = new Date()
+  const diffMonths =
+    (now.getFullYear() - date.getFullYear()) * 12 + (now.getMonth() - date.getMonth())
+
+  let relative = ''
+  if (diffMonths < 1) {
+    relative = 'este mês'
+  } else if (diffMonths === 1) {
+    relative = 'há 1 mês'
+  } else if (diffMonths < 12) {
+    relative = `há ${diffMonths} meses`
+  } else {
+    const years = Math.floor(diffMonths / 12)
+    relative = years === 1 ? 'há 1 ano' : `há ${years} anos`
+  }
+
+  return { long, short, relative, date }
+}

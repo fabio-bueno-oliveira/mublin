@@ -1,45 +1,64 @@
-const IMAGEKIT_HOST = 'ik.imagekit.io'
+// Mublin - Mux only - final
+// video_url no DB = playbackId (ex: Q1KCWhU1fuMF01Gg016Pkd01017702sKYeQxf7uqYDENn02400)
 
-function getImageKitBaseUrl(originalUrl) {
-  if (!originalUrl?.includes(IMAGEKIT_HOST)) {
-    return originalUrl
+export function getSceneMediaUrl(playbackId) {
+  if (!playbackId) {
+    return ''
   }
-
-  return originalUrl.split('/tr:')[0].split('?')[0].replace(/\/$/, '')
+  if (playbackId.startsWith('http')) {
+    return playbackId
+  }
+  return `https://stream.mux.com/${playbackId}.m3u8`
 }
 
-// O ImageKit só reconhece e transforma vídeo (thumbnail, resize, qualidade)
-// se a URL terminar em .mp4/.mov. Registros sem extensão (ex: upload sem o
-// sufixo correto) quebram tanto o poster quanto o player. Nesses casos, o
-// próprio ImageKit recomenda "dar a dica" adicionando /ik-video.mp4 ao final.
-// Ver: https://imagekit.io/docs/transformations
-function ensureVideoExtensionHint(baseUrl) {
-  const hasVideoExtension = /\.(mp4|mov)$/i.test(baseUrl)
-  return hasVideoExtension ? baseUrl : `${baseUrl}/ik-video.mp4`
+export function getScenePosterUrl(
+  playbackId,
+  { width = 640, height, time = 1, fit = 'smartcrop' } = {},
+) {
+  if (!playbackId) {
+    return ''
+  }
+  const id = playbackId.startsWith('http')
+    ? playbackId.split('/').pop()?.replace('.m3u8', '')
+    : playbackId
+
+  const params = new URLSearchParams()
+  if (width) {
+    params.set('width', width)
+  }
+  if (height) {
+    params.set('height', height)
+  }
+  if (fit) {
+    params.set('fit_mode', fit)
+  }
+  params.set('time', time)
+
+  return `https://image.mux.com/${id}/thumbnail.jpg?${params.toString()}`
 }
 
-export function getSceneMediaUrl(originalUrl, type) {
-  if (!originalUrl?.includes(IMAGEKIT_HOST)) {
-    return originalUrl
+export function getSceneAnimatedUrl(
+  playbackId,
+  { width = 320, start = 0, fps = 12, end } = {},
+) {
+  if (!playbackId) {
+    return ''
   }
+  const id = playbackId.startsWith('http')
+    ? playbackId.split('/').pop()?.replace('.m3u8', '')
+    : playbackId
 
-  const base = ensureVideoExtensionHint(getImageKitBaseUrl(originalUrl))
-
-  switch (type) {
-    case 'poster':
-      // Frame estático extraído automaticamente do vídeo pelo ImageKit.
-      return `${base}/ik-thumbnail.jpg?tr=w-260,h-460,so-1,q-80`
-
-    case 'preview':
-      // Mantém o preview animado, mas só é carregado quando
-      // a Scene está próxima/visível no scroller.
-      return `${base}/tr:w-130,h-230,q-60`
-
-    case 'player':
-      // Vídeo usado no player principal.
-      return `${base}/tr:h-720,q-80`
-
-    default:
-      return originalUrl
+  const params = new URLSearchParams()
+  if (width) {
+    params.set('width', width)
   }
+  if (start !== undefined) {
+    params.set('start', start)
+  }
+  if (end !== undefined) {
+    params.set('end', end)
+  }
+  params.set('fps', fps)
+
+  return `https://image.mux.com/${id}/animated.gif?${params.toString()}`
 }

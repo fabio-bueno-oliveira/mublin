@@ -6,9 +6,7 @@ import { useQuery } from '@tanstack/react-query'
 import { fetchRecentProfiles } from '../queries/search'
 import { fetchUpcomingEvents } from '../queries/events'
 import { fetchNewsFeed } from '../queries/feed'
-import { fetchScenes } from '../queries/scenes'
 import NewsCard from '../components/feed/NewsCard'
-// import ScenesScroller from '../components/scenes/ScenesScroller'
 // import FeaturedCard from '../components/home/FeaturedCard'
 import ProfileChecklistCard from '../components/home/ProfileChecklistCard'
 import MusicianDashboard from '../components/home/MusicianDashboard'
@@ -29,6 +27,7 @@ import {
 import { useMediaQuery, useScroller } from '@mantine/hooks'
 import AppNavbarMobile from '../components/AppNavbarMobile'
 import { getAvatarUrl } from '../utils/profile'
+import { isEventHappeningNow } from '../utils/dates'
 import dayjs from 'dayjs'
 import {
   IconUser,
@@ -70,9 +69,10 @@ export default function Home() {
   })
 
   const { data: globalEvents = [], isLoading: loadingGlobalEvents } = useQuery({
-    queryKey: ['events'],
+    queryKey: ['events', 'upcoming'],
     queryFn: () => fetchUpcomingEvents(10),
-    staleTime: 1000 * 60 * 5,
+    staleTime: 1000 * 60 * 1,
+    refetchInterval: 1000 * 60 * 2,
   })
 
   const { data: news = [], isLoading: loadingNews } = useQuery({
@@ -80,12 +80,6 @@ export default function Home() {
     queryFn: () => fetchNewsFeed(6),
     staleTime: 1000 * 60 * 5,
   })
-
-  // const { data: scenes = [], isLoading: loadingScenes } = useQuery({
-  //   queryKey: ['scenes'],
-  //   queryFn: () => fetchScenes(6),
-  //   staleTime: 1000 * 60 * 5,
-  // })
 
   if (loading) {
     return null
@@ -267,24 +261,6 @@ export default function Home() {
                   </Scroller>
                 </Box>
 
-                {/* {(loadingScenes || scenes?.length > 0) && (
-                  <>
-                    <Title order={3} fw={600} fz="lg" mt="lg">
-                      Scenes
-                    </Title>
-
-                    {loadingScenes ? (
-                      <Group wrap="nowrap" gap={10}>
-                        {[1, 2, 3, 4].map((i) => (
-                          <Skeleton key={i} width={130} height={230} radius={12} />
-                        ))}
-                      </Group>
-                    ) : (
-                      <ScenesScroller scenes={scenes} isMobile={isMobile} />
-                    )}
-                  </>
-                )} */}
-
                 <InspirationSpotlight />
 
                 {globalEvents?.length > 0 && (
@@ -379,6 +355,34 @@ export default function Home() {
                                           .format('MMM')}
                                       </Text>
                                     </Box>
+                                    {isEventHappeningNow(event) && (
+                                      <Group
+                                        gap={4}
+                                        pos="absolute"
+                                        style={{
+                                          bottom: 8,
+                                          right: 16,
+                                          backgroundColor: 'rgba(0, 0, 0, 0.75)',
+                                          borderRadius: 6,
+                                          padding: '5px 5px',
+                                        }}
+                                      >
+                                        <Box
+                                          component="span"
+                                          className="live-dot green"
+                                          style={{ flexShrink: 0 }}
+                                        />
+                                        <Text
+                                          size="10px"
+                                          c="white"
+                                          ta="center"
+                                          tt="uppercase"
+                                          lh={1}
+                                        >
+                                          Rolando agora
+                                        </Text>
+                                      </Group>
+                                    )}
                                   </Card.Section>
                                   <Text fw={600} fz="sm" mt="xs" mb={5} lineClamp={1}>
                                     {event.name}

@@ -8,7 +8,6 @@
 }
 
 [data-mantine-color-scheme='dark'] .footer-mobile {
-  /* background-color: #0b0b0b; */
   background-color: rgba(11, 11, 11, 0.96);
 }
 
@@ -29,6 +28,7 @@
   flex-direction: column;
   flex-basis: 100%;
   align-items: center;
+  justify-content: center;
   position: relative;
 }
 
@@ -38,46 +38,51 @@
   stroke-width: 1.7;
 }
 
-/* ── Item ativo ── */
-/* .nav-item.active::before {
-  content: '';
-  display: block;
-  border-top: 2px solid #272727;
-  position: absolute;
-  top: -21px;
-  left: 0;
-  width: 100%;
-  z-index: 251;
-} */
-
 .nav-item.active svg {
   stroke-width: 1.7;
 }
 
-/* ── Botão plus ── */
+/* ── Scenes - swipe sequencial rápido sem vazio ── */
+.scenes-swipe-container {
+  width: 26px;
+  height: 26px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.scenes-swipe-icon {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  will-change: transform, opacity, filter;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scenes-swipe-icon {
+    transform: none !important;
+    opacity: 1 !important;
+    filter: none !important;
+  }
+  .scenes-swipe-icon:nth-child(2) {
+    display: none;
+  }
+}
+
 .nav-item.plus svg {
   width: 26px;
   height: 26px;
   stroke-width: 1.7;
-  /* stroke-width: 2.3;
-  width: 48px;
-  height: 48px; */
 }
-
-/* .nav-item.plus.active::before {
-  content: '';
-  display: block;
-  border-top: 2px solid #0977ff;
-  position: absolute;
-  top: -11px;
-  left: 0;
-  width: 100%;
-} */
 
 [data-mantine-color-scheme='dark'] .nav-item {
   color: #ffffff;
-}
-
-[data-mantine-color-scheme='dark'] .nav-item.active::before {
-  border-top-color: #ffffff;
 }

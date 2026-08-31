@@ -7,6 +7,7 @@ import { useAuth } from '../hooks/useAuth'
 import { notifications } from '@mantine/notifications'
 import {
   Box,
+  Affix,
   Avatar,
   Text,
   ActionIcon,
@@ -19,7 +20,6 @@ import {
   ThemeIcon,
 } from '@mantine/core'
 import {
-  IconX,
   IconHeart,
   IconShare,
   IconMusic,
@@ -30,7 +30,9 @@ import {
   IconChevronUp,
   IconChevronDown,
 } from '@tabler/icons-react'
-import { getSceneMediaUrl } from '../components/scenes/sceneMedia'
+import VideoPlayerNative from '../components/VideoPlayerNative'
+import AppNavbarMobile from '../components/AppNavbarMobile'
+import { getSceneMediaUrl, getScenePosterUrl } from '../components/scenes/sceneMedia'
 
 const AVATAR_PATH =
   'https://ik.imagekit.io/mublin/tr:h-80,c-maintain_ratio/users/avatars/'
@@ -61,8 +63,12 @@ function SceneItem({
     setLikesCount(initialLikesCount)
   }, [initialLiked, initialLikesCount])
 
-  const playerUrl = getSceneMediaUrl(scene.video_url, 'player')
-  const posterUrl = getSceneMediaUrl(scene.video_url, 'poster')
+  const playerUrl = getSceneMediaUrl(scene.video_url)
+  const posterUrl = getScenePosterUrl(scene.video_url, {
+    width: 720,
+    height: 1280,
+    time: 0.5,
+  })
 
   // auto unmute quando é o startId
   useEffect(() => {
@@ -222,29 +228,15 @@ function SceneItem({
           }}
         />
       </Box>
-      {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
-      <video
+      {}
+      <VideoPlayerNative
         ref={videoRef}
         src={playerUrl}
         poster={posterUrl}
-        loop
-        playsInline
-        muted={muted}
-        preload={isActive ? 'auto' : 'metadata'}
-        onTimeUpdate={(e) => {
-          const v = e.currentTarget
-          if (v.duration) {
-            setProgress((v.currentTime / v.duration) * 100)
-          }
-        }}
-        onClick={() => setMuted((m) => !m)}
-        style={{
-          height: '100%',
-          width: '100%',
-          maxWidth: 420,
-          objectFit: 'cover',
-          background: '#000',
-        }}
+        isVertical
+        autoPlay={isActive}
+        startMuted={muted}
+        hideBottomControls
       />
       <ActionIcon
         onClick={() => setMuted((m) => !m)}
@@ -481,6 +473,7 @@ export default function Scenes() {
     })
 
   const fetchedScenes = data?.pages.flat() || []
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const scenes = startScene
     ? [startScene, ...fetchedScenes.filter((s) => s.id !== startScene.id)]
     : fetchedScenes
@@ -648,40 +641,9 @@ export default function Scenes() {
         </Stack>
       </Modal>
 
-      <Box
-        mt={{ base: 0, sm: 110 }}
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          zIndex: 10,
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          padding: '12px 16px',
-        }}
-      >
-        <Text
-          c="white"
-          fw={800}
-          size="lg"
-          hiddenFrom="sm"
-          style={{ textShadow: '0 1px 1px rgba(0,0,0,0.3)' }}
-        >
-          Scenes
-        </Text>
-        <Box w={30} h={30} visibleFrom="sm" />
-        <ActionIcon
-          onClick={() => navigate('/home')}
-          radius="xl"
-          size="lg"
-          bg="rgba(0,0,0,0.4)"
-          style={{ backdropFilter: 'blur(8px)' }}
-        >
-          <IconX size={20} color="white" />
-        </ActionIcon>
-      </Box>
+      <Affix position={{ top: 0, left: 0 }} hiddenFrom="sm">
+        <AppNavbarMobile transparent pageName="Scenes" />
+      </Affix>
 
       <Box
         ref={containerRef}

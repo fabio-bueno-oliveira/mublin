@@ -1,6 +1,5 @@
 import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { upload } from '@imagekit/react'
 import { useAuth } from '../hooks/useAuth'
 import { supabase } from '../lib/supabaseClient'
 import { useQueryClient } from '@tanstack/react-query'
@@ -16,23 +15,25 @@ import {
   Progress,
   ActionIcon,
   Avatar,
+  Loader,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import {
-  IconVideo,
+  IconMovie,
   IconX,
   IconLock,
   IconSparkles,
   IconAlertTriangle,
-  IconMovie,
 } from '@tabler/icons-react'
 
 const AVATAR_PATH =
   'https://ik.imagekit.io/mublin/tr:h-68,c-maintain_ratio/users/avatars/'
 
-const MAX_DURATION_SECONDS = 50
-const MAX_SIZE_MB = 50
+const MAX_DURATION_SECONDS = 50 // precisa bater com o CHECK das tabelas scenes/scene_uploads
+const MAX_SIZE_MB = 30
 const MAX_CAPTION_LENGTH = 150
+const PROCESSING_TIMEOUT_MS = 90_000 // depois disso, deixamos de bloquear a tela
+const POLL_INTERVAL_MS = 2_000
 
 // Lê metadados do vídeo (duração e orientação) usando um <video> temporário,
 // sem precisar subir o arquivo antes.
@@ -55,6 +56,32 @@ function readVideoMetadata(file) {
       URL.revokeObjectURL(url)
       reject(new Error('invalid-video'))
     }
+  })
+}
+
+// Sobe o arquivo direto pra URL de upload do Mux, com progresso via XHR
+// (fetch não expõe progresso de upload de forma simples multiplataforma).
+function uploadFileToMux(uploadUrl, file, onProgress) {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest()
+    xhr.open('PUT', uploadUrl)
+
+    xhr.upload.onprogress = (event) => {
+      if (event.lengthComputable) {
+        onProgress(Math.round((event.loaded / event.total) * 100))
+      }
+    }
+
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        resolve()
+      } else {
+        reject(new Error(`Upload falhou (status ${xhr.status})`))
+      }
+    }
+
+    xhr.onerror = () => reject(new Error('Erro de rede durante o upload.'))
+    xhr.send(file)
   })
 }
 
@@ -103,29 +130,6 @@ function ProUpsell() {
   )
 }
 
-// Gera um slug simples (sem acentos, minúsculo, só letras/números/hífen)
-function slugify(value) {
-  return (value || '')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-}
-
-// Nome do arquivo no padrão "usuario--descricao.mp4", priorizando a legenda
-// e caindo pro nome original do arquivo selecionado quando não há legenda.
-function buildSceneFileName({ username, caption, originalFileName, fallbackId }) {
-  const usernameSlug = slugify(username) || slugify(fallbackId).slice(0, 8) || 'mublin'
-  const originalBase = (originalFileName || '').replace(/\.[^/.]+$/, '')
-  const descriptionSlug = (slugify(caption) || slugify(originalBase) || 'cena').slice(
-    0,
-    60,
-  )
-
-  return `${usernameSlug}--${descriptionSlug}.mp4`
-}
-
 // ── Página principal ──────────────────────────────────────
 export default function NewScene() {
   const navigate = useNavigate()
@@ -139,11 +143,15 @@ export default function NewScene() {
   const [isVertical, setIsVertical] = useState(true)
   const [caption, setCaption] = useState('')
   const [uploadProgress, setUploadProgress] = useState(0)
-  const [submitting, setSubmitting] = useState(false)
+  // idle | uploading | processing | error
+  const [phase, setPhase] = useState('idle')
+  const [errorMessage, setErrorMessage] = useState('')
 
   if (profile?.plan !== 'Pro') {
     return <ProUpsell />
   }
+
+  const isBusy = phase === 'uploading' || phase === 'processing'
 
   function resetSelection() {
     if (previewUrl) {
@@ -154,6 +162,8 @@ export default function NewScene() {
     setDuration(0)
     setIsVertical(true)
     setUploadProgress(0)
+    setPhase('idle')
+    setErrorMessage('')
     if (videoInputRef.current) {
       videoInputRef.current.value = ''
     }
@@ -204,6 +214,8 @@ export default function NewScene() {
       setPreviewUrl(meta.objectUrl)
       setDuration(meta.duration)
       setIsVertical(meta.isVertical)
+      setPhase('idle')
+      setErrorMessage('')
     } catch {
       notifications.show({
         color: 'red',
@@ -213,102 +225,116 @@ export default function NewScene() {
     }
   }
 
+  // Consulta scene_uploads até o webhook do Mux marcar como pronto (ou falho)
+  function waitForProcessing(pendingId) {
+    return new Promise((resolve, reject) => {
+      const startedAt = Date.now()
+
+      const interval = setInterval(async () => {
+        if (Date.now() - startedAt > PROCESSING_TIMEOUT_MS) {
+          clearInterval(interval)
+          reject(new Error('timeout'))
+          return
+        }
+
+        const { data, error } = await supabase
+          .from('scene_uploads')
+          .select('status, error_message')
+          .eq('id', pendingId)
+          .single()
+
+        if (error) {
+          clearInterval(interval)
+          reject(error)
+          return
+        }
+
+        if (data.status === 'ready') {
+          clearInterval(interval)
+          resolve()
+        } else if (data.status === 'errored') {
+          clearInterval(interval)
+          reject(
+            new Error(data.error_message || 'O Mux não conseguiu processar o vídeo.'),
+          )
+        }
+        // se ainda for 'waiting', o intervalo tenta de novo na próxima rodada
+      }, POLL_INTERVAL_MS)
+    })
+  }
+
   async function handlePublish() {
     if (!file) {
       return
     }
 
-    setSubmitting(true)
+    setPhase('uploading')
     setUploadProgress(0)
-
-    let uploadedFileId = null
+    setErrorMessage('')
 
     try {
       const {
         data: { session },
       } = await supabase.auth.getSession()
-      const authRes = await fetch(import.meta.env.VITE_IMAGEKIT_AUTH_ENDPOINT, {
-        headers: { Authorization: `Bearer ${session?.access_token}` },
-      })
-      const { token: ikToken, expire, signature } = await authRes.json()
 
-      const response = await upload({
-        file,
-        fileName: buildSceneFileName({
-          username: profile?.username,
-          caption,
-          originalFileName: file.name,
-          fallbackId: user.id,
-        }),
-        folder: '/scenes/',
-        tags: ['scene'],
-        useUniqueFileName: true,
-        publicKey: import.meta.env.VITE_IMAGEKIT_PUBLIC_KEY,
-        urlEndpoint: import.meta.env.VITE_IMAGEKIT_URL_ENDPOINT,
-        token: ikToken,
-        expire,
-        signature,
-        onProgress: (event) => {
-          if (event?.total) {
-            setUploadProgress(Math.round((event.loaded / event.total) * 100))
-          }
-        },
-      })
-
-      uploadedFileId = response.fileId
-
-      const { error: insertError } = await supabase.from('scenes').insert({
-        profile_id: user.id,
-        video_url: response.url,
-        duration_seconds: Math.round(duration),
-        caption: caption.trim() || null,
-      })
-
-      if (insertError) {
-        throw insertError
+      if (!session) {
+        throw new Error('Sessão expirada. Faça login novamente.')
       }
+
+      // 1) Pede ao servidor uma URL de upload direto no Mux
+      const createRes = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/mux-create-upload`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({ duration, caption }),
+        },
+      )
+
+      const createData = await createRes.json()
+
+      if (!createRes.ok) {
+        throw new Error(createData?.error || 'Não foi possível preparar o upload.')
+      }
+
+      const { pendingId, uploadUrl } = createData
+
+      // 2) Sobe o arquivo direto pro Mux
+      await uploadFileToMux(uploadUrl, file, setUploadProgress)
+
+      // 3) Aguarda o Mux processar — o webhook cria a Scene de verdade
+      setPhase('processing')
+      await waitForProcessing(pendingId)
 
       notifications.show({
         color: 'green',
-        message: 'Cena publicada!',
         position: 'top-center',
+        message: 'Cena publicada!',
       })
       await queryClient.invalidateQueries({ queryKey: ['scenes'] })
       navigate('/home')
     } catch (err) {
       console.error('Erro ao publicar cena:', err)
 
-      // Se o vídeo já subiu pro ImageKit mas o registro no banco falhou,
-      // removemos o arquivo órfão em vez de deixar lixo no storage.
-      if (uploadedFileId) {
-        try {
-          const {
-            data: { session },
-          } = await supabase.auth.getSession()
-          await fetch(
-            `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/imagekit-manage`,
-            {
-              method: 'DELETE',
-              headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${session?.access_token}`,
-              },
-              body: JSON.stringify({ fileId: uploadedFileId }),
-            },
-          )
-        } catch (cleanupErr) {
-          console.error('Erro ao limpar vídeo órfão:', cleanupErr)
-        }
+      if (err.message === 'timeout') {
+        // Não é uma falha — o vídeo só está demorando mais que o normal.
+        // Não faz sentido travar o usuário na tela por isso: a Cena aparece
+        // sozinha assim que o webhook terminar de processar.
+        notifications.show({
+          color: 'yellow',
+          position: 'top-center',
+          message:
+            'Seu vídeo ainda está sendo processado — ele vai aparecer em instantes.',
+        })
+        navigate('/home')
+        return
       }
 
-      notifications.show({
-        color: 'red',
-        title: 'Ops...',
-        message: 'Não foi possível publicar sua Cena. Tente novamente.',
-        position: 'top-center',
-      })
-    } finally {
-      setSubmitting(false)
+      setPhase('error')
+      setErrorMessage(err.message || 'Não foi possível publicar sua Cena.')
     }
   }
 
@@ -346,7 +372,7 @@ export default function NewScene() {
               textAlign: 'center',
             }}
           >
-            <IconMovie size={54} stroke={1.2} />
+            <IconMovie size={54} stroke={1.4} />
             <Text size="sm" fw={600}>
               Toque para escolher um vídeo
             </Text>
@@ -378,37 +404,78 @@ export default function NewScene() {
                 src={previewUrl}
                 muted
                 playsInline
-                controls
+                controls={!isBusy}
                 loop
                 style={{
                   display: 'block',
                   width: '100%',
                   aspectRatio: isVertical ? '9 / 16' : '16 / 9',
                   objectFit: 'cover',
+                  opacity: isBusy ? 0.4 : 1,
                 }}
               />
-              <ActionIcon
-                color="red"
-                variant="filled"
-                size="sm"
-                radius="xl"
-                style={{ position: 'absolute', top: 8, right: 8 }}
-                onClick={resetSelection}
-                disabled={submitting}
-              >
-                <IconX size={12} />
-              </ActionIcon>
+
+              {isBusy && (
+                <Box
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Loader color="white" size="md" />
+                </Box>
+              )}
+
+              {!isBusy && (
+                <ActionIcon
+                  color="red"
+                  variant="filled"
+                  size="sm"
+                  radius="xl"
+                  style={{ position: 'absolute', top: 8, right: 8 }}
+                  onClick={resetSelection}
+                >
+                  <IconX size={12} />
+                </ActionIcon>
+              )}
             </Box>
 
             <Text size="xs" c="dimmed" ta="center">
               Duração: {duration.toFixed(1)}s / {MAX_DURATION_SECONDS}s máx.
             </Text>
 
-            {!isVertical && (
+            {!isVertical && phase === 'idle' && (
               <Group gap={6} justify="center" wrap="nowrap">
                 <IconAlertTriangle size={14} color="var(--mantine-color-yellow-6)" />
                 <Text size="xs" c="dimmed" ta="center">
-                  Vídeos verticais (9:16) ficam melhores no Scenes.
+                  Vídeos verticais (9:16) ficam melhores nas Cenas.
+                </Text>
+              </Group>
+            )}
+
+            {phase === 'uploading' && (
+              <Stack gap={4}>
+                <Progress value={uploadProgress} size="sm" radius="xl" animated />
+                <Text size="xs" c="dimmed" ta="center">
+                  Enviando vídeo... {uploadProgress}%
+                </Text>
+              </Stack>
+            )}
+
+            {phase === 'processing' && (
+              <Text size="xs" c="dimmed" ta="center">
+                Vídeo enviado! Processando (isso pode levar até um minuto)...
+              </Text>
+            )}
+
+            {phase === 'error' && (
+              <Group gap={6} justify="center" wrap="nowrap">
+                <IconAlertTriangle size={14} color="var(--mantine-color-red-6)" />
+                <Text size="xs" c="red" ta="center">
+                  {errorMessage}
                 </Text>
               </Group>
             )}
@@ -421,26 +488,23 @@ export default function NewScene() {
               maxLength={MAX_CAPTION_LENGTH}
               value={caption}
               onChange={(e) => setCaption(e.target.value)}
+              disabled={isBusy}
             />
             <Text size="xs" c="dimmed" ta="right">
               {caption.length}/{MAX_CAPTION_LENGTH}
             </Text>
-
-            {submitting && uploadProgress > 0 && (
-              <Progress value={uploadProgress} size="sm" radius="xl" animated />
-            )}
 
             <Group justify="flex-end">
               <Button
                 variant="subtle"
                 color="gray"
                 onClick={resetSelection}
-                disabled={submitting}
+                disabled={isBusy}
               >
                 Trocar vídeo
               </Button>
-              <Button radius="xl" fw={700} loading={submitting} onClick={handlePublish}>
-                Publicar Cena
+              <Button radius="xl" fw={700} loading={isBusy} onClick={handlePublish}>
+                {phase === 'error' ? 'Tentar novamente' : 'Publicar Cena'}
               </Button>
             </Group>
           </Stack>

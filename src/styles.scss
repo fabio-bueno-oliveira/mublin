@@ -245,15 +245,15 @@
 @keyframes live-pulse {
   0% {
     transform: scale(0.95);
-    box-shadow: 0 0 0 0 rgba(224, 49, 49, 0.7);
+    box-shadow: 0 0 0 0 rgba(var(--dot-color-rgb), 0.7);
   }
   70% {
     transform: scale(1);
-    box-shadow: 0 0 0 8px rgba(224, 49, 49, 0);
+    box-shadow: 0 0 0 8px rgba(var(--dot-color-rgb), 0);
   }
   100% {
     transform: scale(0.95);
-    box-shadow: 0 0 0 0 rgba(224, 49, 49, 0);
+    box-shadow: 0 0 0 0 rgba(var(--dot-color-rgb), 0);
   }
 }
 
@@ -265,13 +265,19 @@
 }
 
 .live-dot {
-  width: 8px;
-  height: 8px;
+  --dot-size: 8px;
+  --dot-color: var(--mantine-color-red-6);
+  --dot-color-rgb: 224, 49, 49; // rgb do red-6
+
+  width: var(--dot-size);
+  height: var(--dot-size);
   border-radius: 50%;
-  background-color: var(--mantine-color-red-6);
+  background-color: var(--dot-color);
   display: inline-block;
   position: relative;
+  flex-shrink: 0;
   animation: live-pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+
   &::after {
     content: '';
     position: absolute;
@@ -281,6 +287,25 @@
     height: 100%;
     border-radius: 50%;
     background: inherit;
+  }
+
+  &.green {
+    --dot-color: var(--mantine-color-green-6);
+    --dot-color-rgb: 47, 158, 68; // rgb do green-6 #2f9e44
+  }
+
+  &.teal {
+    --dot-color: var(--mantine-color-teal-6);
+    --dot-color-rgb: 18, 184, 134; // #12b886
+  }
+
+  &.red {
+    --dot-color: var(--mantine-color-red-6);
+    --dot-color-rgb: 224, 49, 49;
+  }
+
+  &.small {
+    --dot-size: 6.4px; // 20% menor
   }
 }
 

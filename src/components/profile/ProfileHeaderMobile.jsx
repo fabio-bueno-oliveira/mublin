@@ -14,7 +14,7 @@ import { isProfileLive } from '../../utils/live'
 import { truncateString } from '../../utils/formatter'
 import { getAvatarUrl } from '../../utils/profile'
 import { openImagePreviewModal } from '../../utils/openImagePreviewModal'
-// import ProPlanBadge from '../ProPlanBadge'
+import ProPlanBadge from '../ProPlanBadge'
 
 export default function ProfileHeaderMobile({
   profile,
@@ -27,21 +27,29 @@ export default function ProfileHeaderMobile({
 }) {
   return (
     <Box px="sm" py={0} mt={mt}>
-      <Avatar
-        mt={0}
-        mb="md"
-        size={84}
-        src={getAvatarUrl(profile.avatar, profile.is_open_to_work, 168)}
-        style={{ cursor: profile.avatar ? 'pointer' : 'default' }}
-        onClick={() =>
-          profile.avatar &&
-          openImagePreviewModal(
-            getAvatarUrl(profile.avatar, profile.is_open_to_work, 600),
-            profile.full_name,
-            { circular: true },
-          )
-        }
-      />
+      <Group justify="space-between" align="flex-end">
+        <Avatar
+          mt={0}
+          mb="md"
+          size={90}
+          src={getAvatarUrl(profile.avatar, profile.is_open_to_work, 86)}
+          style={{
+            cursor: profile.avatar ? 'pointer' : 'default',
+            borderWidth: '2px',
+            borderStyle: 'solid',
+            borderColor: 'light-dark(#FFFFFF, #101010)',
+          }}
+          onClick={() =>
+            profile.avatar &&
+            openImagePreviewModal(
+              getAvatarUrl(profile.avatar, profile.is_open_to_work, 600),
+              profile.full_name,
+              { circular: true },
+            )
+          }
+        />
+        <ProPlanBadge mb={62} mr={8} />
+      </Group>
       <Stack gap={2} style={{ overflow: 'hidden' }}>
         <Flex align="center" gap={3} mb={2} wrap="wrap">
           <Title order={1} fw={600} fz="h2" lh="1" component={Text} lineClamp={2}>

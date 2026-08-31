@@ -37,6 +37,7 @@ import {
   IconMovie,
   IconIdBadge,
 } from '@tabler/icons-react'
+import MublinMGold from '../assets/svg/m-pro-gold.svg'
 import MublinLogoBlack from '../assets/svg/mublin-m-logo-black.svg'
 import MublinLogoWhite from '../assets/svg/mublin-m-logo-white-squared.svg'
 
@@ -187,25 +188,23 @@ export default function Pro() {
       <Center mt="md">
         <Link to="/home">
           <Image
-            src={colorScheme === 'light' ? MublinLogoBlack : MublinLogoWhite}
+            src={MublinMGold}
             h={54}
             w="auto"
             fit="contain"
+            title="Mublin Pro"
+            style={{
+              filter: 'drop-shadow(0 1px 1px rgba(0,0,0,0.08))',
+            }}
           />
         </Link>
       </Center>
 
-      <Center px="md" mt="sm" style={{ flexDirection: 'column', minHeight: '46vh' }}>
+      <Center px="md" mt="sm" style={{ flexDirection: 'column' }}>
         <Stack align="center" gap="lg" maw={640} w="100%">
           {/* Hero */}
-          <Stack align="center" gap="md">
-            <Badge
-              size="lg"
-              radius="xl"
-              variant="gradient"
-              fw={300}
-              gradient={{ from: 'brown', to: 'yellow.9', deg: 96 }}
-            >
+          <Stack align="center" gap="sm">
+            <Badge size="xl" radius="xl" variant="transparent" fw={300}>
               MUBLIN <span style={{ fontWeight: '700' }}>PRO</span>
             </Badge>
 

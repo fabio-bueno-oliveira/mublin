@@ -2,6 +2,8 @@ import { useState, useEffect, useMemo, useRef } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { useParams, Link } from 'react-router-dom'
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query'
+import { useAuth } from '../hooks/useAuth'
+import { Helmet } from 'react-helmet-async'
 import {
   fetchProfileDetails,
   fetchCheckFollowing,
@@ -25,9 +27,8 @@ import {
   togglePortfolioUpvote,
   fetchProfileLinks,
   fetchProfileUpcomingEvents,
+  fetchProfileScenes,
 } from '../queries/profiles'
-import { useAuth } from '../hooks/useAuth'
-import { Helmet } from 'react-helmet-async'
 // prettier-ignore
 import {
   useMantineColorScheme,
@@ -46,16 +47,6 @@ import {
 } from '@mantine/core'
 // prettier-ignore
 import { useMediaQuery, useDisclosure, useWindowScroll, useScroller } from '@mantine/hooks'
-import { notifications } from '@mantine/notifications'
-import LinkedItem from '../components/feed/LinkedItem'
-import VideoPlayerYoutube from '../components/feed/VideoPlayerYoutube'
-import SectionPanel from '../components/SectionPanel'
-import InviteToGigModal from '../components/gigs/InviteToGigModal'
-import LoadingSkeleton from '../components/profile/LoadingSkeleton'
-import RecognitionBadge from '../components/profile/RecognitionBadge'
-import PortfolioUpvote from '../components/profile/PortfolioUpvote'
-import AvailabilityPanel from '../components/profile/AvailabilityPanel'
-import { truncateString } from '../utils/formatter'
 // prettier-ignore
 import {
   IconMoodSad, IconWorld, IconCheck,
@@ -71,20 +62,33 @@ import {
   IconRosetteDiscountCheckFilled,
   IconSchool, IconUserCircle,
   IconExternalLink, IconRoute,
+  IconSquareRoundedArrowLeftFilled, IconSquareRoundedArrowRightFilled,
   IconArrowRight,
 } from '@tabler/icons-react'
+import { notifications } from '@mantine/notifications'
+import LinkedItem from '../components/feed/LinkedItem'
+import VideoPlayerYoutube from '../components/feed/VideoPlayerYoutube'
+import SectionPanel from '../components/SectionPanel'
+import InviteToGigModal from '../components/gigs/InviteToGigModal'
+import LoadingSkeleton from '../components/profile/LoadingSkeleton'
+import RecognitionBadge from '../components/profile/RecognitionBadge'
+import PortfolioUpvote from '../components/profile/PortfolioUpvote'
+import AvailabilityPanel from '../components/profile/AvailabilityPanel'
+import ScenesScroller from '../components/scenes/ScenesScroller'
+import { truncateString } from '../utils/formatter'
 import ProfileHeaderMobile from '../components/profile/ProfileHeaderMobile'
 import AppNavbarMobile from '../components/AppNavbarMobile'
 import ProPlanBadge from '../components/ProPlanBadge'
 import SimilarProfiles from '../components/SimilarProfiles'
 import { ScrollerArrows } from '../components/profile/ScrollerArrows'
 import SocialLinks from '../components/profile/SocialLinks'
-import { formatPortfolioPeriod, getAvatarUrl } from '../utils/profile'
+import { formatPortfolioPeriod, getAvatarUrl, formatMemberSince } from '../utils/profile'
 import { openImagePreviewModal } from '../utils/openImagePreviewModal'
 import { isProfileLive } from '../utils/live'
 import { isMublinOG } from '../utils/badges'
-import relativeTime from 'dayjs/plugin/relativeTime'
+import { isEventHappeningNow, formatEventDateRange } from '../utils/dates'
 import MublinMLogo from '../assets/svg/mublin-m-logo-silver.svg'
+import relativeTime from 'dayjs/plugin/relativeTime'
 import dayjs from 'dayjs'
 dayjs.extend(relativeTime)
 dayjs.locale('pt-br')
@@ -120,7 +124,6 @@ export default function Profile() {
   const inspirationsScroller = useScroller()
   const partnersScroller = useScroller()
   const gearScroller = useScroller()
-  const upcomingEventsScroller = useScroller()
   const menuItemRefs = useRef({})
 
   const [activeSection, setActiveSection] = useState('')
@@ -154,7 +157,16 @@ export default function Profile() {
     queryKey: ['profile-upcoming-events', profile?.id],
     queryFn: () => fetchProfileUpcomingEvents(profile.id),
     enabled: !!profile?.id,
-    staleTime: 1000 * 60 * 5,
+    staleTime: 1000 * 60 * 1,
+    refetchInterval: 1000 * 60 * 2,
+  })
+
+  const { data: scenes = [], isLoading: loadingScenes } = useQuery({
+    queryKey: ['profile-scenes', profile?.id],
+    queryFn: () => fetchProfileScenes(profile.id),
+    enabled: !!profile?.id,
+    staleTime: 1000 * 60 * 1,
+    refetchInterval: 1000 * 60 * 5,
   })
 
   const { data: profileViewCount } = useQuery({
@@ -529,14 +541,17 @@ export default function Profile() {
 
   const rolesOrdered = profile?.profile_roles
     ?.slice()
-    ?.sort(
+    .sort(
       (a, b) =>
         b.main_activity - a.main_activity ||
         Number(b.roles?.instrumentalist) - Number(a.roles?.instrumentalist),
     )
 
-  const instrumentRolesCount =
-    rolesOrdered?.filter((role) => role.roles?.instrumentalist).length ?? 0
+  const instrumentRolesCount = new Set(
+    rolesOrdered
+      ?.filter((r) => r.roles?.instrumentalist && r.roles?.category_id)
+      .map((r) => r.roles.category_id),
+  ).size
 
   const genres = profile?.profile_genres?.sort((a, b) => b.main_genre - a.main_genre)
   const city = profile?.cities?.name
@@ -672,6 +687,8 @@ export default function Profile() {
     )
   }
 
+  const memberInfo = formatMemberSince(profile.created_at)
+
   return (
     <>
       <Helmet>
@@ -691,10 +708,10 @@ export default function Profile() {
         </Affix>
       )}
 
-      <Container size="xl" px={0} mt={!profile.cover_image ? { base: 70, sm: 20 } : 0}>
+      <Container size="xl" px={0} mt={{ base: 10, sm: 20 }}>
         <Grid>
           <Grid.Col span={{ base: 12, md: 9 }} pos="relative">
-            {profile.cover_image && (
+            {profile.cover_image ? (
               <Card
                 mt={{ base: 46, sm: 0 }}
                 shadow={false}
@@ -737,11 +754,20 @@ export default function Profile() {
                   </Box>
                 </Card.Section>
               </Card>
+            ) : (
+              isMobile && (
+                <Box
+                  bg="light-dark(var(--mantine-color-gray-8), #171717)"
+                  w="100%"
+                  mt={{ base: 46, sm: 0 }}
+                  h={80}
+                />
+              )
             )}
 
             {isMobile && (
               <ProfileHeaderMobile
-                mt={profile.cover_image ? -55 : 0}
+                mt={profile.cover_image ? -55 : -60}
                 profile={profile}
                 city={city}
                 region={region}
@@ -884,20 +910,40 @@ export default function Profile() {
                       </Button.Group>
                     </Card.Section>
 
-                    {profile?.plan === 'Pro' && (
-                      <Flex pl={6} mb={8} gap={6} align="center" visibleFrom="sm">
-                        <Text
-                          fz="11px"
-                          c="dimmed"
-                          lh={1}
-                          component={Link}
-                          to="/pro"
-                          style={{ textDecoration: 'none', color: 'inherit' }}
-                        >
-                          Perfil otimizado com Pro
-                        </Text>
-                      </Flex>
-                    )}
+                    <Divider variant="dashed" opacity={0.5} mb="xs" />
+                    <Tooltip
+                      label={
+                        memberInfo ? (
+                          <Stack gap={2}>
+                            <Text size="xs" fw={400} c="white">
+                              No Mublin desde {memberInfo.short}
+                            </Text>
+                            <Text fz="9px" c="rgba(255,255,255,0.7)" lh={1.2}>
+                              {memberInfo.long} • {memberInfo.relative}
+                            </Text>
+                          </Stack>
+                        ) : (
+                          `@${profile.username}`
+                        )
+                      }
+                      withArrow
+                      position="bottom"
+                      color="dark"
+                      multiline
+                      w={220}
+                      transitionProps={{ transition: 'pop', duration: 200 }}
+                    >
+                      <Text
+                        pl={6}
+                        mb={6}
+                        size="xs"
+                        c="dimmed"
+                        lh={1}
+                        style={{ cursor: 'default', width: 'fit-content' }}
+                      >
+                        @{profile.username}
+                      </Text>
+                    </Tooltip>
                   </Card>
                 </Box>
               </Grid.Col>
@@ -1001,10 +1047,17 @@ export default function Profile() {
                       </Text> */}
                     {(city || region) && (
                       <Group gap={4}>
-                        <Text size="xs" c="var(--mantine-color-gray-5)" fw={300}>
+                        <Text
+                          size="xs"
+                          c="light-dark(var(--mantine-color-gray-7), var(--mantine-color-gray-5))"
+                          fw={300}
+                        >
                           {[city, region, country].filter(Boolean).join(', ')}
                         </Text>
-                        <Text size="xs" c="var(--mantine-color-gray-5)">
+                        <Text
+                          size="xs"
+                          c="light-dark(var(--mantine-color-gray-7), var(--mantine-color-gray-5))"
+                        >
                           ·
                         </Text>
                       </Group>
@@ -1014,7 +1067,7 @@ export default function Profile() {
                       onClick={openContactInfo}
                       c="var(--mantine-color-text)"
                     >
-                      Dados de contato
+                      Infos de contato
                     </Anchor>
                     {isProfileLive(profile) && (
                       <Group gap={6} ml={10} align="center" wrap="nowrap">
@@ -1080,6 +1133,24 @@ export default function Profile() {
                     </Text>
                   </Anchor>
                 </Group>
+
+                {loadingScenes ? (
+                  <Group gap={6} mt={14} mx={{ base: 'sm', md: 0 }}>
+                    {[1, 2, 3, 4, 5].map((i) => (
+                      <Skeleton key={i} width={42} height={75} radius="md" />
+                    ))}
+                  </Group>
+                ) : (
+                  <Box mt={14} mx={{ base: 'sm', md: 0 }}>
+                    <ScenesScroller
+                      scenes={scenes}
+                      isMobile={isMobile}
+                      mini
+                      animated
+                      showButtonAddNewScene={isOwnProfile}
+                    />
+                  </Box>
+                )}
 
                 {!isOwnProfile && (
                   <Group justify="space-around" hiddenFrom="sm" px="sm" mt="sm">
@@ -1298,29 +1369,32 @@ export default function Profile() {
                           <Title order={3} fz="sm" fw={300} opacity={0.8}>
                             Demonstrou interesse nos eventos
                           </Title>
-                          <ScrollerArrows
-                            scroller={upcomingEventsScroller}
-                            sizePreset="lg"
-                          />
                         </Group>
-                        <div
-                          ref={upcomingEventsScroller.ref}
-                          {...upcomingEventsScroller.dragHandlers}
-                          className="scrollerHidden"
-                          style={{
-                            overflow: 'auto',
-                            cursor: upcomingEventsScroller.isDragging
-                              ? 'grabbing'
-                              : 'default',
-                          }}
+                        <Scroller
+                          controlSize="xl"
+                          startControlIcon={
+                            <IconSquareRoundedArrowLeftFilled
+                              size={34}
+                              style={{ marginLeft: '14px' }}
+                            />
+                          }
+                          endControlIcon={
+                            <IconSquareRoundedArrowRightFilled
+                              size={34}
+                              style={{ marginRight: '14px' }}
+                            />
+                          }
+                          // showEndControl
                         >
                           <Group gap="xs" wrap="nowrap" align="flex-start">
-                            {upcomingEvents.map((event) => {
+                            {upcomingEvents.map((item) => {
+                              const event = item.event
+
                               const cityName = event.venue?.city?.name
 
                               return (
                                 <Flex
-                                  key={event.id}
+                                  key={item.id}
                                   direction="column"
                                   align="center"
                                   justify="flex-start"
@@ -1341,7 +1415,7 @@ export default function Profile() {
                                     }
                                     alt={event.name}
                                   />
-                                  {event.is_confirmed && (
+                                  {item.is_confirmed && (
                                     <Tooltip label="Confirmou presença">
                                       <ThemeIcon
                                         color="green"
@@ -1358,7 +1432,7 @@ export default function Profile() {
                                     size="xs"
                                     fw={500}
                                     ta="center"
-                                    lineClamp={2}
+                                    lineClamp={1}
                                     lh={1.2}
                                     w={92}
                                     title={event.name}
@@ -1372,14 +1446,35 @@ export default function Profile() {
                                     lineClamp={1}
                                     w={92}
                                   >
-                                    {dayjs(event.date_start).format('DD MMM')}
+                                    {formatEventDateRange(
+                                      event.date_start,
+                                      event.date_end,
+                                    )}
                                     {cityName ? ` · ${cityName}` : ''}
                                   </Text>
+                                  {isEventHappeningNow(event) && (
+                                    <Group gap={4}>
+                                      <Box
+                                        component="span"
+                                        className="live-dot green small"
+                                        style={{ flexShrink: 0 }}
+                                      />
+                                      <Text
+                                        size="8px"
+                                        c="white"
+                                        ta="center"
+                                        tt="uppercase"
+                                        lh={1}
+                                      >
+                                        Rolando agora
+                                      </Text>
+                                    </Group>
+                                  )}
                                 </Flex>
                               )
                             })}
                           </Group>
-                        </div>
+                        </Scroller>
                       </>
                     )}
                   </SectionPanel>
@@ -2276,7 +2371,7 @@ export default function Profile() {
                         to="/pro"
                         style={{ textDecoration: 'none', color: 'inherit' }}
                       >
-                        {profile?.full_name} possui uma conta Pro
+                        {profile?.username} possui uma conta Pro
                       </Text>
                     </Flex>
                   </SectionPanel>
