@@ -1,4 +1,4 @@
-import MuxPlayer from '@mux/mux-player-react'
+// import MuxPlayer from '@mux/mux-player-react'
 import { forwardRef, useImperativeHandle, useRef, useEffect } from 'react'
 import { useMediaQuery } from '@mantine/hooks'
 
