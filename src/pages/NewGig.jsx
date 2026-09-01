@@ -1,63 +1,51 @@
 import { useState, useEffect, useMemo } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { Helmet } from 'react-helmet-async'
 import { useQuery } from '@tanstack/react-query'
 import { fetchUserProjects } from '../queries/user'
 import { fetchAllRoles } from '../queries/roles'
-import { fetchEventTypes, searchVenues, fetchDressCodeTypes } from '../queries/events'
+import { fetchEventTypes, fetchDressCodeTypes } from '../queries/events'
 import { searchEvents, searchProfiles } from '../queries/search'
 import { supabase } from '../lib/supabaseClient'
 import { useForm } from '@mantine/form'
 import { notifications } from '@mantine/notifications'
 import GigRoleCombobox from '../components/gigs/GigRoleCombobox'
+import ProjectSelector from '../components/gigs/ProjectSelector'
+import VenueSelector from '../components/gigs/VenueSelector'
 import SetlistManager from '../components/setlist/SetlistManager'
-import {
-  Container,
-  Grid,
-  Group,
-  Divider,
-  Avatar,
-  Stack,
-  Combobox,
-  InputBase,
-  useCombobox,
-  Select,
-  TextInput,
-  Textarea,
-  Title,
-  Text,
-  Button,
-  Paper,
-  ActionIcon,
-  Badge,
-  NumberInput,
-  Checkbox,
-  Box,
-  CloseButton,
-  Loader,
-  ScrollArea,
-  UnstyledButton,
-  Collapse,
-  Alert,
-} from '@mantine/core'
 import { useDebouncedCallback } from '@mantine/hooks'
 import { TimeInput } from '@mantine/dates'
-import {
-  IconPlus,
-  IconTrash,
-  IconSend,
-  IconCalendar,
-  IconClock,
-  IconMapPin,
-  IconShirt,
-  IconMicrophone2,
-  IconCheckFilled,
-  IconCheck,
-  IconLock,
-  IconChevronRightFilled,
-} from '@tabler/icons-react'
 import { getDateSuggestions } from '../utils/dates'
+// prettier-ignore
+import {
+  useCombobox,
+  Container, Collapse,
+  Grid, Group, ScrollArea,
+  Box, Stack, Divider, Card, Paper,
+  Alert, Badge, Avatar,
+  CloseButton, InputBase,
+  Select, TextInput, NumberInput,
+  Title, Text, Textarea,
+  Combobox, Checkbox,
+  Button, ActionIcon,
+} from '@mantine/core'
+// prettier-ignore
+import {
+  IconPlus, IconTrash,
+  IconSend, IconCalendar, IconClock,
+  IconMapPin, IconShirt,
+  IconMicrophone2,
+  IconCheck, IconLock,
+  IconChevronRightFilled,
+  IconExclamationCircle,
+  IconHistory,
+  IconMinus,
+  IconChevronCompactDown,
+  IconChevronUp,
+  IconChevronDown,
+  IconX,
+} from '@tabler/icons-react'
 
 function slugify(text) {
   return (text || '')
@@ -89,7 +77,7 @@ function StepPlaceholder({ number, title, id }) {
       style={{ borderStyle: 'dashed' }}
     >
       <Group>
-        <Badge size="lg" variant="filled" color="gray">
+        <Badge size="xl" variant="filled" color="gray">
           Passo {number}
         </Badge>
         <Title order={4} c="dimmed" className="cursorDefault">
@@ -106,188 +94,7 @@ const UPCOMING_STEPS = [
   { number: 4, title: 'Repertório / Setlist', id: 'gig-setlist-placeholder' },
 ]
 
-function ProjectScrollerSelector({ loading, projects, selected, onSelect }) {
-  if (loading) {
-    return (
-      <Text size="sm" c="dimmed" ta="center" py="md">
-        Buscando seus projetos...
-      </Text>
-    )
-  }
-
-  if (!projects.length) {
-    return (
-      <Stack gap={6} align="center" justify="center">
-        <Text size="sm" c="dimmed" ta="center" py="md">
-          Nenhum projeto encontrado
-        </Text>
-        <Button
-          size="xs"
-          variant="outline"
-          color="var(--mantine-color-text)"
-          w="fit-content"
-          rightSection={<IconChevronRightFilled size={14} />}
-          component={Link}
-          to="/new/project"
-        >
-          Cadastrar novo
-        </Button>
-      </Stack>
-    )
-  }
-
-  return (
-    <ScrollArea type="hover" offsetScrollbars>
-      <Group gap="sm" wrap="nowrap" py="xs" px={2}>
-        {projects.map((project) => {
-          const isSelected = selected?.id === project.id
-          return (
-            <UnstyledButton
-              key={project.id}
-              onClick={() => onSelect(project)}
-              style={{
-                border: isSelected
-                  ? '2px solid var(--mantine-color-indigo-5)'
-                  : '1px solid var(--mantine-color-default-border)',
-                borderRadius: 'var(--mantine-radius-md)',
-                padding: 8,
-                minWidth: 120,
-                background: isSelected
-                  ? 'var(--mantine-color-indigo-0)'
-                  : 'var(--mantine-color-body)',
-                transition: 'all 150ms ease',
-              }}
-            >
-              <Stack gap={6} align="center">
-                <Box pos="relative">
-                  <Avatar
-                    src={
-                      project.picture
-                        ? `${PROJECT_IMAGE_PATH}/${project.id}/${project.picture}`
-                        : null
-                    }
-                    size={64}
-                    radius="xl"
-                    style={{
-                      border: isSelected
-                        ? '2px solid var(--mantine-color-indigo-5)'
-                        : undefined,
-                    }}
-                  />
-                  {isSelected && (
-                    <Box
-                      pos="absolute"
-                      bottom={-4}
-                      right={-4}
-                      bg="indigo"
-                      style={{ borderRadius: '50%', padding: 2, lineHeight: 0 }}
-                    >
-                      <IconCheckFilled size={16} color="white" />
-                    </Box>
-                  )}
-                </Box>
-                <Text
-                  size="xs"
-                  fw={isSelected ? 700 : 500}
-                  ta="center"
-                  lineClamp={2}
-                  w={100}
-                >
-                  {project.name}
-                </Text>
-                <Text size="10px" c="dimmed" ta="center" lineClamp={1}>
-                  @{project.slug}
-                </Text>
-              </Stack>
-            </UnstyledButton>
-          )
-        })}
-      </Group>
-    </ScrollArea>
-  )
-}
-
-function VenueCombobox({ selected, onSelect, onClear, disabled, label = 'Local' }) {
-  const combobox = useCombobox()
-  const [value, setValue] = useState('')
-  const [results, setResults] = useState([])
-  const [searching, setSearching] = useState(false)
-  const fetchVenues = useDebouncedCallback(async (val) => {
-    if (val.trim().length < 2) {
-      setResults([])
-      setSearching(false)
-      return
-    }
-    const data = await searchVenues(val)
-    setResults(data)
-    combobox.openDropdown()
-    setSearching(false)
-  }, 500)
-  if (selected) {
-    return (
-      <Box>
-        <Text size="sm" fw={500}>
-          {label}
-        </Text>
-        <Group gap="xs" mt={4}>
-          <IconMapPin size={14} />
-          <Text size="sm" fw={500}>
-            {selected.name}
-          </Text>
-          <CloseButton
-            size="sm"
-            onClick={() => {
-              onClear()
-              setValue('')
-            }}
-            disabled={disabled}
-          />
-        </Group>
-      </Box>
-    )
-  }
-  return (
-    <Combobox
-      store={combobox}
-      onOptionSubmit={(val) => {
-        const item = results.find((r) => String(r.id) === val)
-        if (item) {
-          onSelect(item)
-          setValue('')
-          setResults([])
-        }
-        combobox.closeDropdown()
-      }}
-    >
-      <Combobox.Target>
-        <InputBase
-          label={label}
-          placeholder="Buscar local..."
-          leftSection={<IconMapPin size={14} />}
-          value={value}
-          onChange={(e) => {
-            setValue(e.currentTarget.value)
-            setSearching(true)
-            fetchVenues(e.currentTarget.value)
-          }}
-          rightSection={searching ? <Loader size="xs" /> : <Combobox.Chevron />}
-          disabled={disabled}
-        />
-      </Combobox.Target>
-      <Combobox.Dropdown>
-        <Combobox.Options>
-          {results.map((i) => (
-            <Combobox.Option key={i.id} value={String(i.id)}>
-              {i.name} ({i.cities?.name})
-            </Combobox.Option>
-          ))}
-        </Combobox.Options>
-      </Combobox.Dropdown>
-    </Combobox>
-  )
-}
-
-function EventCombobox({ selected, onSelect, onClear }) {
+function EventCombobox({ selected, onSelect, onClear, isPastGig }) {
   const combobox = useCombobox()
   const [value, setValue] = useState('')
   const [results, setResults] = useState([])
@@ -324,7 +131,9 @@ function EventCombobox({ selected, onSelect, onClear }) {
     >
       <Combobox.Target>
         <InputBase
-          label="Será em um evento (opcional)"
+          label={
+            isPastGig ? 'Foi em um evento (opcional)' : 'Será em um evento (opcional)'
+          }
           placeholder="Digite o nome do evento..."
           value={value}
           onChange={(e) => {
@@ -421,6 +230,7 @@ export default function NewGig() {
   const [selectedEvent, setSelectedEvent] = useState(null)
   const [projectSearch, setProjectSearch] = useState('')
   const [showManualVenue, setShowManualVenue] = useState(false)
+  const [expandedRoleDetails, setExpandedRoleDetails] = useState([])
 
   const [gigRoles, setGigRoles] = useState([
     {
@@ -489,8 +299,25 @@ export default function NewGig() {
       venue_address: '',
       stage_name: '',
     },
-    validate: { title: (v) => (v.length < 2 ? 'Mínimo 2 caracteres' : null) },
+    validate: {
+      title: (value) => (value.trim().length < 2 ? 'Informe um título para a gig' : null),
+      date: (value) => (!value ? 'Informe a data' : null),
+      time_stage_start: (value) => (!value ? 'Informe o horário de início' : null),
+    },
   })
+
+  const isPastGig = useMemo(() => {
+    if (!form.values.date) {
+      return false
+    }
+
+    const selectedDate = new Date(`${form.values.date}T00:00:00`)
+    const today = new Date()
+
+    today.setHours(0, 0, 0, 0)
+
+    return selectedDate < today
+  }, [form.values.date])
 
   const filteredProjects = userProjects.filter(
     (item) =>
@@ -499,18 +326,23 @@ export default function NewGig() {
         item.projects?.name.toLowerCase().includes(projectSearch.toLowerCase())),
   )
 
-  function handleSelectProject(item) {
-    setSelectedProject(item.projects)
+  function handleSelectProject(project) {
+    setSelectedProject(project)
     setStep(2)
-    form.setFieldValue('project_id', String(item.projects.id))
-    setProjectSearch('')
+    form.setFieldValue('project_id', String(project.id))
+
     if (!isTitleManuallyEdited || !form.values.title) {
-      const suggestion = getGigTitleSuggestion(
-        form?.values?.event_type_id,
-        item.projects?.name,
-      )
+      const suggestion = getGigTitleSuggestion(form.values.event_type_id, project.name)
       form.setFieldValue('title', suggestion)
     }
+  }
+
+  function toggleRoleDetails(tempId) {
+    setExpandedRoleDetails((current) =>
+      current.includes(tempId)
+        ? current.filter((id) => id !== tempId)
+        : [...current, tempId],
+    )
   }
 
   const handleBack = () => {
@@ -521,23 +353,17 @@ export default function NewGig() {
   }
 
   const handleContinueToRoles = () => {
+    const validation = form.validate()
+
+    if (validation.hasErrors) {
+      return
+    }
+
     setStep(3)
-    setTimeout(() => {
-      document.getElementById('gig-roles')?.scrollIntoView({
-        behavior: 'smooth',
-        block: 'start',
-      })
-    }, 100)
   }
 
   const handleContinueToSetlist = () => {
     setStep(4)
-    setTimeout(() => {
-      document.getElementById('gig-setlist')?.scrollIntoView({
-        behavior: 'smooth',
-        block: 'start',
-      })
-    }, 100)
   }
 
   function handleSelectEvent(ev) {
@@ -623,11 +449,15 @@ export default function NewGig() {
         throw rolesError
       }
       notifications.show({ title: 'Gig criada!', color: 'green' })
+      navigate('/gigs')
     } catch (e) {
-      notifications.show({ title: 'Erro', message: e.message, color: 'red' })
+      notifications.show({
+        title: 'Erro',
+        message: e.message,
+        color: 'red',
+      })
     } finally {
       setIsSubmitting(false)
-      navigate('/gigs')
     }
   }
 
@@ -709,7 +539,7 @@ export default function NewGig() {
         <title>Cadastrar gig · Mublin</title>
       </Helmet>
       <Container size="sm" py="md">
-        <Title order={3} mb="lg">
+        <Title order={3} mb="md">
           Cadastrar nova gig
         </Title>
 
@@ -717,53 +547,37 @@ export default function NewGig() {
         <Paper withBorder p="md" radius="md" mb="md">
           <Group justify="space-between" mb="xs">
             <Badge
-              size="lg"
+              size="xl"
               variant="filled"
-              color={step === 1 ? 'indigo' : 'green'}
+              color={step === 1 ? 'mublinColor' : 'green'}
               rightSection={step > 1 && <IconCheck size={18} />}
             >
               Passo 1
             </Badge>
             {selectedProject && step > 1 && (
-              <Button variant="subtle" size="xs" onClick={handleBack}>
+              <Button variant="subtle" size="xs" icon onClick={handleBack}>
                 Trocar projeto
               </Button>
             )}
           </Group>
 
           <Stack gap={1} mt={4} mb="xs">
-            <Title order={4}>Selecione o projeto</Title>
-            <Group gap={4}>
-              <Text size="xs" c="dimmed">
-                Exibindo apenas projetos que sou membro administrador ou staff
-              </Text>
+            <Title order={4}>Qual projeto realizará esta gig?</Title>
+            <Group gap={4} wrap="nowrap">
               <IconLock color="gray" size={15} />
+              <Text size="xs" c="dimmed">
+                Exibindo projetos que sou administrador ou staff
+              </Text>
             </Group>
           </Stack>
 
           {step === 1 ? (
             <Stack gap="xs">
-              <TextInput
-                placeholder="Filtrar por nome..."
-                value={projectSearch}
-                onChange={(e) => setProjectSearch(e.currentTarget.value)}
-                leftSection={<IconMicrophone2 size={14} />}
-                rightSection={
-                  projectSearch && <CloseButton onClick={() => setProjectSearch('')} />
-                }
-              />
-              <ProjectScrollerSelector
-                loading={loadingUserProjects}
+              <ProjectSelector
+                loadingProjects={loadingUserProjects}
                 projects={filteredProjects.map((fp) => fp.projects)}
-                selected={selectedProject}
-                onSelect={(proj) => {
-                  const wrapper = filteredProjects.find(
-                    (fp) => fp.projects.id === proj.id,
-                  )
-                  if (wrapper) {
-                    handleSelectProject(wrapper)
-                  }
-                }}
+                selectedProject={selectedProject}
+                onSelectProject={handleSelectProject}
               />
               {/* <Button
                 size="xs"
@@ -794,7 +608,13 @@ export default function NewGig() {
                 </Text>
               </Box>
               {selectedProject?.end_year && (
-                <Alert variant="light" color="orange" p="xs">
+                <Alert
+                  icon={<IconExclamationCircle color="red" />}
+                  variant="light"
+                  title="Atenção!"
+                  color="gray"
+                  p="xs"
+                >
                   Este projeto foi encerrado em {selectedProject?.end_year}. Antes de
                   continuar o cadastro, vale a pena confirmar a viabilidade real desta
                   gig.
@@ -809,9 +629,9 @@ export default function NewGig() {
             <Paper id="gig-details" withBorder p="md" radius="md" mb="md">
               <Group justify="space-between" mb="xs">
                 <Badge
-                  size="lg"
+                  size="xl"
                   variant="filled"
-                  color={step === 2 ? 'indigo' : 'green'}
+                  color={step === 2 ? 'mublinColor' : 'green'}
                   rightSection={step === 3 && <IconCheck size={18} />}
                 >
                   Passo 2
@@ -867,6 +687,7 @@ export default function NewGig() {
 
                   <EventCombobox
                     selected={selectedEvent}
+                    isPastGig={isPastGig}
                     onSelect={handleSelectEvent}
                     onClear={() => {
                       setSelectedEvent(null)
@@ -948,6 +769,19 @@ export default function NewGig() {
                     </Grid.Col>
                   </Grid>
 
+                  {isPastGig && (
+                    <Alert
+                      icon={<IconHistory size={18} />}
+                      title="Gig passada"
+                      color="teal"
+                      variant="light"
+                      p="xs"
+                    >
+                      Você está cadastrando uma gig que já aconteceu. Ela será registrada
+                      no histórico do projeto normalmente.
+                    </Alert>
+                  )}
+
                   {selectedEvent && (
                     <TextInput
                       label="Nome do palco"
@@ -969,8 +803,10 @@ export default function NewGig() {
                   )}
 
                   {!selectedEvent && (
-                    <VenueCombobox
+                    <VenueSelector
                       selected={selectedVenue}
+                      relatedProject={selectedProject}
+                      relatedProjectId={selectedProject?.id}
                       onSelect={(venue) => {
                         setSelectedVenue(venue)
                         setShowManualVenue(false)
@@ -978,7 +814,15 @@ export default function NewGig() {
                       onClear={() => {
                         setSelectedVenue(null)
                       }}
-                      disabled={!!selectedEvent}
+                      onSelectManual={(venue) => {
+                        setSelectedVenue(null)
+                        setShowManualVenue(true)
+                        form.setValues({
+                          venue_name: venue.name || '',
+                          venue_address: venue.address || '',
+                          venue_city_id: venue.city_id || null,
+                        })
+                      }}
                     />
                   )}
 
@@ -1015,11 +859,6 @@ export default function NewGig() {
                       <Button
                         rightSection={<IconChevronRightFilled size={14} />}
                         onClick={handleContinueToRoles}
-                        disabled={
-                          !form.values.title?.trim() ||
-                          !form.values.date ||
-                          !form.values.time_stage_start
-                        }
                       >
                         Continuar
                       </Button>
@@ -1034,9 +873,9 @@ export default function NewGig() {
             <Paper id="gig-roles" withBorder p="md" radius="md" mb="md">
               <Group justify="space-between" mb="xs">
                 <Badge
-                  size="lg"
+                  size="xl"
                   variant="filled"
-                  color={step === 3 ? 'indigo' : 'green'}
+                  color={step === 3 ? 'mublinColor' : 'green'}
                   rightSection={step === 4 && <IconCheck size={18} />}
                 >
                   Passo 3
@@ -1047,7 +886,9 @@ export default function NewGig() {
                   </Button>
                 )}
               </Group>
-              <Title order={4}>Vagas para a gig ({gigRoles?.length})</Title>
+              <Title order={4}>
+                Vagas para a gig ({gigRoles.filter((role) => role.role_id).length})
+              </Title>
               {step > 3 && (
                 <Text size="xs" mt="xs">
                   {gigRoles
@@ -1063,142 +904,227 @@ export default function NewGig() {
               {step === 3 && (
                 <Stack gap="xs" mt="md">
                   <Stack gap="xs">
-                    {gigRoles.map((gr) => (
-                      <Paper key={gr.tempId} p="sm" withBorder radius="md">
-                        <Grid>
-                          <Grid.Col span={{ base: 12, sm: 4 }}>
-                            <Select
-                              label="Atividade"
-                              placeholder="Selecione..."
-                              data={groupedRolesData}
-                              value={gr.role_id ? String(gr.role_id) : null}
-                              onChange={(v) =>
-                                updateRole(gr.tempId, { role_id: v ? Number(v) : null })
-                              }
-                              searchable
-                              comboboxProps={{ withinPortal: true }}
-                            />
-                          </Grid.Col>
-                          <Grid.Col span={{ base: 6, sm: 4 }}>
-                            <Select
-                              label="Nível"
-                              data={[
-                                { value: '1', label: 'Iniciante' },
-                                { value: '2', label: 'Intermediário' },
-                                { value: '3', label: 'Avançado' },
-                              ]}
-                              value={String(gr.experience_level)}
-                              onChange={(v) =>
-                                updateRole(gr.tempId, { experience_level: Number(v) })
-                              }
-                            />
-                          </Grid.Col>
-                          <Grid.Col span={{ base: 6, sm: 4 }}>
-                            <NumberInput
-                              label="Cachê"
-                              placeholder="R$ 0,00"
-                              // leftSection={<IconCurrencyDollar size={14} />}
-                              min={0}
-                              decimalScale={2}
-                              fixedDecimalScale
-                              thousandSeparator="."
-                              decimalSeparator=","
-                              prefix="R$ "
-                              value={gr.fee}
-                              onChange={(v) => updateRole(gr.tempId, { fee: v })}
-                              disabled={gr.fee_not_informed}
-                            />
-                            <Checkbox
-                              mt={6}
-                              size="xs"
-                              label="Não informado"
-                              checked={gr.fee_not_informed}
-                              onChange={(e) =>
-                                updateRole(gr.tempId, {
-                                  fee_not_informed: e.currentTarget.checked,
-                                  fee: e.currentTarget.checked ? null : gr.fee,
-                                })
-                              }
-                            />
-                          </Grid.Col>
-                          <Grid.Col span={12}>
-                            <Textarea
-                              label="Sobre a atuação"
-                              description="Detalhes opcionais sobre esta atuação"
-                              minRows={2}
-                              maxRows={2}
-                              onChange={(e) =>
-                                updateRole(gr.tempId, {
-                                  description: e.currentTarget.value,
-                                })
-                              }
-                            />
-                          </Grid.Col>
-                          <Grid.Col span={12}>
-                            {gr.role_id && selectedProject && (
-                              <GigRoleCombobox
-                                projectId={selectedProject.id}
-                                roleId={gr.role_id}
-                                onSelect={(profile) =>
-                                  updateRole(gr.tempId, { assigned: profile })
+                    {gigRoles.map((gr) => {
+                      const detailsOpened = expandedRoleDetails.includes(gr.tempId)
+
+                      return (
+                        <Paper key={gr.tempId} p="sm" withBorder radius="md">
+                          <Grid>
+                            <Grid.Col span={{ base: 12, sm: 8 }}>
+                              <Select
+                                label="Atividade"
+                                placeholder="Selecione..."
+                                data={groupedRolesData}
+                                value={gr.role_id ? String(gr.role_id) : null}
+                                onChange={(v) =>
+                                  updateRole(gr.tempId, {
+                                    role_id: v ? Number(v) : null,
+                                  })
+                                }
+                                searchable
+                                comboboxProps={{ withinPortal: true }}
+                              />
+                            </Grid.Col>
+
+                            <Grid.Col span={{ base: 12, sm: 4 }}>
+                              <Select
+                                label="Nível"
+                                data={[
+                                  { value: '1', label: 'Iniciante' },
+                                  { value: '2', label: 'Intermediário' },
+                                  { value: '3', label: 'Avançado' },
+                                ]}
+                                value={String(gr.experience_level)}
+                                onChange={(v) =>
+                                  updateRole(gr.tempId, {
+                                    experience_level: Number(v),
+                                  })
                                 }
                               />
-                            )}
-                            {gr.assigned && (
-                              <Group mt="xs" gap="xs">
-                                <Badge color="teal" variant="light">
-                                  @{gr.assigned.username}
-                                </Badge>
-                                <ActionIcon
-                                  size="xs"
-                                  variant="subtle"
-                                  onClick={() =>
-                                    updateRole(gr.tempId, { assigned: null })
-                                  }
-                                >
-                                  x
-                                </ActionIcon>
-                              </Group>
-                            )}
-                          </Grid.Col>
-                          <Grid.Col span={12}>
-                            <Divider mb="sm" />
-                            <Checkbox
-                              label="A vaga é um sub (substituição)"
-                              checked={gr.is_sub}
-                              onChange={(e) =>
-                                updateRole(gr.tempId, { is_sub: e.currentTarget.checked })
+                            </Grid.Col>
+                          </Grid>
+
+                          {gr.role_id && (
+                            <Button
+                              variant="subtle"
+                              size="xs"
+                              mt="sm"
+                              onClick={() => toggleRoleDetails(gr.tempId)}
+                              leftSection={
+                                detailsOpened ? (
+                                  <IconChevronUp size={16} />
+                                ) : (
+                                  <IconChevronDown size={16} />
+                                )
                               }
-                            />
-                            {gr.is_sub && (
-                              <Box mt="xs">
-                                <Text size="xs" fw={500} mb={4}>
-                                  Quem será substituído nesta vaga?
-                                </Text>
-                                <SubForCombobox
-                                  selected={gr.sub_for_profile}
-                                  onSelect={(profile) =>
-                                    updateRole(gr.tempId, { sub_for_profile: profile })
+                            >
+                              {detailsOpened ? 'Ocultar detalhes' : 'Mais detalhes'}
+                            </Button>
+                          )}
+
+                          <Collapse expanded={detailsOpened}>
+                            <Card
+                              withBorder
+                              mt="sm"
+                              shadow="xs"
+                              bg="light-dark(#f5f5f5, #171717)"
+                            >
+                              <Stack gap="sm">
+                                {/* CACHÊ */}
+                                <Box>
+                                  <NumberInput
+                                    label="Cachê"
+                                    placeholder="R$ 0,00"
+                                    min={0}
+                                    decimalScale={2}
+                                    fixedDecimalScale
+                                    thousandSeparator="."
+                                    decimalSeparator=","
+                                    prefix="R$ "
+                                    value={gr.fee}
+                                    onChange={(v) => updateRole(gr.tempId, { fee: v })}
+                                    disabled={gr.fee_not_informed}
+                                  />
+
+                                  <Checkbox
+                                    mt={6}
+                                    size="xs"
+                                    label="Não informado"
+                                    checked={gr.fee_not_informed}
+                                    onChange={(e) =>
+                                      updateRole(gr.tempId, {
+                                        fee_not_informed: e.currentTarget.checked,
+                                        fee: e.currentTarget.checked ? null : gr.fee,
+                                      })
+                                    }
+                                  />
+                                </Box>
+
+                                {/* DESCRIÇÃO */}
+                                <Textarea
+                                  label="Sobre a atuação"
+                                  description="Detalhes opcionais sobre esta atuação"
+                                  minRows={2}
+                                  maxRows={2}
+                                  value={gr.description}
+                                  onChange={(e) =>
+                                    updateRole(gr.tempId, {
+                                      description: e.currentTarget.value,
+                                    })
                                   }
                                 />
-                              </Box>
-                            )}
-                          </Grid.Col>
-                        </Grid>
-                        <Group justify="flex-end" mt="xs">
-                          <Button
-                            size="xs"
-                            variant="subtle"
-                            color="red"
-                            leftSection={<IconTrash size={14} />}
-                            onClick={() => removeRole(gr.tempId)}
-                            disabled={gigRoles.length === 1}
-                          >
-                            Remover vaga
-                          </Button>
-                        </Group>
-                      </Paper>
-                    ))}
+
+                                {/* MÚSICO DESIGNADO */}
+                                {gr.role_id && selectedProject && (
+                                  <Box>
+                                    <Text size="sm" fw={500} mb={4}>
+                                      Designar músico para esta vaga
+                                    </Text>
+
+                                    <GigRoleCombobox
+                                      label=""
+                                      projectId={selectedProject.id}
+                                      roleId={gr.role_id}
+                                      onSelect={(profile) =>
+                                        updateRole(gr.tempId, {
+                                          assigned: profile,
+                                        })
+                                      }
+                                    />
+
+                                    {gr.assigned && (
+                                      <Group mt="xs" gap="xs">
+                                        <Badge
+                                          px={6}
+                                          variant="default"
+                                          tt="lowercase"
+                                          fw={400}
+                                          size="lg"
+                                          radius="lg"
+                                          leftSection={
+                                            <Avatar
+                                              size="xs"
+                                              src={
+                                                gr?.assigned?.avatar
+                                                  ? `https://ik.imagekit.io/mublin/users/avatars/tr:h-16,w-16/${gr.assigned.avatar}`
+                                                  : null
+                                              }
+                                            />
+                                          }
+                                          rightSection={
+                                            <ActionIcon
+                                              size="xs"
+                                              variant="transparent"
+                                              color="teal"
+                                              onClick={() =>
+                                                updateRole(gr.tempId, {
+                                                  assigned: null,
+                                                })
+                                              }
+                                              aria-label="Remover músico designado"
+                                            >
+                                              <IconX size={12} stroke={2.5} />
+                                            </ActionIcon>
+                                          }
+                                        >
+                                          @{gr.assigned.username}
+                                        </Badge>
+                                      </Group>
+                                    )}
+                                  </Box>
+                                )}
+
+                                {/* SUBSTITUIÇÃO */}
+                                <Box>
+                                  <Divider mb="sm" />
+
+                                  <Checkbox
+                                    label="A vaga é um sub (substituição)"
+                                    checked={gr.is_sub}
+                                    onChange={(e) =>
+                                      updateRole(gr.tempId, {
+                                        is_sub: e.currentTarget.checked,
+                                      })
+                                    }
+                                  />
+
+                                  {gr.is_sub && (
+                                    <Box mt="xs">
+                                      <Text size="xs" fw={500} mb={4}>
+                                        Quem será substituído nesta vaga?
+                                      </Text>
+
+                                      <SubForCombobox
+                                        selected={gr.sub_for_profile}
+                                        onSelect={(profile) =>
+                                          updateRole(gr.tempId, {
+                                            sub_for_profile: profile,
+                                          })
+                                        }
+                                      />
+                                    </Box>
+                                  )}
+                                </Box>
+                              </Stack>
+                            </Card>
+                          </Collapse>
+
+                          {/* REMOVER */}
+                          <Group justify="flex-end" mt="xs">
+                            <Button
+                              size="xs"
+                              variant="subtle"
+                              color="red"
+                              leftSection={<IconTrash size={14} />}
+                              onClick={() => removeRole(gr.tempId)}
+                              disabled={gigRoles.length === 1}
+                            >
+                              Remover vaga
+                            </Button>
+                          </Group>
+                        </Paper>
+                      )
+                    })}
                     <Button
                       variant="light"
                       color="var(--mantine-color-text)"
@@ -1224,7 +1150,7 @@ export default function NewGig() {
 
           <Collapse expanded={step === 4}>
             <Paper id="gig-setlist" withBorder p="md" radius="md">
-              <Badge size="lg" variant="filled" color="indigo" mb="xs">
+              <Badge size="lg" variant="filled" color="mublinColor" mb="xs">
                 Passo 4
               </Badge>
               <Title order={4} mb="md">

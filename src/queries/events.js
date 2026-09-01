@@ -116,7 +116,9 @@ export async function fetchEventTypes() {
 export async function searchVenues(keyword) {
   const { data, error } = await supabase
     .from('venues')
-    .select('id, name, neighborhood, address, cities ( name, regions (name, uf) )')
+    .select(
+      'id, name, picture_url, neighborhood, address, cities ( name, regions (name, uf) ), type:venue_types ( name )',
+    )
     .ilike('name', `%${keyword}%`)
     .limit(8)
   if (error) {
@@ -280,4 +282,83 @@ export async function fetchDressCodeTypes() {
     throw error
   }
   return data
+}
+
+export async function getSuggestedVenuesByProject(projectId) {
+  if (!projectId) {
+    return []
+  }
+
+  const { data, error } = await supabase
+    .from('gigs')
+    .select(
+      `
+      id,
+      venue_id,
+      venue_name,
+      venue_address,
+      venue_city_id,
+      created_at,
+      venues (
+        id,
+        name,
+        picture_url,
+        cities (
+          id,
+          name
+        )
+      )
+    `,
+    )
+    .eq('project_id', projectId)
+    .order('created_at', { ascending: false })
+    .limit(10)
+
+  if (error) {
+    console.error('Erro ao buscar venues sugeridos:', error)
+    return []
+  }
+
+  // Remove duplicados e limita a 3 sugestões
+  const suggestions = []
+  const usedVenueIds = new Set()
+  const usedManualNames = new Set()
+
+  for (const gig of data) {
+    // Venue cadastrada
+    if (gig.venue_id && gig.venues) {
+      if (!usedVenueIds.has(gig.venue_id)) {
+        usedVenueIds.add(gig.venue_id)
+
+        suggestions.push({
+          type: 'venue',
+          data: gig.venues,
+        })
+      }
+    }
+
+    // Venue manual
+    if (!gig.venue_id && gig.venue_name) {
+      const normalizedName = gig.venue_name.trim().toLowerCase()
+
+      if (!usedManualNames.has(normalizedName)) {
+        usedManualNames.add(normalizedName)
+
+        suggestions.push({
+          type: 'manual',
+          data: {
+            name: gig.venue_name,
+            address: gig.venue_address,
+            city_id: gig.venue_city_id,
+          },
+        })
+      }
+    }
+
+    if (suggestions.length >= 3) {
+      break
+    }
+  }
+
+  return suggestions
 }

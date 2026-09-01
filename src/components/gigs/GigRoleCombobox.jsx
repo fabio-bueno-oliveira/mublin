@@ -119,7 +119,7 @@ export default function GigRoleCombobox({
                         {p.full_name}
                       </Text>
                       <Text size="xs" c="dimmed" lineClamp={1}>
-                        @{p.username} • {p.priority}
+                        @{p.username}
                       </Text>
                     </Box>
                   </Group>
