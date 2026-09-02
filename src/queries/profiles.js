@@ -48,7 +48,7 @@ export async function fetchProfileDetails(profileUsername) {
           description_ptbr,
           instrumentalist,
           category_id,
-          role_categories ( id, slug, name_ptbr, family )
+          role_categories ( id, slug, name_ptbr, family_id, role_families ( slug, name_ptbr, name_en ) )
         )
       ),
       profile_genres (
