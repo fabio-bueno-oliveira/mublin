@@ -405,11 +405,6 @@ export default function ScenesScroller({
         }
 
        .sceneThumbBorder[data-new="true"]:hover.sceneThumbInner {
-          background: linear-gradient(
-            135deg,
-            var(--mantine-color-dark-5) 0%,
-            var(--mantine-color-dark-6) 100%
-          )!important;
           border-color: var(--mantine-color-blue-6)!important;
         }
 

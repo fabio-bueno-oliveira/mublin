@@ -4,6 +4,7 @@ import { useAuth } from '../hooks/useAuth'
 import { Helmet } from 'react-helmet-async'
 import { useQuery } from '@tanstack/react-query'
 import { fetchUserProjects } from '../queries/user'
+import { fetchActiveProjectMembersForGigRoles } from '../queries/projects'
 import { fetchAllRoles } from '../queries/roles'
 import { fetchEventTypes, fetchDressCodeTypes } from '../queries/events'
 import { searchEvents, searchProfiles } from '../queries/search'
@@ -28,7 +29,7 @@ import {
   Select, TextInput, NumberInput,
   Title, Text, Textarea,
   Combobox, Checkbox,
-  Button, ActionIcon,
+  Button, ActionIcon, ThemeIcon,
 } from '@mantine/core'
 // prettier-ignore
 import {
@@ -36,15 +37,17 @@ import {
   IconSend, IconCalendar, IconClock,
   IconMapPin, IconShirt,
   IconMicrophone2,
-  IconCheck, IconLock,
+  IconCheck,
   IconChevronRightFilled,
   IconExclamationCircle,
   IconHistory,
-  IconMinus,
-  IconChevronCompactDown,
   IconChevronUp,
   IconChevronDown,
   IconX,
+  IconQuestionMark,
+  IconReplaceUser,
+  IconCurrencyDollar,
+  IconWand,
 } from '@tabler/icons-react'
 
 function slugify(text) {
@@ -65,6 +68,11 @@ function generateGigSlug(title) {
 }
 
 const PROJECT_IMAGE_PATH = 'https://ik.imagekit.io/mublin/projects/'
+const AVATAR_IMAGE_PATH = 'https://ik.imagekit.io/mublin/users/avatars/'
+
+function getAvatarUrl(avatar, size = 60) {
+  return avatar ? `${AVATAR_IMAGE_PATH}tr:h-${size},w-${size}/${avatar}` : null
+}
 
 function StepPlaceholder({ number, title, id }) {
   return (
@@ -163,8 +171,10 @@ function SubForCombobox({ onSelect, selected }) {
     if (val.length < 2) {
       return
     }
-    const data = await searchProfiles(val)
-    setResults(data)
+    // searchProfiles retorna { results, total } (por causa da paginação da RPC
+    // search_profiles), diferente de searchEvents que retorna o array direto.
+    const { results: data } = await searchProfiles(val)
+    setResults(Array.isArray(data) ? data : [])
     combobox.openDropdown()
   }, 400)
   if (selected) {
@@ -232,20 +242,22 @@ export default function NewGig() {
   const [showManualVenue, setShowManualVenue] = useState(false)
   const [expandedRoleDetails, setExpandedRoleDetails] = useState([])
 
-  const [gigRoles, setGigRoles] = useState([
-    {
-      tempId: Date.now(),
-      role_id: null,
-      description: '',
-      fee: null,
-      fee_not_informed: false,
-      experience_level: 2,
-      assigned: null,
-      is_sub: false,
-      sub_for_profile: null,
-    },
-  ])
+  const [gigRoles, setGigRoles] = useState([])
+  // const [gigRoles, setGigRoles] = useState([
+  //   {
+  //     tempId: Date.now(),
+  //     role_id: null,
+  //     description: '',
+  //     fee: null,
+  //     fee_not_informed: false,
+  //     experience_level: 2,
+  //     assigned: null,
+  //     is_sub: false,
+  //     sub_for_profile: null,
+  //   },
+  // ])
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isAutoFillingRoles, setIsAutoFillingRoles] = useState(false)
 
   const { data: userProjects = [], isLoading: loadingUserProjects } = useQuery({
     queryKey: ['user-projects', user?.id],
@@ -318,6 +330,38 @@ export default function NewGig() {
 
     return selectedDate < today
   }, [form.values.date])
+
+  // Nome do tipo de gig selecionado (Step 2), usado no resumo exibido após a etapa ser concluída
+  const selectedEventTypeName = useMemo(() => {
+    const type = eventTypes.find(
+      (et) => String(et.id) === String(form.values.event_type_id),
+    )
+    return type?.name || null
+  }, [eventTypes, form.values.event_type_id])
+
+  // Resumo do local da gig (Step 2), considerando os 3 cenários possíveis:
+  // local do evento vinculado, venue cadastrada selecionada, ou preenchimento manual
+  const venueSummary = useMemo(() => {
+    if (selectedEvent?.venue) {
+      const v = selectedEvent.venue
+      const location = v.city?.name ? ` — ${v.city.name}/${v.city.region?.uf || ''}` : ''
+      return `${v.name}${location}`
+    }
+
+    if (selectedVenue) {
+      const location = selectedVenue.city?.name
+        ? ` — ${selectedVenue.city.name}/${selectedVenue.city.region?.uf || ''}`
+        : ''
+      return `${selectedVenue.name}${location}`
+    }
+
+    if (form.values.venue_name) {
+      const address = form.values.venue_address ? ` — ${form.values.venue_address}` : ''
+      return `${form.values.venue_name}${address}`
+    }
+
+    return 'Local não informado'
+  }, [selectedEvent, selectedVenue, form.values.venue_name, form.values.venue_address])
 
   const filteredProjects = userProjects.filter(
     (item) =>
@@ -404,6 +448,101 @@ export default function NewGig() {
   }
   function removeRole(tempId) {
     setGigRoles(gigRoles.filter((r) => r.tempId !== tempId))
+  }
+
+  function isBlankRole(r) {
+    return (
+      !r.role_id &&
+      !r.assigned &&
+      !r.description &&
+      !r.fee &&
+      !r.is_sub &&
+      !r.sub_for_profile
+    )
+  }
+
+  async function handleAutoFillRoles() {
+    if (!selectedProject) {
+      return
+    }
+    setIsAutoFillingRoles(true)
+    try {
+      const members = await fetchActiveProjectMembersForGigRoles(selectedProject.id)
+
+      if (!members.length) {
+        notifications.show({
+          title: 'Ninguém encontrado',
+          message:
+            'Não encontramos integrantes em atividade nesse projeto para sugerir vagas automaticamente.',
+          color: 'yellow',
+        })
+        return
+      }
+
+      // Uma vaga por combinação (integrante, role) — quem acumula mais de uma
+      // função no portfólio gera uma vaga para cada uma delas.
+      const suggestedRoles = members.flatMap((member, memberIndex) =>
+        (member.roles ?? [])
+          .filter((r) => r.role?.id)
+          .map((r, roleIndex) => ({
+            tempId: Date.now() + memberIndex * 100 + roleIndex,
+            role_id: Number(r.role.id),
+            description: '',
+            fee: null,
+            fee_not_informed: false,
+            experience_level: 2,
+            assigned: member.profile,
+            is_sub: false,
+            sub_for_profile: null,
+          })),
+      )
+
+      if (!suggestedRoles.length) {
+        notifications.show({
+          title: 'Nenhuma função cadastrada',
+          message:
+            'Os integrantes em atividade encontrados não têm nenhuma função (role) cadastrada no portfólio.',
+          color: 'yellow',
+        })
+        return
+      }
+
+      // Evita duplicar uma vaga já existente para a mesma pessoa na mesma função
+      const alreadyExists = (candidate) =>
+        gigRoles.some(
+          (r) =>
+            r.role_id === candidate.role_id && r.assigned?.id === candidate.assigned?.id,
+        )
+
+      const newRoles = suggestedRoles.filter((candidate) => !alreadyExists(candidate))
+
+      if (!newRoles.length) {
+        notifications.show({
+          title: 'Vagas já preenchidas',
+          message: 'Todas as vagas sugeridas com base no elenco atual já estão criadas.',
+          color: 'blue',
+        })
+        return
+      }
+
+      // Se ainda só existir a vaga em branco inicial, substitui em vez de acumular
+      const shouldReplace = gigRoles.length === 1 && isBlankRole(gigRoles[0])
+      setGigRoles(shouldReplace ? newRoles : [...gigRoles, ...newRoles])
+
+      notifications.show({
+        title: 'Vagas preenchidas!',
+        message: `${newRoles.length} vaga(s) criada(s) com base no elenco atual do projeto.`,
+        color: 'green',
+      })
+    } catch (e) {
+      notifications.show({
+        title: 'Erro ao preencher vagas automaticamente',
+        message: e.message,
+        color: 'red',
+      })
+    } finally {
+      setIsAutoFillingRoles(false)
+    }
   }
 
   async function handleSubmit(values) {
@@ -561,15 +700,9 @@ export default function NewGig() {
             )}
           </Group>
 
-          <Stack gap={1} mt={4} mb="xs">
-            <Title order={4}>Qual projeto realizará esta gig?</Title>
-            <Group gap={4} wrap="nowrap">
-              <IconLock color="gray" size={15} />
-              <Text size="xs" c="dimmed">
-                Exibindo projetos que sou administrador ou staff
-              </Text>
-            </Group>
-          </Stack>
+          <Title order={4} mt={4} mb="xs">
+            Qual projeto realizará esta gig?
+          </Title>
 
           {step === 1 ? (
             <Stack gap="xs">
@@ -632,7 +765,7 @@ export default function NewGig() {
                   size="xl"
                   variant="filled"
                   color={step === 2 ? 'mublinColor' : 'green'}
-                  rightSection={step === 3 && <IconCheck size={18} />}
+                  rightSection={step > 2 && <IconCheck size={18} />}
                 >
                   Passo 2
                 </Badge>
@@ -643,6 +776,22 @@ export default function NewGig() {
                 )}
               </Group>
               <Title order={4}>Detalhes da gig</Title>
+              {step > 2 && (
+                <Stack gap={4} mt="xs">
+                  <Group gap={6}>
+                    <IconMicrophone2 color="gray" size={14} />
+                    <Text size="sm" c="dimmed">
+                      {selectedEventTypeName || 'Tipo não informado'}
+                    </Text>
+                  </Group>
+                  <Group gap={6}>
+                    <IconMapPin color="gray" size={14} />
+                    <Text size="sm" c="dimmed">
+                      {venueSummary}
+                    </Text>
+                  </Group>
+                </Stack>
+              )}
               {step === 2 && (
                 <Stack gap="sm" mt="md">
                   <Grid>
@@ -828,7 +977,8 @@ export default function NewGig() {
 
                   {!selectedVenue && !selectedEvent && (
                     <Checkbox
-                      label="Não encontrei o local, preencher manualmente"
+                      label="Preencher manualmente o local"
+                      description="Não será cadastrado para a comunidade"
                       checked={showManualVenue}
                       onChange={(e) => setShowManualVenue(e.currentTarget.checked)}
                       mt="xs"
@@ -889,26 +1039,125 @@ export default function NewGig() {
               <Title order={4}>
                 Vagas para a gig ({gigRoles.filter((role) => role.role_id).length})
               </Title>
-              {step > 3 && (
-                <Text size="xs" mt="xs">
-                  {gigRoles
-                    ?.map(
-                      (gigRole) =>
-                        roles?.find((role) => role.id === gigRole.role_id)
-                          ?.description_ptbr,
-                    )
-                    .filter(Boolean)
-                    .join(', ')}
-                </Text>
+              {gigRoles.some((role) => role.role_id) && (
+                <ScrollArea
+                  type="never"
+                  scrollbarSize={0}
+                  offsetScrollbars
+                  mt="xs"
+                  mb={step === 3 ? 'md' : 0}
+                >
+                  <Group gap={0} wrap="nowrap" align="flex-start" py={4}>
+                    {gigRoles
+                      .filter((gr) => gr.role_id)
+                      .map((gr, index, filledRoles) => {
+                        const roleData = roles.find((r) => r.id === gr.role_id)
+                        const roleName =
+                          roleData?.description_ptbr || roleData?.name_ptbr || 'Vaga'
+                        const hasFee =
+                          !gr.fee_not_informed && gr.fee !== null && gr.fee !== ''
+                        const isLast = index === filledRoles.length - 1
+
+                        return (
+                          <Group key={gr.tempId} gap={0} wrap="nowrap" align="center">
+                            <Stack align="center" gap={4} w={64}>
+                              <Box pos="relative" w={42} h={42}>
+                                <Avatar
+                                  size={42}
+                                  radius="xl"
+                                  color="mublinColor"
+                                  src={getAvatarUrl(gr.assigned?.avatar, 80)}
+                                >
+                                  {!gr.assigned && <IconQuestionMark size={18} />}
+                                </Avatar>
+
+                                {hasFee && (
+                                  <ThemeIcon
+                                    size={16}
+                                    radius="xl"
+                                    color="green"
+                                    style={{
+                                      position: 'absolute',
+                                      top: -2,
+                                      right: -2,
+                                    }}
+                                  >
+                                    <IconCurrencyDollar size={10} />
+                                  </ThemeIcon>
+                                )}
+
+                                {gr.is_sub && (
+                                  <Avatar
+                                    size={18}
+                                    radius="xl"
+                                    color="gray"
+                                    src={getAvatarUrl(gr.sub_for_profile?.avatar, 32)}
+                                    style={{
+                                      position: 'absolute',
+                                      bottom: -4,
+                                      right: hasFee ? 14 : -4,
+                                      border: '2px solid var(--mantine-color-body)',
+                                    }}
+                                  >
+                                    <IconReplaceUser size={10} />
+                                  </Avatar>
+                                )}
+                              </Box>
+
+                              <Text size="xs" ta="center" lh={1.15}>
+                                {roleName}
+                              </Text>
+                            </Stack>
+
+                            {!isLast && (
+                              <Box
+                                w={24}
+                                h={1}
+                                mt={20}
+                                bg="light-dark(#e0e0e0, #424242)"
+                              />
+                            )}
+                          </Group>
+                        )
+                      })}
+                  </Group>
+                </ScrollArea>
               )}
               {step === 3 && (
                 <Stack gap="xs" mt="md">
+                  {selectedProject && gigRoles.length === 0 && (
+                    <>
+                      <Button
+                        size="sm"
+                        variant="gradient"
+                        gradient={{ from: 'grape.9', to: 'mublinColor.9', deg: 190 }}
+                        leftSection={<IconWand size={16} />}
+                        onClick={handleAutoFillRoles}
+                        loading={isAutoFillingRoles}
+                      >
+                        Preencher vagas com o elenco atual do projeto
+                      </Button>
+                      <Divider label="ou" labelPosition="center" my="xs" />
+                    </>
+                  )}
                   <Stack gap="xs">
-                    {gigRoles.map((gr) => {
+                    {gigRoles.map((gr, index) => {
                       const detailsOpened = expandedRoleDetails.includes(gr.tempId)
 
                       return (
-                        <Paper key={gr.tempId} p="sm" withBorder radius="md">
+                        <Box
+                          key={gr.tempId}
+                          p="xs"
+                          style={{
+                            borderWidth: '1px',
+                            borderStyle: 'dashed',
+                            borderColor: 'light-dark(#f5f5f5, #424242)',
+                            borderRadius: 6,
+                          }}
+                        >
+                          <Badge radius="xl" size="xl" color="dark" mb="xs">
+                            {index + 1}
+                          </Badge>
                           <Grid>
                             <Grid.Col span={{ base: 12, sm: 8 }}>
                               <Select
@@ -1117,12 +1366,11 @@ export default function NewGig() {
                               color="red"
                               leftSection={<IconTrash size={14} />}
                               onClick={() => removeRole(gr.tempId)}
-                              disabled={gigRoles.length === 1}
                             >
                               Remover vaga
                             </Button>
                           </Group>
-                        </Paper>
+                        </Box>
                       )
                     })}
                     <Button
@@ -1131,7 +1379,7 @@ export default function NewGig() {
                       leftSection={<IconPlus size={16} />}
                       onClick={addRole}
                     >
-                      Adicionar outra vaga
+                      {gigRoles.length > 0 ? 'Adicionar outra vaga' : 'Adicionar vaga'}
                     </Button>
                   </Stack>
                   <Group justify="flex-end" mt="md">

@@ -110,6 +110,93 @@ export async function fetchProjectPeople(projectId) {
   return data
 }
 
+// Usada no Passo 3 da criação de gig ("preencher vagas automaticamente").
+// Retorna os integrantes atualmente em atividade no projeto (year_end nulo),
+// priorizando quem tem is_currently_working = true. Se ninguém tiver essa
+// flag ativa, cai para quem tem is_sporadic = true.
+//
+// Regras aplicadas:
+// 1) Só considera roles instrumentistas (roles.instrumentalist = true) — para
+//    vagas de roadie, produtor etc., a sugestão automática não se aplica.
+// 2) Garante roles.applies_to_a_project = true (redundante com o dado atual
+//    de portfolio, mas evita inconsistência futura).
+// 3) Se sobrar mais de uma role instrumentista para a mesma pessoa, escolhe
+//    UMA só (a "principal"), nesta ordem de prioridade:
+//    a) a role marcada como portfolio_roles.is_main_activity = true;
+//    b) se ninguém tiver essa flag marcada, usa role_families.sort_order
+//       como heurística (menor sort_order = mais prioritário — ex: Cordas
+//       vem antes de Voz).
+//    Se a pessoa só tiver 1 role instrumentista, ela é retornada direto.
+function pickMainPortfolioRole(portfolioRoles) {
+  if (!portfolioRoles.length) {
+    return null
+  }
+  if (portfolioRoles.length === 1) {
+    return portfolioRoles[0]
+  }
+
+  const flaggedAsMain = portfolioRoles.filter((pr) => pr.is_main_activity)
+  if (flaggedAsMain.length > 0) {
+    return flaggedAsMain[0]
+  }
+
+  const bySortOrder = [...portfolioRoles].sort((a, b) => {
+    const sortA = a.role?.category?.family?.sort_order ?? Infinity
+    const sortB = b.role?.category?.family?.sort_order ?? Infinity
+    return sortA - sortB
+  })
+  return bySortOrder[0]
+}
+
+export async function fetchActiveProjectMembersForGigRoles(projectId) {
+  const { data, error } = await supabase
+    .from('portfolio')
+    .select(
+      `
+      id,
+      is_sporadic,
+      is_currently_working,
+      profile:profiles ( id, full_name, username, avatar ),
+      portfolio_roles:portfolio_roles!inner (
+        is_main_activity,
+        role:roles!inner (
+          id, name_ptbr, instrumentalist, applies_to_a_project,
+          category:role_categories (
+            id,
+            family:role_families ( id, sort_order )
+          )
+        )
+      )
+    `,
+    )
+    .eq('project_id', projectId)
+    .is('year_end', null)
+    .eq('portfolio_roles.role.instrumentalist', true)
+    .eq('portfolio_roles.role.applies_to_a_project', true)
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  const currentlyWorking = data.filter((p) => p.is_currently_working)
+  const pool =
+    currentlyWorking.length > 0 ? currentlyWorking : data.filter((p) => p.is_sporadic)
+
+  // Para cada pessoa, elege a role principal e devolve no mesmo formato
+  // { roles: [{ role: { id, name_ptbr } }] } já esperado pelo NewGig.jsx
+  return pool
+    .map((member) => {
+      const mainRole = pickMainPortfolioRole(member.portfolio_roles)
+      return {
+        ...member,
+        roles: mainRole
+          ? [{ role: { id: mainRole.role.id, name_ptbr: mainRole.role.name_ptbr } }]
+          : [],
+      }
+    })
+    .filter((member) => member.roles.length > 0)
+}
+
 export async function searchProjectsByName(name) {
   const { data, error } = await supabase
     .from('projects')

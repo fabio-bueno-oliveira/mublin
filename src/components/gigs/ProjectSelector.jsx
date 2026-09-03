@@ -16,6 +16,7 @@ import {
   IconCheckFilled,
   IconChevronRightFilled,
   IconMicrophone2,
+  IconLock,
 } from '@tabler/icons-react'
 
 const PROJECT_IMAGE_PATH = 'https://ik.imagekit.io/mublin/projects/'
@@ -76,8 +77,15 @@ export default function ProjectSelector({
         }
       />
 
+      <Group gap={4} wrap="nowrap" mt="xs">
+        <IconLock color="gray" size={15} />
+        <Text size="xs" c="dimmed">
+          Exibindo projetos que sou administrador ou staff
+        </Text>
+      </Group>
+
       <ScrollArea type="hover" offsetScrollbars>
-        <Group gap="sm" wrap="nowrap" py="xs" px={2}>
+        <Group gap="sm" wrap="nowrap" px={2}>
           {filteredProjects.map((project) => {
             const isSelected = selectedProject?.id === project.id
 

@@ -406,7 +406,7 @@ export default function Project() {
               <Tabs.Tab value="about">Sobre</Tabs.Tab>
               <Tabs.Tab value="people">Pessoas ({projectPeople.length})</Tabs.Tab>
               <Tabs.Tab value="discography">Discografia</Tabs.Tab>
-              <Tabs.Tab value="jobs">Vagas</Tabs.Tab>
+              {openProjectOpenings.length > 0 && <Tabs.Tab value="jobs">Vagas</Tabs.Tab>}
               <Tabs.Tab value="gigs">Gigs</Tabs.Tab>
               <Tabs.Tab value="social">Redes sociais</Tabs.Tab>
               <Tabs.Tab value="inspirated">Inspirados</Tabs.Tab>
