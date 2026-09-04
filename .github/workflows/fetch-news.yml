@@ -2,8 +2,8 @@ name: Fetch Music News
 
 on:
   schedule:
-    - cron: '0 */12 * * *' # a cada 6 horas
-  workflow_dispatch: # permite rodar manualmente pelo GitHub
+    - cron: '0 */6 * * *' # a cada 6 horas
+  workflow_dispatch:
 
 jobs:
   fetch:
@@ -11,5 +11,17 @@ jobs:
     steps:
       - name: Call fetch-news endpoint
         run: |
-          curl -s -X GET https://mublin.vercel.app/api/cron/fetch-news \
-            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"
+          echo "Chamando /api/cron/fetch-news..."
+          RESPONSE=$(curl -s -w "\n%{http_code}" -X GET https://mublin.vercel.app/api/cron/fetch-news \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}")
+          
+          BODY=$(echo "$RESPONSE" | sed '$d')
+          STATUS=$(echo "$RESPONSE" | tail -n1)
+          
+          echo "Status: $STATUS"
+          echo "Body: $BODY"
+          
+          if [ "$STATUS" -ne 200 ]; then
+            echo "Erro no cron!"
+            exit 1
+          fi
