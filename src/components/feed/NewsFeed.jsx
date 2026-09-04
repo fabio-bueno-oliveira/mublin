@@ -39,7 +39,7 @@ const CATEGORIES = [
   { value: 'artistas', label: 'Artistas', icon: <IconMicrophone2 size={14} /> },
   { value: 'instrumentos', label: 'Instrumentos', icon: <IconMusic size={14} /> },
   { value: 'eventos', label: 'Eventos', icon: <IconCalendarEvent size={14} /> },
-  { value: 'music_business', label: 'Music Business', icon: <IconBriefcase size={14} /> },
+  { value: 'mercado', label: 'Mercado', icon: <IconBriefcase size={14} /> },
 ]
 
 // ─── Skeleton de loading ─────────────────────────────────────────────────────

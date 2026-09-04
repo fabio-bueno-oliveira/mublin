@@ -100,7 +100,54 @@ function cleanText(str) {
     .trim()
 }
 
-// ─── Parser XML minimalista melhorado (sem deps) ───────────────────────────
+// ─── NOVO: Normaliza e corrige URLs de imagem do WordPress ──────────────────
+function normalizeImageUrl(url) {
+  if (!url) {
+    return null
+  }
+
+  let cleaned = url.trim()
+
+  // 1. Corrige bug clássico do TMDQA e outros WP: domínio duplicado
+  // Ex: https://site.com/uploads.site.com/... -> https://site.com/uploads/...
+  cleaned = cleaned.replace(
+    /https?:\/\/[^/]+\/uploads\.(tenhomaisdiscosqueamigos|hitsperdidos)\.com\.br\//i,
+    (match) => {
+      const domain = match.match(/uploads\.(.*?)\.com\.br/)?.[1]
+      return `https://uploads.${domain}.com.br/`
+    },
+  )
+  // Fallback mais genérico para o caso do seu CSV
+  cleaned = cleaned.replace(
+    'https://www.tenhomaisdiscosqueamigos.com/uploads.tenhomaisdiscosqueamigos.com/',
+    'https://uploads.tenhomaisdiscosqueamigos.com/',
+  )
+
+  // 2. Remove sufixo de thumbnail do WordPress: -180x180, -300x300, etc -> pega imagem original
+  // Ex: foto-180x180.jpg -> foto.jpg
+  cleaned = cleaned.replace(/-\d+x\d+(?=\.(jpg|jpeg|png|webp)$)/i, '')
+
+  // 3. Filtra imagens que não servem
+  const blocked = [
+    'feeds.feedburner.com',
+    'pixel',
+    'tracking',
+    '.svg',
+    'gravatar.com',
+    'placehold',
+  ]
+  if (blocked.some((b) => cleaned.toLowerCase().includes(b))) {
+    return null
+  }
+
+  // 4. Valida protocolo
+  if (!cleaned.startsWith('http://') && !cleaned.startsWith('https://')) {
+    return null
+  }
+
+  return cleaned
+}
+
 function parseRSS(xml) {
   const items = []
   const itemMatches = xml.matchAll(/<item>([\s\S]*?)<\/item>/gi)
@@ -109,7 +156,6 @@ function parseRSS(xml) {
     const block = match[1]
 
     const get = (tag) => {
-      // CDATA primeiro
       const cdata = block.match(
         new RegExp(`<${tag}[^>]*><!\\[CDATA\\[([\\s\\S]*?)\\]\\]><\\/${tag}>`, 'i'),
       )
@@ -125,10 +171,8 @@ function parseRSS(xml) {
     if (!title || !linkRaw) {
       continue
     }
+    const link = linkRaw.replace(/&amp;/g, '&').split('#')[0]
 
-    const link = linkRaw.replace(/&amp;/g, '&').split('#')[0] // limpa âncora
-
-    // Descrição: tenta description, depois content:encoded cortado
     const descriptionRaw = get('description')
     const contentEncodedMatch = block.match(
       /<content:encoded[^>]*><!\[CDATA\[([\s\S]*?)\]\]><\/content:encoded>/i,
@@ -136,23 +180,22 @@ function parseRSS(xml) {
     const contentEncoded = contentEncodedMatch?.[1] ?? ''
     const description = cleanText(descriptionRaw || contentEncoded)?.slice(0, 300) ?? null
 
-    // Imagem: tenta 4 estratégias (a maioria dos feeds BR não usa media:content)
+    // Busca imagem em várias tags
     const mediaContent = block.match(/<media:content[^>]+url="([^"]+)"/i)?.[1] ?? null
     const mediaThumb = block.match(/<media:thumbnail[^>]+url="([^"]+)"/i)?.[1] ?? null
-    const enclosure = block.match(/<enclosure[^>]+url="([^"]+)"/i)?.[1] ?? null
+    const enclosure =
+      block.match(/<enclosure[^>]+url="([^"]+)"[^>]*type="image/i)?.[1] ??
+      block.match(/<enclosure[^>]+url="([^"]+)"/i)?.[1] ??
+      null
     const imgInContent = contentEncoded.match(/<img[^>]+src="([^"]+)"/i)?.[1] ?? null
     const imgInDescription =
       (descriptionRaw || '').match(/<img[^>]+src="([^"]+)"/i)?.[1] ?? null
 
-    let image_url =
-      mediaContent || mediaThumb || enclosure || imgInContent || imgInDescription || null
-    // Filtra imagens lixo (tracking pixel, etc)
-    if (
-      image_url &&
-      (image_url.includes('feeds.feedburner.com') || image_url.endsWith('.svg'))
-    ) {
-      image_url = imgInContent || imgInDescription || null
-    }
+    // Prioridade: pega a maior imagem disponível, não o thumb
+    // content:encoded geralmente tem a original, media:content às vezes já é thumb
+    const rawImage =
+      imgInContent || mediaContent || mediaThumb || enclosure || imgInDescription || null
+    const image_url = normalizeImageUrl(rawImage)
 
     items.push({
       title,
@@ -162,11 +205,9 @@ function parseRSS(xml) {
       image_url,
     })
   }
-
   return items
 }
 
-// ─── Busca um feed RSS ─────────────────────────────────────────────────────
 async function fetchFeed(source) {
   try {
     const res = await fetch(source.url, {
@@ -176,21 +217,16 @@ async function fetchFeed(source) {
       },
       signal: AbortSignal.timeout(12_000),
     })
-
     if (!res.ok) {
-      console.warn(`[${source.name}] HTTP ${res.status} - ${source.url}`)
+      console.warn(`[${source.name}] HTTP ${res.status}`)
       return []
     }
-
     const xml = await res.text()
-    // Alguns feeds retornam HTML quando bloqueiam, valida rápido
     if (!xml.includes('<rss') && !xml.includes('<feed') && !xml.includes('<item>')) {
       console.warn(`[${source.name}] não retornou RSS válido`)
       return []
     }
-
     const items = parseRSS(xml)
-
     return items.map((item) => ({
       ...item,
       source_name: source.name,
@@ -198,12 +234,11 @@ async function fetchFeed(source) {
       category: source.category,
     }))
   } catch (err) {
-    console.error(`[${source.name}] Erro ao buscar feed:`, err.message)
+    console.error(`[${source.name}] Erro:`, err.message)
     return []
   }
 }
 
-// ─── Handler principal ──────────────────────────────────────────────────────
 export default async function handler(req, res) {
   if (req.headers.authorization !== `Bearer ${process.env.CRON_SECRET}`) {
     return res.status(401).json({ error: 'Unauthorized' })
@@ -214,7 +249,6 @@ export default async function handler(req, res) {
     process.env.SUPABASE_SERVICE_ROLE_KEY,
   )
 
-  // Busca todos os feeds em paralelo
   const results = await Promise.allSettled(RSS_SOURCES.map(fetchFeed))
   const fetchedItems = results
     .filter((r) => r.status === 'fulfilled')
@@ -226,7 +260,6 @@ export default async function handler(req, res) {
       .json({ message: 'Nenhum item encontrado.', sources: RSS_SOURCES.length })
   }
 
-  // Deduplicação por URL antes de ir pro banco (feeds diferentes republicam a mesma notícia)
   const uniqueByUrl = new Map()
   for (const item of fetchedItems) {
     if (!uniqueByUrl.has(item.link)) {
@@ -235,7 +268,6 @@ export default async function handler(req, res) {
   }
   const allItems = Array.from(uniqueByUrl.values())
 
-  // Prepara linhas pro Supabase
   const rows = allItems.map((item) => ({
     title: item.title,
     description: item.description,
@@ -249,7 +281,6 @@ export default async function handler(req, res) {
       : new Date().toISOString(),
   }))
 
-  // Upsert sem ignoreDuplicates = atualiza se o título/imagem mudar
   const { error } = await supabase.from('news_cache').upsert(rows, { onConflict: 'url' })
 
   if (error) {
@@ -257,7 +288,6 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: error.message })
   }
 
-  // Limpa notícias com mais de 35 dias (margem maior que 30 pra não apagar no dia do corte)
   await supabase
     .from('news_cache')
     .delete()

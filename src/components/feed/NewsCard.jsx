@@ -11,6 +11,20 @@ import {
 import { IconExternalLink } from '@tabler/icons-react'
 import dayjs from 'dayjs'
 
+function normalizeImageForDisplay(url) {
+  if (!url) {
+    return null
+  }
+  // Corrige o mesmo bug no front para registros antigos já salvos
+  const cleaned = url
+    .replace(
+      'https://www.tenhomaisdiscosqueamigos.com/uploads.tenhomaisdiscosqueamigos.com/',
+      'https://uploads.tenhomaisdiscosqueamigos.com/',
+    )
+    .replace(/-\d+x\d+(?=\.(jpg|jpeg|png|webp)$)/i, '')
+  return cleaned
+}
+
 export default function NewsCard({ item, width, subtle = false }) {
   const timeAgo = item.published_at ? dayjs(item.published_at).fromNow() : ''
 
@@ -20,7 +34,10 @@ export default function NewsCard({ item, width, subtle = false }) {
     instrumentos: 'orange',
     eventos: 'green',
     music_business: 'red',
+    mercado: 'red', // mapeia nova categoria 'mercado' para vermelho também
   }
+
+  const displayImage = normalizeImageForDisplay(item.image_url)
 
   return (
     <Card
@@ -40,20 +57,23 @@ export default function NewsCard({ item, width, subtle = false }) {
         boxShadow: 'none',
       }}
     >
-      {/* Conteúdo */}
       <Stack gap={4} style={{ flex: 1, minWidth: 0 }}>
-        {/* Thumbnail */}
-        {item.image_url && (
+        {/* Thumbnail com tratamento de erro duplo */}
+        {displayImage && !subtle && (
           <Image
-            src={item.image_url}
+            src={displayImage}
             alt={item.title}
             w="100%"
-            h="auto"
+            h={180}
             mb="xs"
             radius="sm"
             fit="cover"
             style={{ flexShrink: 0 }}
-            fallbackSrc="https://placehold.co/80x80?text=🎵"
+            fallbackSrc="https://placehold.co/600x400/1a1a1a/FFF?text=Mublin"
+            onError={(e) => {
+              // Se quebrar, esconde a imagem em vez de mostrar ícone quebrado
+              e.currentTarget.style.display = 'none'
+            }}
           />
         )}
         {!subtle && (
@@ -63,7 +83,7 @@ export default function NewsCard({ item, width, subtle = false }) {
               variant="light"
               color={CATEGORY_COLORS[item.category] ?? 'gray'}
             >
-              {item.category}
+              {item.category === 'mercado' ? 'mercado' : item.category}
             </Badge>
             <Tooltip label="Abrir fonte" withArrow position="top">
               <ActionIcon
