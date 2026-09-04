@@ -4,6 +4,7 @@ import { useAuth } from '../hooks/useAuth'
 import { supabase } from '../lib/supabaseClient'
 import { useQueryClient } from '@tanstack/react-query'
 import {
+  Affix,
   Container,
   Stack,
   Group,
@@ -18,6 +19,7 @@ import {
   Loader,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
+import AppNavbarMobile from '../components/AppNavbarMobile'
 import {
   IconMovie,
   IconX,
@@ -133,7 +135,7 @@ function ProUpsell() {
 // ── Página principal ──────────────────────────────────────
 export default function NewScene() {
   const navigate = useNavigate()
-  const { profile, user } = useAuth()
+  const { profile } = useAuth()
   const queryClient = useQueryClient()
   const videoInputRef = useRef(null)
 
@@ -339,177 +341,182 @@ export default function NewScene() {
   }
 
   return (
-    <Container size="sm" py="md">
-      <Stack gap="sm">
-        {/* Autor */}
-        <Group gap="sm">
-          <Avatar
-            size={40}
-            radius="xl"
-            src={profile?.avatar ? AVATAR_PATH + profile.avatar : undefined}
-          />
-          <Stack gap={4}>
-            <Text size="xs" c="dimmed" lh={1}>
-              Nova Cena
-            </Text>
-            <Text lh={1}>{profile?.full_name}</Text>
-          </Stack>
-        </Group>
-
-        {!file ? (
-          <Box
-            component="label"
-            htmlFor="scene-video-input"
-            style={{
-              cursor: 'pointer',
-              border: '1.5px dashed var(--mantine-color-default-border)',
-              borderRadius: 16,
-              padding: '48px 16px',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: 8,
-              textAlign: 'center',
-            }}
-          >
-            <IconMovie size={54} stroke={1.4} />
-            <Text size="sm" fw={600}>
-              Toque para escolher um vídeo
-            </Text>
-            <Text size="xs" c="dimmed" maw={280}>
-              Vertical, .mp4, até {MAX_DURATION_SECONDS} segundos e {MAX_SIZE_MB}MB
-            </Text>
-            <input
-              ref={videoInputRef}
-              id="scene-video-input"
-              type="file"
-              accept="video/mp4"
-              style={{ display: 'none' }}
-              onChange={(e) => handleFileChange(e.target.files?.[0])}
+    <>
+      <Affix position={{ top: 0, left: 0 }} hiddenFrom="sm">
+        <AppNavbarMobile pageName="Nova Scene" />
+      </Affix>
+      <Container size="sm" py="md" mt={{ base: 50, sm: 0 }}>
+        <Stack gap="sm">
+          {/* Autor */}
+          <Group gap="sm">
+            <Avatar
+              size={40}
+              radius="xl"
+              src={profile?.avatar ? AVATAR_PATH + profile.avatar : undefined}
             />
-          </Box>
-        ) : (
-          <Stack gap="sm">
+            <Stack gap={4}>
+              <Text size="xs" c="dimmed" lh={1}>
+                Enviar nova Scene
+              </Text>
+              <Text lh={1}>{profile?.full_name}</Text>
+            </Stack>
+          </Group>
+
+          {!file ? (
             <Box
+              component="label"
+              htmlFor="scene-video-input"
               style={{
-                position: 'relative',
-                width: 220,
-                margin: '0 auto',
+                cursor: 'pointer',
+                border: '1.5px dashed var(--mantine-color-default-border)',
                 borderRadius: 16,
-                overflow: 'hidden',
-                backgroundColor: '#000',
+                padding: '48px 16px',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 8,
+                textAlign: 'center',
               }}
             >
-              <video
-                src={previewUrl}
-                muted
-                playsInline
-                controls={!isBusy}
-                loop
-                style={{
-                  display: 'block',
-                  width: '100%',
-                  aspectRatio: isVertical ? '9 / 16' : '16 / 9',
-                  objectFit: 'cover',
-                  opacity: isBusy ? 0.4 : 1,
-                }}
-              />
-
-              {isBusy && (
-                <Box
-                  style={{
-                    position: 'absolute',
-                    inset: 0,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <Loader color="white" size="md" />
-                </Box>
-              )}
-
-              {!isBusy && (
-                <ActionIcon
-                  color="red"
-                  variant="filled"
-                  size="sm"
-                  radius="xl"
-                  style={{ position: 'absolute', top: 8, right: 8 }}
-                  onClick={resetSelection}
-                >
-                  <IconX size={12} />
-                </ActionIcon>
-              )}
-            </Box>
-
-            <Text size="xs" c="dimmed" ta="center">
-              Duração: {duration.toFixed(1)}s / {MAX_DURATION_SECONDS}s máx.
-            </Text>
-
-            {!isVertical && phase === 'idle' && (
-              <Group gap={6} justify="center" wrap="nowrap">
-                <IconAlertTriangle size={14} color="var(--mantine-color-yellow-6)" />
-                <Text size="xs" c="dimmed" ta="center">
-                  Vídeos verticais (9:16) ficam melhores nas Cenas.
-                </Text>
-              </Group>
-            )}
-
-            {phase === 'uploading' && (
-              <Stack gap={4}>
-                <Progress value={uploadProgress} size="sm" radius="xl" animated />
-                <Text size="xs" c="dimmed" ta="center">
-                  Enviando vídeo... {uploadProgress}%
-                </Text>
-              </Stack>
-            )}
-
-            {phase === 'processing' && (
-              <Text size="xs" c="dimmed" ta="center">
-                Vídeo enviado! Processando (isso pode levar até um minuto)...
+              <IconMovie size={66} stroke={1} />
+              <Text size="sm" fw={600}>
+                Toque para escolher um vídeo
               </Text>
-            )}
-
-            {phase === 'error' && (
-              <Group gap={6} justify="center" wrap="nowrap">
-                <IconAlertTriangle size={14} color="var(--mantine-color-red-6)" />
-                <Text size="xs" c="red" ta="center">
-                  {errorMessage}
-                </Text>
-              </Group>
-            )}
-
-            <Textarea
-              placeholder="Escreva uma legenda (opcional)"
-              minRows={2}
-              autosize
-              maxRows={4}
-              maxLength={MAX_CAPTION_LENGTH}
-              value={caption}
-              onChange={(e) => setCaption(e.target.value)}
-              disabled={isBusy}
-            />
-            <Text size="xs" c="dimmed" ta="right">
-              {caption.length}/{MAX_CAPTION_LENGTH}
-            </Text>
-
-            <Group justify="flex-end">
-              <Button
-                variant="subtle"
-                color="gray"
-                onClick={resetSelection}
-                disabled={isBusy}
+              <Text size="xs" c="dimmed" maw={280}>
+                Vertical, .mp4, até {MAX_DURATION_SECONDS} segundos e {MAX_SIZE_MB}MB
+              </Text>
+              <input
+                ref={videoInputRef}
+                id="scene-video-input"
+                type="file"
+                accept="video/mp4"
+                style={{ display: 'none' }}
+                onChange={(e) => handleFileChange(e.target.files?.[0])}
+              />
+            </Box>
+          ) : (
+            <Stack gap="sm">
+              <Box
+                style={{
+                  position: 'relative',
+                  width: 220,
+                  margin: '0 auto',
+                  borderRadius: 16,
+                  overflow: 'hidden',
+                  backgroundColor: '#000',
+                }}
               >
-                Trocar vídeo
-              </Button>
-              <Button radius="xl" fw={700} loading={isBusy} onClick={handlePublish}>
-                {phase === 'error' ? 'Tentar novamente' : 'Publicar Cena'}
-              </Button>
-            </Group>
-          </Stack>
-        )}
-      </Stack>
-    </Container>
+                <video
+                  src={previewUrl}
+                  muted
+                  playsInline
+                  controls={!isBusy}
+                  loop
+                  style={{
+                    display: 'block',
+                    width: '100%',
+                    aspectRatio: isVertical ? '9 / 16' : '16 / 9',
+                    objectFit: 'cover',
+                    opacity: isBusy ? 0.4 : 1,
+                  }}
+                />
+
+                {isBusy && (
+                  <Box
+                    style={{
+                      position: 'absolute',
+                      inset: 0,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <Loader color="white" size="md" />
+                  </Box>
+                )}
+
+                {!isBusy && (
+                  <ActionIcon
+                    color="red"
+                    variant="filled"
+                    size="sm"
+                    radius="xl"
+                    style={{ position: 'absolute', top: 8, right: 8 }}
+                    onClick={resetSelection}
+                  >
+                    <IconX size={12} />
+                  </ActionIcon>
+                )}
+              </Box>
+
+              <Text size="xs" c="dimmed" ta="center">
+                Duração: {duration.toFixed(1)}s / {MAX_DURATION_SECONDS}s máx.
+              </Text>
+
+              {!isVertical && phase === 'idle' && (
+                <Group gap={6} justify="center" wrap="nowrap">
+                  <IconAlertTriangle size={14} color="var(--mantine-color-yellow-6)" />
+                  <Text size="xs" c="dimmed" ta="center">
+                    Vídeos verticais (9:16) ficam melhores nas Cenas.
+                  </Text>
+                </Group>
+              )}
+
+              {phase === 'uploading' && (
+                <Stack gap={4}>
+                  <Progress value={uploadProgress} size="sm" radius="xl" animated />
+                  <Text size="xs" c="dimmed" ta="center">
+                    Enviando vídeo... {uploadProgress}%
+                  </Text>
+                </Stack>
+              )}
+
+              {phase === 'processing' && (
+                <Text size="xs" c="dimmed" ta="center">
+                  Vídeo enviado! Processando (isso pode levar até um minuto)...
+                </Text>
+              )}
+
+              {phase === 'error' && (
+                <Group gap={6} justify="center" wrap="nowrap">
+                  <IconAlertTriangle size={14} color="var(--mantine-color-red-6)" />
+                  <Text size="xs" c="red" ta="center">
+                    {errorMessage}
+                  </Text>
+                </Group>
+              )}
+
+              <Textarea
+                placeholder="Escreva uma legenda (opcional)"
+                minRows={2}
+                autosize
+                maxRows={4}
+                maxLength={MAX_CAPTION_LENGTH}
+                value={caption}
+                onChange={(e) => setCaption(e.target.value)}
+                disabled={isBusy}
+              />
+              <Text size="xs" c="dimmed" ta="right">
+                {caption.length}/{MAX_CAPTION_LENGTH}
+              </Text>
+
+              <Group justify="flex-end">
+                <Button
+                  variant="subtle"
+                  color="gray"
+                  onClick={resetSelection}
+                  disabled={isBusy}
+                >
+                  Trocar vídeo
+                </Button>
+                <Button radius="xl" fw={700} loading={isBusy} onClick={handlePublish}>
+                  {phase === 'error' ? 'Tentar novamente' : 'Publicar Cena'}
+                </Button>
+              </Group>
+            </Stack>
+          )}
+        </Stack>
+      </Container>
+    </>
   )
 }

@@ -15,12 +15,13 @@ import GigRoleCombobox from '../components/gigs/GigRoleCombobox'
 import ProjectSelector from '../components/gigs/ProjectSelector'
 import VenueSelector from '../components/gigs/VenueSelector'
 import SetlistManager from '../components/setlist/SetlistManager'
+import AppNavbarMobile from '../components/AppNavbarMobile'
 import { useDebouncedCallback } from '@mantine/hooks'
 import { TimeInput } from '@mantine/dates'
 import { getDateSuggestions } from '../utils/dates'
 // prettier-ignore
 import {
-  useCombobox,
+  useCombobox, Affix,
   Container, Collapse,
   Grid, Group, ScrollArea,
   Box, Stack, Divider, Card, Paper,
@@ -677,8 +678,11 @@ export default function NewGig() {
       <Helmet>
         <title>Cadastrar gig · Mublin</title>
       </Helmet>
-      <Container size="sm" py="md">
-        <Title order={3} mb="md">
+      <Affix position={{ top: 0, left: 0 }} hiddenFrom="sm">
+        <AppNavbarMobile pageName="Cadastrar nova gig" />
+      </Affix>
+      <Container size="sm" pb="md" mt={{ base: 60, sm: 'md' }}>
+        <Title order={3} mb="md" visibleFrom="sm">
           Cadastrar nova gig
         </Title>
 

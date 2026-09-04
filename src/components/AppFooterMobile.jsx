@@ -173,12 +173,13 @@ export default function AppFooterMobile() {
       <Drawer
         offset={8}
         radius="md"
+        size="md"
         opened={drawerOpen}
         onClose={() => setDrawerOpen(false)}
         title="O que deseja criar?"
         position="bottom"
       >
-        <Stack mb={20} mt={18} direction="column" gap={18}>
+        <Stack mb={60} mt={8} direction="column" gap={7}>
           <Button
             component={Link}
             to="/new/post"

@@ -13,7 +13,9 @@ import {
 import { useDebouncedCallback } from '@mantine/hooks'
 import { useForm } from '@mantine/form'
 import { notifications } from '@mantine/notifications'
+import AppNavbarMobile from '../components/AppNavbarMobile'
 import {
+  Affix,
   Container,
   Grid,
   Stack,
@@ -618,325 +620,332 @@ export default function NewGearRefactored() {
     (!hasColors || !!selectedColor)
 
   return (
-    <Container size="lg" mt="md">
-      <Title order={1} fz="h3" fw={600}>
-        Adicionar equipamento
-      </Title>
-      <Text size="sm" c="dimmed" mb="lg">
-        Selecione o item que será adicionado ao seu equipamento
-      </Text>
+    <>
+      <Affix position={{ top: 0, left: 0 }} hiddenFrom="sm">
+        <AppNavbarMobile pageName="Adicionar equipamento" />
+      </Affix>
+      <Container size="lg" mt={{ base: 60, sm: 'md' }}>
+        <Stack gap={0}>
+          <Title order={1} fz="h3" fw={600} visibleFrom="sm">
+            Adicionar equipamento
+          </Title>
+          <Text size="sm" c="dimmed" mb="lg">
+            Selecione o item que será adicionado ao seu equipamento
+          </Text>
+        </Stack>
 
-      <Grid>
-        {/* ESQUERDA: FINDER */}
-        <Grid.Col span={{ base: 12, md: 6 }}>
-          <Stack gap="md">
-            <Paper withBorder p="md" radius="md">
-              <Text fw={600} size="sm" mb="sm">
-                1. Encontre o equipamento
-              </Text>
-              <Stack gap="sm">
-                <BrandCombobox
-                  brands={brands}
-                  selectedId={brandSelected}
-                  onSelect={(v) => {
-                    setBrandSelected(v)
-                    setCategorySelected('')
-                    setProductSelected('')
-                  }}
-                />
-
-                {brandSelected && (
-                  <Select
-                    label="Categoria"
-                    placeholder={
-                      loadingCategories
-                        ? 'Carregando...'
-                        : 'Ex: Baixos, Guitarras, Baterias'
-                    }
-                    data={categories.map((c) => ({
-                      value: String(c.id),
-                      label: c.name_ptbr,
-                    }))}
-                    value={categorySelected}
-                    onChange={(v) => {
-                      setCategorySelected(v)
-                      setProductSelected('')
-                    }}
-                    searchable
-                    rightSection={loadingCategories ? <Loader size={12} /> : null}
-                  />
-                )}
-
-                {brandSelected && categorySelected && (
-                  <ProductCombobox
-                    brandId={brandSelected}
-                    categoryId={categorySelected}
-                    products={products}
-                    isLoading={loadingProducts}
-                    userGearIds={userGearIds}
-                    selectedId={productSelected}
-                    onSelect={setProductSelected}
-                    brands={brands}
-                    userId={user?.id}
-                  />
-                )}
-              </Stack>
-            </Paper>
-
-            <Collapse expanded={!!productSelected}>
+        <Grid>
+          {/* ESQUERDA: FINDER */}
+          <Grid.Col span={{ base: 12, md: 6 }}>
+            <Stack gap="md">
               <Paper withBorder p="md" radius="md">
                 <Text fw={600} size="sm" mb="sm">
-                  2. Personalize
+                  1. Encontre o equipamento
                 </Text>
                 <Stack gap="sm">
-                  {hasColors && (
-                    <Box>
-                      <Text size="sm" fw={500} mb="xs">
-                        Cor / Acabamento
-                      </Text>
-                      <Flex gap="sm" wrap="wrap">
-                        {productColors.map((pc) => (
-                          <ColorSwatch
-                            key={pc.id}
-                            color={
-                              pc.colors?.img_sample
-                                ? 'transparent'
-                                : (pc.colors?.rgb ?? '#ccc')
-                            }
-                            size={30}
-                            withShadow={false}
-                            styles={{
-                              alphaOverlay: {
-                                backgroundImage: pc.colors?.img_sample
-                                  ? `url(${COLOR_IMG + pc.colors.img_sample})`
-                                  : 'none',
-                                backgroundSize: 'cover',
-                                backgroundPosition: 'center',
-                              },
-                              root: {
-                                cursor: 'pointer',
-                                width: 28,
-                                height: 28,
-                                outline:
-                                  selectedColor?.id === pc.id
-                                    ? '2px solid var(--mantine-color-white)'
-                                    : undefined,
-                                outlineOffset: 2,
-                              },
-                            }}
-                            onClick={() => setSelectedColor(pc)}
-                          >
-                            {selectedColor?.id === pc.id && (
-                              <IconCheck size={14} color="white" />
-                            )}
-                          </ColorSwatch>
-                        ))}
-                      </Flex>
-                      {selectedColor && (
-                        <Text size="xs" c="dimmed" mt="xs">
-                          {selectedColor.colors?.name_ptbr || selectedColor.colors?.name}
-                        </Text>
-                      )}
-                    </Box>
-                  )}
+                  <BrandCombobox
+                    brands={brands}
+                    selectedId={brandSelected}
+                    onSelect={(v) => {
+                      setBrandSelected(v)
+                      setCategorySelected('')
+                      setProductSelected('')
+                    }}
+                  />
 
-                  <Divider variant="dashed" />
-
-                  <Grid>
-                    <Grid.Col span={4}>
-                      <Switch
-                        size="sm"
-                        label="Destaque"
-                        description="No topo do perfil"
-                        checked={form.values.is_featured}
-                        onChange={(e) =>
-                          form.setFieldValue('is_featured', e.currentTarget.checked)
-                        }
-                      />
-                    </Grid.Col>
-                    <Grid.Col span={4}>
-                      <Switch
-                        size="sm"
-                        label="Em uso"
-                        description="Uso em gigs atuais"
-                        checked={form.values.is_currently_using}
-                        onChange={(e) =>
-                          form.setFieldValue(
-                            'is_currently_using',
-                            e.currentTarget.checked,
-                          )
-                        }
-                      />
-                    </Grid.Col>
-                    <Grid.Col span={4}>
-                      <Switch
-                        size="sm"
-                        label="À venda"
-                        checked={form.values.is_for_sale}
-                        onChange={(e) => {
-                          form.setFieldValue('is_for_sale', e.currentTarget.checked)
-                          if (!e.currentTarget.checked) {
-                            form.setFieldValue('price', '')
-                          }
-                        }}
-                      />
-                    </Grid.Col>
-                  </Grid>
-
-                  {form.values.is_for_sale && (
-                    <NumberInput
-                      label="Preço (R$)"
-                      placeholder="0,00"
-                      min={0}
-                      thousandSeparator="."
-                      decimalSeparator=","
-                      prefix="R$ "
-                      value={form.values.price}
-                      onChange={(v) => form.setFieldValue('price', v)}
-                    />
-                  )}
-
-                  {tunings.length > 0 && (
+                  {brandSelected && (
                     <Select
-                      label="Afinação atual"
-                      description="Opcional"
-                      placeholder="Não informar"
-                      data={[
-                        { value: '', label: 'Não informar' },
-                        ...tunings.map((t) => ({
-                          value: String(t.id),
-                          label: `${t.name_ptbr}${t.description ? ` — ${t.description}` : ''}`,
-                        })),
-                      ]}
-                      value={tuningSelected}
-                      onChange={setTuningSelected}
-                      searchable
-                      clearable
+                      label="Categoria"
+                      placeholder={
+                        loadingCategories
+                          ? 'Carregando...'
+                          : 'Ex: Baixos, Guitarras, Baterias'
+                      }
+                      data={categories.map((c) => ({
+                        value: String(c.id),
+                        label: c.name_ptbr,
+                      }))}
+                      value={categorySelected}
+                      onChange={(v) => {
+                        setCategorySelected(v)
+                        setProductSelected('')
+                      }}
+                      rightSection={loadingCategories ? <Loader size={12} /> : null}
                     />
                   )}
 
-                  <NumberInput
-                    label="Ano do meu item"
-                    description="Opcional"
-                    placeholder="2014"
-                    min={1950}
-                    max={new Date().getFullYear() + 1}
-                    value={form.values.year}
-                    onChange={(v) => form.setFieldValue('year', v)}
-                  />
-
-                  <Textarea
-                    label="Comentário"
-                    description="Opcional"
-                    placeholder="Sobre o seu item..."
-                    autosize
-                    minRows={2}
-                    maxRows={4}
-                    maxLength={420}
-                    value={form.values.owner_comments}
-                    onChange={(e) =>
-                      form.setFieldValue('owner_comments', e.currentTarget.value)
-                    }
-                  />
+                  {brandSelected && categorySelected && (
+                    <ProductCombobox
+                      brandId={brandSelected}
+                      categoryId={categorySelected}
+                      products={products}
+                      isLoading={loadingProducts}
+                      userGearIds={userGearIds}
+                      selectedId={productSelected}
+                      onSelect={setProductSelected}
+                      brands={brands}
+                      userId={user?.id}
+                    />
+                  )}
                 </Stack>
               </Paper>
-            </Collapse>
 
-            <Paper withBorder p="sm" radius="md" style={{ borderStyle: 'dashed' }}>
-              <Group justify="space-between">
-                <Checkbox
-                  label="Compartilhar no feed"
-                  checked={shareOnFeed}
-                  onChange={() => setShareOnFeed((v) => !v)}
-                />
-                <Button
-                  leftSection={<IconCubePlus size={16} />}
-                  onClick={handleSubmit}
-                  loading={isSubmitting}
-                  disabled={!canSave}
-                >
-                  Salvar no meu perfil
-                </Button>
-              </Group>
-              {!canSave && productSelected && (
-                <Text size="xs" c="red" mt={6}>
-                  {userGearIds.includes(Number(productSelected))
-                    ? 'Você já tem este equipamento'
-                    : hasColors && !selectedColor
-                      ? 'Selecione uma cor'
-                      : ''}
-                </Text>
-              )}
-            </Paper>
-          </Stack>
-        </Grid.Col>
+              <Collapse expanded={!!productSelected}>
+                <Paper withBorder p="md" radius="md">
+                  <Text fw={600} size="sm" mb="sm">
+                    2. Personalize
+                  </Text>
+                  <Stack gap="sm">
+                    {hasColors && (
+                      <Box>
+                        <Text size="sm" fw={500} mb="xs">
+                          Cor / Acabamento
+                        </Text>
+                        <Flex gap="sm" wrap="wrap">
+                          {productColors.map((pc) => (
+                            <ColorSwatch
+                              key={pc.id}
+                              color={
+                                pc.colors?.img_sample
+                                  ? 'transparent'
+                                  : (pc.colors?.rgb ?? '#ccc')
+                              }
+                              size={30}
+                              withShadow={false}
+                              styles={{
+                                alphaOverlay: {
+                                  backgroundImage: pc.colors?.img_sample
+                                    ? `url(${COLOR_IMG + pc.colors.img_sample})`
+                                    : 'none',
+                                  backgroundSize: 'cover',
+                                  backgroundPosition: 'center',
+                                },
+                                root: {
+                                  cursor: 'pointer',
+                                  width: 28,
+                                  height: 28,
+                                  outline:
+                                    selectedColor?.id === pc.id
+                                      ? '2px solid var(--mantine-color-white)'
+                                      : undefined,
+                                  outlineOffset: 2,
+                                },
+                              }}
+                              onClick={() => setSelectedColor(pc)}
+                            >
+                              {selectedColor?.id === pc.id && (
+                                <IconCheck size={14} color="white" />
+                              )}
+                            </ColorSwatch>
+                          ))}
+                        </Flex>
+                        {selectedColor && (
+                          <Text size="xs" c="dimmed" mt="xs">
+                            {selectedColor.colors?.name_ptbr ||
+                              selectedColor.colors?.name}
+                          </Text>
+                        )}
+                      </Box>
+                    )}
 
-        {/* DIREITA: LIVE PREVIEW */}
-        <Grid.Col span={{ base: 12, md: 6 }}>
-          <Card
-            withBorder
-            radius="md"
-            padding="lg"
-            style={{ position: 'sticky', top: 20 }}
-          >
-            {getDisplayImage() ? (
-              <>
-                <Card.Section>
-                  <Image
-                    src={getDisplayImage()}
-                    h={360}
-                    fit="contain"
-                    bg="gray.0"
-                    fallbackSrc="https://placehold.co/600x400?text=Sem+Imagem"
-                  />
-                </Card.Section>
-                <Stack gap={0} mt="md">
-                  <Title order={3} fw={500} lineClamp={2}>
-                    {productInfo?.name || 'Equipamento'}
-                  </Title>
-                  {productInfo?.brands && (
-                    <Text size="sm" c="dimmed">
-                      {productInfo.brands?.name ||
-                        brands.find((b) => String(b.id) === brandSelected)?.name}
-                    </Text>
-                  )}
-                  <Group gap={6} mt="xs">
-                    {form.values.is_featured && (
-                      <Badge size="xs" color="mublinColor">
-                        Destaque
-                      </Badge>
-                    )}
-                    {form.values.is_currently_using && (
-                      <Badge size="xs" color="grape.8">
-                        Em uso
-                      </Badge>
-                    )}
+                    <Divider variant="dashed" />
+
+                    <Grid>
+                      <Grid.Col span={{ base: 12, sm: 4 }}>
+                        <Switch
+                          size="sm"
+                          label="Destaque"
+                          description="No topo do perfil"
+                          checked={form.values.is_featured}
+                          onChange={(e) =>
+                            form.setFieldValue('is_featured', e.currentTarget.checked)
+                          }
+                        />
+                      </Grid.Col>
+                      <Grid.Col span={{ base: 12, sm: 4 }}>
+                        <Switch
+                          size="sm"
+                          label="Em uso"
+                          description="Uso em gigs atuais"
+                          checked={form.values.is_currently_using}
+                          onChange={(e) =>
+                            form.setFieldValue(
+                              'is_currently_using',
+                              e.currentTarget.checked,
+                            )
+                          }
+                        />
+                      </Grid.Col>
+                      <Grid.Col span={{ base: 12, sm: 4 }}>
+                        <Switch
+                          size="sm"
+                          label="À venda"
+                          checked={form.values.is_for_sale}
+                          onChange={(e) => {
+                            form.setFieldValue('is_for_sale', e.currentTarget.checked)
+                            if (!e.currentTarget.checked) {
+                              form.setFieldValue('price', '')
+                            }
+                          }}
+                        />
+                      </Grid.Col>
+                    </Grid>
+
                     {form.values.is_for_sale && (
-                      <Badge size="xs" color="green.9">
-                        À venda
-                      </Badge>
+                      <NumberInput
+                        label="Preço (R$)"
+                        placeholder="0,00"
+                        min={0}
+                        thousandSeparator="."
+                        decimalSeparator=","
+                        prefix="R$ "
+                        value={form.values.price}
+                        onChange={(v) => form.setFieldValue('price', v)}
+                      />
                     )}
-                  </Group>
-                  {form.values.owner_comments && (
-                    <Text size="sm" mt="sm" lineClamp={3} c="dimmed">
-                      "{form.values.owner_comments}"
-                    </Text>
-                  )}
-                </Stack>
-              </>
-            ) : (
-              <Center h={360} style={{ flexDirection: 'column' }}>
-                <ThemeIcon size={56} radius="xl" variant="light" color="gray" mb="md">
-                  <IconPhoto size={28} />
-                </ThemeIcon>
-                <Text size="sm" c="dimmed" ta="center" maw={260} mt={4}>
-                  Selecione marca, categoria e modelo para visualizar
-                </Text>
-              </Center>
-            )}
-          </Card>
-        </Grid.Col>
-      </Grid>
-    </Container>
+
+                    {tunings.length > 0 && (
+                      <Select
+                        label="Afinação atual"
+                        description="Opcional"
+                        placeholder="Não informar"
+                        data={[
+                          { value: '', label: 'Não informar' },
+                          ...tunings.map((t) => ({
+                            value: String(t.id),
+                            label: `${t.name_ptbr}${t.description ? ` — ${t.description}` : ''}`,
+                          })),
+                        ]}
+                        value={tuningSelected}
+                        onChange={setTuningSelected}
+                        searchable
+                        clearable
+                      />
+                    )}
+
+                    <NumberInput
+                      label="Ano do meu item"
+                      description="Opcional"
+                      placeholder="2014"
+                      min={1950}
+                      max={new Date().getFullYear() + 1}
+                      value={form.values.year}
+                      onChange={(v) => form.setFieldValue('year', v)}
+                    />
+
+                    <Textarea
+                      label="Comentário"
+                      description="Opcional"
+                      placeholder="Sobre o seu item..."
+                      autosize
+                      minRows={2}
+                      maxRows={4}
+                      maxLength={420}
+                      value={form.values.owner_comments}
+                      onChange={(e) =>
+                        form.setFieldValue('owner_comments', e.currentTarget.value)
+                      }
+                    />
+                  </Stack>
+                </Paper>
+              </Collapse>
+
+              <Paper withBorder p="sm" radius="md" style={{ borderStyle: 'dashed' }}>
+                <Group justify="space-between">
+                  <Checkbox
+                    label="Compartilhar no feed"
+                    checked={shareOnFeed}
+                    onChange={() => setShareOnFeed((v) => !v)}
+                  />
+                  <Button
+                    leftSection={<IconCubePlus size={16} />}
+                    onClick={handleSubmit}
+                    loading={isSubmitting}
+                    disabled={!canSave}
+                  >
+                    Salvar no meu perfil
+                  </Button>
+                </Group>
+                {!canSave && productSelected && (
+                  <Text size="xs" c="red" mt={6}>
+                    {userGearIds.includes(Number(productSelected))
+                      ? 'Você já tem este equipamento'
+                      : hasColors && !selectedColor
+                        ? 'Selecione uma cor'
+                        : ''}
+                  </Text>
+                )}
+              </Paper>
+            </Stack>
+          </Grid.Col>
+
+          {/* DIREITA: LIVE PREVIEW */}
+          <Grid.Col span={{ base: 12, md: 6 }}>
+            <Card
+              withBorder
+              radius="md"
+              padding="lg"
+              style={{ position: 'sticky', top: 20 }}
+            >
+              {getDisplayImage() ? (
+                <>
+                  <Card.Section>
+                    <Image
+                      src={getDisplayImage()}
+                      h={360}
+                      fit="contain"
+                      bg="gray.0"
+                      fallbackSrc="https://placehold.co/600x400?text=Sem+Imagem"
+                    />
+                  </Card.Section>
+                  <Stack gap={0} mt="md">
+                    <Title order={3} fw={500} lineClamp={2}>
+                      {productInfo?.name || 'Equipamento'}
+                    </Title>
+                    {productInfo?.brands && (
+                      <Text size="sm" c="dimmed">
+                        {productInfo.brands?.name ||
+                          brands.find((b) => String(b.id) === brandSelected)?.name}
+                      </Text>
+                    )}
+                    <Group gap={6} mt="xs">
+                      {form.values.is_featured && (
+                        <Badge size="xs" color="mublinColor">
+                          Destaque
+                        </Badge>
+                      )}
+                      {form.values.is_currently_using && (
+                        <Badge size="xs" color="grape.8">
+                          Em uso
+                        </Badge>
+                      )}
+                      {form.values.is_for_sale && (
+                        <Badge size="xs" color="green.9">
+                          À venda
+                        </Badge>
+                      )}
+                    </Group>
+                    {form.values.owner_comments && (
+                      <Text size="sm" mt="sm" lineClamp={3} c="dimmed">
+                        "{form.values.owner_comments}"
+                      </Text>
+                    )}
+                  </Stack>
+                </>
+              ) : (
+                <Center h={360} style={{ flexDirection: 'column' }}>
+                  <ThemeIcon size={56} radius="xl" variant="light" color="gray" mb="md">
+                    <IconPhoto size={28} />
+                  </ThemeIcon>
+                  <Text size="sm" c="dimmed" ta="center" maw={260} mt={4}>
+                    Selecione marca, categoria e modelo para visualizar
+                  </Text>
+                </Center>
+              )}
+            </Card>
+          </Grid.Col>
+        </Grid>
+      </Container>
+    </>
   )
 }
