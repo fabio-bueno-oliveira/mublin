@@ -4,7 +4,6 @@
  * Arquivo: /api/cron/fetch-news.js
  * Deploy: Vercel (Serverless Function)
  * Agendamento: GitHub Actions (.github/workflows/fetch-news.yml)
- * Roda a cada 2 horas automaticamente via GitHub Actions.
  *
  * Variáveis de ambiente necessárias (Vercel Dashboard → Environment Variables):
  *   SUPABASE_URL              ← URL do projeto Supabase
@@ -17,27 +16,53 @@
 
 import { createClient } from '@supabase/supabase-js'
 
-// ─── Fontes RSS confirmadas e ativas ─────────────────────────────────────────
+// ─── Fontes RSS curadas para o Mublin ───────────────
+
 const RSS_SOURCES = [
+  // --- NOTÍCIAS GERAIS / CENA BR ---
   {
     name: 'Hits Perdidos',
     url: 'https://hitsperdidos.com/feed/',
-    category: 'noticias', // notícias gerais, shows, artistas BR
+    category: 'noticias', // independente BR, festivais, cena
   },
+  {
+    name: 'Tenho Mais Discos Que Amigos',
+    url: 'https://tenhomaisdiscosqueamigos.com/feed/',
+    category: 'noticias', // maior portal independente BR
+  },
+  {
+    name: 'Igor Miranda',
+    url: 'https://igormiranda.com.br/feed/',
+    category: 'noticias', // rock/metal, referência jornalística
+  },
+  {
+    name: 'Wikimetal',
+    url: 'https://wikimetal.com.br/feed/',
+    category: 'noticias', // rock/metal/pop, bem ativo
+  },
+  {
+    name: 'Whiplash.net',
+    url: 'https://whiplash.net/rss/',
+    category: 'noticias', // acervo gigante, metal e clássicos
+  },
+
+  // --- ARTISTAS / LANÇAMENTOS ---
   {
     name: "Blog n' Roll",
-    url: 'https://blognroll.com.br/category/br-music/feed/',
-    category: 'artistas', // rock e música brasileira
+    url: 'https://blognroll.com.br/feed/', // feed geral é mais estável que /category/br-music/feed/
+    category: 'artistas',
   },
   {
-    name: 'UMusic Store Blog',
-    url: 'https://blog.umusicstore.com/feed/',
-    category: 'artistas', // lançamentos e artistas
+    name: 'Monkeybuzz',
+    url: 'https://monkeybuzz.com.br/feed/',
+    category: 'artistas', // indie, alternativo, gringo e BR
   },
+
+  // --- INSTRUMENTOS / TÉCNICA (muito relevante pro Mublin) ---
   {
-    name: 'Jornal de Brasília – Música',
-    url: 'https://jornaldebrasilia.com.br/entretenimento/musica/feed/',
-    category: 'noticias', // notícias gerais de música
+    name: 'Cifra Club News',
+    url: 'https://www.cifraclub.com.br/noticias/feed/',
+    category: 'instrumentos', // teoria, técnicas, cifras - ouro pra músico
   },
   {
     name: 'X5 Music Blog',
@@ -49,6 +74,13 @@ const RSS_SOURCES = [
     url: 'https://www.jam.mus.br/feed/',
     category: 'instrumentos', // técnicas, dicas para músicos
   },
+
+  // --- MERCADO DA MÚSICA (nova categoria recomendada) ---
+  {
+    name: 'Mundo da Música',
+    url: 'https://www.mundodamusica.com.br/feed/',
+    category: 'mercado', // negócios, streaming, direitos, carreira
+  },
 ]
 
 function cleanText(str) {
@@ -56,28 +88,28 @@ function cleanText(str) {
     return null
   }
   return str
-    .replace(/<[^>]+>/g, '') // remove tags HTML (<p>, <strong>, etc)
-    .replace(/&amp;/g, '&') // &
-    .replace(/&lt;/g, '<') //
-    .replace(/&gt;/g, '>') // >
-    .replace(/&quot;/g, '"') // "
-    .replace(/&apos;/g, "'") // '
-    .replace(/&#(\d+);/g, (_, code) => String.fromCharCode(code)) // &#8220; → "
+    .replace(/<[^>]+>/g, '')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&#(\d+);/g, (_, code) => String.fromCharCode(code))
     .replace(/&#x([0-9a-f]+);/gi, (_, hex) => String.fromCharCode(parseInt(hex, 16)))
     .replace(/&nbsp;/g, ' ')
     .trim()
 }
 
-// ─── Parser XML minimalista (sem dependências externas) ───────────────────────
+// ─── Parser XML minimalista melhorado (sem deps) ───────────────────────────
 function parseRSS(xml) {
   const items = []
-  const itemMatches = xml.matchAll(/<item>([\s\S]*?)<\/item>/g)
+  const itemMatches = xml.matchAll(/<item>([\s\S]*?)<\/item>/gi)
 
   for (const match of itemMatches) {
     const block = match[1]
 
     const get = (tag) => {
-      // Tenta CDATA primeiro, depois texto simples
+      // CDATA primeiro
       const cdata = block.match(
         new RegExp(`<${tag}[^>]*><!\\[CDATA\\[([\\s\\S]*?)\\]\\]><\\/${tag}>`, 'i'),
       )
@@ -88,45 +120,75 @@ function parseRSS(xml) {
       return plain ? plain[1].replace(/<[^>]+>/g, '').trim() : null
     }
 
-    // Imagem: tenta media:content, depois og:image no description
-    const mediaUrl = block.match(/media:content[^>]+url="([^"]+)"/i)?.[1] ?? null
-
     const title = cleanText(get('title'))
-    const description = cleanText(get('description'))?.slice(0, 300) ?? null
-    const link = get('link')
-    if (!title || !link) {
+    const linkRaw = get('link')
+    if (!title || !linkRaw) {
       continue
-    } // ignora items incompletos
+    }
+
+    const link = linkRaw.replace(/&amp;/g, '&').split('#')[0] // limpa âncora
+
+    // Descrição: tenta description, depois content:encoded cortado
+    const descriptionRaw = get('description')
+    const contentEncodedMatch = block.match(
+      /<content:encoded[^>]*><!\[CDATA\[([\s\S]*?)\]\]><\/content:encoded>/i,
+    )
+    const contentEncoded = contentEncodedMatch?.[1] ?? ''
+    const description = cleanText(descriptionRaw || contentEncoded)?.slice(0, 300) ?? null
+
+    // Imagem: tenta 4 estratégias (a maioria dos feeds BR não usa media:content)
+    const mediaContent = block.match(/<media:content[^>]+url="([^"]+)"/i)?.[1] ?? null
+    const mediaThumb = block.match(/<media:thumbnail[^>]+url="([^"]+)"/i)?.[1] ?? null
+    const enclosure = block.match(/<enclosure[^>]+url="([^"]+)"/i)?.[1] ?? null
+    const imgInContent = contentEncoded.match(/<img[^>]+src="([^"]+)"/i)?.[1] ?? null
+    const imgInDescription =
+      (descriptionRaw || '').match(/<img[^>]+src="([^"]+)"/i)?.[1] ?? null
+
+    let image_url =
+      mediaContent || mediaThumb || enclosure || imgInContent || imgInDescription || null
+    // Filtra imagens lixo (tracking pixel, etc)
+    if (
+      image_url &&
+      (image_url.includes('feeds.feedburner.com') || image_url.endsWith('.svg'))
+    ) {
+      image_url = imgInContent || imgInDescription || null
+    }
 
     items.push({
       title,
-      link: link.replace(/&amp;/g, '&'),
-      description: description?.slice(0, 300) ?? null,
-      pub_date: get('pubDate') ?? get('dc:date') ?? null,
-      image_url: mediaUrl,
+      link,
+      description,
+      pub_date: get('pubDate') ?? get('dc:date') ?? get('published') ?? null,
+      image_url,
     })
   }
 
   return items
 }
 
-// ─── Busca um feed RSS ────────────────────────────────────────────────────────
+// ─── Busca um feed RSS ─────────────────────────────────────────────────────
 async function fetchFeed(source) {
   try {
     const res = await fetch(source.url, {
       headers: {
         'User-Agent': 'Mublin RSS Reader/1.0 (+https://mublin.app)',
-        Accept: 'application/rss+xml, application/xml, text/xml',
+        Accept: 'application/rss+xml, application/xml, text/xml, */*',
       },
-      signal: AbortSignal.timeout(10_000), // timeout 10s
+      signal: AbortSignal.timeout(12_000),
     })
 
     if (!res.ok) {
-      console.warn(`[${source.name}] HTTP ${res.status}`)
+      console.warn(`[${source.name}] HTTP ${res.status} - ${source.url}`)
       return []
     }
 
     const xml = await res.text()
+    // Alguns feeds retornam HTML quando bloqueiam, valida rápido
+    if (!xml.includes('<rss') && !xml.includes('<feed') && !xml.includes('<item>')) {
+      console.warn(`[${source.name}] não retornou RSS válido`)
+      return []
+    }
+
     const items = parseRSS(xml)
 
     return items.map((item) => ({
@@ -141,11 +203,9 @@ async function fetchFeed(source) {
   }
 }
 
-// ─── Handler principal ────────────────────────────────────────────────────────
+// ─── Handler principal ──────────────────────────────────────────────────────
 export default async function handler(req, res) {
-  // Proteção básica do endpoint com segredo
-  const authHeader = req.headers.authorization
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (req.headers.authorization !== `Bearer ${process.env.CRON_SECRET}`) {
     return res.status(401).json({ error: 'Unauthorized' })
   }
 
@@ -156,13 +216,26 @@ export default async function handler(req, res) {
 
   // Busca todos os feeds em paralelo
   const results = await Promise.allSettled(RSS_SOURCES.map(fetchFeed))
-  const allItems = results.filter((r) => r.status === 'fulfilled').flatMap((r) => r.value)
+  const fetchedItems = results
+    .filter((r) => r.status === 'fulfilled')
+    .flatMap((r) => r.value)
 
-  if (allItems.length === 0) {
-    return res.status(200).json({ message: 'Nenhum item encontrado.' })
+  if (fetchedItems.length === 0) {
+    return res
+      .status(200)
+      .json({ message: 'Nenhum item encontrado.', sources: RSS_SOURCES.length })
   }
 
-  // Upsert no Supabase usando o link como chave única (evita duplicatas)
+  // Deduplicação por URL antes de ir pro banco (feeds diferentes republicam a mesma notícia)
+  const uniqueByUrl = new Map()
+  for (const item of fetchedItems) {
+    if (!uniqueByUrl.has(item.link)) {
+      uniqueByUrl.set(item.link, item)
+    }
+  }
+  const allItems = Array.from(uniqueByUrl.values())
+
+  // Prepara linhas pro Supabase
   const rows = allItems.map((item) => ({
     title: item.title,
     description: item.description,
@@ -176,24 +249,24 @@ export default async function handler(req, res) {
       : new Date().toISOString(),
   }))
 
-  const { error } = await supabase
-    .from('news_cache')
-    .upsert(rows, { onConflict: 'url', ignoreDuplicates: true })
+  // Upsert sem ignoreDuplicates = atualiza se o título/imagem mudar
+  const { error } = await supabase.from('news_cache').upsert(rows, { onConflict: 'url' })
 
   if (error) {
     console.error('Supabase upsert error:', error)
     return res.status(500).json({ error: error.message })
   }
 
-  // Limpa notícias com mais de 30 dias para não crescer indefinidamente
+  // Limpa notícias com mais de 35 dias (margem maior que 30 pra não apagar no dia do corte)
   await supabase
     .from('news_cache')
     .delete()
-    .lt('published_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString())
+    .lt('published_at', new Date(Date.now() - 35 * 24 * 60 * 60 * 1000).toISOString())
 
   return res.status(200).json({
     success: true,
-    fetched: allItems.length,
+    fetched_raw: fetchedItems.length,
+    fetched_unique: allItems.length,
     sources: RSS_SOURCES.length,
   })
 }
