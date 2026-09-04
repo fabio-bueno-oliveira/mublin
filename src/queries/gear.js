@@ -409,3 +409,70 @@ export async function fetchGearCategoryItems(gearCategoryId, page = 1, pageSize 
   }
   return { items: data, count: count ?? 0 }
 }
+
+export async function fetchProductByIdOptimized(id) {
+  if (!id) {
+    return null
+  }
+  const { data, error } = await supabase
+    .from('products')
+    .select(
+      'id, name, id_brand, id_category, picture, id_default_color, product_categories ( macro_category, name_en ), brands ( name )',
+    )
+    .eq('id', id)
+    .single()
+  if (error) {
+    throw error
+  }
+  return data
+}
+
+export async function fetchBrandCategoriesRPC(brandId) {
+  if (!brandId) {
+    return []
+  }
+  const { data, error } = await supabase.rpc('get_brand_categories', {
+    brand_id_input: Number(brandId),
+  })
+  if (error) {
+    throw error
+  }
+  return data
+}
+
+export async function createGearRequest({
+  profile_id,
+  product_name_requested,
+  brand_id = null,
+  category_id = null,
+  search_context = null,
+}) {
+  const { data, error } = await supabase
+    .from('gear_requests')
+    .insert({
+      profile_id,
+      product_name_requested,
+      brand_id,
+      category_id,
+      search_context,
+      suggestion_submitted: true,
+    })
+    .select()
+    .single()
+  if (error) {
+    throw error
+  }
+  return data
+}
+
+export async function fetchMyGearRequests(profileId) {
+  const { data, error } = await supabase
+    .from('gear_requests')
+    .select('*')
+    .eq('profile_id', profileId)
+    .order('created_at', { ascending: false })
+  if (error) {
+    throw error
+  }
+  return data
+}
