@@ -38,6 +38,7 @@ import {
   IconSparklesFilled,
   IconSquareRoundedArrowLeftFilled,
   IconSquareRoundedArrowRightFilled,
+  IconRss,
 } from '@tabler/icons-react'
 
 const CDN_PREFIX = 'https://ik.imagekit.io/mublin'
@@ -578,10 +579,16 @@ export default function Home() {
             )}
           </Grid.Col>
           <Grid.Col span={{ base: 12, md: 4, lg: 4 }} visibleFrom="sm">
-            <Title order={3} fw={600} fz="lg" mt={{ base: 'md', sm: 'xs' }} mb="sm">
-              Notícias recentes
-            </Title>
-            <Stack gap="lg" wrap="nowrap">
+            <Group justify="space-between" align="center" mt={{ base: 'md', sm: 'xs' }}>
+              <Title order={3} fw={600} fz="lg">
+                Notícias do Mercado
+              </Title>
+              <IconRss size={15} color="gray" />
+            </Group>
+            <Text mb="xs" c="dimmed" size="sm" fw={600}>
+              Assuntos em alta
+            </Text>
+            <Stack gap="sm" wrap="nowrap">
               {loadingNews
                 ? [1, 2, 3, 4, 5].map((i) => (
                     <Skeleton

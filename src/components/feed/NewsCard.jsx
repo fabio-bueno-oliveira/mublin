@@ -15,7 +15,7 @@ function normalizeImageForDisplay(url) {
   if (!url) {
     return null
   }
-  // Corrige o mesmo bug no front para registros antigos já salvos
+
   const cleaned = url
     .replace(
       'https://www.tenhomaisdiscosqueamigos.com/uploads.tenhomaisdiscosqueamigos.com/',
@@ -34,7 +34,7 @@ export default function NewsCard({ item, width, subtle = false }) {
     instrumentos: 'orange',
     eventos: 'green',
     music_business: 'red',
-    mercado: 'red', // mapeia nova categoria 'mercado' para vermelho também
+    mercado: 'red',
   }
 
   const displayImage = normalizeImageForDisplay(item.image_url)
@@ -46,8 +46,8 @@ export default function NewsCard({ item, width, subtle = false }) {
       withBorder={!subtle}
       padding={subtle ? 0 : 'sm'}
       component="a"
-      href={item.url}
-      target="_blank"
+      href={subtle ? '/feed' : item.url}
+      target={subtle ? '_self' : '_blank'}
       rel="noopener noreferrer"
       bg={subtle ? 'transparent' : undefined}
       style={{
@@ -57,7 +57,7 @@ export default function NewsCard({ item, width, subtle = false }) {
         boxShadow: 'none',
       }}
     >
-      <Stack gap={4} style={{ flex: 1, minWidth: 0 }}>
+      <Stack gap={subtle ? 0 : 4} style={{ flex: 1, minWidth: 0 }}>
         {/* Thumbnail com tratamento de erro duplo */}
         {displayImage && !subtle && (
           <Image
@@ -99,11 +99,11 @@ export default function NewsCard({ item, width, subtle = false }) {
           </Group>
         )}
 
-        <Text fw={600} size="sm" lineClamp={2} style={{ lineHeight: 1.3 }}>
+        <Text fw={subtle ? 400 : 600} size="sm" lineClamp={2} style={{ lineHeight: 1.3 }}>
           {item.title}
         </Text>
 
-        {item.description && (
+        {item.description && !subtle && (
           <Text size="xs" c="dimmed" lineClamp={2}>
             {item.description}
           </Text>

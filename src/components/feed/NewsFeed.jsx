@@ -39,6 +39,7 @@ const CATEGORIES = [
   { value: 'artistas', label: 'Artistas', icon: <IconMicrophone2 size={14} /> },
   { value: 'instrumentos', label: 'Instrumentos', icon: <IconMusic size={14} /> },
   { value: 'eventos', label: 'Eventos', icon: <IconCalendarEvent size={14} /> },
+  { value: 'music_business', label: 'Music Business', icon: <IconBriefcase size={14} /> },
   { value: 'mercado', label: 'Mercado', icon: <IconBriefcase size={14} /> },
 ]
 
@@ -71,7 +72,7 @@ export function NewsFeed() {
     <Box>
       <Flex justify="space-between" align="center" mb="xs" visibleFrom="sm">
         <Title order={3} fz="h4" fw={500}>
-          Notícias da Música
+          Notícias do Mercado
         </Title>
         <Tooltip label={filtersOpened ? 'Ocultar filtros' : 'Mostrar filtros'}>
           <ActionIcon variant="subtle" color="gray" onClick={toggleFilters}>
