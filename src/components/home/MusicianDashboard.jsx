@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query'
@@ -16,8 +16,12 @@ import {
   Button,
   Switch,
   Image,
+  ScrollArea,
+  Divider,
+  UnstyledButton,
+  Collapse,
 } from '@mantine/core'
-import { IconChevronRight } from '@tabler/icons-react'
+import { IconChevronDown, IconHistory } from '@tabler/icons-react'
 import {
   fetchUserGigs,
   fetchUserRecentGear,
@@ -36,14 +40,12 @@ export default function MusicianDashboard() {
   const [tempGoal, setTempGoal] = useState(10)
   const [tempNoGoal, setTempNoGoal] = useState(false)
   const [popoverOpened, setPopoverOpened] = useState(false)
+  const [historyOpened, setHistoryOpened] = useState(false)
 
   const saveGigGoalMutation = useMutation({
     mutationFn: (goals) => upsertUserGigGoals(user.id, goals),
     onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ['user-gig-goals', user.id],
-      })
-
+      queryClient.invalidateQueries({ queryKey: ['user-gig-goals', user.id] })
       setPopoverOpened(false)
     },
   })
@@ -63,14 +65,14 @@ export default function MusicianDashboard() {
     setPopoverOpened(true)
   }
 
-  const { data: gigs = [], isLoading: loadingGigs } = useQuery({
+  const { data: gigs = [] } = useQuery({
     queryKey: ['user-gigs', user?.id],
     queryFn: () => fetchUserGigs(user.id),
     enabled: !!user?.id,
     staleTime: 1000 * 60 * 5,
   })
 
-  const { data: gigGoals, isLoading: loadingGigGoals } = useQuery({
+  const { data: gigGoals } = useQuery({
     queryKey: ['user-gig-goals', user?.id],
     queryFn: () => fetchUserGigGoals(user.id),
     enabled: !!user?.id,
@@ -87,58 +89,71 @@ export default function MusicianDashboard() {
     staleTime: 1000 * 60 * 5,
   })
 
-  const gigsTotal = gigs.length
-  const progress = noGoal ? 0 : Math.min((gigsTotal / goal) * 100, 100)
+  const { nextGig, pastGigs, gigsThisMonth } = useMemo(() => {
+    const now = dayjs().startOf('day')
+    const valid = gigs.filter((g) => g?.gig?.date)
+    const upcoming = valid
+      .filter(
+        (g) => dayjs(g.gig.date).isSame(now, 'day') || dayjs(g.gig.date).isAfter(now),
+      )
+      .sort((a, b) => dayjs(a.gig.date).valueOf() - dayjs(b.gig.date).valueOf())
 
-  const nextGig = gigs[0]
+    const past = valid
+      .filter((g) => dayjs(g.gig.date).isBefore(now, 'day'))
+      .sort((a, b) => dayjs(b.gig.date).valueOf() - dayjs(a.gig.date).valueOf())
 
+    const thisMonth = gigs.filter((g) =>
+      dayjs(g.gig?.date).isSame(dayjs(), 'month'),
+    ).length
+
+    return { nextGig: upcoming[0] || null, pastGigs: past, gigsThisMonth: thisMonth }
+  }, [gigs])
+
+  const progress = noGoal ? 0 : Math.min((gigsThisMonth / goal) * 100, 100)
   const subtleBg = 'light-dark(rgba(0,0,0,0.01), rgba(0,0,0,0.09))'
 
   return (
-    <Card
-      radius="lg"
-      withBorder
-      p={{ base: 'sm', sm: 'sm' }}
-      mb="md"
-      mt={{ base: 2, sm: 8 }}
-    >
-      <Group justify="space-between" mb="sm">
+    <Card radius="lg" withBorder p="sm" mb="md" mt={{ base: 2, sm: 8 }}>
+      <Group justify="space-between" mb="xs">
         <Title order={3} fz="md" fw={600} ml={2}>
           Seu dia a dia
         </Title>
       </Group>
 
-      <Stack gap="xs">
+      <Card.Section px="md">
         <Grid gap="xs">
           <Grid.Col span={7.4}>
             <Paper
               radius="md"
               p="xs"
               h={84}
-              style={{ boxShadow: 'none', background: subtleBg }}
+              style={{
+                boxShadow: 'none',
+                background: subtleBg,
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'flex-start',
+              }}
             >
               <Text size="xs" fw={500} tt="uppercase" c="dimmed">
                 Próxima gig
               </Text>
-              <Stack gap={0} mt={4}>
-                <Text size="md" fw={600} lineClamp={1}>
-                  {nextGig ? nextGig?.gig?.title : 'Nenhuma gig no momento'}
+
+              <Box>
+                <Text size="sm" fw={500} lineClamp={1}>
+                  {nextGig ? nextGig?.gig?.title : 'Nenhuma gig futura'}
                 </Text>
                 {nextGig && (
                   <Text size="xs" c="dimmed" lineClamp={1}>
-                    {dayjs(nextGig?.gig?.date).format('DD [de] MMMM [de] YYYY')} (
-                    {dayjs(nextGig?.gig?.date).fromNow()})
+                    {dayjs(nextGig?.gig?.date).format('DD [de] MMMM')} •{' '}
+                    {dayjs(nextGig?.gig?.date).fromNow()}
                   </Text>
                 )}
-              </Stack>
-              {/* <Text size="xs" c="dimmed">
-                Em 4 dias • Estúdio Aurora
-              </Text> */}
+              </Box>
             </Paper>
           </Grid.Col>
 
           <Grid.Col span={4.6}>
-            {/* CARD INTEIRO AGORA É O TARGET */}
             <Popover
               width={240}
               position="bottom-end"
@@ -154,21 +169,17 @@ export default function MusicianDashboard() {
                   p="xs"
                   h={84}
                   onClick={handleOpen}
-                  style={{
-                    boxShadow: 'none',
-                    background: subtleBg,
-                    cursor: 'pointer',
-                    transition: 'transform 0.1s ease',
-                  }}
-                  className="musician-dashboard-goal-card"
+                  style={{ boxShadow: 'none', background: subtleBg, cursor: 'pointer' }}
                 >
-                  <Text size="xs" fw={500} tt="uppercase" c="dimmed">
-                    Gigs este mês
+                  <Text size="xs" fw={500} c="dimmed">
+                    GIGS{' '}
+                    {dayjs()
+                      .format('MMM/YY')
+                      .replace(/^\w/, (c) => c.toUpperCase())}
                   </Text>
-                  <Text size="sm" fw={600}>
-                    {gigs.length} gigs
+                  <Text size="sm" fw={500}>
+                    {gigsThisMonth} gigs
                   </Text>
-
                   {!noGoal && goal ? (
                     <Box
                       mt={3}
@@ -187,13 +198,11 @@ export default function MusicianDashboard() {
                   ) : (
                     <Box mt={3} mb={6} h={4} />
                   )}
-
                   <Text size="11px" c="dimmed">
                     {noGoal || !goal ? 'Definir meta' : `Meta: ${goal}`}
                   </Text>
                 </Card>
               </Popover.Target>
-
               <Popover.Dropdown p="sm" onClick={(e) => e.stopPropagation()}>
                 <Stack gap="sm">
                   <Text size="xs" fw={500}>
@@ -216,7 +225,6 @@ export default function MusicianDashboard() {
                     <Text size="xs" c="dimmed">
                       Sem meta
                     </Text>
-
                     <Switch
                       size="sm"
                       checked={tempNoGoal}
@@ -244,43 +252,88 @@ export default function MusicianDashboard() {
             </Popover>
           </Grid.Col>
         </Grid>
+      </Card.Section>
 
-        <Grid gutter="xs">
-          {/* <Grid.Col span={6}>
-            <Group
-              gap={6}
-              h={42}
-              p={8}
-              style={{ borderRadius: 8, boxShadow: 'none', background: subtleBg }}
-            >
-              <IconBulb size={16} opacity={0.7} />
-              <Stack gap={5} style={{ flex: 1 }}>
-                <Text size="11px" fw={500} lineClamp={1}>
-                  Trocar cordas
-                </Text>
-                <Text size="10px" c="dimmed" lineClamp={1}>
-                  em 2 dias
-                </Text>
-              </Stack>
-              <IconChevronRight size={12} opacity={0.4} />
+      {pastGigs.length > 0 && (
+        <Card.Section px="md" py={6}>
+          <UnstyledButton
+            onClick={() => setHistoryOpened((o) => !o)}
+            style={{ alignSelf: 'flex-start', marginTop: 4 }}
+          >
+            <Group gap={2}>
+              <Text size="sm" lh={1} c="dimmed" fw={500}>
+                Ver histórico de gigs recentes ({pastGigs.length})
+              </Text>
+              <IconChevronDown
+                size={16}
+                color="gray"
+                style={{
+                  transform: historyOpened ? 'rotate(180deg)' : 'none',
+                  transition: 'transform 0.2s',
+                }}
+              />
             </Group>
-          </Grid.Col> */}
+          </UnstyledButton>
+
+          <Collapse expanded={historyOpened}>
+            <Box
+              mt={6}
+              p="md"
+              style={{
+                boxShadow: 'none',
+                background: subtleBg,
+              }}
+            >
+              <Group gap={6} mb={6}>
+                <IconHistory size={16} />
+                <Text size="sm" fw={600}>
+                  Gigs passadas
+                </Text>
+                <Text size="sm" c="dimmed">
+                  ({pastGigs.length})
+                </Text>
+              </Group>
+              <Divider mb="xs" />
+              <ScrollArea h={70} type="auto">
+                <Stack gap={8}>
+                  {pastGigs.slice(0, 20).map((g) => (
+                    <Group key={g.id} justify="space-between" wrap="nowrap" gap="xs">
+                      <Box style={{ flex: 1, minWidth: 0 }}>
+                        <Text size="xs" fw={500} lineClamp={1}>
+                          {g.gig?.title}
+                        </Text>
+                        <Text size="11px" c="dimmed">
+                          {dayjs(g.gig?.date).format('DD/MM/YYYY')}
+                        </Text>
+                      </Box>
+                      <Text size="11px" c="dimmed" style={{ whiteSpace: 'nowrap' }}>
+                        {dayjs(g.gig?.date).fromNow()}
+                      </Text>
+                    </Group>
+                  ))}
+                </Stack>
+              </ScrollArea>
+            </Box>
+          </Collapse>
+        </Card.Section>
+      )}
+
+      <Divider variant="dashed" mt={4} mb="md" opacity={0.6} />
+
+      <Card.Section px="lg" pb="lg">
+        <Grid gutter="xs">
           <Grid.Col span={12}>
             <Group
               wrap="nowrap"
-              gap={8}
-              p={8}
-              // style={{ borderRadius: 8, boxShadow: 'none', background: subtleBg }}
+              gap="sm"
               component={Link}
-              to={`/${profile?.username}`}
+              to={`/${profile?.username}/gear`}
               style={{
                 borderRadius: 8,
                 boxShadow: 'none',
-                background: subtleBg,
                 cursor: 'pointer',
-                transition: 'transform 0.1s ease',
               }}
-              className="musician-dashboard-goal-card noDecoration"
+              className="noDecoration"
             >
               {recentGear && (
                 <Image
@@ -299,23 +352,18 @@ export default function MusicianDashboard() {
                 <Text size="xs" fw={500} tt="uppercase" c="dimmed" lineClamp={1}>
                   Último item adicionado
                 </Text>
-                {recentGear ? (
-                  <Text size="xs" lineClamp={1}>
-                    {loadingRecentGear
-                      ? 'Carregando...'
-                      : `${recentGear?.products?.name} (${recentGear?.products?.brands?.name})`}
-                  </Text>
-                ) : (
-                  <Text size="xs" lineClamp={1}>
-                    Nenhum item adicionado até o momento
-                  </Text>
-                )}
+                <Text size="xs" lineClamp={1}>
+                  {loadingRecentGear
+                    ? 'Carregando...'
+                    : recentGear
+                      ? `${recentGear?.products?.name} (${recentGear?.products?.brands?.name})`
+                      : 'Nenhum item adicionado'}
+                </Text>
               </Stack>
-              <IconChevronRight size={12} opacity={0.4} />
             </Group>
           </Grid.Col>
         </Grid>
-      </Stack>
+      </Card.Section>
     </Card>
   )
 }

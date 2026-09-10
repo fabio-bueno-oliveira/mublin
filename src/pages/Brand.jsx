@@ -159,9 +159,9 @@ export default function Brand() {
           />
         </Center>
         <Flex direction="column" align="center">
-          {/* <Title order={1} fz="h2" visibleFrom="sm">
+          <Title order={1} fz="h3" visibleFrom="sm">
             {brand?.name}
-          </Title> */}
+          </Title>
           <Text size="xs" c="dimmed" ta="center">
             {brand?.brands_categories?.name_ptbr}
           </Text>

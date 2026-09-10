@@ -8,24 +8,40 @@ import {
   Badge,
   Tooltip,
 } from '@mantine/core'
-import { IconExternalLink } from '@tabler/icons-react'
+import { IconExternalLink, IconFlame } from '@tabler/icons-react'
 import dayjs from 'dayjs'
 
 function normalizeImageForDisplay(url) {
-  if (!url) {
-    return null
-  }
-
-  const cleaned = url
+  if (!url) return null
+  let cleaned = url
     .replace(
       'https://www.tenhomaisdiscosqueamigos.com/uploads.tenhomaisdiscosqueamigos.com/',
       'https://uploads.tenhomaisdiscosqueamigos.com/',
     )
     .replace(/-\d+x\d+(?=\.(jpg|jpeg|png|webp)$)/i, '')
+    // Jetpack resize: i0.wp.com/.../foto.jpg?resize=370,265 -> /foto.jpg
+    .replace(/https?:\/\/i\d+\.wp\.com\/([^?]+).*/, (m, p1) => `https://${p1}`)
+    .replace(/\?resize=.*$/, '')
+    .replace(/&amp;/g, '&')
+
+  // Se ainda tiver query de resize, remove
+  try {
+    const u = new URL(cleaned)
+    u.searchParams.delete('resize')
+    u.searchParams.delete('ssl')
+    cleaned = u.toString()
+  } catch {}
+
   return cleaned
 }
 
-export default function NewsCard({ item, width, subtle = false }) {
+export default function NewsCard({
+  item,
+  width,
+  subtle = false,
+  isTrending = false,
+  trendingCount = 0,
+}) {
   const timeAgo = item.published_at ? dayjs(item.published_at).fromNow() : ''
 
   const CATEGORY_COLORS = {
@@ -55,10 +71,25 @@ export default function NewsCard({ item, width, subtle = false }) {
         display: 'block',
         cursor: 'pointer',
         boxShadow: 'none',
+        position: 'relative',
+        overflow: 'hidden',
       }}
     >
+      {/* Faixa sutil de trending no topo */}
+      {/* {isTrending && !subtle && (
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 3,
+            background: 'linear-gradient(90deg, #ff6b35, #f7931e)',
+          }}
+        />
+      )} */}
+
       <Stack gap={subtle ? 0 : 4} style={{ flex: 1, minWidth: 0 }}>
-        {/* Thumbnail com tratamento de erro duplo */}
         {displayImage && !subtle && (
           <Image
             src={displayImage}
@@ -71,20 +102,39 @@ export default function NewsCard({ item, width, subtle = false }) {
             style={{ flexShrink: 0 }}
             fallbackSrc="https://placehold.co/600x400/1a1a1a/FFF?text=Mublin"
             onError={(e) => {
-              // Se quebrar, esconde a imagem em vez de mostrar ícone quebrado
               e.currentTarget.style.display = 'none'
             }}
           />
         )}
+
         {!subtle && (
           <Group justify="space-between" wrap="nowrap" gap="xs">
-            <Badge
-              size="xs"
-              variant="light"
-              color={CATEGORY_COLORS[item.category] ?? 'gray'}
-            >
-              {item.category === 'mercado' ? 'mercado' : item.category}
-            </Badge>
+            <Group gap={6}>
+              <Badge
+                size="xs"
+                variant="light"
+                color={CATEGORY_COLORS[item.category] ?? 'gray'}
+              >
+                {item.category === 'mercado' ? 'mercado' : item.category}
+              </Badge>
+
+              {isTrending && (
+                <Tooltip
+                  label={`${trendingCount} portais falando sobre isso agora`}
+                  withArrow
+                >
+                  <Badge
+                    size="xs"
+                    variant="transparent"
+                    color="orange.9"
+                    style={{ cursor: 'default' }}
+                  >
+                    em alta 🔥
+                  </Badge>
+                </Tooltip>
+              )}
+            </Group>
+
             <Tooltip label="Abrir fonte" withArrow position="top">
               <ActionIcon
                 size="xs"
@@ -109,16 +159,36 @@ export default function NewsCard({ item, width, subtle = false }) {
           </Text>
         )}
 
-        <Group gap={4} mt={2}>
-          <Text size="xs" c="dimmed">
+        <Group gap={4} mt={2} wrap="nowrap">
+          <Text size="xs" c="dimmed" truncate="end">
             {item.source_name}
           </Text>
           <Text size="xs" c="dimmed">
             ·
           </Text>
-          <Text size="xs" c="dimmed">
+          <Text size="xs" c="dimmed" truncate="end">
             {timeAgo}
           </Text>
+          {/* {isTrending && subtle && trendingCount > 1 && (
+            <>
+              <Text size="xs" c="dimmed">
+                ·
+              </Text>
+              <Text size="xs" c="orange" fw={500}>
+                {trendingCount} fontes
+              </Text>
+            </>
+          )} */}
+          {isTrending && subtle && trendingCount > 1 && (
+            <Badge
+              size="xs"
+              variant="transparent"
+              color="orange.9"
+              style={{ cursor: 'default' }}
+            >
+              em alta 🔥
+            </Badge>
+          )}
         </Group>
       </Stack>
     </Card>

@@ -343,7 +343,7 @@ export default function GearItem() {
           <ActionIcon
             size="lg"
             variant="default"
-            radius="xl"
+            radius="md"
             onClick={() => handleToggleFavorite(!!favoriteInfo?.id)}
             loading={togglingFavorite}
             disabled={loadingFavoriteInfo}

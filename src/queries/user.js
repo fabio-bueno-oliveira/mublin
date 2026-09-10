@@ -445,10 +445,7 @@ export async function fetchUserGigs(userId, limit = 30) {
     .eq('profile_id', userId)
     .eq('status_request_appliant', 2)
     .eq('status_request_gig_owner', 2)
-    .order('date', {
-      ascending: false,
-      foreignTable: 'gigs',
-    })
+    .order('date', { ascending: false, referencedTable: 'gigs' })
     .limit(limit)
 
   if (error) {

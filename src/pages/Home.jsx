@@ -1,7 +1,8 @@
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { Helmet } from 'react-helmet-async'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
+import { getTrendingMap } from '../hooks/useTrending'
 import { useQuery } from '@tanstack/react-query'
 import { fetchRecentProfiles } from '../queries/search'
 import { fetchUpcomingEvents } from '../queries/events'
@@ -81,6 +82,8 @@ export default function Home() {
     queryFn: () => fetchNewsFeed(6),
     staleTime: 1000 * 60 * 5,
   })
+
+  const trendingMap = useMemo(() => getTrendingMap(news), [news])
 
   if (loading) {
     return null
@@ -594,15 +597,24 @@ export default function Home() {
                     <Skeleton
                       key={i}
                       width="100%"
-                      height={144}
+                      height={40}
                       style={{ flexShrink: 0 }}
                     />
                   ))
-                : news.map((item) => (
-                    <Box key={item.id} style={{ flexShrink: 0 }}>
-                      <NewsCard item={item} width="100%" subtle />
-                    </Box>
-                  ))}
+                : news.map((item) => {
+                    const trend = trendingMap.get(item.id)
+                    return (
+                      <Box key={item.id} style={{ flexShrink: 0 }}>
+                        <NewsCard
+                          item={item}
+                          width="100%"
+                          subtle
+                          isTrending={!!trend?.isTrending}
+                          trendingCount={trend?.count ?? 0}
+                        />
+                      </Box>
+                    )
+                  })}
             </Stack>
           </Grid.Col>
         </Grid>

@@ -14,7 +14,6 @@ import {
   Container,
   SimpleGrid,
   Image,
-  Badge,
   ThemeIcon,
   RollingNumber,
   Center,
@@ -28,6 +27,7 @@ import {
   IconMicrophone2,
   IconBrandSpotify,
   IconArrowRight,
+  IconBolt,
 } from '@tabler/icons-react'
 import { IconGuitarPedal } from '../components/icons/GuitarPedal'
 
@@ -116,9 +116,31 @@ export default function Landing() {
           <Grid p={0}>
             <Grid.Col span={{ base: 12, sm: 8 }}>
               <Stack gap="lg" align={isMobile ? 'center' : 'flex-start'}>
-                <Badge color="mublinColor" radius="xl" variant="light" size="md" fw={360}>
-                  The professional network for musicians
-                </Badge>
+                <Group
+                  gap={4}
+                  px={14}
+                  h={24}
+                  style={{
+                    borderRadius: 999,
+                    border:
+                      '1px solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4))',
+                    background:
+                      'light-dark(rgba(255,255,255,0.8), rgba(255,255,255,0.06))',
+                    backdropFilter: 'blur(8px)',
+                    width: 'fit-content',
+                  }}
+                >
+                  <IconBolt size={16} stroke={1.5} color="gray" />
+                  <Text
+                    size="xs"
+                    c="dimmed"
+                    style={{ letterSpacing: '-0.01em' }}
+                    tt="uppercase"
+                    ff="heading"
+                  >
+                    A rede profissional para músicos
+                  </Text>
+                </Group>
                 <Title
                   order={1}
                   ta={isMobile ? 'center' : 'left'}
@@ -127,14 +149,15 @@ export default function Landing() {
                   fz="clamp(40px, 6vw, 72px)"
                   fw={700}
                 >
-                  Sua carreira musical, <br />
+                  Sua próxima gig
+                  <br />
                   <Text
                     component="span"
                     inherit
                     variant="gradient"
                     gradient={{ from: 'mublinColor', to: 'blue', deg: 96 }}
                   >
-                    conectada.
+                    começa aqui.
                   </Text>
                 </Title>
                 <Text
@@ -144,14 +167,13 @@ export default function Landing() {
                   maw={500}
                   lh={1.5}
                 >
-                  Mublin é a rede profissional para músicos, produtores, roadies e todos
-                  que fazem a música acontecer.
+                  Encontre gigs, monte bandas, mostre seu setup. Tudo em um só lugar,
+                  feito pra quem vive de música.
                 </Text>
                 <Group gap="sm" my="xs" justify="center">
                   <Button
                     size="md"
                     radius="xl"
-                    fw="700"
                     variant="gradient"
                     gradient={{ from: 'mublinColor.9', to: 'blue.8', deg: 96 }}
                     onClick={() => navigate('/signup')}
@@ -174,10 +196,11 @@ export default function Landing() {
             <Grid.Col span={{ base: 12, sm: 4 }} pt={{ base: 30, sm: 40 }}>
               <Center>
                 <Image
-                  src="https://ik.imagekit.io/mublin/misc/isometric-theatre-backstage-crew-vector-illustration-flat_7068130.webp"
-                  w={300}
+                  src="https://ik.imagekit.io/mublin/misc/backstage_laughter.jpg?tr=w-340,q-80"
+                  w={340}
                   h="auto"
                   fit="cover"
+                  radius="lg"
                 />
               </Center>
             </Grid.Col>
