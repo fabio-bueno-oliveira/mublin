@@ -126,6 +126,15 @@ export default function Home() {
 
                 <Box mt="md" mb="xs">
                   <Title order={3} fw={600} fz="lg" mb="xs">
+                    Convites para gigs
+                  </Title>
+                  <Text c="dimmed" size="sm">
+                    Nenhum convite no momento
+                  </Text>
+                </Box>
+
+                <Box mt="md" mb="xs">
+                  <Title order={3} fw={600} fz="lg" mb="xs">
                     Novos por aqui
                   </Title>
 

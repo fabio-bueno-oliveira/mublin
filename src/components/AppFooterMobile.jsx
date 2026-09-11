@@ -118,17 +118,6 @@ export default function AppFooterMobile() {
           </UnstyledButton>
 
           <UnstyledButton
-            className={navItemClass(isActive('/search'))}
-            onClick={() => navigate('/search')}
-            opacity={isActive('/search') && !drawerOpen ? 1 : 0.65}
-          >
-            <IconSearch />
-            <Text size="10px" lh={1.2}>
-              Buscar
-            </Text>
-          </UnstyledButton>
-
-          <UnstyledButton
             className={['nav-item plus', drawerOpen ? 'active' : '']
               .filter(Boolean)
               .join(' ')}
@@ -138,6 +127,17 @@ export default function AppFooterMobile() {
             <IconPlus />
             <Text size="10px" lh={1.2}>
               Criar
+            </Text>
+          </UnstyledButton>
+
+          <UnstyledButton
+            className={navItemClass(isActive('/search'))}
+            onClick={() => navigate('/search')}
+            opacity={isActive('/search') && !drawerOpen ? 1 : 0.65}
+          >
+            <IconSearch />
+            <Text size="10px" lh={1.2}>
+              Buscar
             </Text>
           </UnstyledButton>
 

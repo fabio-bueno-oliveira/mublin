@@ -84,7 +84,13 @@ export default function ProjectSelector({
         </Text>
       </Group>
 
-      <ScrollArea type="hover" offsetScrollbars>
+      <ScrollArea
+        type="always"
+        offsetScrollbars="present"
+        scrollbarSize={18}
+        scrollHideDelay={0}
+        pb="xs"
+      >
         <Group gap="sm" wrap="nowrap" px={2}>
           {filteredProjects.map((project) => {
             const isSelected = selectedProject?.id === project.id

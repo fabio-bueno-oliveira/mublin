@@ -14,6 +14,7 @@ import { notifications } from '@mantine/notifications'
 import GigRoleCombobox from '../components/gigs/GigRoleCombobox'
 import ProjectSelector from '../components/gigs/ProjectSelector'
 import VenueSelector from '../components/gigs/VenueSelector'
+import InternalSearchSelect from '../components/gigs/InternalSearchSelect'
 import SetlistManager from '../components/setlist/SetlistManager'
 import AppNavbarMobile from '../components/AppNavbarMobile'
 import { useDebouncedCallback } from '@mantine/hooks'
@@ -21,12 +22,12 @@ import { TimeInput } from '@mantine/dates'
 import { getDateSuggestions } from '../utils/dates'
 // prettier-ignore
 import {
-  useCombobox, Affix,
+  useCombobox, Affix, 
   Container, Collapse,
   Grid, Group, ScrollArea,
   Box, Stack, Divider, Card, Paper,
   Alert, Badge, Avatar,
-  CloseButton, InputBase,
+  CloseButton, InputBase, Input, Fieldset,
   Select, TextInput, NumberInput,
   Title, Text, Textarea,
   Combobox, Checkbox,
@@ -741,7 +742,8 @@ export default function NewGig() {
               <Box>
                 <Text fw={600}>{selectedProject?.name}</Text>
                 <Text size="xs" c="dimmed">
-                  @{selectedProject?.slug} · {selectedProject?.project_types?.name_ptbr}
+                  {selectedProject?.project_types?.name_ptbr}
+                  {selectedProject?.genres?.name && ` · ${selectedProject?.genres?.name}`}
                 </Text>
               </Box>
               {selectedProject?.end_year && (
@@ -753,8 +755,7 @@ export default function NewGig() {
                   p="xs"
                 >
                   Este projeto foi encerrado em {selectedProject?.end_year}. Antes de
-                  continuar o cadastro, vale a pena confirmar a viabilidade real desta
-                  gig.
+                  continuar o cadastro, vale a pena confirmar a viabilidade real desta gig
                 </Alert>
               )}
             </Group>
@@ -1069,7 +1070,7 @@ export default function NewGig() {
                                 <Avatar
                                   size={42}
                                   radius="xl"
-                                  color="mublinColor"
+                                  color="gray"
                                   src={getAvatarUrl(gr.assigned?.avatar, 80)}
                                 >
                                   {!gr.assigned && <IconQuestionMark size={18} />}
@@ -1139,7 +1140,7 @@ export default function NewGig() {
                         onClick={handleAutoFillRoles}
                         loading={isAutoFillingRoles}
                       >
-                        Preencher vagas com o elenco atual do projeto
+                        Preencher vagas com o elenco atual
                       </Button>
                       <Divider label="ou" labelPosition="center" my="xs" />
                     </>
@@ -1149,22 +1150,10 @@ export default function NewGig() {
                       const detailsOpened = expandedRoleDetails.includes(gr.tempId)
 
                       return (
-                        <Box
-                          key={gr.tempId}
-                          p="xs"
-                          style={{
-                            borderWidth: '1px',
-                            borderStyle: 'dashed',
-                            borderColor: 'light-dark(#f5f5f5, #424242)',
-                            borderRadius: 6,
-                          }}
-                        >
-                          <Badge radius="xl" size="xl" color="dark" mb="xs">
-                            {index + 1}
-                          </Badge>
+                        <Fieldset legend={`Vaga ${index + 1}`} key={gr.tempId}>
                           <Grid>
                             <Grid.Col span={{ base: 12, sm: 8 }}>
-                              <Select
+                              <InternalSearchSelect
                                 label="Atividade"
                                 placeholder="Selecione..."
                                 data={groupedRolesData}
@@ -1174,8 +1163,6 @@ export default function NewGig() {
                                     role_id: v ? Number(v) : null,
                                   })
                                 }
-                                searchable
-                                comboboxProps={{ withinPortal: true }}
                               />
                             </Grid.Col>
 
@@ -1197,6 +1184,71 @@ export default function NewGig() {
                             </Grid.Col>
                           </Grid>
 
+                          {/* MÚSICO DESIGNADO */}
+                          {gr.role_id && selectedProject && (
+                            <Box mt="md">
+                              <Input.Label>Designar pessoa (opcional)</Input.Label>
+                              <Input.Description mb="xs">
+                                A pessoa receberá o convite. Caso deixe em branco, a vaga
+                                ficará aberta para qualquer usuário que possa se
+                                interessar.
+                              </Input.Description>
+
+                              {!gr.assigned && (
+                                <GigRoleCombobox
+                                  label=""
+                                  projectId={selectedProject.id}
+                                  roleId={gr.role_id}
+                                  onSelect={(profile) =>
+                                    updateRole(gr.tempId, {
+                                      assigned: profile,
+                                    })
+                                  }
+                                />
+                              )}
+
+                              {gr.assigned && (
+                                <Group mt="xs" gap="xs">
+                                  <Badge
+                                    px={6}
+                                    variant="default"
+                                    tt="lowercase"
+                                    fw={400}
+                                    size="lg"
+                                    radius="lg"
+                                    leftSection={
+                                      <Avatar
+                                        size="xs"
+                                        src={
+                                          gr?.assigned?.avatar
+                                            ? `https://ik.imagekit.io/mublin/users/avatars/tr:h-16,w-16/${gr.assigned.avatar}`
+                                            : null
+                                        }
+                                      />
+                                    }
+                                    rightSection={
+                                      <ActionIcon
+                                        size="xs"
+                                        variant="transparent"
+                                        color="teal"
+                                        onClick={() =>
+                                          updateRole(gr.tempId, {
+                                            assigned: null,
+                                          })
+                                        }
+                                        aria-label="Remover músico designado"
+                                      >
+                                        <IconX size={12} stroke={2.5} />
+                                      </ActionIcon>
+                                    }
+                                  >
+                                    @{gr.assigned.username}
+                                  </Badge>
+                                </Group>
+                              )}
+                            </Box>
+                          )}
+
                           {gr.role_id && (
                             <Button
                               variant="subtle"
@@ -1211,7 +1263,9 @@ export default function NewGig() {
                                 )
                               }
                             >
-                              {detailsOpened ? 'Ocultar detalhes' : 'Mais detalhes'}
+                              {detailsOpened
+                                ? 'Ocultar detalhes opcionais'
+                                : 'Detalhes opcionais'}
                             </Button>
                           )}
 
@@ -1256,7 +1310,7 @@ export default function NewGig() {
                                 {/* DESCRIÇÃO */}
                                 <Textarea
                                   label="Sobre a atuação"
-                                  description="Detalhes opcionais sobre esta atuação"
+                                  description="Descrição sobre esta atuação"
                                   minRows={2}
                                   maxRows={2}
                                   value={gr.description}
@@ -1267,72 +1321,12 @@ export default function NewGig() {
                                   }
                                 />
 
-                                {/* MÚSICO DESIGNADO */}
-                                {gr.role_id && selectedProject && (
-                                  <Box>
-                                    <Text size="sm" fw={500} mb={4}>
-                                      Designar músico para esta vaga
-                                    </Text>
-
-                                    <GigRoleCombobox
-                                      label=""
-                                      projectId={selectedProject.id}
-                                      roleId={gr.role_id}
-                                      onSelect={(profile) =>
-                                        updateRole(gr.tempId, {
-                                          assigned: profile,
-                                        })
-                                      }
-                                    />
-
-                                    {gr.assigned && (
-                                      <Group mt="xs" gap="xs">
-                                        <Badge
-                                          px={6}
-                                          variant="default"
-                                          tt="lowercase"
-                                          fw={400}
-                                          size="lg"
-                                          radius="lg"
-                                          leftSection={
-                                            <Avatar
-                                              size="xs"
-                                              src={
-                                                gr?.assigned?.avatar
-                                                  ? `https://ik.imagekit.io/mublin/users/avatars/tr:h-16,w-16/${gr.assigned.avatar}`
-                                                  : null
-                                              }
-                                            />
-                                          }
-                                          rightSection={
-                                            <ActionIcon
-                                              size="xs"
-                                              variant="transparent"
-                                              color="teal"
-                                              onClick={() =>
-                                                updateRole(gr.tempId, {
-                                                  assigned: null,
-                                                })
-                                              }
-                                              aria-label="Remover músico designado"
-                                            >
-                                              <IconX size={12} stroke={2.5} />
-                                            </ActionIcon>
-                                          }
-                                        >
-                                          @{gr.assigned.username}
-                                        </Badge>
-                                      </Group>
-                                    )}
-                                  </Box>
-                                )}
-
                                 {/* SUBSTITUIÇÃO */}
                                 <Box>
                                   <Divider mb="sm" />
 
                                   <Checkbox
-                                    label="A vaga é um sub (substituição)"
+                                    label="A vaga é um sub"
                                     checked={gr.is_sub}
                                     onChange={(e) =>
                                       updateRole(gr.tempId, {
@@ -1366,15 +1360,14 @@ export default function NewGig() {
                           <Group justify="flex-end" mt="xs">
                             <Button
                               size="xs"
-                              variant="subtle"
-                              color="red"
-                              leftSection={<IconTrash size={14} />}
+                              variant="default"
+                              leftSection={<IconTrash size={14} color="red" />}
                               onClick={() => removeRole(gr.tempId)}
                             >
                               Remover vaga
                             </Button>
                           </Group>
-                        </Box>
+                        </Fieldset>
                       )
                     })}
                     <Button

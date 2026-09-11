@@ -4,6 +4,7 @@ import { useAuth } from '../../hooks/useAuth'
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query'
 import {
   Grid,
+  Avatar,
   Card,
   Paper,
   Group,
@@ -114,15 +115,26 @@ export default function MusicianDashboard() {
 
   return (
     <Card radius="lg" withBorder p="sm" mb="md" mt={{ base: 2, sm: 8 }}>
-      <Group justify="space-between" mb="xs">
-        <Title order={3} fz="md" fw={600} ml={2}>
+      <Group justify="flex-start" gap={6} mb="xs">
+        <Avatar
+          size={25}
+          radius="xl"
+          src={
+            profile?.avatar
+              ? `https://ik.imagekit.io/mublin/tr:h-50,c-maintain_ratio/users/avatars/${profile?.avatar}`
+              : `https://api.dicebear.com/10.x/initials/svg?seed=${profile?.full_name}`
+          }
+          component={Link}
+          to={`/${profile?.username}`}
+        />
+        <Title order={3} fz="xl" fw={600} ml={2} lh={1}>
           Seu dia a dia
         </Title>
       </Group>
 
       <Card.Section px="md">
         <Grid gap="xs">
-          <Grid.Col span={7.4}>
+          <Grid.Col span={7.3}>
             <Paper
               radius="md"
               p="xs"
@@ -153,7 +165,7 @@ export default function MusicianDashboard() {
             </Paper>
           </Grid.Col>
 
-          <Grid.Col span={4.6}>
+          <Grid.Col span={4.7}>
             <Popover
               width={240}
               position="bottom-end"
@@ -171,11 +183,8 @@ export default function MusicianDashboard() {
                   onClick={handleOpen}
                   style={{ boxShadow: 'none', background: subtleBg, cursor: 'pointer' }}
                 >
-                  <Text size="xs" fw={500} c="dimmed">
-                    GIGS{' '}
-                    {dayjs()
-                      .format('MMM/YY')
-                      .replace(/^\w/, (c) => c.toUpperCase())}
+                  <Text size="xs" fw={500} tt="uppercase" c="dimmed">
+                    {dayjs().format('MMMM/YY')}
                   </Text>
                   <Text size="sm" fw={500}>
                     {gigsThisMonth} gigs
@@ -262,7 +271,7 @@ export default function MusicianDashboard() {
           >
             <Group gap={2}>
               <Text size="sm" lh={1} c="dimmed" fw={500}>
-                Ver histórico de gigs recentes ({pastGigs.length})
+                Minhas gigs recentes ({pastGigs.length})
               </Text>
               <IconChevronDown
                 size={16}
