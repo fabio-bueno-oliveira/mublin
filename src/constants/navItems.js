@@ -5,7 +5,7 @@ import {
   IconBulb,
   IconPencilPlus,
   IconCalendarPlus,
-  IconCalendar,
+  IconGps,
   IconMusicPlus,
   IconMicrophone2,
   IconMusic,
@@ -17,7 +17,7 @@ export const NAV_ITEMS = [
   { label: 'Scenes', icon: IconMovie, path: '/scenes' },
   { label: 'Feed', icon: IconRss, path: '/feed' },
   { label: 'Projetos', icon: IconMusic, path: '/projects' },
-  { label: 'Gigs', icon: IconCalendar, path: '/gigs' },
+  { label: 'Descobrir', icon: IconGps, path: '/search' },
 ]
 
 export const QUICK_ACTIONS = [

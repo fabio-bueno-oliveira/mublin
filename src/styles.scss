@@ -122,6 +122,21 @@
   }
 }
 
+.mantine-MiniCalendar-day {
+  position: relative;
+}
+.mantine-MiniCalendar-day[data-has-gig]::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--mantine-color-red-6);
+}
+
 /* --- Layout --- */
 .paperWrapper,
 .feedPostWrapper {

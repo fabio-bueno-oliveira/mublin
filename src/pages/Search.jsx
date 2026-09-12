@@ -13,24 +13,29 @@ import {
   searchGearCategories,
   searchBrands,
   searchEvents,
+  fetchRecentProfiles,
 } from '../queries/search'
 import { fetchGenreCategories } from '../queries/genres'
 import { fetchRandomProjectOpening } from '../queries/projectOpenings'
 import { useAuth } from '../hooks/useAuth'
+import { getAvatarUrl } from '../utils/profile'
+import InspirationSpotlight from '../components/home/InspirationSpotlight'
+import UpcomingEvents from '../components/UpcomingEvents'
+// prettier-ignore
 import {
-  Grid,
+  Container, Grid,
+  Center, Flex,
+  Skeleton, Loader,
   Box,
-  NavLink,
-  Flex,
-  Container,
-  Loader,
   Group,
-  Center,
   Scroller,
+  NavLink,
+  Indicator,
   Title,
   Text,
   Image,
   Avatar,
+  Card,
   Tooltip,
   TextInput,
   ActionIcon,
@@ -48,11 +53,14 @@ import {
   IconClock,
   IconX,
   IconArrowLeft,
-  IconZoom,
-  IconBriefcase,
   IconArrowRight,
+  IconSquareRoundedArrowLeftFilled,
+  IconSquareRoundedArrowRightFilled,
+  IconZoom,
+  IconUser,
+  IconBriefcase,
+  IconRosetteDiscountCheckFilled,
 } from '@tabler/icons-react'
-import { getAvatarUrl } from '../utils/profile'
 
 const PATH_USER_AVATAR =
   'https://ik.imagekit.io/mublin/tr:h-200,c-maintain_ratio/users/avatars/'
@@ -179,6 +187,12 @@ export default function Search() {
     enabled: !q,
     staleTime: 0,
     refetchOnWindowFocus: false,
+  })
+
+  const { data: recentProfiles = [], isLoading: loadingRecentProfiles } = useQuery({
+    queryKey: ['recent-profiles'],
+    queryFn: () => fetchRecentProfiles(7),
+    staleTime: 1000 * 60 * 5,
   })
 
   async function doMobileSearch(keyword) {
@@ -692,7 +706,7 @@ export default function Search() {
           </>
         ) : (
           !isMobileFocused && (
-            <Stack gap="lg" mt={{ base: 'md', sm: 60 }}>
+            <Stack gap="sm" mt={{ base: 'md', sm: 60 }}>
               <EmptyState>
                 <EmptyState.Indicator>
                   <IconZoom />
@@ -769,8 +783,151 @@ export default function Search() {
                 </Stack>
               )}
 
+              <Box mt="md" mb="xs">
+                <Title order={3} fw={600} fz="lg" mb="xs">
+                  Novos por aqui
+                </Title>
+
+                <Scroller
+                  controlSize="xl"
+                  startControlIcon={
+                    <IconSquareRoundedArrowLeftFilled
+                      size={34}
+                      style={{ marginLeft: '14px' }}
+                    />
+                  }
+                  endControlIcon={
+                    <IconSquareRoundedArrowRightFilled
+                      size={34}
+                      style={{ marginRight: '14px' }}
+                    />
+                  }
+                  // showEndControl
+                >
+                  <Group wrap="nowrap" gap="md">
+                    {loadingRecentProfiles
+                      ? [1, 2, 3, 4, 5].map((i) => (
+                          <Skeleton
+                            key={i}
+                            width={140}
+                            height={140}
+                            radius="md"
+                            style={{ flexShrink: 0 }}
+                          />
+                        ))
+                      : recentProfiles.map((p) => {
+                          const location = p.cities?.name
+                            ? `${p.cities.name}${p.cities.countries?.name_ptbr ? `, ${p.cities.countries.name_ptbr}` : ''}`
+                            : p.regions?.name
+                              ? `${p.regions.name}${p.regions.uf ? ` - ${p.regions.uf}` : ''}`
+                              : null
+
+                          return (
+                            <Link
+                              key={p.id}
+                              to={`/${p.username}`}
+                              style={{ textDecoration: 'none', color: 'inherit' }}
+                            >
+                              <Card
+                                p="xs"
+                                w={140}
+                                h={140}
+                                shadow="sm"
+                                withBorder
+                                pos="relative"
+                                style={{ flexShrink: 0 }}
+                              >
+                                {p.is_live && (
+                                  <Badge
+                                    size="xs"
+                                    color="red.9"
+                                    pos="absolute"
+                                    left={5}
+                                    top={5}
+                                  >
+                                    Live
+                                  </Badge>
+                                )}
+                                <Stack align="center" gap={3}>
+                                  <Indicator
+                                    position="top-end"
+                                    offset={{ x: 2, y: 14 }}
+                                    color="transparent"
+                                    size={20}
+                                    disabled={!p.is_verified}
+                                    label={
+                                      <IconRosetteDiscountCheckFilled
+                                        size={24}
+                                        color="var(--mantine-color-text)"
+                                        style={{ display: 'block' }}
+                                      />
+                                    }
+                                  >
+                                    <Avatar
+                                      src={
+                                        p?.avatar
+                                          ? getAvatarUrl(
+                                              p?.avatar,
+                                              p?.is_open_to_work,
+                                              64,
+                                            )
+                                          : `https://api.dicebear.com/10.x/initials/svg?seed=${p?.full_name}`
+                                      }
+                                      size={64}
+                                      radius="xl"
+                                    >
+                                      {!p.avatar && <IconUser size={28} />}
+                                    </Avatar>
+                                  </Indicator>
+                                  <Text
+                                    w={114}
+                                    size="sm"
+                                    fw={600}
+                                    ta="center"
+                                    lineClamp={1}
+                                  >
+                                    {p?.full_name || p?.username}
+                                  </Text>
+                                  {p?.title && (
+                                    <Text
+                                      w={110}
+                                      size="10px"
+                                      ta="center"
+                                      lineClamp={1}
+                                      mb={3}
+                                    >
+                                      {p.title}
+                                    </Text>
+                                  )}
+                                  {/* {mainRole && (
+                                    <Text size="xs" ta="center" lineClamp={1}>
+                                      {mainRole}
+                                    </Text>
+                                  )} */}
+                                  {location && (
+                                    <Text
+                                      size="10px"
+                                      c="dimmed"
+                                      ta="center"
+                                      lineClamp={1}
+                                    >
+                                      {location}
+                                    </Text>
+                                  )}
+                                </Stack>
+                              </Card>
+                            </Link>
+                          )
+                        })}
+                    <Box w={32} h={140} />
+                  </Group>
+                </Scroller>
+              </Box>
+
+              <InspirationSpotlight />
+
               {!!genreCategories?.length && (
-                <Box mt="md">
+                <Box>
                   <Title order={4} fw={600} mb="sm">
                     Explore por gênero
                   </Title>
@@ -862,6 +1019,8 @@ export default function Search() {
                   </SimpleGrid>
                 </Box>
               )}
+
+              <UpcomingEvents />
             </Stack>
           )
         )}

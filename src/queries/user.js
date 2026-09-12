@@ -455,6 +455,56 @@ export async function fetchUserGigs(userId, limit = 30) {
   return data
 }
 
+export async function fetchUserNextGig(userId, fromIsoDate) {
+  const { data, error } = await supabase
+    .from('gig_applications')
+    .select(
+      `
+      id,
+      gig:gigs!inner (
+        id,
+        title,
+        date
+      )
+    `,
+    )
+    .eq('profile_id', userId)
+    .eq('status_request_appliant', 2)
+    .eq('status_request_gig_owner', 2)
+    .gte('gigs.date', fromIsoDate)
+    .order('date', { ascending: true, referencedTable: 'gigs' })
+    .limit(1)
+    .maybeSingle()
+
+  if (error) {
+    throw new Error(error.message)
+  }
+  return data
+}
+
+export async function fetchUserGigsByDate(userId, isoDate) {
+  // isoDate = '2026-10-10'
+  const { data, error } = await supabase
+    .from('gig_applications')
+    .select(
+      `
+      id,
+      gig:gigs!inner (
+        id,
+        title,
+        date
+      )
+    `,
+    )
+    .eq('profile_id', userId)
+    .eq('status_request_appliant', 2)
+    .eq('status_request_gig_owner', 2)
+    .eq('gigs.date', isoDate) // filtra no join
+
+  if (error) throw new Error(error.message)
+  return data
+}
+
 export async function fetchUserGigGoals(userId) {
   const { data, error } = await supabase
     .from('gig_goals')

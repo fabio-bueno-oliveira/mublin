@@ -837,7 +837,7 @@ export default function NewGig() {
                     {...form.getInputProps('description')}
                   />
 
-                  <Divider label="Data e local" />
+                  <Divider label="Local" />
 
                   <EventCombobox
                     selected={selectedEvent}
@@ -848,6 +848,81 @@ export default function NewGig() {
                       setSelectedVenue(null)
                     }}
                   />
+
+                  {selectedEvent && (
+                    <TextInput
+                      label="Nome do palco"
+                      description="Palco ou local onde será a gig no evento"
+                      placeholder="Ex: Palco Principal"
+                      {...form.getInputProps('stage_name')}
+                    />
+                  )}
+
+                  {selectedEvent?.venue && (
+                    <Group gap={6}>
+                      <IconMapPin size={14} />
+                      <Text size="sm" c="dimmed">
+                        {selectedEvent.venue.name}
+                        {selectedEvent.venue.city?.name &&
+                          ` — ${selectedEvent.venue.city.name}/${selectedEvent.venue.city.region?.uf || ''}`}
+                      </Text>
+                    </Group>
+                  )}
+
+                  {!selectedEvent && (
+                    <VenueSelector
+                      selected={selectedVenue}
+                      relatedProject={selectedProject}
+                      relatedProjectId={selectedProject?.id}
+                      onSelect={(venue) => {
+                        setSelectedVenue(venue)
+                        setShowManualVenue(false)
+                      }}
+                      onClear={() => {
+                        setSelectedVenue(null)
+                      }}
+                      onSelectManual={(venue) => {
+                        setSelectedVenue(null)
+                        setShowManualVenue(true)
+                        form.setValues({
+                          venue_name: venue.name || '',
+                          venue_address: venue.address || '',
+                          venue_city_id: venue.city_id || null,
+                        })
+                      }}
+                    />
+                  )}
+
+                  {!selectedVenue && !selectedEvent && (
+                    <Checkbox
+                      label="Preencher manualmente o local"
+                      description="Não será cadastrado para a comunidade"
+                      checked={showManualVenue}
+                      onChange={(e) => setShowManualVenue(e.currentTarget.checked)}
+                      mt="xs"
+                    />
+                  )}
+
+                  {showManualVenue && !selectedVenue && !selectedEvent && (
+                    <Grid>
+                      <Grid.Col span={6}>
+                        <TextInput
+                          label="Nome do local (caso não encontrado acima)"
+                          placeholder="Ex: Estúdio do Seu Zé"
+                          {...form.getInputProps('venue_name')}
+                        />
+                      </Grid.Col>
+                      <Grid.Col span={6}>
+                        <TextInput
+                          label="Endereço"
+                          placeholder="Rua, bairro, cidade"
+                          {...form.getInputProps('venue_address')}
+                        />
+                      </Grid.Col>
+                    </Grid>
+                  )}
+
+                  <Divider label="Data" />
 
                   {!selectedEvent && (
                     <ScrollArea type="never" scrollbarSize={0} offsetScrollbars>
@@ -934,79 +1009,6 @@ export default function NewGig() {
                       Você está cadastrando uma gig que já aconteceu. Ela será registrada
                       no histórico do projeto normalmente.
                     </Alert>
-                  )}
-
-                  {selectedEvent && (
-                    <TextInput
-                      label="Nome do palco"
-                      description="Palco ou local onde será a gig no evento"
-                      placeholder="Ex: Palco Principal"
-                      {...form.getInputProps('stage_name')}
-                    />
-                  )}
-
-                  {selectedEvent?.venue && (
-                    <Group gap={6}>
-                      <IconMapPin size={14} />
-                      <Text size="sm" c="dimmed">
-                        {selectedEvent.venue.name}
-                        {selectedEvent.venue.city?.name &&
-                          ` — ${selectedEvent.venue.city.name}/${selectedEvent.venue.city.region?.uf || ''}`}
-                      </Text>
-                    </Group>
-                  )}
-
-                  {!selectedEvent && (
-                    <VenueSelector
-                      selected={selectedVenue}
-                      relatedProject={selectedProject}
-                      relatedProjectId={selectedProject?.id}
-                      onSelect={(venue) => {
-                        setSelectedVenue(venue)
-                        setShowManualVenue(false)
-                      }}
-                      onClear={() => {
-                        setSelectedVenue(null)
-                      }}
-                      onSelectManual={(venue) => {
-                        setSelectedVenue(null)
-                        setShowManualVenue(true)
-                        form.setValues({
-                          venue_name: venue.name || '',
-                          venue_address: venue.address || '',
-                          venue_city_id: venue.city_id || null,
-                        })
-                      }}
-                    />
-                  )}
-
-                  {!selectedVenue && !selectedEvent && (
-                    <Checkbox
-                      label="Preencher manualmente o local"
-                      description="Não será cadastrado para a comunidade"
-                      checked={showManualVenue}
-                      onChange={(e) => setShowManualVenue(e.currentTarget.checked)}
-                      mt="xs"
-                    />
-                  )}
-
-                  {showManualVenue && !selectedVenue && !selectedEvent && (
-                    <Grid>
-                      <Grid.Col span={6}>
-                        <TextInput
-                          label="Nome do local (caso não encontrado acima)"
-                          placeholder="Ex: Estúdio do Seu Zé"
-                          {...form.getInputProps('venue_name')}
-                        />
-                      </Grid.Col>
-                      <Grid.Col span={6}>
-                        <TextInput
-                          label="Endereço"
-                          placeholder="Rua, bairro, cidade"
-                          {...form.getInputProps('venue_address')}
-                        />
-                      </Grid.Col>
-                    </Grid>
                   )}
 
                   {step === 2 && (

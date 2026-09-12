@@ -16,23 +16,14 @@ import {
   Slider,
   Button,
   Switch,
-  Image,
   ScrollArea,
   Divider,
   UnstyledButton,
   Collapse,
 } from '@mantine/core'
 import { IconChevronDown, IconHistory } from '@tabler/icons-react'
-import {
-  fetchUserGigs,
-  fetchUserRecentGear,
-  fetchUserGigGoals,
-  upsertUserGigGoals,
-} from '../../queries/user'
+import { fetchUserGigs, fetchUserGigGoals, upsertUserGigGoals } from '../../queries/user'
 import dayjs from 'dayjs'
-
-const PATH_GEAR_ITEM_IMG =
-  'https://ik.imagekit.io/mublin/products/tr:w-70,h-70,cm-pad_resize,bg-FFFFFF,fo-x/'
 
 export default function MusicianDashboard() {
   const { user, profile } = useAuth()
@@ -82,13 +73,6 @@ export default function MusicianDashboard() {
 
   const goal = gigGoals?.monthly_total_gigs ?? null
   const noGoal = !goal
-
-  const { data: recentGear, isLoading: loadingRecentGear } = useQuery({
-    queryKey: ['user-recent-gear', user?.id],
-    queryFn: () => fetchUserRecentGear(user.id),
-    enabled: !!user?.id,
-    staleTime: 1000 * 60 * 5,
-  })
 
   const { nextGig, pastGigs, gigsThisMonth } = useMemo(() => {
     const now = dayjs().startOf('day')
@@ -264,7 +248,7 @@ export default function MusicianDashboard() {
       </Card.Section>
 
       {pastGigs.length > 0 && (
-        <Card.Section px="md" py={6}>
+        <Card.Section px="md" pt={6} pb="sm">
           <UnstyledButton
             onClick={() => setHistoryOpened((o) => !o)}
             style={{ alignSelf: 'flex-start', marginTop: 4 }}
@@ -326,53 +310,6 @@ export default function MusicianDashboard() {
           </Collapse>
         </Card.Section>
       )}
-
-      <Divider variant="dashed" mt={4} mb="md" opacity={0.6} />
-
-      <Card.Section px="lg" pb="lg">
-        <Grid gutter="xs">
-          <Grid.Col span={12}>
-            <Group
-              wrap="nowrap"
-              gap="sm"
-              component={Link}
-              to={`/${profile?.username}/gear`}
-              style={{
-                borderRadius: 8,
-                boxShadow: 'none',
-                cursor: 'pointer',
-              }}
-              className="noDecoration"
-            >
-              {recentGear && (
-                <Image
-                  src={
-                    recentGear?.products?.picture
-                      ? PATH_GEAR_ITEM_IMG + recentGear?.products?.picture
-                      : undefined
-                  }
-                  fit="contain"
-                  h={35}
-                  w={35}
-                  radius="sm"
-                />
-              )}
-              <Stack gap={1} style={{ flex: 1 }}>
-                <Text size="xs" fw={500} tt="uppercase" c="dimmed" lineClamp={1}>
-                  Último item adicionado
-                </Text>
-                <Text size="xs" lineClamp={1}>
-                  {loadingRecentGear
-                    ? 'Carregando...'
-                    : recentGear
-                      ? `${recentGear?.products?.name} (${recentGear?.products?.brands?.name})`
-                      : 'Nenhum item adicionado'}
-                </Text>
-              </Stack>
-            </Group>
-          </Grid.Col>
-        </Grid>
-      </Card.Section>
     </Card>
   )
 }
