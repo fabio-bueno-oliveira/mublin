@@ -152,16 +152,16 @@ export default function GigsDashboard() {
                   <Text size="sm" fw={500} lineClamp={1}>
                     {nextGig ? nextGig?.gig?.title : 'Nenhuma gig futura'}
                   </Text>
-                  <Group gap={4}>
-                    {nextGig && (
+                  {nextGig && (
+                    <Group gap={4}>
                       <Text size="xs" c="dimmed" lineClamp={1}>
                         {dayjs(nextGig?.gig?.date).format('DD [de] MMMM')}
                       </Text>
-                    )}
-                    <Badge fw={300} size="xs" variant="transparent" color="orange">
-                      {dayjs(nextGig?.gig?.date).fromNow()}
-                    </Badge>
-                  </Group>
+                      <Badge fw={300} size="xs" variant="transparent" color="orange">
+                        {dayjs(nextGig?.gig?.date).fromNow()}
+                      </Badge>
+                    </Group>
+                  )}
                 </Stack>
               </Paper>
             </Grid.Col>

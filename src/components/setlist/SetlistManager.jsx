@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Stack,
   Group,
+  Box,
   Paper,
   Select,
   TextInput,
@@ -16,6 +17,7 @@ import {
   Collapse,
   Popover,
   Anchor,
+  Fieldset,
 } from '@mantine/core'
 import {
   IconPlus,
@@ -55,6 +57,7 @@ export default function SetlistManager({ projectId, value, onChange }) {
 
   const [newSetlistName, setNewSetlistName] = useState('')
   const [creatingSetlist, setCreatingSetlist] = useState(false)
+  const [showNewSetlistForm, setShowNewSetlistForm] = useState(false)
 
   const [showQuickTrack, setShowQuickTrack] = useState(false)
   const [quickTrackTitle, setQuickTrackTitle] = useState('')
@@ -90,8 +93,11 @@ export default function SetlistManager({ projectId, value, onChange }) {
     setCreatingSetlist(true)
     try {
       const setlist = await createSetlist(projectId, newSetlistName.trim(), user.id)
-      await queryClient.invalidateQueries({ queryKey: ['project-setlists', projectId] })
+      await queryClient.invalidateQueries({
+        queryKey: ['project-setlists', projectId],
+      })
       setNewSetlistName('')
+      setShowNewSetlistForm(false)
       onChange(setlist.id)
     } finally {
       setCreatingSetlist(false)
@@ -177,31 +183,67 @@ export default function SetlistManager({ projectId, value, onChange }) {
         />
       )}
 
-      <Paper withBorder p={0} radius="md">
-        <Text size="xs" fw={500} mb={6}>
-          {setlists.length > 0
-            ? 'Ou crie uma nova setlist para este projeto'
-            : 'Este projeto ainda não tem nenhuma setlist. Crie a primeira:'}
-        </Text>
-        <Group align="flex-end" gap="xs">
-          <TextInput
-            placeholder="Ex: Repertório acústico"
-            value={newSetlistName}
-            onChange={(e) => setNewSetlistName(e.currentTarget.value)}
-            style={{ flex: 1 }}
-          />
+      {setlists.length === 0 ? (
+        <Paper withBorder p="sm" radius="md">
+          <Text size="xs" fw={500} mb={6}>
+            Este projeto ainda não tem nenhuma setlist. Crie a primeira:
+          </Text>
+          <Group align="flex-end" gap="xs">
+            <TextInput
+              placeholder="Ex: Repertório acústico"
+              value={newSetlistName}
+              onChange={(e) => setNewSetlistName(e.currentTarget.value)}
+              style={{ flex: 1 }}
+            />
+            <Button
+              type="button"
+              leftSection={<IconPlus size={16} />}
+              onClick={handleCreateSetlist}
+              loading={creatingSetlist}
+              disabled={!newSetlistName.trim()}
+              size="sm"
+            >
+              Criar setlist
+            </Button>
+          </Group>
+        </Paper>
+      ) : (
+        <>
           <Button
             type="button"
-            leftSection={<IconPlus size={16} />}
-            onClick={handleCreateSetlist}
-            loading={creatingSetlist}
-            disabled={!newSetlistName.trim()}
-            size="sm"
+            variant="subtle"
+            size="xs"
+            w="fit-content"
+            leftSection={showNewSetlistForm ? undefined : <IconPlus size={14} />}
+            onClick={() => setShowNewSetlistForm((v) => !v)}
           >
-            Criar setlist
+            {showNewSetlistForm ? 'Cancelar' : 'Criar uma nova setlist para este projeto'}
           </Button>
-        </Group>
-      </Paper>
+
+          <Collapse expanded={showNewSetlistForm}>
+            <Box>
+              <Group align="flex-end" gap="xs">
+                <TextInput
+                  placeholder="Ex: Repertório acústico"
+                  value={newSetlistName}
+                  onChange={(e) => setNewSetlistName(e.currentTarget.value)}
+                  style={{ flex: 1 }}
+                />
+                <Button
+                  type="button"
+                  leftSection={<IconPlus size={16} />}
+                  onClick={handleCreateSetlist}
+                  loading={creatingSetlist}
+                  disabled={!newSetlistName.trim()}
+                  size="sm"
+                >
+                  Criar setlist
+                </Button>
+              </Group>
+            </Box>
+          </Collapse>
+        </>
+      )}
 
       {value && (
         <>
@@ -215,7 +257,8 @@ export default function SetlistManager({ projectId, value, onChange }) {
 
           <Button
             type="button"
-            variant="subtle"
+            variant="light"
+            color="teal"
             size="xs"
             w="fit-content"
             onClick={() => setShowQuickTrack((v) => !v)}
@@ -296,86 +339,93 @@ export default function SetlistManager({ projectId, value, onChange }) {
             </Paper>
           </Collapse>
 
-          <Stack gap="xs">
-            {loadingTracks && (
-              <Group justify="center" py="sm">
-                <Loader size="xs" />
-              </Group>
-            )}
-            {!loadingTracks && tracks.length === 0 && (
-              <Text size="sm" c="dimmed" ta="center" py="sm">
-                Nenhuma faixa adicionada ainda
-              </Text>
-            )}
-            {tracks.map((t, index) => (
-              <Paper key={t.setlist_track_id} p="xs" withBorder radius="md">
-                <Group justify="space-between" wrap="nowrap">
-                  <Group gap="xs" wrap="nowrap">
-                    <Stack gap={0}>
-                      <ActionIcon
-                        type="button"
-                        size="xs"
-                        variant="subtle"
-                        disabled={index === 0}
-                        onClick={() => handleMove(index, -1)}
-                      >
-                        <IconChevronUp size={12} />
-                      </ActionIcon>
-                      <ActionIcon
-                        type="button"
-                        size="xs"
-                        variant="subtle"
-                        disabled={index === tracks.length - 1}
-                        onClick={() => handleMove(index, 1)}
-                      >
-                        <IconChevronDown size={12} />
-                      </ActionIcon>
-                    </Stack>
-                    <Text size="sm" fw={500}>
-                      {index + 1}. {t.title}
-                    </Text>
-                    <Text size="xs" c="dimmed">
-                      {formatDuration(t.duration_seconds)}
-                    </Text>
-                    {t.spotify_id && (
-                      <Anchor
-                        href={buildSpotifyTrackUrl(t.spotify_id)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        c="dimmed"
-                      >
-                        <IconBrandSpotify size={16} color="#1DB954" />
-                      </Anchor>
-                    )}
-                    {t.youtube_path && (
-                      <Anchor
-                        href={t.youtube_path}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        c="dimmed"
-                      >
-                        <IconBrandYoutube size={16} color="#FF0000" />
-                      </Anchor>
-                    )}
-                    {t.project_id !== projectId && (
-                      <Badge size="xs" variant="light" color="teal">
-                        Pública
-                      </Badge>
-                    )}
-                  </Group>
-                  <ActionIcon
-                    type="button"
-                    size="sm"
-                    variant="subtle"
-                    color="red"
-                    onClick={() => handleRemoveTrack(t.setlist_track_id)}
-                  >
-                    <IconTrash size={14} />
-                  </ActionIcon>
+          <Fieldset
+            legend={`
+              Setlist ${setlists.find((s) => String(s.id) === String(value))?.name || 'Repertório'} (${tracks.length} músicas)
+            `}
+            variant="default"
+          >
+            <Stack gap="xs">
+              {loadingTracks && (
+                <Group justify="center" py="sm">
+                  <Loader size="xs" />
                 </Group>
-              </Paper>
-            ))}
-          </Stack>
+              )}
+              {!loadingTracks && tracks.length === 0 && (
+                <Text size="sm" c="dimmed" ta="center" py="sm">
+                  Nenhuma faixa adicionada ainda
+                </Text>
+              )}
+              {tracks.map((t, index) => (
+                <Paper key={t.setlist_track_id} p="xs" withBorder radius="md">
+                  <Group justify="space-between" wrap="nowrap">
+                    <Group gap="xs" wrap="nowrap">
+                      <Stack gap={0}>
+                        <ActionIcon
+                          type="button"
+                          size="xs"
+                          variant="subtle"
+                          disabled={index === 0}
+                          onClick={() => handleMove(index, -1)}
+                        >
+                          <IconChevronUp size={12} />
+                        </ActionIcon>
+                        <ActionIcon
+                          type="button"
+                          size="xs"
+                          variant="subtle"
+                          disabled={index === tracks.length - 1}
+                          onClick={() => handleMove(index, 1)}
+                        >
+                          <IconChevronDown size={12} />
+                        </ActionIcon>
+                      </Stack>
+                      <Text size="sm" fw={500}>
+                        {index + 1}. {t.title}
+                      </Text>
+                      <Text size="xs" c="dimmed">
+                        {formatDuration(t.duration_seconds)}
+                      </Text>
+                      {t.spotify_id && (
+                        <Anchor
+                          href={buildSpotifyTrackUrl(t.spotify_id)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          c="dimmed"
+                        >
+                          <IconBrandSpotify size={16} color="#1DB954" />
+                        </Anchor>
+                      )}
+                      {t.youtube_path && (
+                        <Anchor
+                          href={t.youtube_path}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          c="dimmed"
+                        >
+                          <IconBrandYoutube size={16} color="#FF0000" />
+                        </Anchor>
+                      )}
+                      {t.project_id !== projectId && (
+                        <Badge size="xs" variant="light" color="teal">
+                          Pública
+                        </Badge>
+                      )}
+                    </Group>
+                    <ActionIcon
+                      type="button"
+                      size="sm"
+                      variant="subtle"
+                      color="red"
+                      onClick={() => handleRemoveTrack(t.setlist_track_id)}
+                    >
+                      <IconTrash size={14} />
+                    </ActionIcon>
+                  </Group>
+                </Paper>
+              ))}
+            </Stack>
+          </Fieldset>
         </>
       )}
     </Stack>

@@ -430,20 +430,20 @@ export default function NewGig() {
   }
 
   function addRole() {
-    setGigRoles([
-      ...gigRoles,
-      {
-        tempId: Date.now(),
-        role_id: null,
-        description: '',
-        fee: null,
-        fee_not_informed: false,
-        experience_level: 2,
-        assigned: null,
-        is_sub: false,
-        sub_for_profile: null,
-      },
-    ])
+    setExpandedRoleDetails([])
+    const newRole = {
+      tempId: Date.now(),
+      role_id: null,
+      description: '',
+      fee: null,
+      fee_not_informed: false,
+      experience_level: 2,
+      assigned: null,
+      is_sub: false,
+      sub_for_profile: null,
+      invitation_description: '',
+    }
+    setGigRoles([...gigRoles, newRole])
   }
   function updateRole(tempId, patch) {
     setGigRoles(gigRoles.map((r) => (r.tempId === tempId ? { ...r, ...patch } : r)))
@@ -496,6 +496,7 @@ export default function NewGig() {
             assigned: member.profile,
             is_sub: false,
             sub_for_profile: null,
+            invitation_description: '',
           })),
       )
 
@@ -576,7 +577,11 @@ export default function NewGig() {
         throw error
       }
 
-      const normalized = gigRoles.map((r) => ({
+      // Só enviamos vagas com uma atividade (role) de fato selecionada —
+      // vagas em branco (ex: adicionadas e não preenchidas) são descartadas aqui.
+      const rolesToInsert = gigRoles.filter((r) => r.role_id)
+
+      const normalized = rolesToInsert.map((r) => ({
         gig_id: gig.id,
         role_id: r.role_id,
         description: r.description,
@@ -585,12 +590,59 @@ export default function NewGig() {
         is_sub: r.is_sub,
         sub_for: r.is_sub ? r.sub_for_profile?.id || null : null,
       }))
-      const { error: rolesError } = await supabase.from('gig_roles').insert(normalized)
+
+      // .select() é essencial aqui: gig_roles.id é um uuid gerado pelo banco
+      // (gen_random_uuid()), e precisamos desses ids para criar os convites
+      // (gig_applications) logo abaixo, referenciando cada vaga certa.
+      const { data: insertedRoles, error: rolesError } = await supabase
+        .from('gig_roles')
+        .insert(normalized)
+        .select()
       if (rolesError) {
         throw rolesError
       }
+
+      // Um INSERT ... VALUES (múltiplas linhas) simples no Postgres retorna as
+      // linhas na mesma ordem em que foram enviadas, então dá pra parear pelo
+      // índice com rolesToInsert (mesma ordem usada para montar "normalized").
+      const applicationsToInsert = insertedRoles
+        .map((insertedRole, index) => ({
+          insertedRole,
+          original: rolesToInsert[index],
+        }))
+        .filter(({ original }) => original?.assigned?.id)
+        .map(({ insertedRole, original }) => ({
+          gig_id: gig.id,
+          gig_role_id: insertedRole.id,
+          profile_id: original.assigned.id,
+          invited_by: user.id,
+          invitation_description: original.invitation_description?.trim() || null,
+          // Convite: quem convida (dono da gig) já "aceitou" ao convidar;
+          // quem foi convidado fica com o convite pendente até responder.
+          status_request_gig_owner: 2, // accepted
+          status_request_appliant: 1, // pending
+        }))
+
+      if (applicationsToInsert.length > 0) {
+        const { error: applicationsError } = await supabase
+          .from('gig_applications')
+          .insert(applicationsToInsert)
+        if (applicationsError) {
+          // A gig e as vagas já foram criadas com sucesso; só os convites
+          // falharam. Avisamos sem bloquear a navegação, para não fazer o
+          // usuário perder o trabalho já salvo.
+          notifications.show({
+            title: 'Gig criada, mas houve um problema ao enviar os convites',
+            message: applicationsError.message,
+            color: 'yellow',
+          })
+          navigate('/gigs')
+          return
+        }
+      }
+
       notifications.show({ title: 'Gig criada!', color: 'green' })
-      navigate('/gigs')
+      navigate('/home')
     } catch (e) {
       notifications.show({
         title: 'Erro',
@@ -1111,9 +1163,32 @@ export default function NewGig() {
                                 )}
                               </Box>
 
-                              <Text size="xs" ta="center" lh={1.15}>
+                              <Text size="xs" ta="center" lh={1} fw={500}>
                                 {roleName}
                               </Text>
+
+                              {gr?.assigned ? (
+                                <Text
+                                  size="10px"
+                                  ta="center"
+                                  lh={1}
+                                  fw={300}
+                                  lineClamp={3}
+                                >
+                                  {gr?.assigned?.username} será convidado
+                                </Text>
+                              ) : (
+                                <Text
+                                  size="10px"
+                                  ta="center"
+                                  lh={1}
+                                  fw={300}
+                                  lineClamp={3}
+                                  c="dimmed"
+                                >
+                                  A vaga ficará em aberto
+                                </Text>
+                              )}
                             </Stack>
 
                             {!isLast && (
@@ -1153,38 +1228,17 @@ export default function NewGig() {
 
                       return (
                         <Fieldset legend={`Vaga ${index + 1}`} key={gr.tempId}>
-                          <Grid>
-                            <Grid.Col span={{ base: 12, sm: 8 }}>
-                              <InternalSearchSelect
-                                label="Atividade"
-                                placeholder="Selecione..."
-                                data={groupedRolesData}
-                                value={gr.role_id ? String(gr.role_id) : null}
-                                onChange={(v) =>
-                                  updateRole(gr.tempId, {
-                                    role_id: v ? Number(v) : null,
-                                  })
-                                }
-                              />
-                            </Grid.Col>
-
-                            <Grid.Col span={{ base: 12, sm: 4 }}>
-                              <Select
-                                label="Nível"
-                                data={[
-                                  { value: '1', label: 'Iniciante' },
-                                  { value: '2', label: 'Intermediário' },
-                                  { value: '3', label: 'Avançado' },
-                                ]}
-                                value={String(gr.experience_level)}
-                                onChange={(v) =>
-                                  updateRole(gr.tempId, {
-                                    experience_level: Number(v),
-                                  })
-                                }
-                              />
-                            </Grid.Col>
-                          </Grid>
+                          <InternalSearchSelect
+                            label="Atividade"
+                            placeholder="Selecione..."
+                            data={groupedRolesData}
+                            value={gr.role_id ? String(gr.role_id) : null}
+                            onChange={(v) =>
+                              updateRole(gr.tempId, {
+                                role_id: v ? Number(v) : null,
+                              })
+                            }
+                          />
 
                           {/* MÚSICO DESIGNADO */}
                           {gr.role_id && selectedProject && (
@@ -1279,35 +1333,57 @@ export default function NewGig() {
                               bg="light-dark(#f5f5f5, #171717)"
                             >
                               <Stack gap="sm">
-                                {/* CACHÊ */}
-                                <Box>
-                                  <NumberInput
-                                    label="Cachê"
-                                    placeholder="R$ 0,00"
-                                    min={0}
-                                    decimalScale={2}
-                                    fixedDecimalScale
-                                    thousandSeparator="."
-                                    decimalSeparator=","
-                                    prefix="R$ "
-                                    value={gr.fee}
-                                    onChange={(v) => updateRole(gr.tempId, { fee: v })}
-                                    disabled={gr.fee_not_informed}
-                                  />
+                                <Grid>
+                                  <Grid.Col span={{ base: 12, sm: 6 }}>
+                                    <Select
+                                      label="Nível"
+                                      data={[
+                                        { value: '1', label: 'Iniciante' },
+                                        { value: '2', label: 'Intermediário' },
+                                        { value: '3', label: 'Avançado' },
+                                      ]}
+                                      value={String(gr.experience_level)}
+                                      onChange={(v) =>
+                                        updateRole(gr.tempId, {
+                                          experience_level: Number(v),
+                                        })
+                                      }
+                                    />
+                                  </Grid.Col>
+                                  <Grid.Col span={{ base: 12, sm: 6 }}>
+                                    {/* CACHÊ */}
+                                    <Box>
+                                      <NumberInput
+                                        label="Cachê"
+                                        placeholder="R$ 0,00"
+                                        min={0}
+                                        decimalScale={2}
+                                        fixedDecimalScale
+                                        thousandSeparator="."
+                                        decimalSeparator=","
+                                        prefix="R$ "
+                                        value={gr.fee}
+                                        onChange={(v) =>
+                                          updateRole(gr.tempId, { fee: v })
+                                        }
+                                        disabled={gr.fee_not_informed}
+                                      />
 
-                                  <Checkbox
-                                    mt={6}
-                                    size="xs"
-                                    label="Não informado"
-                                    checked={gr.fee_not_informed}
-                                    onChange={(e) =>
-                                      updateRole(gr.tempId, {
-                                        fee_not_informed: e.currentTarget.checked,
-                                        fee: e.currentTarget.checked ? null : gr.fee,
-                                      })
-                                    }
-                                  />
-                                </Box>
+                                      <Checkbox
+                                        mt={6}
+                                        size="xs"
+                                        label="Não informado"
+                                        checked={gr.fee_not_informed}
+                                        onChange={(e) =>
+                                          updateRole(gr.tempId, {
+                                            fee_not_informed: e.currentTarget.checked,
+                                            fee: e.currentTarget.checked ? null : gr.fee,
+                                          })
+                                        }
+                                      />
+                                    </Box>
+                                  </Grid.Col>
+                                </Grid>
 
                                 {/* DESCRIÇÃO */}
                                 <Textarea
@@ -1322,6 +1398,35 @@ export default function NewGig() {
                                     })
                                   }
                                 />
+
+                                {/* MENSAGEM DO CONVITE */}
+                                {gr.assigned && (
+                                  <Textarea
+                                    label={
+                                      <Group gap={6} wrap="nowrap" mb={2}>
+                                        <Avatar
+                                          size={20}
+                                          radius="xl"
+                                          src={getAvatarUrl(gr.assigned.avatar, 40)}
+                                        >
+                                          {gr.assigned.full_name?.[0]}
+                                        </Avatar>
+                                        <span>Mensagem do convite</span>
+                                      </Group>
+                                    }
+                                    description={`Uma mensagem pessoal para @${gr.assigned.username}, enviada junto com o convite`}
+                                    placeholder="Ex: Fala! Bora tocar comigo nessa gig?"
+                                    minRows={2}
+                                    maxRows={3}
+                                    maxLength={500}
+                                    value={gr.invitation_description || ''}
+                                    onChange={(e) =>
+                                      updateRole(gr.tempId, {
+                                        invitation_description: e.currentTarget.value,
+                                      })
+                                    }
+                                  />
+                                )}
 
                                 {/* SUBSTITUIÇÃO */}
                                 <Box>

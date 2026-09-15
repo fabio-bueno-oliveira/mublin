@@ -83,11 +83,34 @@ export async function searchAvailableTracks(projectId, query) {
   return data || []
 }
 
+// Todas as faixas do próprio projeto (sem misturar com faixas públicas de
+// terceiros). Usada no "quick add" em pills do TrackCombobox — diferente de
+// searchAvailableTracks, aqui não corremos o risco de faixas públicas
+// "roubarem" o limite antes de chegar nas faixas que realmente importam.
+export async function fetchProjectTracks(projectId) {
+  if (!projectId) {
+    return []
+  }
+  const { data, error } = await supabase
+    .from('tracks')
+    .select('id, title, duration_seconds, is_public, project_id')
+    .eq('project_id', projectId)
+    .order('title', { ascending: true })
+  if (error) {
+    throw error
+  }
+  return data || []
+}
+
 // Vincula uma track existente a uma setlist
 export async function addTrackToSetlist(setlistId, trackId, orderIndex) {
   const { data, error } = await supabase
     .from('setlist_tracks')
-    .insert({ setlist_id: setlistId, track_id: trackId, order_index: orderIndex })
+    .insert({
+      setlist_id: setlistId,
+      track_id: trackId,
+      order_index: orderIndex,
+    })
     .select('id, order_index, tracks(id, title, duration_seconds, is_public, project_id)')
     .single()
   if (error) {
