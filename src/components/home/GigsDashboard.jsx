@@ -7,7 +7,7 @@ import {
   Grid,
   Box, Stack,
   Group, Center,
-  Avatar,
+  Avatar, Anchor,
   Card, Paper,
   Text, Title,
   Slider, Button, Switch,
@@ -21,8 +21,12 @@ import {
   fetchUserGigGoals,
   upsertUserGigGoals,
 } from '../../queries/user'
+import { fetchReceivedInvitations } from '../../queries/gigs'
 import { IconCalendarEvent, IconMailBolt } from '@tabler/icons-react'
 import dayjs from 'dayjs'
+
+const PROJECT_IMAGE_PATH =
+  'https://ik.imagekit.io/mublin/projects/tr:h-100,w-100,c-maintain_ratio/'
 
 export default function GigsDashboard() {
   const { user, profile } = useAuth()
@@ -103,6 +107,17 @@ export default function GigsDashboard() {
 
   const progress = noGoal ? 0 : Math.min((gigsThisMonth / goal) * 100, 100)
   const subtleBg = 'light-dark(rgba(0,0,0,0.01), rgba(0,0,0,0.09))'
+
+  const { data: receivedInvitations = [], isLoading: loadingReceived } = useQuery({
+    queryKey: ['received-invitations', user?.id],
+    queryFn: () => fetchReceivedInvitations(user.id),
+    enabled: !!user?.id,
+    staleTime: 1000 * 60 * 2,
+  })
+
+  const pendingCount = receivedInvitations.filter(
+    (i) => !i.status_request_appliant || i.status_request_appliant === 1,
+  ).length
 
   // Dynamic greeting
   // const hour = new Date().getHours()
@@ -326,14 +341,58 @@ export default function GigsDashboard() {
         <Group gap={6} mb={2}>
           <IconMailBolt size={18} stroke={1.8} style={{ opacity: 0.6 }} />
           <Title order={3} fw={600} fz="lg">
-            Convites para gigs
+            Convites para gigs ({pendingCount})
           </Title>
         </Group>
-        <Card radius="md" withBorder p="sm" mb="md" mt={{ base: 2, sm: 8 }}>
-          <Text c="dimmed" size="sm">
-            Nenhum convite para gigs no momento
-          </Text>
-        </Card>
+        {receivedInvitations.length > 0 ? (
+          <>
+            {receivedInvitations.map((inv) => (
+              <Card
+                key={inv.id}
+                radius="md"
+                withBorder
+                p="sm"
+                mb="md"
+                mt={{ base: 2, sm: 8 }}
+              >
+                <Group gap={6}>
+                  <Avatar
+                    radius="md"
+                    size={50}
+                    src={`${PROJECT_IMAGE_PATH}${inv?.gigs?.projects?.id}/${inv?.gigs?.projects?.picture}`}
+                  />
+                  <Stack gap={0}>
+                    <Text size="xs">
+                      Convite para ser {inv?.gig_roles?.roles?.description_ptbr} em{' '}
+                      {inv?.gigs?.projects?.name} (
+                      {inv?.gigs?.projects?.project_types.name_ptbr})
+                    </Text>
+                    <Text size="xs" c="dimmed">
+                      {inv?.gigs?.type?.name} em{' '}
+                      {`${dayjs(inv?.gigs?.date).format('dddd, D [de] MMMM [de] YYYY')} (${dayjs(inv?.gigs?.date).fromNow()})`}
+                    </Text>
+                    <Anchor
+                      component={Link}
+                      to={`/gig-invitations`}
+                      size="xs"
+                      fw={400}
+                      c="mublinColor"
+                      style={{ width: 'fit-content' }}
+                    >
+                      Ver mais detalhes
+                    </Anchor>
+                  </Stack>
+                </Group>
+              </Card>
+            ))}
+          </>
+        ) : (
+          <Card radius="md" withBorder p="sm" mb="md" mt={{ base: 2, sm: 8 }}>
+            <Text c="dimmed" size="sm">
+              Nenhum convite para gigs no momento
+            </Text>
+          </Card>
+        )}
       </Box>
     </>
   )

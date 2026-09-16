@@ -211,13 +211,14 @@ export default function SetlistManager({ projectId, value, onChange }) {
         <>
           <Button
             type="button"
-            variant="subtle"
+            variant="outline"
             size="xs"
             w="fit-content"
-            leftSection={showNewSetlistForm ? undefined : <IconPlus size={14} />}
             onClick={() => setShowNewSetlistForm((v) => !v)}
           >
-            {showNewSetlistForm ? 'Cancelar' : 'Criar uma nova setlist para este projeto'}
+            {showNewSetlistForm
+              ? 'Cancelar'
+              : 'ou crie uma nova setlist para este projeto'}
           </Button>
 
           <Collapse expanded={showNewSetlistForm}>
@@ -257,13 +258,12 @@ export default function SetlistManager({ projectId, value, onChange }) {
 
           <Button
             type="button"
-            variant="light"
-            color="teal"
+            variant="outline"
             size="xs"
             w="fit-content"
             onClick={() => setShowQuickTrack((v) => !v)}
           >
-            {showQuickTrack ? 'Cancelar' : 'Não encontrei, cadastrar nova faixa'}
+            {showQuickTrack ? 'cancelar' : 'não encontrei, cadastrar nova faixa'}
           </Button>
 
           <Collapse expanded={showQuickTrack}>
@@ -386,7 +386,7 @@ export default function SetlistManager({ projectId, value, onChange }) {
                       <Text size="xs" c="dimmed">
                         {formatDuration(t.duration_seconds)}
                       </Text>
-                      {t.spotify_id && (
+                      {/* {t.spotify_id && (
                         <Anchor
                           href={buildSpotifyTrackUrl(t.spotify_id)}
                           target="_blank"
@@ -395,8 +395,8 @@ export default function SetlistManager({ projectId, value, onChange }) {
                         >
                           <IconBrandSpotify size={16} color="#1DB954" />
                         </Anchor>
-                      )}
-                      {t.youtube_path && (
+                      )} */}
+                      {/* {t.youtube_path && (
                         <Anchor
                           href={t.youtube_path}
                           target="_blank"
@@ -405,7 +405,7 @@ export default function SetlistManager({ projectId, value, onChange }) {
                         >
                           <IconBrandYoutube size={16} color="#FF0000" />
                         </Anchor>
-                      )}
+                      )} */}
                       {t.project_id !== projectId && (
                         <Badge size="xs" variant="light" color="teal">
                           Pública

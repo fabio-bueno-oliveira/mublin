@@ -135,3 +135,97 @@ export async function fetchGigsCreatedByMe(userId) {
   }
   return data ?? []
 }
+
+/**
+ * Convites ENVIADOS pelo usuário logado (ele é o dono da gig).
+ * Filtramos pelo created_by da tabela gigs.
+ */
+export async function fetchSentInvitations(userId) {
+  const { data, error } = await supabase
+    .from('gig_applications')
+    .select(
+      `
+      id,
+      created_at,
+      invitation_description,
+      status_request_gig_owner,
+      status_request_appliant,
+      gigs (
+        id,
+        date,
+        title,
+        created_by,
+        type:event_types ( name ),
+        city:cities ( name ),
+        projects ( id, name, slug, picture, project_types ( name_ptbr ) )
+      ),
+      gig_roles (
+        id, description, fee, is_filled, is_sub, sub_for,
+        roles ( description_ptbr ),
+        experience_levels ( id, name_pt ),
+        profiles ( avatar, username )
+      ),
+      profiles:profile_id (
+        id,
+        full_name,
+        username,
+        avatar,
+        title
+      )
+    `,
+    )
+    .eq('gigs.created_by', userId)
+    .order('created_at', { ascending: false })
+
+  if (error) {
+    throw error
+  }
+  // Filtrar linhas onde gigs não veio (join falhou — owner diferente)
+  return (data ?? []).filter((r) => r.gigs !== null)
+}
+
+/**
+ * Convites RECEBIDOS pelo usuário logado (ele é o profile_id convidado).
+ */
+export async function fetchReceivedInvitations(userId) {
+  const { data, error } = await supabase
+    .from('gig_applications')
+    .select(
+      `
+      id,
+      created_at,
+      invitation_description,
+      status_request_gig_owner,
+      status_request_appliant,
+      gigs (
+        id,
+        date,
+        title,
+        created_by,
+        type:event_types ( name ),
+        city:cities ( name ),
+        projects ( id, name, slug, picture, project_types ( name_ptbr ) )
+      ),
+      gig_roles (
+        id, description, fee, is_filled, is_sub, sub_for,
+        roles ( description_ptbr ),
+        experience_levels ( id, name_pt ),
+        profiles ( avatar, username )
+      ),
+      profiles:invited_by (
+        id,
+        full_name,
+        username,
+        avatar,
+        title
+      )
+    `,
+    )
+    .eq('profile_id', userId)
+    .order('created_at', { ascending: false })
+
+  if (error) {
+    throw error
+  }
+  return data ?? []
+}

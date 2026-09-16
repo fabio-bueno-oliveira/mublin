@@ -39,18 +39,17 @@ import {
   IconSend, IconCalendar, IconClock,
   IconMapPin, IconShirt,
   IconMicrophone2,
-  IconCheck,
+  IconCheck, IconX,
   IconChevronRightFilled,
   IconExclamationCircle,
   IconHistory,
-  IconChevronUp,
-  IconChevronDown,
-  IconX,
+  IconChevronUp, IconChevronDown,
   IconQuestionMark,
   IconReplaceUser,
   IconCurrencyDollar,
   IconWand,
 } from '@tabler/icons-react'
+import dayjs from 'dayjs'
 
 function slugify(text) {
   return (text || '')
@@ -414,9 +413,6 @@ export default function NewGig() {
 
   function handleSelectEvent(ev) {
     setSelectedEvent(ev)
-    // ev.venue não traz "id" (só dados pra exibição) — então não dá pra vincular
-    // via venue_id aqui. O VenueCombobox fica oculto e o local do evento é só exibido
-    // como leitura (ver JSX abaixo), sem popular selectedVenue/venue_id.
     setSelectedVenue(null)
     setShowManualVenue(false)
 
@@ -611,26 +607,28 @@ export default function NewGig() {
           original: rolesToInsert[index],
         }))
         .filter(({ original }) => original?.assigned?.id)
-        .map(({ insertedRole, original }) => ({
-          gig_id: gig.id,
-          gig_role_id: insertedRole.id,
-          profile_id: original.assigned.id,
-          invited_by: user.id,
-          invitation_description: original.invitation_description?.trim() || null,
-          // Convite: quem convida (dono da gig) já "aceitou" ao convidar;
-          // quem foi convidado fica com o convite pendente até responder.
-          status_request_gig_owner: 2, // accepted
-          status_request_appliant: 1, // pending
-        }))
+        .map(({ insertedRole, original }) => {
+          const isSelfInvite = original.assigned.id === user.id
+          return {
+            gig_id: gig.id,
+            gig_role_id: insertedRole.id,
+            profile_id: original.assigned.id,
+            invited_by: user.id,
+            invitation_description: original.invitation_description?.trim() || null,
+            // Convite: quem convida (dono da gig) já "aceitou" ao convidar;
+            // quem foi convidado fica com o convite pendente até responder —
+            // exceto quando a pessoa se auto-designa, caso em que já nasce
+            // aceito (ela já sabe que quer participar).
+            status_request_gig_owner: 2, // accepted
+            status_request_appliant: isSelfInvite ? 2 : 1, // accepted : pending
+          }
+        })
 
       if (applicationsToInsert.length > 0) {
         const { error: applicationsError } = await supabase
           .from('gig_applications')
           .insert(applicationsToInsert)
         if (applicationsError) {
-          // A gig e as vagas já foram criadas com sucesso; só os convites
-          // falharam. Avisamos sem bloquear a navegação, para não fazer o
-          // usuário perder o trabalho já salvo.
           notifications.show({
             title: 'Gig criada, mas houve um problema ao enviar os convites',
             message: applicationsError.message,
@@ -832,13 +830,18 @@ export default function NewGig() {
                   </Button>
                 )}
               </Group>
-              <Title order={4}>Detalhes da gig</Title>
+              <Title order={4}>
+                {step > 2
+                  ? `Detalhes da gig '${form.getValues()?.title}'`
+                  : 'Detalhes da gig'}
+              </Title>
               {step > 2 && (
                 <Stack gap={4} mt="xs">
                   <Group gap={6}>
                     <IconMicrophone2 color="gray" size={14} />
                     <Text size="sm" c="dimmed">
-                      {selectedEventTypeName || 'Tipo não informado'}
+                      {selectedEventTypeName || 'Tipo não informado'} |{' '}
+                      {dayjs(form.values.date).format('DD/MM/YYYY')}
                     </Text>
                   </Group>
                   <Group gap={6}>
@@ -1255,11 +1258,14 @@ export default function NewGig() {
                                   label=""
                                   projectId={selectedProject.id}
                                   roleId={gr.role_id}
-                                  onSelect={(profile) =>
+                                  onSelect={(profile) => {
+                                    console.log(gr.tempId, {
+                                      assigned: profile,
+                                    })
                                     updateRole(gr.tempId, {
                                       assigned: profile,
                                     })
-                                  }
+                                  }}
                                 />
                               )}
 

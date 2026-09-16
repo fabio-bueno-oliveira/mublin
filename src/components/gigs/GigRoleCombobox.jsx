@@ -41,7 +41,11 @@ export default function GigRoleCombobox({
         p_search: debouncedSearch || '',
       })
       if (error) throw error
-      return data
+      // A RPC devolve "profile_id" (não "id"). Normalizamos aqui pra bater
+      // com o shape usado no resto do app pra objetos de perfil (portfolio,
+      // sub_for_profile etc.), que sempre usam "id" — evita ter que lembrar
+      // dessa exceção em todo lugar que consome o resultado deste combobox.
+      return (data || []).map((item) => ({ ...item, id: item.profile_id }))
     },
     enabled: !!projectId && !!roleId,
   })
@@ -64,7 +68,9 @@ export default function GigRoleCombobox({
       offset={8}
       middlewares={{ flip: false, shift: false }}
       onOptionSubmit={(val) => {
-        const profile = data.find((d) => d.profile_id === val)
+        // "id" aqui vem da normalização feita acima (profile_id -> id) —
+        // precisa casar com o mesmo campo usado no value={} das opções.
+        const profile = data.find((d) => String(d.id) === val)
         if (profile) {
           onSelect(profile)
           setSearch('')
@@ -123,7 +129,7 @@ export default function GigRoleCombobox({
                     {reason}
                   </Text>
                   {profiles.map((p) => (
-                    <Combobox.Option key={p.profile_id} value={p.profile_id}>
+                    <Combobox.Option key={p.id} value={String(p.id)}>
                       <Group gap="xs" wrap="nowrap">
                         <Avatar
                           src={p.avatar ? `${AVATAR_PATH}tr:h-60,w-60/${p.avatar}` : null}

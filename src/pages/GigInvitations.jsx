@@ -4,9 +4,11 @@ import { supabase } from '../lib/supabaseClient'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../hooks/useAuth'
 import { Helmet } from 'react-helmet-async'
+import { fetchReceivedInvitations, fetchSentInvitations } from '../queries/gigs'
 import {
   Container,
   Stack,
+  Grid,
   Title,
   Text,
   Group,
@@ -21,19 +23,23 @@ import {
   Alert,
   Tabs,
   Box,
-  Divider,
+  DataList,
   Anchor,
   Flex,
   Tooltip,
+  Fieldset,
+  Center,
 } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
+import { modals } from '@mantine/modals'
 import {
   IconMoodSad,
   IconChevronDown,
   IconChevronUp,
   IconSend,
   IconCheck,
+  IconClock,
 } from '@tabler/icons-react'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
@@ -47,100 +53,12 @@ const AVATAR_PATH =
 
 // ─── Status lookup (applications_statuses) ────────────────────────────────────
 const STATUS_MAP = {
-  1: { label: 'Pendente', color: 'orange' },
-  2: { label: 'Aceito', color: 'lime' },
+  1: { label: 'Pendente', color: 'gray' },
+  2: { label: 'Aceito', color: 'green' },
   3: { label: 'Declinado', color: 'red' },
 }
 
 // ─── Queries ──────────────────────────────────────────────────────────────────
-
-/**
- * Convites ENVIADOS pelo usuário logado (ele é o dono da gig).
- * Filtramos pelo created_by da tabela gigs.
- */
-async function fetchSentInvitations(userId) {
-  const { data, error } = await supabase
-    .from('gig_applications')
-    .select(
-      `
-      id,
-      created_at,
-      invitation_description,
-      status_request_gig_owner,
-      status_request_appliant,
-      gigs (
-        id,
-        title,
-        created_by,
-        projects ( id, name, slug, picture, project_types ( name_ptbr ) )
-      ),
-      gig_roles (
-        id, description, fee, is_filled, is_sub, sub_for,
-        roles ( description_ptbr ),
-        experience_levels ( id, name_pt ),
-        profiles ( avatar, username )
-      ),
-      profiles:profile_id (
-        id,
-        full_name,
-        username,
-        avatar,
-        title
-      )
-    `,
-    )
-    .eq('gigs.created_by', userId)
-    .order('created_at', { ascending: false })
-
-  if (error) {
-    throw error
-  }
-  // Filtrar linhas onde gigs não veio (join falhou — owner diferente)
-  return (data ?? []).filter((r) => r.gigs !== null)
-}
-
-/**
- * Convites RECEBIDOS pelo usuário logado (ele é o profile_id convidado).
- */
-async function fetchReceivedInvitations(userId) {
-  const { data, error } = await supabase
-    .from('gig_applications')
-    .select(
-      `
-      id,
-      created_at,
-      invitation_description,
-      status_request_gig_owner,
-      status_request_appliant,
-      gigs (
-        id,
-        title,
-        created_by,
-        projects ( id, name, slug, picture, project_types ( name_ptbr ) )
-      ),
-      gig_roles (
-        id, description, fee, is_filled, is_sub, sub_for,
-        roles ( description_ptbr ),
-        experience_levels ( id, name_pt ),
-        profiles ( avatar, username )
-      ),
-      profiles:profile_id (
-        id,
-        full_name,
-        username,
-        avatar,
-        title
-      )
-    `,
-    )
-    .eq('profile_id', userId)
-    .order('created_at', { ascending: false })
-
-  if (error) {
-    throw error
-  }
-  return data ?? []
-}
 
 /**
  * Comentários de uma application.
@@ -206,14 +124,13 @@ function ApplicationComments({ applicationId, currentUserId }) {
   })
 
   return (
-    <Stack gap="xs" mt="sm">
-      <Divider label="Comentários" labelPosition="left" />
+    <Stack gap="xs">
       {isLoading ? (
-        <Text size="xs" c="dimmed">
+        <Text size="sm" c="dimmed">
           Carregando comentários...
         </Text>
       ) : comments.length === 0 ? (
-        <Text size="xs" c="dimmed">
+        <Text size="sm" c="dimmed">
           Nenhum comentário ainda.
         </Text>
       ) : (
@@ -252,7 +169,7 @@ function ApplicationComments({ applicationId, currentUserId }) {
       )}
 
       {/* Campo novo comentário */}
-      <Group align="flex-end" gap="xs" mt="xs">
+      <Group align="flex-end" gap="xs">
         <Textarea
           placeholder="Escreva um comentário..."
           value={newComment}
@@ -261,7 +178,7 @@ function ApplicationComments({ applicationId, currentUserId }) {
           minRows={1}
           maxRows={4}
           flex={1}
-          size="xs"
+          size="sm"
         />
         <Tooltip label="Enviar">
           <ActionIcon
@@ -287,6 +204,7 @@ function ApplicationComments({ applicationId, currentUserId }) {
 
 function InvitationCard({ invitation, currentUserId, mode, userProfile }) {
   const queryClient = useQueryClient()
+  const [gigDetailsExpanded, { toggle: toggleGigDetails }] = useDisclosure(false)
   const [expanded, { toggle }] = useDisclosure(false)
 
   const ownerStatus = STATUS_MAP[invitation.status_request_gig_owner]
@@ -316,9 +234,31 @@ function InvitationCard({ invitation, currentUserId, mode, userProfile }) {
     },
   })
 
-  const profile = invitation.profiles
-  const gig = invitation.gigs
-  const role = invitation.gig_roles
+  const profile = invitation?.profiles
+  const role = invitation?.gig_roles
+  const fee = invitation?.gig_roles?.fee
+
+  const dataListDetails = [
+    { label: 'Atividade:', value: role?.roles?.description_ptbr },
+    {
+      label: 'Projeto/Artista:',
+      value: `${invitation?.gigs?.projects?.name} (${invitation?.gigs?.projects?.project_types.name_ptbr})`,
+    },
+    { label: 'Cachê:', value: fee ? fee : 'Não informado', disabled: !fee },
+    {
+      label: 'Data da Gig:',
+      value: `${dayjs(invitation?.gigs?.date).format('dddd, D [de] MMMM [de] YYYY')} (${dayjs(invitation?.gigs?.date).fromNow()})`,
+    },
+    { label: 'Tipo da Gig:', value: invitation?.gigs?.type?.name },
+    { label: 'Título da Gig:', value: invitation?.gigs?.title },
+    {
+      label: 'Cidade:',
+      value: invitation?.gigs?.city?.name
+        ? invitation?.gigs?.city?.name
+        : 'Não informado',
+      disabled: !invitation?.gigs?.city?.name,
+    },
+  ]
 
   const isReceived = mode === 'received'
   const isAcceptedByAppliant = invitation.status_request_appliant === 2
@@ -327,173 +267,245 @@ function InvitationCard({ invitation, currentUserId, mode, userProfile }) {
     (!invitation.status_request_appliant || invitation.status_request_appliant === 1)
 
   return (
-    <Paper withBorder radius="md" p="md">
-      <Text size="xs" c="dimmed" mb={4}>
-        {isReceived ? 'Convite recebido ' : 'Convite enviado em '}
-        {dayjs(invitation.created_at).format('dddd, D [de] MMMM [de] YYYY [às] HH:mm')}
-      </Text>
-      <Title order={3} size="md" fw={300} mb="sm">
-        {role?.roles?.description_ptbr} em {invitation?.gigs?.projects?.name} (
-        {invitation?.gigs?.projects?.project_types.name_ptbr})
+    <Paper withBorder radius="md" p="sm">
+      <Group gap={4} mb={4}>
+        <Text size="xs" c="dimmed" style={{ cursor: 'default' }}>
+          {isReceived ? 'Convite recebido ' : 'Convite enviado em '}
+          {dayjs(invitation.created_at).fromNow()}
+        </Text>
+        <Tooltip
+          label={`Convite criado em ${dayjs(invitation.created_at).format(
+            'dddd, D [de] MMMM [de] YYYY [às] HH:mm',
+          )}`}
+          fz="xs"
+          w={200}
+          multiline
+          withArrow
+        >
+          <IconClock size={12} color="gray" />
+        </Tooltip>
+      </Group>
+
+      <Title order={2} size="xl" fw={500} mb="xs">
+        {role?.roles?.description_ptbr} para {invitation?.gigs?.projects?.name} (
+        {invitation?.gigs?.projects?.project_types.name_ptbr}) em{' '}
+        {dayjs(invitation?.gigs?.date).format('D [de] MMMM [de] YYYY')}
       </Title>
-      <Group justify="space-between" wrap="nowrap" align="flex-start">
-        <Group gap="sm" wrap="nowrap" flex={1}>
-          <Avatar
-            src={profile?.avatar ? AVATAR_PATH + profile.avatar : undefined}
-            radius="xl"
-            size={44}
-            component={Link}
-            to={`/${profile?.username}`}
-          />
-          <Box flex={1}>
-            <Group gap={4} wrap="wrap">
-              <Text size="sm">Convite feito {isReceived ? 'por' : 'para'}</Text>
-              <Anchor
+
+      <Group gap="xs" wrap="nowrap" flex={1} mb="xs">
+        <Avatar
+          src={profile?.avatar ? AVATAR_PATH + profile.avatar : undefined}
+          radius="xl"
+          size={30}
+          component={Link}
+          to={`/${profile?.username}`}
+        />
+        <Box flex={1}>
+          <Group gap={4} wrap="wrap">
+            <Text size="xs">Convite feito {isReceived ? 'por' : 'para'}</Text>
+            <Anchor
+              component={Link}
+              to={`/${profile?.username}`}
+              fw={600}
+              size="xs"
+              c="var(--mantine-color-text)"
+            >
+              {profile?.full_name}
+            </Anchor>
+            <Text size="xs">{dayjs(invitation.created_at).fromNow()}</Text>
+          </Group>
+          {profile?.title && (
+            <Text size="xs" c="dimmed" lh={1.2}>
+              {profile.title}
+            </Text>
+          )}
+        </Box>
+      </Group>
+
+      <Button
+        size="xs"
+        onClick={toggleGigDetails}
+        leftSection={
+          gigDetailsExpanded ? <IconChevronUp size={14} /> : <IconChevronDown size={14} />
+        }
+      >
+        Ver detalhes da gig
+      </Button>
+      <Collapse expanded={gigDetailsExpanded}>
+        <Fieldset p="xs" legend="Detalhes da gig" my="xs">
+          <DataList p={0} gap={4} size="xs" orientation="horizontal">
+            {dataListDetails.map((item) => (
+              <DataList.Item key={item.label}>
+                <DataList.ItemLabel>{item.label}</DataList.ItemLabel>
+                <DataList.ItemValue c={item.disabled ? 'dimmed' : undefined}>
+                  {item.value}
+                </DataList.ItemValue>
+              </DataList.Item>
+            ))}
+          </DataList>
+        </Fieldset>
+      </Collapse>
+
+      <Fieldset p={4} legend="Status do convite" my="sm">
+        <Grid columns={2} gutter="md">
+          <Grid.Col span={1}>
+            <Center>
+              <Avatar
+                src={profile?.avatar ? AVATAR_PATH + profile.avatar : undefined}
+                radius="xl"
+                size={22}
                 component={Link}
                 to={`/${profile?.username}`}
-                fw={600}
-                size="sm"
-                c="var(--mantine-color-text)"
-              >
-                {profile?.full_name}
-              </Anchor>
-              <Text size="sm">{dayjs(invitation.created_at).fromNow()}</Text>
-            </Group>
-            {profile?.title && (
-              <Text size="xs" c="dimmed" lh={1.2}>
-                {profile.title}
-              </Text>
+              />
+            </Center>
+            <Text size="xs" ta="center">
+              Organizador
+            </Text>
+            {ownerStatus && (
+              <Center>
+                <Badge size="sm" color={ownerStatus.color} variant="light">
+                  {ownerStatus.label}
+                </Badge>
+              </Center>
             )}
-            <Group gap={6} mt={4} wrap="wrap">
-              {gig && (
-                <Badge variant="light" color="blue" size="xs" radius="sm">
-                  {gig.title}
+          </Grid.Col>
+          <Grid.Col span={1}>
+            <Center>
+              <Avatar
+                src={userProfile?.avatar ? AVATAR_PATH + userProfile.avatar : undefined}
+                radius="xl"
+                size={22}
+                component={Link}
+                to={`/${userProfile?.username}`}
+              />
+            </Center>
+            <Text size="xs" ta="center">
+              Convidado
+            </Text>
+            {appliantStatus && (
+              <Center>
+                <Badge size="sm" color={appliantStatus.color} variant="light">
+                  {appliantStatus.label}
                 </Badge>
-              )}
-              {role && (
-                <Badge variant="outline" color="gray" size="xs" radius="sm">
-                  {role?.roles?.description_ptbr}
-                </Badge>
-              )}
-            </Group>
-          </Box>
-        </Group>
+              </Center>
+            )}
+          </Grid.Col>
+        </Grid>
+      </Fieldset>
 
-        {/* Status badges */}
-        <Stack gap={4} align="flex-end">
-          {ownerStatus && (
-            <Tooltip label="Status do convite">
-              <Badge size="xs" color={ownerStatus.color} variant="light">
-                {ownerStatus.label}
-              </Badge>
-            </Tooltip>
+      <Stack gap="sm" mt="xs">
+        {/* Ações de resposta (apenas quem recebeu) */}
+        {canRespond && (
+          <Button.Group>
+            <Button
+              fullWidth
+              variant="filled"
+              color="lime.9"
+              onClick={() => updateStatus.mutate(2)}
+              loading={updateStatus.isPending}
+            >
+              Aceitar
+            </Button>
+            <Button
+              fullWidth
+              variant="filled"
+              color="red.9"
+              onClick={() => updateStatus.mutate(3)}
+              loading={updateStatus.isPending}
+            >
+              Declinar
+            </Button>
+          </Button.Group>
+        )}
+        {isAcceptedByAppliant && (
+          <Tooltip
+            label="Clique para voltar para pendente"
+            disabled={!isReceived}
+            withArrow
+          >
+            <Button
+              color="lime"
+              variant="light"
+              fullWidth
+              loading={updateStatus.isPending}
+              disabled={!isReceived}
+              onClick={() =>
+                modals.openConfirmModal({
+                  title: 'Retirar aceite do convite',
+                  children: (
+                    <Text size="sm">
+                      Tem certeza que deseja retirar o seu aceite? O convite ficará
+                      pendente novamente.
+                    </Text>
+                  ),
+                  labels: { confirm: 'Retirar aceite', cancel: 'Cancelar' },
+                  confirmProps: { color: 'red' },
+                  onConfirm: () => updateStatus.mutate(1),
+                })
+              }
+              leftSection={<IconCheck size={16} />}
+            >
+              Aceito
+            </Button>
+          </Tooltip>
+        )}
+
+        <Box>
+          <Text size="xs" mb={2}>
+            Descrição do convite:
+          </Text>
+          {invitation.invitation_description ? (
+            <Group align="center" gap={6}>
+              {isReceived ? (
+                <Avatar
+                  src={profile?.avatar ? AVATAR_PATH + profile.avatar : undefined}
+                  radius="xl"
+                  size={20}
+                  component={Link}
+                  to={`/${profile?.username}`}
+                  title={profile?.username}
+                />
+              ) : (
+                <Avatar
+                  src={userProfile?.avatar ? AVATAR_PATH + userProfile.avatar : undefined}
+                  radius="xl"
+                  size={20}
+                  component={Link}
+                  to={`/${userProfile?.username}`}
+                  title={userProfile?.username}
+                />
+              )}
+              <Text size="sm" style={{ whiteSpace: 'pre-line' }}>
+                {invitation.invitation_description}
+              </Text>
+            </Group>
+          ) : (
+            <Text size="sm" c="dimmed">
+              Nenhuma descrição foi enviada junto deste convite
+            </Text>
           )}
-          {appliantStatus && (
-            <Tooltip label="Resposta do convidado">
-              <Badge size="xs" color={appliantStatus.color} variant="filled">
-                {appliantStatus.label}
-              </Badge>
-            </Tooltip>
-          )}
-        </Stack>
-      </Group>
+        </Box>
+      </Stack>
 
       {/* Botão expandir */}
       <Button
         variant="subtle"
         size="xs"
         mt="xs"
-        px={0}
         rightSection={
           expanded ? <IconChevronUp size={13} /> : <IconChevronDown size={13} />
         }
         onClick={toggle}
         color="gray"
       >
-        {expanded ? 'Ocultar detalhes' : 'Ver detalhes'}
+        {expanded ? 'Ocultar comentários' : 'Comentários'}
       </Button>
 
       <Collapse expanded={expanded}>
-        <Stack gap="sm" mt="xs">
-          <Box>
-            <Text size="xs" c="dimmed" mb={2}>
-              Descrição do convite
-            </Text>
-            {invitation.invitation_description ? (
-              <Group align="center" gap={6}>
-                {isReceived ? (
-                  <Avatar
-                    src={profile?.avatar ? AVATAR_PATH + profile.avatar : undefined}
-                    radius="xl"
-                    size={20}
-                    component={Link}
-                    to={`/${profile?.username}`}
-                    title={profile?.username}
-                  />
-                ) : (
-                  <Avatar
-                    src={
-                      userProfile?.avatar ? AVATAR_PATH + userProfile.avatar : undefined
-                    }
-                    radius="xl"
-                    size={20}
-                    component={Link}
-                    to={`/${userProfile?.username}`}
-                    title={userProfile?.username}
-                  />
-                )}
-                <Text size="sm" style={{ whiteSpace: 'pre-line' }}>
-                  {invitation.invitation_description}
-                </Text>
-              </Group>
-            ) : (
-              <Text size="sm">Nenhuma descrição foi enviada junto deste convite</Text>
-            )}
-          </Box>
-
-          {/* Ações de resposta (apenas quem recebeu) */}
-          {canRespond && (
-            <Group gap="xs">
-              <Button
-                size="xs"
-                color="lime"
-                variant="light"
-                onClick={() => updateStatus.mutate(2)}
-                loading={updateStatus.isPending}
-              >
-                Aceitar Gig
-              </Button>
-              <Button
-                size="xs"
-                color="red"
-                variant="light"
-                onClick={() => updateStatus.mutate(3)}
-                loading={updateStatus.isPending}
-              >
-                Declinar Gig
-              </Button>
-            </Group>
-          )}
-          {isAcceptedByAppliant && (
-            <Button
-              size="xs"
-              color="lime"
-              variant="light"
-              loading={updateStatus.isPending}
-              style={{ width: 'fit-content' }}
-              disabled
-              leftSection={<IconCheck size={16} />}
-            >
-              Aceito
-            </Button>
-          )}
-
-          {/* Seção de comentários */}
-          <ApplicationComments
-            applicationId={invitation.id}
-            currentUserId={currentUserId}
-          />
-        </Stack>
+        <ApplicationComments
+          applicationId={invitation.id}
+          currentUserId={currentUserId}
+        />
       </Collapse>
     </Paper>
   )
