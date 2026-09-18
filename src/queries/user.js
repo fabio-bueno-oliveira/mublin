@@ -464,7 +464,10 @@ export async function fetchUserNextGig(userId, fromIsoDate) {
       gig:gigs!inner (
         id,
         title,
-        date
+        date,
+        type:event_types ( name ),
+        city:cities ( name ),
+        projects ( id, name, slug, picture, project_types ( name_ptbr ) )
       )
     `,
     )
@@ -492,7 +495,9 @@ export async function fetchUserGigsByDate(userId, isoDate) {
       gig:gigs!inner (
         id,
         title,
-        date
+        date,
+        time_stage_start,
+        time_stage_end
       )
     `,
     )

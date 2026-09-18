@@ -90,3 +90,12 @@ export const formatEventDateRange = (date_start, date_end) => {
   }
   return `${start.format('DD MMM')} - ${end.format('DD MMM')}`
 }
+
+export const formatShortDate = (dataISO) => {
+  // dataISO = "2026-09-20"
+  return dayjs(dataISO)
+    .locale('pt-br')
+    .format('MMM DD') // retorna "set 20"
+    .replace('.', '') // alguns navegadores retornam "set." com ponto, isso garante que saia limpo
+    .toUpperCase() // "SET 20"
+}

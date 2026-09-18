@@ -21,6 +21,7 @@ import { useAuth } from '../hooks/useAuth'
 import { getAvatarUrl } from '../utils/profile'
 import InspirationSpotlight from '../components/home/InspirationSpotlight'
 import UpcomingEvents from '../components/UpcomingEvents'
+import FeaturedSetup from '../components/explore/FeaturedSetup'
 // prettier-ignore
 import {
   Container, Grid,
@@ -706,7 +707,7 @@ export default function Search() {
           </>
         ) : (
           !isMobileFocused && (
-            <Stack gap="sm" mt={{ base: 'md', sm: 60 }}>
+            <Stack gap="xs" mt={{ base: 'md', sm: 60 }}>
               <EmptyState>
                 <EmptyState.Indicator>
                   <IconZoom />
@@ -783,7 +784,7 @@ export default function Search() {
                 </Stack>
               )}
 
-              <Box mt="md" mb="xs">
+              <Box mt="md">
                 <Title order={3} fw={600} fz="lg" mb="xs">
                   Novos por aqui
                 </Title>
@@ -1021,6 +1022,8 @@ export default function Search() {
               )}
 
               <UpcomingEvents />
+
+              <FeaturedSetup />
             </Stack>
           )
         )}

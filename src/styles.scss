@@ -45,7 +45,7 @@
 }
 
 [data-mantine-color-scheme='dark'] .mantine-Divider-root {
-  opacity: 0.8;
+  opacity: 0.9;
 }
 
 .mantine-Accordion-content {
@@ -136,6 +136,15 @@
   border-radius: 50%;
   background-color: var(--mantine-color-red-6);
 }
+// Dia atual - fundo leve quase transparente, sempre visível
+.mantine-MiniCalendar-day[data-is-today]:not([data-selected]) {
+  background-color: light-dark(rgba(0, 0, 0, 0.06), rgba(255, 255, 255, 0.12)) !important;
+  font-weight: 600;
+}
+// Quando o dia de hoje está selecionado, mantém a cor de seleção + anel interno
+/* .mantine-MiniCalendar-day[data-is-today][data-selected] {
+  box-shadow: inset 0 0 0 1.5px light-dark(rgba(0, 0, 0, 0.25), rgba(255, 255, 255, 0.35));
+} */
 
 /* --- Layout --- */
 .paperWrapper,

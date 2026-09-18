@@ -8,7 +8,7 @@ import {
   Badge,
   Tooltip,
 } from '@mantine/core'
-import { IconExternalLink, IconFlame } from '@tabler/icons-react'
+import { IconExternalLink } from '@tabler/icons-react'
 import dayjs from 'dayjs'
 
 function normalizeImageForDisplay(url) {
@@ -160,13 +160,13 @@ export default function NewsCard({
         )}
 
         <Group gap={4} mt={2} wrap="nowrap">
-          <Text size="xs" c="dimmed" truncate="end">
+          <Text size="11px" c="dimmed" truncate="end">
             {item.source_name}
           </Text>
-          <Text size="xs" c="dimmed">
+          <Text size="11px" c="dimmed">
             ·
           </Text>
-          <Text size="xs" c="dimmed" truncate="end">
+          <Text size="11px" c="dimmed" truncate="end">
             {timeAgo}
           </Text>
           {/* {isTrending && subtle && trendingCount > 1 && (

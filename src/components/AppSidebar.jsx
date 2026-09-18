@@ -151,7 +151,7 @@ export default function AppSidebar() {
           </Card>
 
           <Card withBorder={false} shadow="xs" radius="md" p="xs">
-            <Group gap="xs" wrap="nowrap">
+            <Group gap={6} wrap="nowrap">
               <IconEye size={16} />
               {loadingProfileViews ? (
                 <Text size="xs" c="dimmed">
@@ -180,7 +180,7 @@ export default function AppSidebar() {
           </Card>
 
           <Card withBorder={false} shadow="xs" radius="md" p="xs">
-            <Group gap="xs" wrap="nowrap">
+            <Group gap={6} wrap="nowrap">
               <IconBookmark size={16} />
               <Link
                 to="/saved"
