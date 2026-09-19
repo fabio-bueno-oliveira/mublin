@@ -11,7 +11,7 @@ import NewsCard from '../components/feed/NewsCard'
 import ProfileChecklistCard from '../components/home/ProfileChecklistCard'
 import GigsDashboard from '../components/home/GigsDashboard'
 import AppNavbarMobile from '../components/AppNavbarMobile'
-import MublinProBanner from '../components/banners/MublinPro'
+import BannerMublinPro from '../components/banners/BannerMublinPro'
 // prettier-ignore
 import {
   Skeleton, Grid,
@@ -86,9 +86,9 @@ export default function Home() {
               <>
                 {/* <FeaturedCard /> */}
 
-                <GigsDashboard />
-
                 <ProfileChecklistCard />
+
+                <GigsDashboard />
 
                 {profile?.plan === 'Pro' ? (
                   <Box mb="xs">
@@ -143,7 +143,7 @@ export default function Home() {
                     </Card>
                   </Box>
                 ) : (
-                  <MublinProBanner />
+                  <BannerMublinPro />
                 )}
 
                 {/* <Card bg="mublinColor.9">

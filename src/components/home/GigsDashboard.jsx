@@ -4,16 +4,17 @@ import { useAuth } from '../../hooks/useAuth'
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query'
 // prettier-ignore
 import {
-  Grid,
-  Box, Stack,
+  Grid, Stack,
+  Box, Table,
   Group, Center,
   Avatar,
   Card, Paper,
   Text, Title,
-  Slider, Button, Switch,
-  Popover, Badge,
+  Select, Switch, Slider,
+  Button,
+  Badge,
+  Popover,
   Divider,
-  Checkbox,
 } from '@mantine/core'
 import { MiniCalendar } from '@mantine/dates'
 import {
@@ -25,12 +26,8 @@ import {
 } from '../../queries/user'
 import { fetchReceivedInvitations } from '../../queries/gigs'
 import { formatShortDate } from '../../utils/dates'
-import {
-  IconCalendarEvent,
-  IconCheck,
-  IconClock,
-  IconMailPlus,
-} from '@tabler/icons-react'
+import BannerGigs from '../banners/BannerGigs'
+import { IconCheck, IconClock } from '@tabler/icons-react'
 import dayjs from 'dayjs'
 import 'dayjs/locale/pt-br'
 import relativeTime from 'dayjs/plugin/relativeTime'
@@ -51,7 +48,7 @@ export default function GigsDashboard() {
   const [popoverOpened, setPopoverOpened] = useState(false)
 
   const [miniCalendarCurrentDate, setMiniCalendarCurrentDate] = useState(new Date())
-  const [onlyPending, setOnlyPending] = useState(false)
+  const [invitationFilter, setInvitationFilter] = useState('all') // 'all' | 'pending'
 
   const saveGigGoalMutation = useMutation({
     mutationFn: (goals) => upsertUserGigGoals(user.id, goals),
@@ -82,8 +79,9 @@ export default function GigsDashboard() {
     enabled: !!user?.id,
     staleTime: 1000 * 60 * 5,
   })
-
   const todayIso = dayjs().format('YYYY-MM-DD')
+  const selectedIso = dayjs(miniCalendarCurrentDate).format('YYYY-MM-DD')
+  const isSelectedToday = selectedIso === todayIso
 
   const { data: nextGig } = useQuery({
     queryKey: ['user-next-gig', user?.id, todayIso],
@@ -91,25 +89,20 @@ export default function GigsDashboard() {
     enabled: !!user?.id,
     staleTime: 1000 * 60 * 5,
   })
-
-  const gigDatesSet = useMemo(() => {
-    return new Set(gigs.map((g) => dayjs(g.gig?.date).format('YYYY-MM-DD')))
-  }, [gigs])
-
-  const gigsThisMonth = useMemo(() => {
-    return gigs.filter((g) => dayjs(g.gig?.date).isSame(dayjs(), 'month')).length
-  }, [gigs])
-
-  const selectedIso = dayjs(miniCalendarCurrentDate).format('YYYY-MM-DD')
-  const isSelectedToday = selectedIso === todayIso
-
+  const gigDatesSet = useMemo(
+    () => new Set(gigs.map((g) => dayjs(g.gig?.date).format('YYYY-MM-DD'))),
+    [gigs],
+  )
+  const gigsThisMonth = useMemo(
+    () => gigs.filter((g) => dayjs(g.gig?.date).isSame(dayjs(), 'month')).length,
+    [gigs],
+  )
   const { data: gigsForSelectedDay = [], isLoading: isLoadingGigsForSelectedDay } =
     useQuery({
       queryKey: ['user-gigs-by-date', user?.id, selectedIso],
       queryFn: () => fetchUserGigsByDate(user.id, selectedIso),
       enabled: !!user?.id && !!selectedIso,
     })
-
   const { data: gigGoals } = useQuery({
     queryKey: ['user-gig-goals', user?.id],
     queryFn: () => fetchUserGigGoals(user.id),
@@ -131,19 +124,15 @@ export default function GigsDashboard() {
       staleTime: 1000 * 60 * 2,
     })
 
-  const pendingCount = receivedInvitations.filter(
-    (i) => !i.status_request_appliant || i.status_request_appliant === 1,
-  ).length
-
-  const weekDay = dayjs(miniCalendarCurrentDate).locale('pt-br').format('dddd') // ex: quarta-feira
-  const weekDayCapitalized = weekDay.charAt(0).toUpperCase() + weekDay.slice(1) // Quarta-feira
+  const weekDay = dayjs(miniCalendarCurrentDate).locale('pt-br').format('dddd')
+  const weekDayCapitalized = weekDay.charAt(0).toUpperCase() + weekDay.slice(1)
 
   const filteredInvitations = useMemo(() => {
-    if (onlyPending) {
+    if (invitationFilter === 'pending') {
       return receivedInvitations.filter((i) => i.status_request_appliant === 1)
     }
     return receivedInvitations
-  }, [receivedInvitations, onlyPending])
+  }, [receivedInvitations, invitationFilter])
 
   return (
     <>
@@ -189,27 +178,29 @@ export default function GigsDashboard() {
                     {nextGig ? nextGig?.gig?.title : 'Nenhum evento futuro'}
                   </Text>
                   {nextGig && (
-                    <Group gap={4}>
-                      <Text size="xs" c="dimmed" lineClamp={1}>
-                        {dayjs(nextGig?.gig?.date).format('DD [de] MMMM')}{' '}
-                        <Text span>({dayjs(nextGig?.gig?.date).fromNow()})</Text>
-                      </Text>
-                    </Group>
+                    <>
+                      <Group gap={4}>
+                        <Text size="xs" c="dimmed" lineClamp={1}>
+                          {dayjs(nextGig?.gig?.date).format('DD [de] MMMM')}{' '}
+                          <Text span>({dayjs(nextGig?.gig?.date).fromNow()})</Text>
+                        </Text>
+                      </Group>
+                      <Group gap={4}>
+                        <Text size="10px" c="dimmed" lh={1}>
+                          com
+                        </Text>
+                        <Avatar
+                          src={`${PROJECT_IMAGE_PATH}/${nextGig?.gig?.projects?.id}/${nextGig?.gig?.projects?.picture}`}
+                          size={20}
+                          component={Link}
+                          to={`/project/${nextGig?.gig?.projects?.slug}`}
+                        />
+                        <Text size="10px" c="dimmed" lh={1}>
+                          {nextGig?.gig?.projects?.name}
+                        </Text>
+                      </Group>
+                    </>
                   )}
-                  <Group gap={4}>
-                    <Text size="10px" c="dimmed" lh={1}>
-                      com
-                    </Text>
-                    <Avatar
-                      src={`${PROJECT_IMAGE_PATH}/${nextGig?.gig?.projects?.id}/${nextGig?.gig?.projects?.picture}`}
-                      size={20}
-                      component={Link}
-                      to={`/project/${nextGig?.gig?.projects?.slug}`}
-                    />
-                    <Text size="10px" c="dimmed" lh={1}>
-                      {nextGig?.gig?.projects?.name}
-                    </Text>
-                  </Group>
                 </Stack>
               </Paper>
             </Grid.Col>
@@ -336,7 +327,7 @@ export default function GigsDashboard() {
       </Center>
 
       <Box mt="md" mb="xs" id="gigs-list-view">
-        <Title ta="center" order={3} fw={600} fz="lg" lh={1} mb="sm">
+        <Title ta="center" order={3} fw={600} fz="lg" lh={1} mb="xs">
           {isSelectedToday
             ? `Hoje, ${weekDay}`
             : `${weekDayCapitalized}, ${dayjs(miniCalendarCurrentDate).locale('pt-br').format('DD [de] MMMM')}`}
@@ -373,26 +364,30 @@ export default function GigsDashboard() {
         )}
       </Box>
 
-      <Divider mt="lg" opacity={0.6} />
+      {/* <Divider mt="lg" opacity={0.6} /> */}
 
       <Box mt="md" mb="xs">
-        <Group gap={6} mb={2} w="100%" justify="space-between">
-          <Group gap={6}>
-            {/* <IconMailPlus size={24} stroke={1.8} style={{ opacity: 0.6 }} /> */}
-            <Title order={3} fw={600} fz="lg">
-              Convites para gigs ({filteredInvitations.length})
-              {/* {onlyPending ? ` de ${receivedInvitations.length}` : ''}) */}
-            </Title>
-          </Group>
+        <Group gap={6} mb={2} w="100%" justify="space-between" align="center">
+          <Title order={3} fw={600} fz="lg">
+            Convites para gigs ({filteredInvitations.length})
+          </Title>
 
-          <Checkbox
-            label="ocultar aceitos"
-            size="xs"
-            gap=""
-            checked={onlyPending}
-            onChange={(event) => setOnlyPending(event.currentTarget.checked)}
-            disabled={receivedInvitations.length === 0}
-          />
+          {receivedInvitations.length > 0 && (
+            <Select
+              size="sm"
+              variant="unstyled"
+              w={120}
+              placeholder="Filtrar"
+              data={[
+                { value: 'all', label: 'Todos' },
+                { value: 'pending', label: 'Pendentes' },
+              ]}
+              value={invitationFilter}
+              onChange={setInvitationFilter}
+              allowDeselect={false}
+              comboboxProps={{ withinPortal: false }}
+            />
+          )}
         </Group>
 
         {loadingReceivedInvitations && (
@@ -404,14 +399,16 @@ export default function GigsDashboard() {
         )}
 
         {!loadingReceivedInvitations &&
-        filteredInvitations.length === 0 &&
-        receivedInvitations.length > 0 ? (
-          <Card radius="md" withBorder p="sm" mb="md" mt="xs">
-            <Text c="dimmed" size="sm">
-              Nenhum convite pendente
-            </Text>
-          </Card>
-        ) : null}
+          filteredInvitations.length === 0 &&
+          receivedInvitations.length > 0 && (
+            <Card radius="md" withBorder p="sm" mb="md" mt="xs">
+              <Text c="dimmed" size="sm">
+                {invitationFilter === 'pending'
+                  ? 'Nenhum convite pendente'
+                  : 'Nenhum convite'}
+              </Text>
+            </Card>
+          )}
 
         {filteredInvitations.length > 0 ? (
           <>
@@ -463,24 +460,19 @@ export default function GigsDashboard() {
                       radius="md"
                       size={50}
                       src={`${PROJECT_IMAGE_PATH}${inv?.gigs?.projects?.id}/${inv?.gigs?.projects?.picture}`}
-                      component={Link}
-                      to={`/gig-invitations`}
                     />
                     <Badge size="xs" fw={500} variant="filled" color="dark" w="100%">
                       {formatShortDate(inv?.gigs?.date)}
                     </Badge>
                   </Stack>
                   <Stack gap={2} w="100%">
-                    <Title fz="sm">{inv?.gig_roles?.roles?.description_ptbr} </Title>
+                    <Title fz="sm">{inv?.gig_roles?.roles?.description_ptbr}</Title>
                     <Text size="xs">
                       com {inv?.gigs?.projects?.name}{' '}
                       <Text span> · {inv?.gigs?.projects?.project_types.name_ptbr}</Text>
                     </Text>
                     <Text size="xs" c="dimmed">
                       Tipo do evento: {inv?.gigs?.type?.name}
-                    </Text>
-                    <Text size="10px" c="dimmed">
-                      {`${dayjs(inv?.gigs?.date).locale('pt-br').format('dddd, D [de] MMMM [de] YYYY')} (${dayjs(inv?.gigs?.date).fromNow()})`}
                     </Text>
                   </Stack>
                 </Group>
@@ -499,7 +491,9 @@ export default function GigsDashboard() {
         )}
       </Box>
 
-      <Divider my="lg" opacity={0.6} />
+      <Box mb="md">
+        <BannerGigs />
+      </Box>
     </>
   )
 }

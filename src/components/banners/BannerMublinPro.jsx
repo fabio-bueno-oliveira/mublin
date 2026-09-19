@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { Card, Group, Box, Text, Button } from '@mantine/core'
 import { IconRosetteDiscountCheck, IconArrowRight } from '@tabler/icons-react'
 
-export default function MublinProBanner() {
+export default function BannerMublinPro() {
   return (
     <Card
       component={Link}

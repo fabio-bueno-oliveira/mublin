@@ -18,6 +18,7 @@ import {
   RollingNumber,
   Center,
   Grid,
+  Badge,
 } from '@mantine/core'
 import {
   IconMusic,
@@ -115,32 +116,19 @@ export default function Landing() {
         <Container size="lg" py={50} w="100%">
           <Grid p={0}>
             <Grid.Col span={{ base: 12, sm: 8 }}>
-              <Stack gap="lg" align={isMobile ? 'center' : 'flex-start'}>
-                <Group
-                  gap={4}
-                  px={14}
-                  h={24}
-                  style={{
-                    borderRadius: 999,
-                    border:
-                      '1px solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4))',
-                    background:
-                      'light-dark(rgba(255,255,255,0.8), rgba(255,255,255,0.06))',
-                    backdropFilter: 'blur(8px)',
-                    width: 'fit-content',
-                  }}
+              <Stack gap="md" align={isMobile ? 'center' : 'flex-start'}>
+                <Text
+                  lh={1}
+                  tt="uppercase"
+                  ff="monospace"
+                  size="xs"
+                  c="dimmed"
+                  mb="xs"
+                  variant="gradient"
+                  gradient={{ from: 'red', to: 'teal', deg: 90 }}
                 >
-                  <IconBolt size={16} stroke={1.5} color="gray" />
-                  <Text
-                    size="xs"
-                    c="dimmed"
-                    style={{ letterSpacing: '-0.01em' }}
-                    tt="uppercase"
-                    ff="heading"
-                  >
-                    A rede profissional para músicos
-                  </Text>
-                </Group>
+                  A rede de músicos e profissionais da música
+                </Text>
                 <Title
                   order={1}
                   ta={isMobile ? 'center' : 'left'}

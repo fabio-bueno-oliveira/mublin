@@ -1,6 +1,6 @@
 import { Card, Group, Text } from '@mantine/core'
 
-export default function MublinProBannerMini() {
+export default function BannerMublinProMini() {
   return (
     <Card
       radius="md"

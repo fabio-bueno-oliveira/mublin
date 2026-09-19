@@ -105,7 +105,9 @@ export default function ProfileChecklistCard() {
               className="profile-checklist-item"
               style={{
                 borderRadius: 8,
-                backgroundColor: locked ? 'var(--mantine-color-grape-light)' : undefined,
+                backgroundColor: locked
+                  ? 'var(--mantine-color-mublinColor-light)'
+                  : undefined,
               }}
             >
               <Group justify="space-between" wrap="nowrap" gap="xs">
@@ -119,7 +121,7 @@ export default function ProfileChecklistCard() {
                   ) : locked ? (
                     <IconLock
                       size={16}
-                      color="var(--mantine-color-grape-6)"
+                      color="var(--mantine-color-blue-6)"
                       style={{ flexShrink: 0 }}
                     />
                   ) : (
@@ -143,7 +145,7 @@ export default function ProfileChecklistCard() {
                     <Badge
                       size="xs"
                       variant="filled"
-                      color="dark"
+                      color="blue"
                       radius="sm"
                       style={{ flexShrink: 0 }}
                     >
