@@ -18,7 +18,6 @@ import {
   RollingNumber,
   Center,
   Grid,
-  Badge,
 } from '@mantine/core'
 import {
   IconMusic,
@@ -29,6 +28,7 @@ import {
   IconBrandSpotify,
   IconArrowRight,
   IconBolt,
+  IconQuote,
 } from '@tabler/icons-react'
 import { IconGuitarPedal } from '../components/icons/GuitarPedal'
 
@@ -117,18 +117,16 @@ export default function Landing() {
           <Grid p={0}>
             <Grid.Col span={{ base: 12, sm: 8 }}>
               <Stack gap="md" align={isMobile ? 'center' : 'flex-start'}>
-                <Text
-                  lh={1}
-                  tt="uppercase"
-                  ff="monospace"
-                  size="xs"
-                  c="dimmed"
-                  mb="xs"
-                  variant="gradient"
-                  gradient={{ from: 'red', to: 'teal', deg: 90 }}
-                >
-                  A rede de músicos e profissionais da música
-                </Text>
+                <Group gap={6} wrap="nowrap" align="center">
+                  <IconQuote
+                    size={18}
+                    color="var(--mantine-color-blue-7)"
+                    style={{ transform: 'scaleX(-1)' }}
+                  />
+                  <Text fs="italic" fw={500} size="md" c="dimmed">
+                    o LinkedIn para músicos
+                  </Text>
+                </Group>
                 <Title
                   order={1}
                   ta={isMobile ? 'center' : 'left'}

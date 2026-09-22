@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Helmet } from 'react-helmet-async'
 import { useSearchParams, Link, useNavigate } from 'react-router-dom'
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query'
@@ -120,6 +120,10 @@ export default function Search() {
   const q = searchParams.get('q') ?? ''
   const [mobileInput, setMobileInput] = useState(q)
   const [isMobileFocused, setIsMobileFocused] = useState(false)
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [])
 
   const { data: recentSearches = [] } = useQuery({
     queryKey: ['recent-searches', user?.id],

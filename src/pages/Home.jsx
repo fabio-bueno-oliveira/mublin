@@ -67,7 +67,7 @@ export default function Home() {
     <>
       <Helmet>
         <meta charSet="utf-8" />
-        <title>Home · Mublin</title>
+        <title>Home | Mublin</title>
         <link rel="canonical" href="https://mublin.com/home" />
       </Helmet>
       {isMobile && <AppNavbarMobile fixed={false} />}

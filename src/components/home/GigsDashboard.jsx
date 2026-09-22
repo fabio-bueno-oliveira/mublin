@@ -5,16 +5,12 @@ import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query'
 // prettier-ignore
 import {
   Grid, Stack,
-  Box, Table,
   Group, Center,
-  Avatar,
-  Card, Paper,
-  Text, Title,
+  Box, Card, Paper,
+  Text, Title, Avatar,
   Select, Switch, Slider,
-  Button,
-  Badge,
-  Popover,
-  Divider,
+  Button, Badge,
+  Popover, Divider,
 } from '@mantine/core'
 import { MiniCalendar } from '@mantine/dates'
 import {
@@ -129,7 +125,14 @@ export default function GigsDashboard() {
 
   const filteredInvitations = useMemo(() => {
     if (invitationFilter === 'pending') {
-      return receivedInvitations.filter((i) => i.status_request_appliant === 1)
+      return receivedInvitations.filter((i) => {
+        if (i.status_request_appliant !== 1) return false
+        // Remove convites que já passaram (data + hora)
+        const gigDate = i?.gigs?.date
+        const gigTime = i?.gigs?.time_stage_start || '23:59:59'
+        const isPast = gigDate ? dayjs(`${gigDate}T${gigTime}`).isBefore(dayjs()) : false
+        return !isPast
+      })
     }
     return receivedInvitations
   }, [receivedInvitations, invitationFilter])
@@ -416,7 +419,7 @@ export default function GigsDashboard() {
               <Card
                 key={inv.id}
                 component={Link}
-                to={`/gig-invitations`}
+                to={`/gig-invitation/${inv.id}`}
                 radius="md"
                 withBorder
                 p="sm"
@@ -430,28 +433,51 @@ export default function GigsDashboard() {
                       enviado por {inv.profiles.full_name}
                     </Text>
                   </Group>
-                  {inv.status_request_appliant === 1 && (
-                    <Badge
-                      leftSection={<IconClock size={10} />}
-                      variant="light"
-                      size="xs"
-                      color="mublinSecondary"
-                      fw={300}
-                    >
-                      pendente
-                    </Badge>
-                  )}
-                  {inv.status_request_appliant === 2 && (
-                    <Badge
-                      leftSection={<IconCheck size={10} />}
-                      variant="light"
-                      size="xs"
-                      color="green"
-                      fw={300}
-                    >
-                      aceito
-                    </Badge>
-                  )}
+                  {(() => {
+                    const gigDate = inv?.gigs?.date
+                    const gigTime = inv?.gigs?.time_stage_start || '23:59:59'
+                    const isPastGig = gigDate
+                      ? dayjs(`${gigDate}T${gigTime}`).isBefore(dayjs())
+                      : false
+
+                    if (isPastGig) {
+                      return (
+                        <Badge variant="light" size="xs" color="red.9" fw={300}>
+                          passou
+                        </Badge>
+                      )
+                    }
+
+                    if (inv.status_request_appliant === 1) {
+                      return (
+                        <Badge
+                          leftSection={<IconClock size={10} />}
+                          variant="light"
+                          size="xs"
+                          color="mublinSecondary"
+                          fw={300}
+                        >
+                          pendente
+                        </Badge>
+                      )
+                    }
+
+                    if (inv.status_request_appliant === 2) {
+                      return (
+                        <Badge
+                          leftSection={<IconCheck size={10} />}
+                          variant="light"
+                          size="xs"
+                          color="green"
+                          fw={300}
+                        >
+                          aceito
+                        </Badge>
+                      )
+                    }
+
+                    return null
+                  })()}
                 </Group>
                 <Divider variant="dashed" my={8} />
                 <Group gap={6} wrap="nowrap" align="flex-start">
@@ -466,12 +492,19 @@ export default function GigsDashboard() {
                     </Badge>
                   </Stack>
                   <Stack gap={2} w="100%">
-                    <Title fz="sm">{inv?.gig_roles?.roles?.description_ptbr}</Title>
-                    <Text size="xs">
+                    <Title fz="xs">
+                      Convite para ser {inv?.gig_roles?.roles?.description_ptbr}
+                    </Title>
+                    {inv?.gigs?.title && (
+                      <Text size="xs" lh={1}>
+                        {inv?.gigs?.title}
+                      </Text>
+                    )}
+                    <Text size="xs" c="dimmed" mt={2} lh={1}>
                       com {inv?.gigs?.projects?.name}{' '}
                       <Text span> · {inv?.gigs?.projects?.project_types.name_ptbr}</Text>
                     </Text>
-                    <Text size="xs" c="dimmed">
+                    <Text size="xs" c="dimmed" lh={1}>
                       Tipo do evento: {inv?.gigs?.type?.name}
                     </Text>
                   </Stack>

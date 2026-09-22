@@ -1,10 +1,10 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../hooks/useAuth'
 import { Helmet } from 'react-helmet-async'
-import { fetchReceivedInvitations, fetchSentInvitations } from '../queries/gigs'
+import { fetchGigInvitationsByGigId } from '../queries/gigs'
 import {
   Container,
   Stack,
@@ -21,16 +21,15 @@ import {
   ActionIcon,
   Skeleton,
   Alert,
-  Tabs,
   Box,
   DataList,
   Anchor,
-  Flex,
   Tooltip,
   Fieldset,
   Center,
+  Divider,
 } from '@mantine/core'
-import { useDisclosure } from '@mantine/hooks'
+import { useDisclosure, useWindowScroll } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
 import { modals } from '@mantine/modals'
 import {
@@ -40,10 +39,12 @@ import {
   IconSend,
   IconCheck,
   IconClock,
+  IconArrowLeft,
 } from '@tabler/icons-react'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import 'dayjs/locale/pt-br'
+import { useEffect } from 'react'
 
 dayjs.extend(relativeTime)
 dayjs.locale('pt-br')
@@ -51,18 +52,59 @@ dayjs.locale('pt-br')
 const AVATAR_PATH =
   'https://ik.imagekit.io/mublin/tr:h-200,c-maintain_ratio/users/avatars/'
 
-// ─── Status lookup (applications_statuses) ────────────────────────────────────
 const STATUS_MAP = {
   1: { label: 'Pendente', color: 'gray' },
   2: { label: 'Aceito', color: 'green' },
   3: { label: 'Declinado', color: 'red' },
 }
 
-// ─── Queries ──────────────────────────────────────────────────────────────────
+async function fetchInvitationById(invitationId) {
+  const { data, error } = await supabase
+    .from('gig_applications')
+    .select(
+      `
+      id,
+      created_at,
+      invitation_description,
+      status_request_gig_owner,
+      status_request_appliant,
+      profile_id,
+      gigs (
+        id,
+        created_by,
+        date,
+        time_stage_start,
+        title,
+        venue_name,
+        venue_address,
+        type:event_types ( name ),
+        city:cities ( name ),
+        events ( id, name, description ),
+        venues ( id, name ),
+        projects ( id, name, slug, picture, project_types ( name_ptbr ) )
+      ),
+      gig_roles (
+        id, description, fee, is_filled, is_sub, sub_for,
+        roles ( description_ptbr ),
+        experience_levels ( id, name_pt ),
+        profiles ( avatar, username )
+      ),
+      profiles:invited_by (
+        id,
+        full_name,
+        username,
+        avatar,
+        title
+      )
+    `,
+    )
+    .eq('id', invitationId)
+    .single()
 
-/**
- * Comentários de uma application.
- */
+  if (error) throw error
+  return data
+}
+
 async function fetchApplicationComments(applicationId) {
   const { data, error } = await supabase
     .from('gig_applications_comments')
@@ -83,13 +125,9 @@ async function fetchApplicationComments(applicationId) {
     .eq('gig_application_id', applicationId)
     .order('created_at', { ascending: true })
 
-  if (error) {
-    throw error
-  }
+  if (error) throw error
   return data ?? []
 }
-
-// ─── Componente de comentários ────────────────────────────────────────────────
 
 function ApplicationComments({ applicationId, currentUserId }) {
   const queryClient = useQueryClient()
@@ -110,9 +148,7 @@ function ApplicationComments({ applicationId, currentUserId }) {
           content: content.trim(),
         },
       ])
-      if (error) {
-        throw error
-      }
+      if (error) throw error
     },
     onSuccess: () => {
       setNewComment('')
@@ -168,7 +204,6 @@ function ApplicationComments({ applicationId, currentUserId }) {
         </Stack>
       )}
 
-      {/* Campo novo comentário */}
       <Group align="flex-end" gap="xs">
         <Textarea
           placeholder="Escreva um comentário..."
@@ -183,9 +218,7 @@ function ApplicationComments({ applicationId, currentUserId }) {
         <Tooltip label="Enviar">
           <ActionIcon
             onClick={() => {
-              if (newComment.trim()) {
-                addComment.mutate(newComment)
-              }
+              if (newComment.trim()) addComment.mutate(newComment)
             }}
             loading={addComment.isPending}
             disabled={!newComment.trim()}
@@ -200,9 +233,84 @@ function ApplicationComments({ applicationId, currentUserId }) {
   )
 }
 
-// ─── Card de convite ──────────────────────────────────────────────────────────
+function OtherInvitedMusicians({ gigId, currentInvitationId }) {
+  const { data: otherInvites = [], isLoading } = useQuery({
+    queryKey: ['gig-other-invites', gigId, currentInvitationId],
+    queryFn: () => fetchGigInvitationsByGigId(gigId, currentInvitationId),
+    enabled: !!gigId,
+    staleTime: 1000 * 60 * 2,
+  })
 
-function InvitationCard({ invitation, currentUserId, mode, userProfile }) {
+  if (isLoading) {
+    return (
+      <Box mt="lg">
+        <Skeleton height={80} radius="md" />
+      </Box>
+    )
+  }
+
+  if (!otherInvites.length) return null
+
+  return (
+    <Box mt="lg">
+      <Title order={4} size="md" fw={600} mb="xs">
+        Outros músicos convidados para esta gig ({otherInvites.length})
+      </Title>
+      <Stack gap="xs">
+        {otherInvites.map((inv) => {
+          const status = STATUS_MAP[inv.status_request_appliant]
+          const role = inv?.gig_roles?.roles?.description_ptbr
+          return (
+            <Paper key={inv.id} withBorder radius="md" p="xs">
+              <Group gap="xs" wrap="nowrap" justify="space-between">
+                <Group gap="xs" wrap="nowrap">
+                  <Avatar
+                    src={
+                      inv.profiles?.avatar ? AVATAR_PATH + inv.profiles.avatar : undefined
+                    }
+                    size={36}
+                    radius="xl"
+                    component={Link}
+                    to={`/${inv.profiles?.username}`}
+                  />
+                  <Box>
+                    <Group gap={4}>
+                      <Anchor
+                        component={Link}
+                        to={`/${inv.profiles?.username}`}
+                        size="sm"
+                        fw={600}
+                        c="var(--mantine-color-text)"
+                      >
+                        {inv.profiles?.full_name}
+                      </Anchor>
+                      <Text size="xs" c="dimmed">
+                        @{inv.profiles?.username}
+                      </Text>
+                    </Group>
+                    {role && (
+                      <Text size="xs" c="dimmed">
+                        {role}
+                      </Text>
+                    )}
+                  </Box>
+                </Group>
+
+                {status && (
+                  <Badge size="xs" color={status.color} variant="light">
+                    {status.label}
+                  </Badge>
+                )}
+              </Group>
+            </Paper>
+          )
+        })}
+      </Stack>
+    </Box>
+  )
+}
+
+function InvitationCard({ invitation, currentUserId, userProfile }) {
   const queryClient = useQueryClient()
   const [gigDetailsExpanded, { toggle: toggleGigDetails }] = useDisclosure(false)
   const [expanded, { toggle }] = useDisclosure(false)
@@ -210,18 +318,20 @@ function InvitationCard({ invitation, currentUserId, mode, userProfile }) {
   const ownerStatus = STATUS_MAP[invitation.status_request_gig_owner]
   const appliantStatus = STATUS_MAP[invitation.status_request_appliant]
 
-  // Atualizar status do convidado (apenas ele pode fazer)
+  const gigDate = invitation?.gigs?.date
+  const gigTime = invitation?.gigs?.time_stage_start || '23:59:59'
+  const isPastGig = gigDate ? dayjs(`${gigDate}T${gigTime}`).isBefore(dayjs()) : false
+
   const updateStatus = useMutation({
     mutationFn: async (statusId) => {
       const { error } = await supabase
         .from('gig_applications')
         .update({ status_request_appliant: statusId })
         .eq('id', invitation.id)
-      if (error) {
-        throw error
-      }
+      if (error) throw error
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['invitation', invitation.id] })
       queryClient.invalidateQueries({ queryKey: ['received-invitations'] })
       notifications.show({
         title: 'Resposta enviada!',
@@ -247,7 +357,7 @@ function InvitationCard({ invitation, currentUserId, mode, userProfile }) {
     { label: 'Cachê:', value: fee ? fee : 'Não informado', disabled: !fee },
     {
       label: 'Data da Gig:',
-      value: `${dayjs(invitation?.gigs?.date).format('dddd, D [de] MMMM [de] YYYY')} (${dayjs(invitation?.gigs?.date).fromNow()})`,
+      value: `${dayjs(invitation?.gigs?.date).format('dddd, D [de] MMMM [de] YYYY')} às ${invitation?.gigs?.time_stage_start || '--:--'} (${dayjs(invitation?.gigs?.date).fromNow()})`,
     },
     { label: 'Tipo da Gig:', value: invitation?.gigs?.type?.name },
     { label: 'Título da Gig:', value: invitation?.gigs?.title },
@@ -258,25 +368,38 @@ function InvitationCard({ invitation, currentUserId, mode, userProfile }) {
         : 'Não informado',
       disabled: !invitation?.gigs?.city?.name,
     },
+    {
+      label: 'Evento relacionado:',
+      value: invitation?.gigs?.events?.name
+        ? invitation?.gigs?.events?.name
+        : 'Nenhum evento relacionado',
+      disabled: !invitation?.gigs?.events?.id,
+    },
+    {
+      label: 'Endereço:',
+      value: invitation?.gigs?.venue_address
+        ? invitation?.gigs?.venue_address
+        : 'Não informado',
+      disabled: !invitation?.gigs?.venue_address,
+    },
   ]
 
-  const isReceived = mode === 'received'
+  const isReceived = invitation.profile_id === currentUserId
   const isAcceptedByAppliant = invitation.status_request_appliant === 2
   const canRespond =
     isReceived &&
-    (!invitation.status_request_appliant || invitation.status_request_appliant === 1)
+    (!invitation.status_request_appliant || invitation.status_request_appliant === 1) &&
+    !isPastGig
 
   return (
     <Paper withBorder radius="md" p="sm">
       <Group gap={4} mb={4}>
-        <Text size="xs" c="dimmed" style={{ cursor: 'default' }}>
-          {isReceived ? 'Convite recebido ' : 'Convite enviado em '}
+        <Text size="xs" c="dimmed">
+          Convite {isReceived ? 'recebido' : 'enviado'}{' '}
           {dayjs(invitation.created_at).fromNow()}
         </Text>
         <Tooltip
-          label={`Convite criado em ${dayjs(invitation.created_at).format(
-            'dddd, D [de] MMMM [de] YYYY [às] HH:mm',
-          )}`}
+          label={`Criado em ${dayjs(invitation.created_at).format('dddd, D [de] MMMM [de] YYYY [às] HH:mm')}`}
           fz="xs"
           w={200}
           multiline
@@ -284,11 +407,15 @@ function InvitationCard({ invitation, currentUserId, mode, userProfile }) {
         >
           <IconClock size={12} color="gray" />
         </Tooltip>
+        {isPastGig && (
+          <Badge size="xs" color="red.9" variant="light" ml="xs">
+            passou
+          </Badge>
+        )}
       </Group>
 
       <Title order={2} size="xl" fw={500} mb="xs">
-        {role?.roles?.description_ptbr} para {invitation?.gigs?.projects?.name} (
-        {invitation?.gigs?.projects?.project_types.name_ptbr}) em{' '}
+        {role?.roles?.description_ptbr} para {invitation?.gigs?.projects?.name} em{' '}
         {dayjs(invitation?.gigs?.date).format('D [de] MMMM [de] YYYY')}
       </Title>
 
@@ -322,31 +449,7 @@ function InvitationCard({ invitation, currentUserId, mode, userProfile }) {
         </Box>
       </Group>
 
-      <Button
-        size="xs"
-        onClick={toggleGigDetails}
-        leftSection={
-          gigDetailsExpanded ? <IconChevronUp size={14} /> : <IconChevronDown size={14} />
-        }
-      >
-        Ver detalhes da gig
-      </Button>
-      <Collapse expanded={gigDetailsExpanded}>
-        <Fieldset p="xs" legend="Detalhes da gig" my="xs">
-          <DataList p={0} gap={4} size="xs" orientation="horizontal">
-            {dataListDetails.map((item) => (
-              <DataList.Item key={item.label}>
-                <DataList.ItemLabel>{item.label}</DataList.ItemLabel>
-                <DataList.ItemValue c={item.disabled ? 'dimmed' : undefined}>
-                  {item.value}
-                </DataList.ItemValue>
-              </DataList.Item>
-            ))}
-          </DataList>
-        </Fieldset>
-      </Collapse>
-
-      <Fieldset p={4} legend="Status do convite" my="sm">
+      <Fieldset p="xs" legend="Status do convite" my="sm">
         <Grid columns={2} gutter="md">
           <Grid.Col span={1}>
             <Center>
@@ -354,11 +457,12 @@ function InvitationCard({ invitation, currentUserId, mode, userProfile }) {
                 src={profile?.avatar ? AVATAR_PATH + profile.avatar : undefined}
                 radius="xl"
                 size={22}
+                title={`/${profile?.username}`}
                 component={Link}
                 to={`/${profile?.username}`}
               />
             </Center>
-            <Text size="xs" ta="center">
+            <Text size="xs" my={2} ta="center">
               Organizador
             </Text>
             {ownerStatus && (
@@ -379,7 +483,7 @@ function InvitationCard({ invitation, currentUserId, mode, userProfile }) {
                 to={`/${userProfile?.username}`}
               />
             </Center>
-            <Text size="xs" ta="center">
+            <Text size="xs" my={2} ta="center">
               Convidado
             </Text>
             {appliantStatus && (
@@ -393,8 +497,14 @@ function InvitationCard({ invitation, currentUserId, mode, userProfile }) {
         </Grid>
       </Fieldset>
 
-      <Stack gap="sm" mt="xs">
-        {/* Ações de resposta (apenas quem recebeu) */}
+      <Stack gap="xs" mt="xs">
+        {isPastGig && (
+          <Alert color="gray" variant="light" radius="md" p="xs">
+            Essa gig já aconteceu em{' '}
+            {dayjs(`${gigDate}T${gigTime}`).format('DD/MM/YYYY [às] HH:mm')}.
+          </Alert>
+        )}
+
         {canRespond && (
           <Button.Group>
             <Button
@@ -450,31 +560,21 @@ function InvitationCard({ invitation, currentUserId, mode, userProfile }) {
           </Tooltip>
         )}
 
+        <Divider variant="dashed" mt="xs" />
+
         <Box>
-          <Text size="xs" mb={2}>
+          <Text size="sm" mb={2}>
             Descrição do convite:
           </Text>
           {invitation.invitation_description ? (
             <Group align="center" gap={6}>
-              {isReceived ? (
-                <Avatar
-                  src={profile?.avatar ? AVATAR_PATH + profile.avatar : undefined}
-                  radius="xl"
-                  size={20}
-                  component={Link}
-                  to={`/${profile?.username}`}
-                  title={profile?.username}
-                />
-              ) : (
-                <Avatar
-                  src={userProfile?.avatar ? AVATAR_PATH + userProfile.avatar : undefined}
-                  radius="xl"
-                  size={20}
-                  component={Link}
-                  to={`/${userProfile?.username}`}
-                  title={userProfile?.username}
-                />
-              )}
+              <Avatar
+                src={profile?.avatar ? AVATAR_PATH + profile.avatar : undefined}
+                radius="xl"
+                size={20}
+                component={Link}
+                to={`/${profile?.username}`}
+              />
               <Text size="sm" style={{ whiteSpace: 'pre-line' }}>
                 {invitation.invitation_description}
               </Text>
@@ -485,151 +585,126 @@ function InvitationCard({ invitation, currentUserId, mode, userProfile }) {
             </Text>
           )}
         </Box>
+
+        <Button
+          size="xs"
+          variant="outline"
+          color="var(--mantine-color-text)"
+          onClick={toggleGigDetails}
+          leftSection={
+            gigDetailsExpanded ? (
+              <IconChevronUp size={14} />
+            ) : (
+              <IconChevronDown size={14} />
+            )
+          }
+        >
+          Ver detalhes da gig
+        </Button>
+        <Collapse expanded={gigDetailsExpanded}>
+          <Fieldset p="xs" legend="Detalhes da gig" my="xs">
+            <DataList p={0} gap={4} size="xs" orientation="horizontal">
+              {dataListDetails.map((item) => (
+                <DataList.Item key={item.label}>
+                  <DataList.ItemLabel>{item.label}</DataList.ItemLabel>
+                  <DataList.ItemValue c={item.disabled ? 'dimmed' : undefined}>
+                    {item.value}
+                  </DataList.ItemValue>
+                </DataList.Item>
+              ))}
+            </DataList>
+          </Fieldset>
+        </Collapse>
+
+        <Button
+          variant="outline"
+          color="var(--mantine-color-text)"
+          size="xs"
+          mt="xs"
+          leftSection={
+            expanded ? <IconChevronUp size={13} /> : <IconChevronDown size={13} />
+          }
+          onClick={toggle}
+        >
+          {expanded ? 'Ocultar comentários' : 'Comentários'}
+        </Button>
+
+        <Collapse expanded={expanded}>
+          <ApplicationComments
+            applicationId={invitation.id}
+            currentUserId={currentUserId}
+          />
+        </Collapse>
       </Stack>
-
-      {/* Botão expandir */}
-      <Button
-        variant="subtle"
-        size="xs"
-        mt="xs"
-        rightSection={
-          expanded ? <IconChevronUp size={13} /> : <IconChevronDown size={13} />
-        }
-        onClick={toggle}
-        color="gray"
-      >
-        {expanded ? 'Ocultar comentários' : 'Comentários'}
-      </Button>
-
-      <Collapse expanded={expanded}>
-        <ApplicationComments
-          applicationId={invitation.id}
-          currentUserId={currentUserId}
-        />
-      </Collapse>
     </Paper>
   )
 }
 
-// ─── Lista com skeletons ──────────────────────────────────────────────────────
-
-function InvitationList({
-  invitations,
-  isLoading,
-  emptyMessage,
-  currentUserId,
-  mode,
-  userProfile,
-}) {
-  if (isLoading) {
-    return (
-      <Stack gap="sm">
-        {[1, 2, 3].map((i) => (
-          <Skeleton key={i} height={80} radius="md" />
-        ))}
-      </Stack>
-    )
-  }
-
-  if (invitations.length === 0) {
-    return (
-      <Alert icon={<IconMoodSad size={16} />} color="gray" radius="md">
-        {emptyMessage}
-      </Alert>
-    )
-  }
-
-  return (
-    <Stack gap="sm">
-      {invitations.map((inv) => (
-        <InvitationCard
-          key={inv.id}
-          invitation={inv}
-          currentUserId={currentUserId}
-          mode={mode}
-          userProfile={userProfile}
-        />
-      ))}
-    </Stack>
-  )
-}
-
-// ─── Página principal ─────────────────────────────────────────────────────────
-
-export default function GigInvitations() {
+export default function GigInvitation() {
+  const { id } = useParams()
+  const navigate = useNavigate()
   const { user, profile } = useAuth()
+  const [, scrollTo] = useWindowScroll()
 
-  const { data: sentInvitations = [], isLoading: loadingSent } = useQuery({
-    queryKey: ['sent-invitations', user?.id],
-    queryFn: () => fetchSentInvitations(user.id),
-    enabled: !!user?.id,
+  useEffect(() => {
+    scrollTo({ y: 0 })
+  }, [])
+
+  const {
+    data: invitation,
+    isLoading,
+    isError,
+    error,
+  } = useQuery({
+    queryKey: ['invitation', id],
+    queryFn: () => fetchInvitationById(id),
+    enabled: !!id,
     staleTime: 1000 * 60 * 2,
   })
-
-  const { data: receivedInvitations = [], isLoading: loadingReceived } = useQuery({
-    queryKey: ['received-invitations', user?.id],
-    queryFn: () => fetchReceivedInvitations(user.id),
-    enabled: !!user?.id,
-    staleTime: 1000 * 60 * 2,
-  })
-
-  const pendingCount = receivedInvitations.filter(
-    (i) => !i.status_request_appliant || i.status_request_appliant === 1,
-  ).length
 
   return (
     <>
       <Helmet>
-        <title>Convites para Gigs | Mublin</title>
+        <title>Convite para Gig | Mublin</title>
       </Helmet>
 
       <Container size="sm" py="lg">
-        <Flex align="center" gap="xs" mb="lg">
-          <Title order={2} fw={600} size="xl">
-            Convites para Gigs
-          </Title>
-          {pendingCount > 0 && (
-            <Badge color="orange" size="sm" variant="filled">
-              {pendingCount} pendente{pendingCount > 1 ? 's' : ''}
-            </Badge>
-          )}
-        </Flex>
+        <Button
+          variant="subtle"
+          size="xs"
+          leftSection={<IconArrowLeft size={14} />}
+          onClick={() => navigate(-1)}
+          mb="md"
+        >
+          Voltar
+        </Button>
 
-        <Tabs defaultValue="received">
-          <Tabs.List mb="lg">
-            <Tabs.Tab value="received">
-              Recebidos
-              {pendingCount > 0 && (
-                <Badge size="xs" color="orange" variant="filled" ml={6}>
-                  {pendingCount}
-                </Badge>
-              )}
-            </Tabs.Tab>
-            <Tabs.Tab value="sent">Enviados</Tabs.Tab>
-          </Tabs.List>
-
-          <Tabs.Panel value="received">
-            <InvitationList
-              invitations={receivedInvitations}
-              isLoading={loadingReceived}
-              emptyMessage="Você ainda não recebeu nenhum convite para gig."
+        {isLoading ? (
+          <Stack gap="sm">
+            <Skeleton height={200} radius="md" />
+            <Skeleton height={100} radius="md" />
+          </Stack>
+        ) : isError ? (
+          <Alert icon={<IconMoodSad size={16} />} color="red" radius="md">
+            Erro ao carregar convite: {error?.message || 'Convite não encontrado'}
+          </Alert>
+        ) : !invitation ? (
+          <Alert icon={<IconMoodSad size={16} />} color="gray" radius="md">
+            Convite não encontrado.
+          </Alert>
+        ) : (
+          <>
+            <InvitationCard
+              invitation={invitation}
               currentUserId={user?.id}
-              mode="received"
               userProfile={profile}
             />
-          </Tabs.Panel>
-
-          <Tabs.Panel value="sent">
-            <InvitationList
-              invitations={sentInvitations}
-              isLoading={loadingSent}
-              emptyMessage="Você ainda não enviou nenhum convite para gig."
-              currentUserId={user?.id}
-              mode="sent"
-              userProfile={profile}
+            <OtherInvitedMusicians
+              gigId={invitation.gigs?.id}
+              currentInvitationId={invitation.id}
             />
-          </Tabs.Panel>
-        </Tabs>
+          </>
+        )}
       </Container>
     </>
   )

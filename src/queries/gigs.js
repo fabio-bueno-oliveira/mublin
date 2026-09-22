@@ -200,6 +200,7 @@ export async function fetchReceivedInvitations(userId) {
       gigs (
         id,
         date,
+        time_stage_start,
         title,
         created_by,
         type:event_types ( name ),
@@ -227,5 +228,40 @@ export async function fetchReceivedInvitations(userId) {
   if (error) {
     throw error
   }
+  return data ?? []
+}
+
+export async function fetchGigInvitationsByGigId(gigId, excludeApplicationId) {
+  let query = supabase
+    .from('gig_applications')
+    .select(
+      `
+      id,
+      created_at,
+      status_request_appliant,
+      status_request_gig_owner,
+      gig_roles (
+        id,
+        roles ( description_ptbr ),
+        fee
+      ),
+      profiles:profile_id (
+        id,
+        full_name,
+        username,
+        avatar,
+        title
+      )
+    `,
+    )
+    .eq('gig_id', gigId)
+    .order('created_at', { ascending: true })
+
+  if (excludeApplicationId) {
+    query = query.neq('id', excludeApplicationId)
+  }
+
+  const { data, error } = await query
+  if (error) throw error
   return data ?? []
 }
