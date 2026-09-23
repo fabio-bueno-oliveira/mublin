@@ -24,7 +24,7 @@ import { getDateSuggestions } from '../utils/dates'
 import {
   useCombobox, Affix, 
   Container, Collapse,
-  Grid, Group, ScrollArea,
+  Grid, Flex, Group, ScrollArea,
   Box, Stack, Divider, Card, Paper,
   Alert, Badge, Avatar,
   CloseButton, InputBase, Input, Fieldset,
@@ -141,9 +141,7 @@ function EventCombobox({ selected, onSelect, onClear, isPastGig }) {
     >
       <Combobox.Target>
         <InputBase
-          label={
-            isPastGig ? 'Foi em um evento (opcional)' : 'Será em um evento (opcional)'
-          }
+          label={isPastGig ? 'Foi em um evento' : 'Será em um evento'}
           placeholder="Digite o nome do evento..."
           value={value}
           onChange={(e) => {
@@ -154,11 +152,15 @@ function EventCombobox({ selected, onSelect, onClear, isPastGig }) {
       </Combobox.Target>
       <Combobox.Dropdown>
         <Combobox.Options>
-          {results.map((i) => (
-            <Combobox.Option key={i.id} value={String(i.id)}>
-              {i.name}
-            </Combobox.Option>
-          ))}
+          {value.length >= 2 && results.length === 0 ? (
+            <Combobox.Empty>Nenhum evento encontrado</Combobox.Empty>
+          ) : (
+            results.map((i) => (
+              <Combobox.Option key={i.id} value={String(i.id)}>
+                {i.name}
+              </Combobox.Option>
+            ))
+          )}
         </Combobox.Options>
       </Combobox.Dropdown>
     </Combobox>
@@ -529,6 +531,7 @@ export default function NewGig() {
       experience_level: 2,
       assigned: null,
       is_sub: false,
+      is_public: false,
       sub_for_profile: null,
       invitation_description: '',
     }
@@ -548,6 +551,7 @@ export default function NewGig() {
       !r.description &&
       !r.fee &&
       !r.is_sub &&
+      !r.is_public &&
       !r.sub_for_profile
     )
   }
@@ -584,6 +588,7 @@ export default function NewGig() {
             experience_level: 2,
             assigned: member.profile,
             is_sub: false,
+            is_public: false,
             sub_for_profile: null,
             invitation_description: '',
           })),
@@ -683,6 +688,8 @@ export default function NewGig() {
         experience_level: r.experience_level,
         is_sub: r.is_sub,
         sub_for: r.is_sub ? r.sub_for_profile?.id || null : null,
+        // Sem pessoa designada, a vaga obrigatoriamente é pública
+        is_public: r.assigned ? r.is_public : true,
       }))
 
       // .select() é essencial aqui: gig_roles.id é um uuid gerado pelo banco
@@ -898,7 +905,7 @@ export default function NewGig() {
                 <Alert
                   icon={<IconExclamationCircle color="red" />}
                   variant="light"
-                  title="Atenção!"
+                  // title="Atenção!"
                   color="gray"
                   p="xs"
                 >
@@ -1014,7 +1021,7 @@ export default function NewGig() {
                       }
                     }}
                   >
-                    <Group grow mt="xs" align="stretch">
+                    <Flex mt="xs" gap="xs" direction="column" align="stretch">
                       <Radio.Card value="event" p="sm" radius="md">
                         <Group wrap="nowrap" align="flex-start" gap="xs">
                           <Radio.Indicator />
@@ -1022,11 +1029,12 @@ export default function NewGig() {
                             <Group gap={6}>
                               <IconCalendarEvent size={14} />
                               <Text size="sm" fw={500}>
-                                Evento
+                                {isPastGig ? 'Foi em um evento' : 'Será em um evento'}
                               </Text>
                             </Group>
                             <Text size="xs" c="dimmed">
-                              A gig faz parte de um evento já cadastrado
+                              A gig acontecerá em um evento já cadastrado. (Ex: Rock in
+                              Rio, João Rock, Tardezinha, etc)
                             </Text>
                           </div>
                         </Group>
@@ -1043,7 +1051,8 @@ export default function NewGig() {
                               </Text>
                             </Group>
                             <Text size="xs" c="dimmed">
-                              Busque um local já cadastrado no Mublin
+                              Busque um local já cadastrado (ex: Hangar 110, Nubank
+                              Parque, etc)
                             </Text>
                           </div>
                         </Group>
@@ -1065,11 +1074,11 @@ export default function NewGig() {
                           </div>
                         </Group>
                       </Radio.Card>
-                    </Group>
+                    </Flex>
                   </Radio.Group>
 
                   {locationMode === 'event' && (
-                    <Stack gap="xs" mt="sm">
+                    <Stack gap="xs" mt="xs">
                       <EventCombobox
                         selected={selectedEvent}
                         isPastGig={isPastGig}
@@ -1483,6 +1492,25 @@ export default function NewGig() {
                               )}
                             </Box>
                           )}
+
+                          <Checkbox
+                            mt="md"
+                            size="sm"
+                            color="green"
+                            label="Tornar esta vaga pública"
+                            description={
+                              gr.assigned
+                                ? 'A vaga aparecerá nas buscas enquanto o convidado não aceitar o convite'
+                                : 'A vaga aparecerá nas buscas enquanto não for preenchida'
+                            }
+                            checked={gr.is_public || !gr.assigned}
+                            disabled={!gr.assigned}
+                            onChange={(e) =>
+                              updateRole(gr.tempId, {
+                                is_public: e.currentTarget.checked,
+                              })
+                            }
+                          />
 
                           {gr.role_id && (
                             <Button
