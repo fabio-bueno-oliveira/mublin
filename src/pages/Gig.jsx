@@ -7,7 +7,9 @@ import { fetchGigDetails, fetchGigApplicationDetails } from '../queries/gigs'
 import AppNavbarMobile from '../components/AppNavbarMobile'
 import {
   Container,
+  Affix,
   Table,
+  DataList,
   Anchor,
   Title,
   Text,
@@ -16,7 +18,6 @@ import {
   Badge,
   Button,
   Paper,
-  Skeleton,
   Avatar,
   Modal,
   Divider,
@@ -32,7 +33,6 @@ import {
   IconClock,
   IconEye,
   IconX,
-  IconZoom,
   IconMoodSad,
 } from '@tabler/icons-react'
 import dayjs from 'dayjs'
@@ -47,16 +47,16 @@ const PROJECT_AVATAR_PATH = 'https://ik.imagekit.io/mublin/projects'
 // ── Helpers ───────────────────────────────────────────────
 
 function gigDate(gig) {
-  return gig?.events?.date_start ?? gig?.gigs?.date ?? null
+  return gig?.date ?? null
 }
 
 function gigVenue(gig) {
-  if (gig?.events?.venues?.name) {
-    const city = gig?.events?.venues.cities?.name
-    const uf = gig?.events.venues.cities?.regions?.uf
-    return `${gig?.events.venues.name}${city ? ` · ${city}` : ''}${uf ? `/${uf}` : ''}`
+  if (!gig?.venue_name) {
+    return null
   }
-  return null
+  const city = gig?.venue_city?.name
+  const uf = gig?.venue_city?.regions?.uf
+  return `${gig.venue_name}${city ? ` · ${city}` : ''}${uf ? `/${uf}` : ''}`
 }
 
 function daysUntil(dateStr) {
@@ -74,41 +74,41 @@ function UrgencyBadge({ dateStr }) {
 
   if (days < 0) {
     return (
-      <Badge size="sm" color="gray" variant="light">
+      <Badge size="md" color="gray" variant="light" mb="xs">
         Passou
       </Badge>
     )
   }
   if (days === 0) {
     return (
-      <Badge size="sm" color="red" variant="filled">
+      <Badge size="md" color="red" variant="filled" mb="xs">
         Hoje!
       </Badge>
     )
   }
   if (days <= 2) {
     return (
-      <Badge size="sm" color="red" variant="light">
+      <Badge size="md" color="red" variant="light" mb="xs">
         em {days} dias
       </Badge>
     )
   }
   if (days <= 7) {
     return (
-      <Badge size="sm" color="orange" variant="light">
+      <Badge size="md" color="orange" variant="light" mb="xs">
         em {days} dias
       </Badge>
     )
   }
   if (days <= 30) {
     return (
-      <Badge size="sm" color="yellow" variant="light">
+      <Badge size="md" color="yellow" variant="light" mb="xs">
         em {days} dias
       </Badge>
     )
   }
   return (
-    <Badge size="sm" color="gray" variant="light">
+    <Badge size="sm" color="gray" variant="light" mb="xs">
       {dayjs(dateStr).fromNow()}
     </Badge>
   )
@@ -149,6 +149,48 @@ export default function GigApplicationDetail() {
 
   const nextDays = daysUntil(gigDate(gig))
 
+  // mesmo padrão de items usado no DataList do GigInvitation.jsx
+  const dataListDetails = [
+    {
+      label: 'Data',
+      value: gigDate(gig)
+        ? `${dayjs(gigDate(gig)).format('dddd, D [de] MMMM [de] YYYY')}${
+            nextDays > 0 ? ` (em ${nextDays} dias)` : ''
+          }`
+        : 'Não informada',
+      disabled: !gigDate(gig),
+    },
+    {
+      label: 'Horário',
+      value:
+        gig?.time_stage_start || gig?.time_stage_end
+          ? `das ${gig?.time_stage_start?.slice(0, 5) || '--:--'} às ${
+              gig?.time_stage_end?.slice(0, 5) || '--:--'
+            }`
+          : 'Não informado',
+      disabled: !gig?.time_stage_start && !gig?.time_stage_end,
+    },
+    {
+      label: 'Local',
+      value: gigVenue(gig) || 'Não informado',
+      disabled: !gigVenue(gig),
+    },
+    {
+      label: 'Tipo',
+      value: gig?.event_types?.name || 'Não informado',
+      disabled: !gig?.event_types?.name,
+    },
+    {
+      label: 'Remunerado',
+      value: gig?.has_remuneration ? 'Sim' : 'Não',
+    },
+    {
+      label: 'Dress code',
+      value: gig?.dress_code_types?.name || 'Não informado',
+      disabled: !gig?.dress_code_types?.name,
+    },
+  ]
+
   const renderLeftSection = (status) => {
     const props = { color: status?.color, stroke: 3, size: 12 }
 
@@ -166,52 +208,48 @@ export default function GigApplicationDetail() {
     <>
       <Helmet>
         <meta charSet="utf-8" />
-        <title>{isSuccess ? `${gig?.events?.name} · Mublin` : 'Mublin'}</title>
+        <title>{isSuccess ? `${gig?.title} · Mublin` : 'Mublin'}</title>
         <link rel="canonical" href={`https://mublin.com/gig/${gig?.slug}`} />
-        <meta name="description" content={`Gig '${gig?.events?.name}' no Mublin`} />
+        <meta name="description" content={`Gig '${gig?.title}' no Mublin`} />
       </Helmet>
-      <AppNavbarMobile />
 
-      <Container size="xl" pt="xs" px={{ base: 'md', sm: 0 }}>
+      <Affix position={{ top: 0, left: 0 }} hiddenFrom="sm">
+        <AppNavbarMobile pageName={`Detalhes da gig`} />
+      </Affix>
+
+      <Container size="xl" pt="xs" px={{ base: 'md', sm: 0 }} mt={{ base: 50, sm: 0 }}>
         <Stack>
           {loadingGig ? (
-            <Paper p="sm" radius="lg" withBorder>
-              <Stack gap={8}>
-                <Skeleton height={22} width={280} radius="lg" />
-                <Skeleton height={15} width={120} radius="lg" />
-                <Group gap="xs" my={6}>
-                  <Skeleton height={40} width={40} radius="md" />
-                  <Stack gap={6}>
-                    <Skeleton height={14} width={200} radius="lg" />
-                    <Skeleton height={14} width={160} radius="lg" />
-                  </Stack>
-                </Group>
-                <Skeleton height={12} width={190} radius="lg" />
-                <Skeleton height={12} width={220} radius="lg" />
-                <Skeleton height={12} width={160} radius="lg" />
-                <Skeleton height={12} width={130} radius="lg" />
-                <Skeleton height={12} width={180} radius="lg" />
-              </Stack>
-            </Paper>
+            <Text mt="lg" ta="center" c="dimmed">
+              Carregando...
+            </Text>
           ) : isSuccess ? (
             <Paper p="sm" radius="lg" withBorder>
               <Stack gap={2}>
                 <Stack gap={0} mb={8}>
-                  {/* <UrgencyBadge dateStr={gigDate(gig)} /> */}
+                  <UrgencyBadge dateStr={gigDate(gig)} />
                   <Title order={1} fz="h3" w="100%">
-                    {gig?.events?.name}
+                    {gig?.title}
                   </Title>
-                  <Text size="sm" mb="xs" opacity={0.6}>
+                  {gig?.events?.id && (
+                    <Text size="xs" c="dimmed">
+                      parte do evento{' '}
+                      <Anchor component={Link} to={`/event/${gig.events.slug}`} size="xs">
+                        {gig.events.name}
+                      </Anchor>
+                    </Text>
+                  )}
+                  <Text size="xs" mb="xs" c="dimmed">
                     postado por{' '}
                     <Anchor component={Link} to={`/${gig?.profiles?.username}`}>
                       {gig?.profiles?.full_name}
                     </Anchor>{' '}
-                    há {dayjs(gig?.created_at).fromNow()}
+                    {dayjs(gig?.created_at).fromNow()}
                   </Text>
                   {nextDays !== null && nextDays <= 2 && (
                     <IconExclamationCircleFilled size={15} color="orange" />
                   )}
-                  <Group my={2} gap="xs">
+                  <Group my={4} gap="xs">
                     <Avatar
                       size={40}
                       radius="md"
@@ -238,51 +276,16 @@ export default function GigApplicationDetail() {
                     </Stack>
                   </Group>
                 </Stack>
-                <Table
-                  verticalSpacing={2}
-                  horizontalSpacing={0}
-                  fz="13px"
-                  variant="vertical"
-                  layout="fixed"
-                  withRowBorders={false}
-                >
-                  <Table.Tbody>
-                    <Table.Tr>
-                      <Table.Th bg="transparent" w={104}>
-                        Data
-                      </Table.Th>
-                      <Table.Td>
-                        {dayjs(gigDate(gig)).format('dddd, D [de] MMMM [de] YYYY')}{' '}
-                        {nextDays > 0 && `(em ${nextDays} dias)`}
-                      </Table.Td>
-                    </Table.Tr>
-
-                    <Table.Tr>
-                      <Table.Th bg="transparent">Horário</Table.Th>
-                      <Table.Td>
-                        das {gig?.time_stage_start?.slice(0, 5)} às{' '}
-                        {gig?.time_stage_end?.slice(0, 5)}
-                      </Table.Td>
-                    </Table.Tr>
-
-                    {gigVenue(gig) && (
-                      <Table.Tr>
-                        <Table.Th bg="transparent">Local</Table.Th>
-                        <Table.Td>{gigVenue(gig)}</Table.Td>
-                      </Table.Tr>
-                    )}
-
-                    <Table.Tr>
-                      <Table.Th bg="transparent">Remunerado</Table.Th>
-                      <Table.Td>{gig?.has_remuneration ? 'Sim' : 'Não'}</Table.Td>
-                    </Table.Tr>
-
-                    <Table.Tr>
-                      <Table.Th bg="transparent">Dress code</Table.Th>
-                      <Table.Td>{gig?.dress_code_types?.name}</Table.Td>
-                    </Table.Tr>
-                  </Table.Tbody>
-                </Table>
+                <DataList p={0} gap={4} size="sm" orientation="horizontal">
+                  {dataListDetails.map((item) => (
+                    <DataList.Item key={item.label}>
+                      <DataList.ItemLabel>{item.label}</DataList.ItemLabel>
+                      <DataList.ItemValue c={item.disabled ? 'dimmed' : undefined}>
+                        {item.value}
+                      </DataList.ItemValue>
+                    </DataList.Item>
+                  ))}
+                </DataList>
               </Stack>
             </Paper>
           ) : (
@@ -302,14 +305,20 @@ export default function GigApplicationDetail() {
           {isSuccess && (
             <Paper p="sm" radius="lg" withBorder>
               <Title order={5}>Sobre a gig</Title>
-              <Spoiler
-                mt="xs"
-                maxHeight={60}
-                showLabel="...ver mais"
-                hideLabel="...ver menos"
-              >
-                <Text size="sm">{gig?.description}</Text>
-              </Spoiler>
+              {gig?.description ? (
+                <Spoiler
+                  mt="xs"
+                  maxHeight={60}
+                  showLabel="...ver mais"
+                  hideLabel="...ver menos"
+                >
+                  <Text size="sm">{gig?.description}</Text>
+                </Spoiler>
+              ) : (
+                <Text size="sm" c="dimmed" mt={4}>
+                  Descrição não fornecida
+                </Text>
+              )}
             </Paper>
           )}
 
@@ -364,10 +373,11 @@ export default function GigApplicationDetail() {
                           )}
                         </Stack>
                         <ActionIcon
-                          size="lg"
+                          size="md"
+                          variant="subtle"
                           onClick={() => handleOpenModalRoleDetail(role)}
                         >
-                          <IconEye size={22} color="white" />
+                          <IconEye size={18} color="white" />
                         </ActionIcon>
                       </Group>
                     </Paper>

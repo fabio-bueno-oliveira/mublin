@@ -30,7 +30,7 @@ import {
   CloseButton, InputBase, Input, Fieldset,
   Select, TextInput, NumberInput,
   Title, Text, Textarea,
-  Combobox, Checkbox,
+  Combobox, Checkbox, Radio, Loader,
   Button, ActionIcon, ThemeIcon,
 } from '@mantine/core'
 // prettier-ignore
@@ -39,6 +39,7 @@ import {
   IconSend, IconCalendar, IconClock,
   IconMapPin, IconShirt,
   IconMicrophone2,
+  IconCalendarEvent, IconBuildingStore, IconEdit,
   IconCheck, IconX,
   IconChevronRightFilled,
   IconExclamationCircle,
@@ -230,6 +231,88 @@ function SubForCombobox({ onSelect, selected }) {
   )
 }
 
+// Busca de cidade usada no modo "Preencher manualmente" do local da gig.
+// Garante que venue_city_id sempre seja preenchido, mesmo fora do fluxo de
+// venue pré-cadastrada — mesmo padrão de combobox debounced do EventCombobox/SubForCombobox acima.
+// TODO: extrair a query para queries/search.js (searchCities), como já é feito com searchEvents/searchProfiles.
+function CityCombobox({ selected, onSelect }) {
+  const combobox = useCombobox()
+  const [search, setSearch] = useState('')
+  const [results, setResults] = useState([])
+  const [loading, setLoading] = useState(false)
+
+  const fetchCities = useDebouncedCallback(async (query) => {
+    if (query.trim().length < 2) {
+      setResults([])
+      return
+    }
+    setLoading(true)
+    const { data, error } = await supabase
+      .from('cities')
+      .select('id, name, regions ( name, uf )')
+      .ilike('name', `%${query}%`)
+      .limit(10)
+    setLoading(false)
+    if (!error) {
+      setResults(data ?? [])
+      combobox.openDropdown()
+    }
+  }, 300)
+
+  if (selected) {
+    return (
+      <Group gap="xs" mt={4}>
+        <IconMapPin size={14} />
+        <Text size="sm">
+          {selected.name}
+          {selected.regions?.uf ? ` — ${selected.regions.uf}` : ''}
+        </Text>
+        <CloseButton size="xs" onClick={() => onSelect(null)} />
+      </Group>
+    )
+  }
+
+  return (
+    <Combobox
+      store={combobox}
+      onOptionSubmit={(value) => {
+        const city = results.find((c) => String(c.id) === value)
+        onSelect(city || null)
+        setSearch('')
+        setResults([])
+        combobox.closeDropdown()
+      }}
+    >
+      <Combobox.Target>
+        <InputBase
+          label="Cidade"
+          placeholder="Buscar cidade..."
+          value={search}
+          rightSection={loading ? <Loader size="xs" /> : null}
+          onChange={(e) => {
+            setSearch(e.currentTarget.value)
+            fetchCities(e.currentTarget.value)
+          }}
+        />
+      </Combobox.Target>
+      <Combobox.Dropdown>
+        <Combobox.Options>
+          {results.length === 0 ? (
+            <Combobox.Empty>Nenhuma cidade encontrada</Combobox.Empty>
+          ) : (
+            results.map((c) => (
+              <Combobox.Option key={c.id} value={String(c.id)}>
+                {c.name}
+                {c.regions?.uf ? ` — ${c.regions.uf}` : ''}
+              </Combobox.Option>
+            ))
+          )}
+        </Combobox.Options>
+      </Combobox.Dropdown>
+    </Combobox>
+  )
+}
+
 export default function NewGig() {
   const { user } = useAuth()
   const navigate = useNavigate()
@@ -240,7 +323,9 @@ export default function NewGig() {
   const [selectedVenue, setSelectedVenue] = useState(null)
   const [selectedEvent, setSelectedEvent] = useState(null)
   const [projectSearch, setProjectSearch] = useState('')
-  const [showManualVenue, setShowManualVenue] = useState(false)
+  // 'event' | 'venue' | 'manual' | null — controla qual dos 3 cards de local está ativo
+  const [locationMode, setLocationMode] = useState(null)
+  const [selectedManualCity, setSelectedManualCity] = useState(null)
   const [expandedRoleDetails, setExpandedRoleDetails] = useState([])
 
   const [gigRoles, setGigRoles] = useState([])
@@ -310,6 +395,7 @@ export default function NewGig() {
       time_stage_end: '',
       venue_name: '',
       venue_address: '',
+      venue_city_id: null,
       stage_name: '',
     },
     validate: {
@@ -358,11 +444,20 @@ export default function NewGig() {
 
     if (form.values.venue_name) {
       const address = form.values.venue_address ? ` — ${form.values.venue_address}` : ''
-      return `${form.values.venue_name}${address}`
+      const city = selectedManualCity
+        ? ` — ${selectedManualCity.name}${selectedManualCity.regions?.uf ? `/${selectedManualCity.regions.uf}` : ''}`
+        : ''
+      return `${form.values.venue_name}${address}${city}`
     }
 
     return 'Local não informado'
-  }, [selectedEvent, selectedVenue, form.values.venue_name, form.values.venue_address])
+  }, [
+    selectedEvent,
+    selectedVenue,
+    selectedManualCity,
+    form.values.venue_name,
+    form.values.venue_address,
+  ])
 
   const filteredProjects = userProjects.filter(
     (item) =>
@@ -413,8 +508,6 @@ export default function NewGig() {
 
   function handleSelectEvent(ev) {
     setSelectedEvent(ev)
-    setSelectedVenue(null)
-    setShowManualVenue(false)
 
     if (ev.date_start) {
       form.setFieldValue('date', ev.date_start) // já vem em "YYYY-MM-DD"
@@ -557,13 +650,18 @@ export default function NewGig() {
           project_id: values.project_id ? Number(values.project_id) : null,
           event_type: values.event_type_id ? Number(values.event_type_id) : 1,
           dress_code_id: values.dress_code_id ? Number(values.dress_code_id) : null,
-          event_id: selectedEvent?.id || null,
-          venue_id: selectedVenue?.id || null,
+          // Cada campo de local é amarrado ao locationMode ativo — evita o caso em que
+          // um valor "sobra" no form de uma seleção anterior e vaza pro insert.
+          // venue_city_id/venue_name/venue_address de 'event' e 'venue' são recalculados
+          // pelo trigger sync_gig_venue_snapshot no banco; aqui só garantimos o snapshot manual.
+          event_id: locationMode === 'event' ? selectedEvent?.id || null : null,
+          venue_id: locationMode === 'venue' ? selectedVenue?.id || null : null,
           date: values.date || null,
           time_stage_start: values.time_stage_start || null,
           time_stage_end: values.time_stage_end || null,
-          venue_name: selectedVenue ? null : values.venue_name,
-          venue_address: selectedVenue ? null : values.venue_address,
+          venue_name: locationMode === 'manual' ? values.venue_name || null : null,
+          venue_address: locationMode === 'manual' ? values.venue_address || null : null,
+          venue_city_id: locationMode === 'manual' ? values.venue_city_id || null : null,
           setlist_id: selectedSetlistId || null,
           created_by: user.id,
         })
@@ -894,75 +992,141 @@ export default function NewGig() {
 
                   <Divider label="Local" />
 
-                  <EventCombobox
-                    selected={selectedEvent}
-                    isPastGig={isPastGig}
-                    onSelect={handleSelectEvent}
-                    onClear={() => {
-                      setSelectedEvent(null)
-                      setSelectedVenue(null)
-                    }}
-                  />
-
-                  {selectedEvent && (
-                    <TextInput
-                      label="Nome do palco"
-                      description="Palco ou local onde será a gig no evento"
-                      placeholder="Ex: Palco Principal"
-                      {...form.getInputProps('stage_name')}
-                    />
-                  )}
-
-                  {selectedEvent?.venue && (
-                    <Group gap={6}>
-                      <IconMapPin size={14} />
-                      <Text size="sm" c="dimmed">
-                        {selectedEvent.venue.name}
-                        {selectedEvent.venue.city?.name &&
-                          ` — ${selectedEvent.venue.city.name}/${selectedEvent.venue.city.region?.uf || ''}`}
-                      </Text>
-                    </Group>
-                  )}
-
-                  {!selectedEvent && (
-                    <VenueSelector
-                      selected={selectedVenue}
-                      relatedProject={selectedProject}
-                      relatedProjectId={selectedProject?.id}
-                      onSelect={(venue) => {
-                        setSelectedVenue(venue)
-                        setShowManualVenue(false)
-                      }}
-                      onClear={() => {
+                  <Radio.Group
+                    value={locationMode}
+                    onChange={(mode) => {
+                      setLocationMode(mode)
+                      // Limpa o que não pertence ao modo escolhido, pra nunca
+                      // vazar dado de uma seleção anterior pro insert.
+                      if (mode !== 'event') {
+                        setSelectedEvent(null)
+                      }
+                      if (mode !== 'venue') {
                         setSelectedVenue(null)
-                      }}
-                      onSelectManual={(venue) => {
-                        setSelectedVenue(null)
-                        setShowManualVenue(true)
+                      }
+                      if (mode !== 'manual') {
+                        setSelectedManualCity(null)
                         form.setValues({
-                          venue_name: venue.name || '',
-                          venue_address: venue.address || '',
-                          venue_city_id: venue.city_id || null,
+                          venue_name: '',
+                          venue_address: '',
+                          venue_city_id: null,
                         })
-                      }}
-                    />
+                      }
+                    }}
+                  >
+                    <Group grow mt="xs" align="stretch">
+                      <Radio.Card value="event" p="sm" radius="md">
+                        <Group wrap="nowrap" align="flex-start" gap="xs">
+                          <Radio.Indicator />
+                          <div>
+                            <Group gap={6}>
+                              <IconCalendarEvent size={14} />
+                              <Text size="sm" fw={500}>
+                                Evento
+                              </Text>
+                            </Group>
+                            <Text size="xs" c="dimmed">
+                              A gig faz parte de um evento já cadastrado
+                            </Text>
+                          </div>
+                        </Group>
+                      </Radio.Card>
+
+                      <Radio.Card value="venue" p="sm" radius="md">
+                        <Group wrap="nowrap" align="flex-start" gap="xs">
+                          <Radio.Indicator />
+                          <div>
+                            <Group gap={6}>
+                              <IconBuildingStore size={14} />
+                              <Text size="sm" fw={500}>
+                                Local já cadastrado
+                              </Text>
+                            </Group>
+                            <Text size="xs" c="dimmed">
+                              Busque um local já cadastrado no Mublin
+                            </Text>
+                          </div>
+                        </Group>
+                      </Radio.Card>
+
+                      <Radio.Card value="manual" p="sm" radius="md">
+                        <Group wrap="nowrap" align="flex-start" gap="xs">
+                          <Radio.Indicator />
+                          <div>
+                            <Group gap={6}>
+                              <IconEdit size={14} />
+                              <Text size="sm" fw={500}>
+                                Preencher manualmente
+                              </Text>
+                            </Group>
+                            <Text size="xs" c="dimmed">
+                              Não será cadastrado para a comunidade
+                            </Text>
+                          </div>
+                        </Group>
+                      </Radio.Card>
+                    </Group>
+                  </Radio.Group>
+
+                  {locationMode === 'event' && (
+                    <Stack gap="xs" mt="sm">
+                      <EventCombobox
+                        selected={selectedEvent}
+                        isPastGig={isPastGig}
+                        onSelect={handleSelectEvent}
+                        onClear={() => setSelectedEvent(null)}
+                      />
+
+                      {selectedEvent && (
+                        <TextInput
+                          label="Nome do palco"
+                          description="Palco ou local onde será a gig no evento"
+                          placeholder="Ex: Palco Principal"
+                          {...form.getInputProps('stage_name')}
+                        />
+                      )}
+
+                      {selectedEvent?.venue && (
+                        <Group gap={6}>
+                          <IconMapPin size={14} />
+                          <Text size="sm" c="dimmed">
+                            {selectedEvent.venue.name}
+                            {selectedEvent.venue.city?.name &&
+                              ` — ${selectedEvent.venue.city.name}/${selectedEvent.venue.city.region?.uf || ''}`}
+                          </Text>
+                        </Group>
+                      )}
+                    </Stack>
                   )}
 
-                  {!selectedVenue && !selectedEvent && (
-                    <Checkbox
-                      label="Preencher manualmente o local"
-                      description="Não será cadastrado para a comunidade"
-                      checked={showManualVenue}
-                      onChange={(e) => setShowManualVenue(e.currentTarget.checked)}
-                      mt="xs"
-                    />
+                  {locationMode === 'venue' && (
+                    <Stack gap="xs" mt="sm">
+                      <VenueSelector
+                        selected={selectedVenue}
+                        relatedProject={selectedProject}
+                        relatedProjectId={selectedProject?.id}
+                        onSelect={(venue) => setSelectedVenue(venue)}
+                        onClear={() => setSelectedVenue(null)}
+                        onSelectManual={(venue) => {
+                          // Ponte com o card "Preencher manualmente": se o usuário não
+                          // encontrar o local na busca, cai pro modo manual já com o
+                          // que ele tiver digitado até aqui.
+                          setSelectedVenue(null)
+                          setLocationMode('manual')
+                          form.setValues({
+                            venue_name: venue.name || '',
+                            venue_address: venue.address || '',
+                          })
+                        }}
+                      />
+                    </Stack>
                   )}
 
-                  {showManualVenue && !selectedVenue && !selectedEvent && (
-                    <Grid>
+                  {locationMode === 'manual' && (
+                    <Grid mt="sm">
                       <Grid.Col span={6}>
                         <TextInput
-                          label="Nome do local (caso não encontrado acima)"
+                          label="Nome do local"
                           placeholder="Ex: Estúdio do Seu Zé"
                           {...form.getInputProps('venue_name')}
                         />
@@ -970,8 +1134,17 @@ export default function NewGig() {
                       <Grid.Col span={6}>
                         <TextInput
                           label="Endereço"
-                          placeholder="Rua, bairro, cidade"
+                          placeholder="Rua, bairro"
                           {...form.getInputProps('venue_address')}
+                        />
+                      </Grid.Col>
+                      <Grid.Col span={6}>
+                        <CityCombobox
+                          selected={selectedManualCity}
+                          onSelect={(city) => {
+                            setSelectedManualCity(city)
+                            form.setFieldValue('venue_city_id', city?.id || null)
+                          }}
                         />
                       </Grid.Col>
                     </Grid>

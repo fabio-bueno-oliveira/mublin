@@ -27,7 +27,6 @@ import {
   Tooltip,
   Fieldset,
   Center,
-  Divider,
 } from '@mantine/core'
 import { useDisclosure, useWindowScroll } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
@@ -37,9 +36,10 @@ import {
   IconChevronDown,
   IconChevronUp,
   IconSend,
-  IconCheck,
   IconClock,
   IconArrowLeft,
+  IconThumbDown,
+  IconThumbUp,
 } from '@tabler/icons-react'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
@@ -71,16 +71,12 @@ async function fetchInvitationById(invitationId) {
       profile_id,
       gigs (
         id,
-        created_by,
         date,
         time_stage_start,
         title,
-        venue_name,
-        venue_address,
+        created_by,
         type:event_types ( name ),
         city:cities ( name ),
-        events ( id, name, description ),
-        venues ( id, name ),
         projects ( id, name, slug, picture, project_types ( name_ptbr ) )
       ),
       gig_roles (
@@ -88,6 +84,20 @@ async function fetchInvitationById(invitationId) {
         roles ( description_ptbr ),
         experience_levels ( id, name_pt ),
         profiles ( avatar, username )
+      ),
+      organizer:invited_by (
+        id,
+        full_name,
+        username,
+        avatar,
+        title
+      ),
+      applicant:profile_id (
+        id,
+        full_name,
+        username,
+        avatar,
+        title
       ),
       profiles:invited_by (
         id,
@@ -103,6 +113,17 @@ async function fetchInvitationById(invitationId) {
 
   if (error) throw error
   return data
+}
+
+async function fetchApplicationsCountByRoleId(gigRoleId) {
+  // Conta quantas candidaturas/convites existem para a mesma vaga
+  const { count, error } = await supabase
+    .from('gig_applications')
+    .select('id', { count: 'exact', head: true })
+    .eq('gig_role_id', gigRoleId)
+
+  if (error) throw error
+  return count ?? 0
 }
 
 async function fetchApplicationComments(applicationId) {
@@ -129,15 +150,18 @@ async function fetchApplicationComments(applicationId) {
   return data ?? []
 }
 
-function ApplicationComments({ applicationId, currentUserId }) {
+function ApplicationComments({ applicationId, currentUserId, comments: commentsProp }) {
   const queryClient = useQueryClient()
   const [newComment, setNewComment] = useState('')
 
-  const { data: comments = [], isLoading } = useQuery({
+  const { data: commentsFromQuery = [], isLoading } = useQuery({
     queryKey: ['application-comments', applicationId],
     queryFn: () => fetchApplicationComments(applicationId),
     staleTime: 0,
+    enabled: !commentsProp, // só busca se não vier do pai
   })
+
+  const comments = commentsProp ?? commentsFromQuery
 
   const addComment = useMutation({
     mutationFn: async (content) => {
@@ -235,7 +259,7 @@ function ApplicationComments({ applicationId, currentUserId }) {
 
 function OtherInvitedMusicians({ gigId, currentInvitationId }) {
   const { data: otherInvites = [], isLoading } = useQuery({
-    queryKey: ['gig-other-invites', gigId, currentInvitationId],
+    queryKey: ['gig-invite', gigId, currentInvitationId],
     queryFn: () => fetchGigInvitationsByGigId(gigId, currentInvitationId),
     enabled: !!gigId,
     staleTime: 1000 * 60 * 2,
@@ -254,57 +278,64 @@ function OtherInvitedMusicians({ gigId, currentInvitationId }) {
   return (
     <Box mt="lg">
       <Title order={4} size="md" fw={600} mb="xs">
-        Outros músicos convidados para esta gig ({otherInvites.length})
+        Pessoas confirmadas nesta mesma gig ({otherInvites.length})
       </Title>
       <Stack gap="xs">
-        {otherInvites.map((inv) => {
-          const status = STATUS_MAP[inv.status_request_appliant]
-          const role = inv?.gig_roles?.roles?.description_ptbr
-          return (
-            <Paper key={inv.id} withBorder radius="md" p="xs">
-              <Group gap="xs" wrap="nowrap" justify="space-between">
-                <Group gap="xs" wrap="nowrap">
-                  <Avatar
-                    src={
-                      inv.profiles?.avatar ? AVATAR_PATH + inv.profiles.avatar : undefined
-                    }
-                    size={36}
-                    radius="xl"
-                    component={Link}
-                    to={`/${inv.profiles?.username}`}
-                  />
-                  <Box>
-                    <Group gap={4}>
-                      <Anchor
-                        component={Link}
-                        to={`/${inv.profiles?.username}`}
-                        size="sm"
-                        fw={600}
-                        c="var(--mantine-color-text)"
-                      >
-                        {inv.profiles?.full_name}
-                      </Anchor>
-                      <Text size="xs" c="dimmed">
-                        @{inv.profiles?.username}
-                      </Text>
-                    </Group>
-                    {role && (
-                      <Text size="xs" c="dimmed">
-                        {role}
-                      </Text>
-                    )}
-                  </Box>
-                </Group>
+        {otherInvites
+          .filter((inv) => {
+            // só aceitos
+            return inv.status_request_appliant === 2
+          })
+          .map((inv) => {
+            const status = STATUS_MAP[inv.status_request_appliant]
+            const role = inv?.gig_roles?.roles?.description_ptbr
+            return (
+              <Paper key={inv.id} withBorder radius="md" p="xs">
+                <Group gap="xs" wrap="nowrap" justify="space-between">
+                  <Group gap="xs" wrap="nowrap">
+                    <Avatar
+                      src={
+                        inv.profiles?.avatar
+                          ? AVATAR_PATH + inv.profiles.avatar
+                          : undefined
+                      }
+                      size={36}
+                      radius="xl"
+                      component={Link}
+                      to={`/${inv.profiles?.username}`}
+                    />
+                    <Box>
+                      <Group gap={4}>
+                        <Anchor
+                          component={Link}
+                          to={`/${inv.profiles?.username}`}
+                          size="sm"
+                          fw={600}
+                          c="var(--mantine-color-text)"
+                        >
+                          {inv.profiles?.full_name}
+                        </Anchor>
+                        <Text size="xs" c="dimmed">
+                          @{inv.profiles?.username}
+                        </Text>
+                      </Group>
+                      {role && (
+                        <Text size="xs" c="dimmed">
+                          {role}
+                        </Text>
+                      )}
+                    </Box>
+                  </Group>
 
-                {status && (
-                  <Badge size="xs" color={status.color} variant="light">
-                    {status.label}
-                  </Badge>
-                )}
-              </Group>
-            </Paper>
-          )
-        })}
+                  {status && inv.status_request_appliant === 2 && (
+                    <Badge size="xs" color={status.color} variant="light">
+                      {status.label}
+                    </Badge>
+                  )}
+                </Group>
+              </Paper>
+            )
+          })}
       </Stack>
     </Box>
   )
@@ -315,12 +346,25 @@ function InvitationCard({ invitation, currentUserId, userProfile }) {
   const [gigDetailsExpanded, { toggle: toggleGigDetails }] = useDisclosure(false)
   const [expanded, { toggle }] = useDisclosure(false)
 
+  const { data: comments = [] } = useQuery({
+    queryKey: ['application-comments', invitation.id],
+    queryFn: () => fetchApplicationComments(invitation.id),
+    staleTime: 0,
+  })
+
   const ownerStatus = STATUS_MAP[invitation.status_request_gig_owner]
   const appliantStatus = STATUS_MAP[invitation.status_request_appliant]
 
   const gigDate = invitation?.gigs?.date
   const gigTime = invitation?.gigs?.time_stage_start || '23:59:59'
   const isPastGig = gigDate ? dayjs(`${gigDate}T${gigTime}`).isBefore(dayjs()) : false
+
+  const gigRoleId = invitation?.gig_roles?.id
+  const { data: applicationsCount, isLoading: isLoadingCount } = useQuery({
+    queryKey: ['gig-role-applications-count', gigRoleId],
+    queryFn: () => fetchApplicationsCountByRoleId(gigRoleId),
+    enabled: !!gigRoleId,
+  })
 
   const updateStatus = useMutation({
     mutationFn: async (statusId) => {
@@ -329,10 +373,23 @@ function InvitationCard({ invitation, currentUserId, userProfile }) {
         .update({ status_request_appliant: statusId })
         .eq('id', invitation.id)
       if (error) throw error
+      return statusId
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['invitation', invitation.id] })
+    onSuccess: (newStatus) => {
+      // Invalida TODAS as variações de ['invitation', id] - resolve o problema de string vs number
+      queryClient.invalidateQueries({ queryKey: ['invitation'] })
+      // Atualização otimista imediata - UI muda na hora sem esperar refetch
+      queryClient.setQueryData(['invitation', String(invitation.id)], (old) =>
+        old ? { ...old, status_request_appliant: newStatus } : old,
+      )
+      queryClient.setQueryData(['invitation', invitation.id], (old) =>
+        old ? { ...old, status_request_appliant: newStatus } : old,
+      )
+      // Também invalida listas que possam usar esse convite
       queryClient.invalidateQueries({ queryKey: ['received-invitations'] })
+      queryClient.invalidateQueries({ queryKey: ['sent-invitations'] })
+      queryClient.invalidateQueries({ queryKey: ['gig-role-applications-count'] })
+
       notifications.show({
         title: 'Resposta enviada!',
         message: 'Status atualizado.',
@@ -344,7 +401,9 @@ function InvitationCard({ invitation, currentUserId, userProfile }) {
     },
   })
 
-  const profile = invitation?.profiles
+  const organizerProfile = invitation?.organizer || invitation?.profiles
+  const applicantProfile = invitation?.applicant
+  const profile = organizerProfile
   const role = invitation?.gig_roles
   const fee = invitation?.gig_roles?.fee
 
@@ -386,6 +445,7 @@ function InvitationCard({ invitation, currentUserId, userProfile }) {
 
   const isReceived = invitation.profile_id === currentUserId
   const isAcceptedByAppliant = invitation.status_request_appliant === 2
+  const isDeclinedByAppliant = invitation.status_request_appliant === 3
   const canRespond =
     isReceived &&
     (!invitation.status_request_appliant || invitation.status_request_appliant === 1) &&
@@ -414,10 +474,29 @@ function InvitationCard({ invitation, currentUserId, userProfile }) {
         )}
       </Group>
 
-      <Title order={2} size="xl" fw={500} mb="xs">
+      <Title order={2} size="xl" fw={500}>
         {role?.roles?.description_ptbr} para {invitation?.gigs?.projects?.name} em{' '}
         {dayjs(invitation?.gigs?.date).format('D [de] MMMM [de] YYYY')}
       </Title>
+
+      <Group mb="sm" mt={4}>
+        <Group gap={4}>
+          <Text span size="xs" lh={1}>
+            Status da vaga:
+          </Text>
+          <Text span size="xs">
+            {invitation?.gig_roles?.is_filled ? 'Encerrada' : 'Em aberto'}
+          </Text>
+        </Group>
+        <Group gap={4}>
+          <Text span size="xs" lh={1}>
+            Total de candidaturas para esta vaga:
+          </Text>
+          <Text span size="xs" fw={600}>
+            {isLoadingCount ? '...' : (applicationsCount ?? 0)}
+          </Text>
+        </Group>
+      </Group>
 
       <Group gap="xs" wrap="nowrap" flex={1} mb="xs">
         <Avatar
@@ -449,21 +528,27 @@ function InvitationCard({ invitation, currentUserId, userProfile }) {
         </Box>
       </Group>
 
-      <Fieldset p="xs" legend="Status do convite" my="sm">
+      <Fieldset p={4} legend="Status do convite" my="sm">
         <Grid columns={2} gutter="md">
           <Grid.Col span={1}>
             <Center>
               <Avatar
-                src={profile?.avatar ? AVATAR_PATH + profile.avatar : undefined}
+                src={
+                  organizerProfile?.avatar
+                    ? AVATAR_PATH + organizerProfile.avatar
+                    : undefined
+                }
                 radius="xl"
                 size={22}
-                title={`/${profile?.username}`}
                 component={Link}
-                to={`/${profile?.username}`}
+                to={`/${organizerProfile?.username}`}
               />
             </Center>
-            <Text size="xs" my={2} ta="center">
+            <Text size="xs" ta="center">
               Organizador
+            </Text>
+            <Text size="10px" ta="center" c="dimmed">
+              @{organizerProfile?.username}
             </Text>
             {ownerStatus && (
               <Center>
@@ -476,15 +561,22 @@ function InvitationCard({ invitation, currentUserId, userProfile }) {
           <Grid.Col span={1}>
             <Center>
               <Avatar
-                src={userProfile?.avatar ? AVATAR_PATH + userProfile.avatar : undefined}
+                src={
+                  applicantProfile?.avatar
+                    ? AVATAR_PATH + applicantProfile.avatar
+                    : undefined
+                }
                 radius="xl"
                 size={22}
                 component={Link}
-                to={`/${userProfile?.username}`}
+                to={`/${applicantProfile?.username}`}
               />
             </Center>
-            <Text size="xs" my={2} ta="center">
+            <Text size="xs" ta="center">
               Convidado
+            </Text>
+            <Text size="10px" ta="center" c="dimmed">
+              @{applicantProfile?.username}
             </Text>
             {appliantStatus && (
               <Center>
@@ -529,8 +621,14 @@ function InvitationCard({ invitation, currentUserId, userProfile }) {
         )}
         {isAcceptedByAppliant && (
           <Tooltip
-            label="Clique para voltar para pendente"
+            label={
+              invitation?.gig_roles?.is_filled
+                ? 'Não é possível alterar pois a vaga já foi fechada pelo organizador'
+                : 'Clique para voltar para pendente'
+            }
             disabled={!isReceived}
+            multiline
+            w={200}
             withArrow
           >
             <Button
@@ -538,7 +636,7 @@ function InvitationCard({ invitation, currentUserId, userProfile }) {
               variant="light"
               fullWidth
               loading={updateStatus.isPending}
-              disabled={!isReceived}
+              disabled={!isReceived || invitation?.gig_roles?.is_filled}
               onClick={() =>
                 modals.openConfirmModal({
                   title: 'Retirar aceite do convite',
@@ -553,19 +651,52 @@ function InvitationCard({ invitation, currentUserId, userProfile }) {
                   onConfirm: () => updateStatus.mutate(1),
                 })
               }
-              leftSection={<IconCheck size={16} />}
+              leftSection={<IconThumbUp size={16} />}
             >
               Aceito
             </Button>
           </Tooltip>
         )}
+        {isDeclinedByAppliant && (
+          <Tooltip
+            label={
+              invitation?.gig_roles?.is_filled
+                ? 'Não é possível alterar pois a vaga já foi fechada pelo organizador'
+                : 'Clique para voltar para pendente'
+            }
+            disabled={!isReceived}
+            multiline
+            w={200}
+            withArrow
+          >
+            <Button
+              color="red.9"
+              variant="light"
+              fullWidth
+              loading={updateStatus.isPending}
+              disabled={!isReceived || invitation?.gig_roles?.is_filled}
+              onClick={() =>
+                modals.openConfirmModal({
+                  title: 'Reverter recusa do convite',
+                  children: (
+                    <Text size="sm">
+                      Tem certeza que deseja reverter sua recusa? O convite ficará
+                      pendente novamente.
+                    </Text>
+                  ),
+                  labels: { confirm: 'Retirar recusa', cancel: 'Cancelar' },
+                  confirmProps: { color: 'red' },
+                  onConfirm: () => updateStatus.mutate(1),
+                })
+              }
+              leftSection={<IconThumbDown size={16} />}
+            >
+              Recusado
+            </Button>
+          </Tooltip>
+        )}
 
-        <Divider variant="dashed" mt="xs" />
-
-        <Box>
-          <Text size="sm" mb={2}>
-            Descrição do convite:
-          </Text>
+        <Fieldset p="xs" legend="Descrição do convite:" my="xs">
           {invitation.invitation_description ? (
             <Group align="center" gap={6}>
               <Avatar
@@ -584,7 +715,7 @@ function InvitationCard({ invitation, currentUserId, userProfile }) {
               Nenhuma descrição foi enviada junto deste convite
             </Text>
           )}
-        </Box>
+        </Fieldset>
 
         <Button
           size="xs"
@@ -626,7 +757,9 @@ function InvitationCard({ invitation, currentUserId, userProfile }) {
           }
           onClick={toggle}
         >
-          {expanded ? 'Ocultar comentários' : 'Comentários'}
+          {expanded
+            ? `Ocultar comentários (${comments.length})`
+            : `Comentários ${comments.length > 0 ? `(${comments.length})` : ''}`}
         </Button>
 
         <Collapse expanded={expanded}>
@@ -661,6 +794,18 @@ export default function GigInvitation() {
     enabled: !!id,
     staleTime: 1000 * 60 * 2,
   })
+
+  const canView =
+    invitation?.profile_id === user?.id ||
+    invitation?.gigs?.created_by === user?.id ||
+    invitation?.organizer?.id === user?.id
+
+  if (!canView && !isLoading)
+    return (
+      <Alert color="red" p="xs" mt="sm">
+        Você não tem permissão para ver este convite
+      </Alert>
+    )
 
   return (
     <>

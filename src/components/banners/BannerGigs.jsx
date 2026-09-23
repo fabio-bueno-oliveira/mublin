@@ -31,11 +31,11 @@ export default function BannerGigs() {
           <IconMusic size={26} color="#ff6a00" />
         </Box>
         <Box style={{ flex: 1 }}>
-          <Badge color="white" c="#ff6a00" size="xs" radius="xl">
+          <Badge color="white" variant="outline" size="md" radius="xl">
             Querendo tocar?
           </Badge>
           <Text c="white" fw={800} fz={19}>
-            Encontre gigs interessantes
+            Encontre gigs
           </Text>
           <Text c="white" opacity={0.9} fz={13.5} fw={500}>
             Novas oportunidades toda semana

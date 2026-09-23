@@ -1,31 +1,23 @@
 import { useEffect, useMemo } from 'react'
 import { Helmet } from 'react-helmet-async'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { getTrendingMap } from '../hooks/useTrending'
 import { useQuery } from '@tanstack/react-query'
-import { fetchUserRecentGear } from '../queries/user'
 import { fetchNewsFeed } from '../queries/feed'
 import NewsCard from '../components/feed/NewsCard'
-// import FeaturedCard from '../components/home/FeaturedCard'
 import ProfileChecklistCard from '../components/home/ProfileChecklistCard'
 import GigsDashboard from '../components/home/GigsDashboard'
 import AppNavbarMobile from '../components/AppNavbarMobile'
 import BannerMublinPro from '../components/banners/BannerMublinPro'
 // prettier-ignore
 import {
-  Skeleton, Grid,
-  Box, Card,
-  Container, Stack,
-  Group,
+  Skeleton, Grid, Box,
+  Container, Stack, Group,
   Text, Title, 
-  Image,
 } from '@mantine/core'
 import { useMediaQuery } from '@mantine/hooks'
-import { IconRss, IconBox } from '@tabler/icons-react'
-
-const PATH_GEAR_ITEM_IMG =
-  'https://ik.imagekit.io/mublin/products/tr:w-70,h-70,cm-pad_resize,bg-FFFFFF,fo-x/'
+import { IconRss } from '@tabler/icons-react'
 
 export default function Home() {
   const { user, profile, loading } = useAuth()
@@ -50,13 +42,6 @@ export default function Home() {
     staleTime: 1000 * 60 * 5,
   })
 
-  const { data: recentGear, isLoading: loadingRecentGear } = useQuery({
-    queryKey: ['user-recent-gear', user?.id],
-    queryFn: () => fetchUserRecentGear(user.id),
-    enabled: !!user?.id,
-    staleTime: 1000 * 60 * 5,
-  })
-
   const trendingMap = useMemo(() => getTrendingMap(news), [news])
 
   if (loading) {
@@ -76,12 +61,9 @@ export default function Home() {
         <Grid gap="lg">
           <Grid.Col span={{ base: 12, md: 8, lg: 8 }}>
             {loading ? (
-              <>
-                <Title size="h2" fw={600} lh={1.2} mt={4} mb={4}>
-                  Carregando...
-                </Title>
-                <Skeleton width={300} height={18} radius="md" />
-              </>
+              <Title size="h4" fw={500} lh={1.2} mt="sm" mb={4}>
+                Carregando...
+              </Title>
             ) : (
               <>
                 {/* <FeaturedCard /> */}
@@ -90,71 +72,7 @@ export default function Home() {
 
                 <GigsDashboard />
 
-                {profile?.plan === 'Pro' ? (
-                  <Box mb="xs">
-                    <Title order={3} fw={600} fz="lg" mb={2}>
-                      Meu equipamento
-                    </Title>
-                    <Card radius="md" withBorder p="sm" mb="md">
-                      <Group
-                        wrap="nowrap"
-                        gap="sm"
-                        component={Link}
-                        to={`/${profile?.username}/gear`}
-                        style={{
-                          borderRadius: 8,
-                          boxShadow: 'none',
-                          cursor: 'pointer',
-                        }}
-                        className="noDecoration"
-                      >
-                        {recentGear && (
-                          <Image
-                            src={
-                              recentGear?.products?.picture
-                                ? PATH_GEAR_ITEM_IMG + recentGear?.products?.picture
-                                : undefined
-                            }
-                            fit="contain"
-                            h={35}
-                            w={35}
-                            radius="sm"
-                          />
-                        )}
-                        <Stack gap={1} style={{ flex: 1 }}>
-                          <Text
-                            size="xs"
-                            fw={500}
-                            tt="uppercase"
-                            c="dimmed"
-                            lineClamp={1}
-                          >
-                            Adicionado recentemente
-                          </Text>
-                          <Text size="xs" lineClamp={1}>
-                            {loadingRecentGear
-                              ? 'Carregando...'
-                              : recentGear
-                                ? `${recentGear?.products?.name} (${recentGear?.products?.brands?.name})`
-                                : 'Nenhum item adicionado'}
-                          </Text>
-                        </Stack>
-                      </Group>
-                    </Card>
-                  </Box>
-                ) : (
-                  <BannerMublinPro />
-                )}
-
-                {/* <Card bg="mublinColor.9">
-                  <Title order={2}>Guitarrista</Title>
-                  <Title order={4}>Guitarrista para show cover anos 80</Title>
-                  <Text />
-                  <Text>
-                    95% match Sorocaba, SP · Bar Manifesto · 28 jun · 21h Rock · Guitar solo
-                    exigido · 4h de show R$ 400 cachê encerra hoje
-                  </Text>
-                </Card> */}
+                {profile?.plan !== 'Pro' && <BannerMublinPro />}
               </>
             )}
           </Grid.Col>

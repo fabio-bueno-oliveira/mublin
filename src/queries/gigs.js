@@ -5,13 +5,16 @@ export async function fetchGigDetails(gigId) {
     .from('gigs')
     .select(
       `
-      id, created_at, active, 
+      id, created_at, active, date, 
       title, slug, description,
       has_remuneration,
       time_stage_start, time_stage_end, 
-      profiles!gigs_posted_by_fkey ( id, full_name, username, avatar ),
+      profiles!gigs_created_by_fkey ( id, full_name, username, avatar ),
       projects ( id, name, slug, picture, project_types ( name_ptbr ) ),
-      events ( id, name, date_start, venues ( name, cities ( name, regions ( name, uf ) ) ) ),
+      venue_name, venue_address,
+      venue_city:venue_city_id ( name, regions ( name, uf ) ),
+      events ( id, name, slug, date_start ),
+      venues ( id, name, slug ),
       event_types ( name ),
       dress_code_types ( name ),
       gig_roles (
@@ -237,24 +240,14 @@ export async function fetchGigInvitationsByGigId(gigId, excludeApplicationId) {
     .select(
       `
       id,
-      created_at,
       status_request_appliant,
-      status_request_gig_owner,
-      gig_roles (
-        id,
-        roles ( description_ptbr ),
-        fee
-      ),
-      profiles:profile_id (
-        id,
-        full_name,
-        username,
-        avatar,
-        title
-      )
+      gig_roles!inner ( is_filled, roles ( description_ptbr ) ),
+      profiles:profile_id ( id, full_name, username, avatar )
     `,
     )
     .eq('gig_id', gigId)
+    .eq('status_request_appliant', 2) // só aceitos
+    .eq('gig_roles.is_filled', true) // apenas vagas fechadas
     .order('created_at', { ascending: true })
 
   if (excludeApplicationId) {

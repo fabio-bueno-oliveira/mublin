@@ -5,7 +5,7 @@ import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query'
 // prettier-ignore
 import {
   Grid, Stack,
-  Group, Center,
+  Group, Center, Table,
   Box, Card, Paper,
   Text, Title, Avatar,
   Select, Switch, Slider,
@@ -23,7 +23,13 @@ import {
 import { fetchReceivedInvitations } from '../../queries/gigs'
 import { formatShortDate } from '../../utils/dates'
 import BannerGigs from '../banners/BannerGigs'
-import { IconCheck, IconClock } from '@tabler/icons-react'
+import {
+  IconCalendarEvent,
+  IconClock,
+  IconHourglassOff,
+  IconThumbDown,
+  IconThumbUp,
+} from '@tabler/icons-react'
 import dayjs from 'dayjs'
 import 'dayjs/locale/pt-br'
 import relativeTime from 'dayjs/plugin/relativeTime'
@@ -54,7 +60,7 @@ export default function GigsDashboard() {
     },
   })
 
-  const handleSave = () => {
+  const handleSaveGoal = () => {
     saveGigGoalMutation.mutate({
       monthly_total_gigs: tempNoGoal ? null : tempGoal,
       annual_total_gigs: null,
@@ -157,7 +163,7 @@ export default function GigsDashboard() {
           </Title>
         </Group>
 
-        <Card.Section px="md" pb="md">
+        <Card.Section px="md">
           <Grid gap="xs">
             <Grid.Col span={7.3}>
               <Paper
@@ -173,7 +179,7 @@ export default function GigsDashboard() {
                 }}
               >
                 <Text size="xs" fw={500} tt="uppercase" c="dimmed">
-                  Próxima gig
+                  Próxima gig {nextGig && `${dayjs(nextGig?.gig?.date).fromNow()}`}
                 </Text>
 
                 <Stack gap={1} mt={2}>
@@ -185,11 +191,15 @@ export default function GigsDashboard() {
                       <Group gap={4}>
                         <Text size="xs" c="dimmed" lineClamp={1}>
                           {dayjs(nextGig?.gig?.date).format('DD [de] MMMM')}{' '}
-                          <Text span>({dayjs(nextGig?.gig?.date).fromNow()})</Text>
+                          <Text span>
+                            {nextGig?.gig?.venue_city
+                              ? `em ${nextGig.gig.venue_city.name}/${nextGig.gig.venue_city.region?.uf || ''}`
+                              : nextGig?.gig?.venue_name || ''}
+                          </Text>
                         </Text>
                       </Group>
                       <Group gap={4}>
-                        <Text size="10px" c="dimmed" lh={1}>
+                        <Text span size="10px" c="dimmed" lh={1}>
                           com
                         </Text>
                         <Avatar
@@ -198,7 +208,7 @@ export default function GigsDashboard() {
                           component={Link}
                           to={`/project/${nextGig?.gig?.projects?.slug}`}
                         />
-                        <Text size="10px" c="dimmed" lh={1}>
+                        <Text span size="10px" c="dimmed" lh={1}>
                           {nextGig?.gig?.projects?.name}
                         </Text>
                       </Group>
@@ -296,7 +306,7 @@ export default function GigsDashboard() {
                       </Button>
                       <Button
                         size="xs"
-                        onClick={handleSave}
+                        onClick={handleSaveGoal}
                         loading={saveGigGoalMutation.isPending}
                       >
                         Salvar
@@ -308,64 +318,78 @@ export default function GigsDashboard() {
             </Grid.Col>
           </Grid>
         </Card.Section>
-      </Card>
 
-      <Center>
-        <MiniCalendar
-          value={miniCalendarCurrentDate}
-          onChange={setMiniCalendarCurrentDate}
-          numberOfDays={6}
-          size="sm"
-          locale="pt-br"
-          getDayProps={(date) => {
-            const iso = dayjs(date).format('YYYY-MM-DD')
-            const isToday = iso === todayIso
+        <Divider variant="dashed" my="md" />
 
-            return {
-              'data-has-gig': gigDatesSet.has(iso) || undefined,
-              'data-is-today': isToday || undefined,
-            }
-          }}
-        />
-      </Center>
+        <Center>
+          <MiniCalendar
+            value={miniCalendarCurrentDate}
+            onChange={setMiniCalendarCurrentDate}
+            numberOfDays={6}
+            size="sm"
+            locale="pt-br"
+            getDayProps={(date) => {
+              const iso = dayjs(date).format('YYYY-MM-DD')
+              const isToday = iso === todayIso
 
-      <Box mt="md" mb="xs" id="gigs-list-view">
-        <Title ta="center" order={3} fw={600} fz="lg" lh={1} mb="xs">
-          {isSelectedToday
-            ? `Hoje, ${weekDay}`
-            : `${weekDayCapitalized}, ${dayjs(miniCalendarCurrentDate).locale('pt-br').format('DD [de] MMMM')}`}
-        </Title>
+              return {
+                'data-has-gig': gigDatesSet.has(iso) || undefined,
+                'data-is-today': isToday || undefined,
+              }
+            }}
+          />
+        </Center>
 
-        {isLoadingGigsForSelectedDay ? (
-          <Card radius="md" withBorder p="sm">
-            <Text c="dimmed" size="sm">
+        <Box mt="md" id="gigs-list-view">
+          <Title ta="center" order={3} fw={600} fz="lg" lh={1} mb={6}>
+            {isSelectedToday
+              ? `Hoje, ${weekDay}`
+              : `${weekDayCapitalized}, ${dayjs(miniCalendarCurrentDate).locale('pt-br').format('DD [de] MMMM')}`}
+          </Title>
+
+          {isLoadingGigsForSelectedDay ? (
+            <Text c="dimmed" ta="center" size="sm">
               Carregando gigs...
             </Text>
-          </Card>
-        ) : gigsForSelectedDay.length === 0 ? (
-          <Card radius="md" withBorder p="sm">
-            <Text c="dimmed" size="sm">
+          ) : gigsForSelectedDay.length === 0 ? (
+            <Text c="dimmed" ta="center" size="sm">
               Nenhuma gig nesta data
             </Text>
-          </Card>
-        ) : (
-          <Stack gap="xs" mt="sm">
-            {gigsForSelectedDay.map((item) => (
-              <Paper key={item.id} withBorder p="xs" radius="md">
-                <Text size="sm" fw={500}>
-                  {item.gig.title}
-                </Text>
-                <Text size="xs" c="dimmed">
-                  Início:{' '}
-                  {item.gig.time_stage_start ? item.gig.time_stage_start.slice(0, 5) : ''}
-                  {item.gig.time_stage_end &&
-                    ` | Fim: ${item.gig.time_stage_end.slice(0, 5)}`}
-                </Text>
-              </Paper>
-            ))}
-          </Stack>
-        )}
-      </Box>
+          ) : (
+            <Table mt="sm">
+              <Table.Tbody>
+                {gigsForSelectedDay.map((item) => (
+                  <Table.Tr
+                    key={item.id}
+                    component={Link}
+                    to={`/gig/${item.gig.id}`}
+                    style={{ textDecoration: 'none', color: 'inherit', border: 'none' }}
+                  >
+                    <Table.Td px={0} py={4}>
+                      <Group gap={4}>
+                        <IconCalendarEvent size={32} stroke={1.4} />
+                        <Stack gap={0}>
+                          <Text size="sm" fw={500} c="var(--mantine-color-text)">
+                            {item.gig.title}
+                          </Text>
+                          <Text size="xs" c="dimmed">
+                            Início:{' '}
+                            {item.gig.time_stage_start
+                              ? item.gig.time_stage_start.slice(0, 5)
+                              : ''}
+                            {item.gig.time_stage_end &&
+                              ` · Fim: ${item.gig.time_stage_end.slice(0, 5)}`}
+                          </Text>
+                        </Stack>
+                      </Group>
+                    </Table.Td>
+                  </Table.Tr>
+                ))}
+              </Table.Tbody>
+            </Table>
+          )}
+        </Box>
+      </Card>
 
       {/* <Divider mt="lg" opacity={0.6} /> */}
 
@@ -423,14 +447,15 @@ export default function GigsDashboard() {
                 radius="md"
                 withBorder
                 p="sm"
-                mb="md"
+                mb="xs"
                 mt="xs"
               >
                 <Group justify="space-between">
                   <Group gap={6}>
                     <Avatar src={`${AVATAR_PATH}${inv.profiles.avatar}`} size={20} />
                     <Text size="xs" fw={200}>
-                      enviado por {inv.profiles.full_name}
+                      enviado por {inv.profiles.full_name}{' '}
+                      {inv?.created_at && `${dayjs(inv?.created_at).fromNow()}`}
                     </Text>
                   </Group>
                   {(() => {
@@ -442,7 +467,13 @@ export default function GigsDashboard() {
 
                     if (isPastGig) {
                       return (
-                        <Badge variant="light" size="xs" color="red.9" fw={300}>
+                        <Badge
+                          variant="light"
+                          size="xs"
+                          color="red.9"
+                          fw={300}
+                          leftSection={<IconHourglassOff size={10} />}
+                        >
                           passou
                         </Badge>
                       )
@@ -465,13 +496,27 @@ export default function GigsDashboard() {
                     if (inv.status_request_appliant === 2) {
                       return (
                         <Badge
-                          leftSection={<IconCheck size={10} />}
+                          leftSection={<IconThumbUp size={10} />}
                           variant="light"
                           size="xs"
                           color="green"
                           fw={300}
                         >
                           aceito
+                        </Badge>
+                      )
+                    }
+
+                    if (inv.status_request_appliant === 3) {
+                      return (
+                        <Badge
+                          leftSection={<IconThumbDown size={10} />}
+                          variant="light"
+                          size="xs"
+                          color="red.9"
+                          fw={300}
+                        >
+                          declinado
                         </Badge>
                       )
                     }
@@ -492,7 +537,7 @@ export default function GigsDashboard() {
                     </Badge>
                   </Stack>
                   <Stack gap={2} w="100%">
-                    <Title fz="xs">
+                    <Title fz="md" fw={500}>
                       Convite para ser {inv?.gig_roles?.roles?.description_ptbr}
                     </Title>
                     {inv?.gigs?.title && (
