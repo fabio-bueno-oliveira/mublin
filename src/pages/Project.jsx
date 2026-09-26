@@ -419,7 +419,13 @@ export default function Project() {
             <Title order={5} fw={600} mb="xs">
               Visão geral
             </Title>
-            <Text size="sm">
+            <Text
+              size="sm"
+              style={{
+                textDecoration: 'none',
+                whiteSpace: 'pre-line',
+              }}
+            >
               {project?.description ? (
                 project.description
               ) : (

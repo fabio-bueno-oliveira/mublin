@@ -438,7 +438,10 @@ export async function fetchUserGigs(userId, limit = 30) {
       gig:gigs (
         id,
         title,
-        date
+        date,
+        is_canceled,
+        canceled_at,
+        cancellation_reason
       )
     `,
     )
@@ -465,9 +468,15 @@ export async function fetchUserNextGig(userId, fromIsoDate) {
         id,
         title,
         date,
-        type:event_types ( name ),
-        city:cities ( name ),
+        time_stage_start,
+        venue_name,
+        venue_city:venue_city_id ( name, region:region_id ( name, uf ) ),
         projects ( id, name, slug, picture, project_types ( name_ptbr ) )
+      ),
+      gig_role:gig_roles (
+        id,
+        primary_role_id,
+        roles ( description_ptbr )
       )
     `,
     )
@@ -475,14 +484,57 @@ export async function fetchUserNextGig(userId, fromIsoDate) {
     .eq('status_request_appliant', 2)
     .eq('status_request_gig_owner', 2)
     .gte('gigs.date', fromIsoDate)
-    .order('date', { ascending: true, referencedTable: 'gigs' })
-    .limit(1)
-    .maybeSingle()
 
   if (error) {
     throw new Error(error.message)
   }
-  return data
+
+  // Não confiamos em .order()/.limit(1)/.maybeSingle() sobre uma tabela
+  // embutida (gigs) — na prática isso não garantia a ordenação real e podia
+  // devolver "qualquer" gig que batesse no filtro de data, não a mais
+  // próxima (ex: a de amanhã em vez da que já estava rolando hoje).
+  // Buscamos todas as gigs de hoje em diante e ordenamos no client por
+  // data + horário de início, agrupando por gig (uma vaga combinada gera
+  // uma linha por função, todas apontando pra mesma gig).
+  const groups = new Map()
+  for (const row of data ?? []) {
+    const gigId = row.gig?.id
+    if (!gigId) {
+      continue
+    }
+    if (!groups.has(gigId)) {
+      groups.set(gigId, { id: row.id, gig: row.gig, comboRoles: [] })
+    }
+    if (row.gig_role) {
+      groups.get(gigId).comboRoles.push(row.gig_role)
+    }
+  }
+
+  const sorted = Array.from(groups.values()).sort((a, b) => {
+    const dateDiff = (a.gig?.date || '').localeCompare(b.gig?.date || '')
+    if (dateDiff !== 0) {
+      return dateDiff
+    }
+    // mesma data: desempata pelo horário de início (útil se a pessoa tiver
+    // mais de uma gig no mesmo dia)
+    return (a.gig?.time_stage_start || '').localeCompare(b.gig?.time_stage_start || '')
+  })
+
+  if (sorted.length === 0) {
+    return null
+  }
+
+  const next = sorted[0]
+  return {
+    ...next,
+    // vaga principal primeiro, mesma convenção usada em todo o resto do app
+    comboRoles: [...next.comboRoles].sort((a, b) => {
+      const aIsPrimary = !a?.primary_role_id
+      const bIsPrimary = !b?.primary_role_id
+      if (aIsPrimary === bIsPrimary) return 0
+      return aIsPrimary ? -1 : 1
+    }),
+  }
 }
 
 export async function fetchUserGigsByDate(userId, isoDate) {
@@ -497,7 +549,17 @@ export async function fetchUserGigsByDate(userId, isoDate) {
         title,
         date,
         time_stage_start,
-        time_stage_end
+        time_stage_end,
+        is_canceled,
+        canceled_at,
+        cancellation_reason,
+        type:event_types ( name ),
+        project:projects ( id, name, slug, picture )
+      ),
+      gig_role:gig_roles (
+        id,
+        primary_role_id,
+        roles ( description_ptbr )
       )
     `,
     )
@@ -507,7 +569,37 @@ export async function fetchUserGigsByDate(userId, isoDate) {
     .eq('gigs.date', isoDate) // filtra no join
 
   if (error) throw new Error(error.message)
-  return data
+
+  // Uma gig com vagas combinadas (mesma pessoa em mais de uma função) gera uma
+  // gig_application por função, todas apontando pra mesma gig. Agrupamos por
+  // gig.id e juntamos as funções (comboRoles) — vale tanto pra um combo formal
+  // (primary_role_id) quanto pra duas vagas independentes da mesma pessoa na
+  // mesma gig: nos dois casos, é "essa gig, com essas funções" numa linha só.
+  const groups = new Map()
+  for (const row of data ?? []) {
+    const gigId = row.gig?.id
+    if (!gigId) {
+      continue
+    }
+    if (!groups.has(gigId)) {
+      groups.set(gigId, { id: row.id, gig: row.gig, comboRoles: [] })
+    }
+    if (row.gig_role) {
+      groups.get(gigId).comboRoles.push(row.gig_role)
+    }
+  }
+
+  return Array.from(groups.values()).map((group) => ({
+    ...group,
+    // vaga principal primeiro (sem primary_role_id), pra exibir "Guitarrista e
+    // Backing Vocal" e não o contrário
+    comboRoles: [...group.comboRoles].sort((a, b) => {
+      const aIsPrimary = !a?.primary_role_id
+      const bIsPrimary = !b?.primary_role_id
+      if (aIsPrimary === bIsPrimary) return 0
+      return aIsPrimary ? -1 : 1
+    }),
+  }))
 }
 
 export async function fetchUserGigGoals(userId) {

@@ -37,6 +37,7 @@ import {
 } from '@mantine/core'
 import {
   IconSearch,
+  IconGps,
   IconArrowRight,
   IconPlus,
   IconBell,
@@ -349,6 +350,21 @@ export default function AppNavbar({ children }) {
               >
                 <IconSearch size={18} />
               </ActionIcon>
+              <Flex
+                direction="column"
+                align="center"
+                gap={1}
+                mr="sm"
+                component={Link}
+                to="/search"
+                opacity={
+                  location.pathname === '/search' && !searchParams.has('q') ? 1 : 0.8
+                }
+                style={NAV_LINK_STYLE}
+              >
+                <IconGps size={20} stroke={1.7} />
+                <Text size="xs">Descobrir</Text>
+              </Flex>
               <Menu
                 shadow="md"
                 width={300}

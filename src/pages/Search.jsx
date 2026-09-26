@@ -712,7 +712,7 @@ export default function Search() {
         ) : (
           !isMobileFocused && (
             <Stack gap="xs" mt={{ base: 'md', sm: 60 }}>
-              <EmptyState>
+              <EmptyState hiddenFrom="sm">
                 <EmptyState.Indicator>
                   <IconZoom />
                 </EmptyState.Indicator>

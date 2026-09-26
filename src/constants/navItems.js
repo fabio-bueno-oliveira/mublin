@@ -17,7 +17,7 @@ export const NAV_ITEMS = [
   { label: 'Scenes', icon: IconMovie, path: '/scenes' },
   { label: 'Feed', icon: IconRss, path: '/feed' },
   { label: 'Projetos', icon: IconMusic, path: '/projects' },
-  { label: 'Descobrir', icon: IconGps, path: '/search' },
+  // { label: 'Descobrir', icon: IconGps, path: '/search' },
 ]
 
 export const QUICK_ACTIONS = [

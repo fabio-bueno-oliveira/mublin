@@ -328,6 +328,16 @@
     --dot-color-rgb: 224, 49, 49;
   }
 
+  &.yellow {
+    --dot-color: var(--mantine-color-yellow-6);
+    --dot-color-rgb: 255, 255, 0;
+  }
+
+  &.orange {
+    --dot-color: var(--mantine-color-orange-6);
+    --dot-color-rgb: 255, 165, 0;
+  }
+
   &.small {
     --dot-size: 6.4px; // 20% menor
   }

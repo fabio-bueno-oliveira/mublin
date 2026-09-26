@@ -40,6 +40,7 @@ import {
   IconMapPin, IconShirt,
   IconMicrophone2,
   IconCalendarEvent, IconBuildingStore, IconEdit,
+  IconCirclesRelation,
   IconCheck, IconX,
   IconChevronRightFilled,
   IconExclamationCircle,
@@ -523,7 +524,8 @@ export default function NewGig() {
   function addRole() {
     setExpandedRoleDetails([])
     const newRole = {
-      tempId: Date.now(),
+      tempId: crypto.randomUUID(), // vira o próprio gig_roles.id no insert — ver handleSubmit
+      primaryTempId: null, // preenchido só em vagas "combinadas" (ver addCombinedRole)
       role_id: null,
       description: '',
       fee: null,
@@ -537,15 +539,55 @@ export default function NewGig() {
     }
     setGigRoles([...gigRoles, newRole])
   }
+
+  // Uma "função combinada" é sempre a mesma pessoa da vaga principal, com o
+  // cachê e a visibilidade herdados dela — por isso assigned/is_public/
+  // invitation_description aqui nascem em branco e nunca são editados
+  // diretamente: getPrimaryRole()/getEffectiveAssigned() resolvem isso na
+  // hora de renderizar e no submit. Só a atividade (role_id) é própria.
+  function addCombinedRole(primaryTempId) {
+    setExpandedRoleDetails([])
+    const newRole = {
+      tempId: crypto.randomUUID(),
+      primaryTempId,
+      role_id: null,
+      description: '',
+      fee: null,
+      fee_not_informed: false,
+      experience_level: 2,
+      assigned: null,
+      is_sub: false,
+      is_public: false,
+      sub_for_profile: null,
+      invitation_description: '',
+    }
+    setGigRoles((current) => [...current, newRole])
+  }
+
   function updateRole(tempId, patch) {
     setGigRoles(gigRoles.map((r) => (r.tempId === tempId ? { ...r, ...patch } : r)))
   }
   function removeRole(tempId) {
-    setGigRoles(gigRoles.filter((r) => r.tempId !== tempId))
+    // remover a vaga principal remove junto as funções combinadas com ela.
+    setGigRoles(gigRoles.filter((r) => r.tempId !== tempId && r.primaryTempId !== tempId))
+  }
+
+  function getPrimaryRole(gr) {
+    return gr.primaryTempId ? gigRoles.find((r) => r.tempId === gr.primaryTempId) : null
+  }
+  function getEffectiveAssigned(gr) {
+    return getPrimaryRole(gr)?.assigned ?? gr.assigned
+  }
+  function getEffectiveFee(gr) {
+    const primary = getPrimaryRole(gr)
+    return primary
+      ? { fee: primary.fee, fee_not_informed: primary.fee_not_informed }
+      : { fee: gr.fee, fee_not_informed: gr.fee_not_informed }
   }
 
   function isBlankRole(r) {
     return (
+      !r.primaryTempId &&
       !r.role_id &&
       !r.assigned &&
       !r.description &&
@@ -575,12 +617,20 @@ export default function NewGig() {
       }
 
       // Uma vaga por combinação (integrante, role) — quem acumula mais de uma
-      // função no portfólio gera uma vaga para cada uma delas.
-      const suggestedRoles = members.flatMap((member, memberIndex) =>
-        (member.roles ?? [])
-          .filter((r) => r.role?.id)
-          .map((r, roleIndex) => ({
-            tempId: Date.now() + memberIndex * 100 + roleIndex,
+      // função no portfólio gera uma vaga para cada uma delas, já combinadas
+      // entre si (mesma pessoa, um cachê só): a primeira função do integrante
+      // vira a vaga principal, as demais apontam pra ela via primaryTempId.
+      const suggestedRoles = members.flatMap((member) => {
+        const memberRoles = (member.roles ?? []).filter((r) => r.role?.id)
+        let primaryTempId = null
+        return memberRoles.map((r, roleIndex) => {
+          const tempId = crypto.randomUUID()
+          if (roleIndex === 0) {
+            primaryTempId = tempId
+          }
+          return {
+            tempId,
+            primaryTempId: roleIndex === 0 ? null : primaryTempId,
             role_id: Number(r.role.id),
             description: '',
             fee: null,
@@ -591,8 +641,9 @@ export default function NewGig() {
             is_public: false,
             sub_for_profile: null,
             invitation_description: '',
-          })),
-      )
+          }
+        })
+      })
 
       if (!suggestedRoles.length) {
         notifications.show({
@@ -605,6 +656,9 @@ export default function NewGig() {
       }
 
       // Evita duplicar uma vaga já existente para a mesma pessoa na mesma função
+      // (nota: se isso remover justamente a vaga principal de um combo mas manter
+      // a secundária, o handleSubmit trata a secundária órfã como vaga normal —
+      // ver o cálculo de validPrimary lá embaixo)
       const alreadyExists = (candidate) =>
         gigRoles.some(
           (r) =>
@@ -678,9 +732,38 @@ export default function NewGig() {
 
       // Só enviamos vagas com uma atividade (role) de fato selecionada —
       // vagas em branco (ex: adicionadas e não preenchidas) são descartadas aqui.
-      const rolesToInsert = gigRoles.filter((r) => r.role_id)
+      // Para uma vaga "combinada" (primaryTempId setado), pessoa designada,
+      // visibilidade, mensagem do convite e cachê são sempre os da vaga
+      // principal — a vaga secundária nunca guarda essas informações por
+      // conta própria (evita os dois ficarem dessincronizados).
+      // Se a vaga principal foi removida ou perdeu a atividade selecionada
+      // nesse meio tempo, validPrimary é null e a secundária vira uma vaga
+      // independente normal, com seus próprios valores (em geral em branco).
+      const rolesToInsert = gigRoles
+        .filter((r) => r.role_id)
+        .map((r) => {
+          const primary = r.primaryTempId
+            ? gigRoles.find((p) => p.tempId === r.primaryTempId)
+            : null
+          const validPrimary = primary?.role_id ? primary : null
+          return {
+            ...r,
+            primaryRoleTempId: validPrimary?.tempId || null,
+            assigned: validPrimary ? validPrimary.assigned : r.assigned,
+            is_public: validPrimary ? validPrimary.is_public : r.is_public,
+            invitation_description: validPrimary
+              ? validPrimary.invitation_description
+              : r.invitation_description,
+            fee: validPrimary ? null : r.fee,
+            fee_not_informed: validPrimary ? true : r.fee_not_informed,
+          }
+        })
 
+      // id vai explícito (gerado no client em addRole/addCombinedRole) — assim
+      // primary_role_id já pode referenciar a vaga principal na mesma leva de
+      // insert, sem precisar de um select() de volta nem de um segundo round-trip.
       const normalized = rolesToInsert.map((r) => ({
+        id: r.tempId,
         gig_id: gig.id,
         role_id: r.role_id,
         description: r.description,
@@ -690,36 +773,26 @@ export default function NewGig() {
         sub_for: r.is_sub ? r.sub_for_profile?.id || null : null,
         // Sem pessoa designada, a vaga obrigatoriamente é pública
         is_public: r.assigned ? r.is_public : true,
+        primary_role_id: r.primaryRoleTempId,
       }))
 
-      // .select() é essencial aqui: gig_roles.id é um uuid gerado pelo banco
-      // (gen_random_uuid()), e precisamos desses ids para criar os convites
-      // (gig_applications) logo abaixo, referenciando cada vaga certa.
-      const { data: insertedRoles, error: rolesError } = await supabase
-        .from('gig_roles')
-        .insert(normalized)
-        .select()
+      const { error: rolesError } = await supabase.from('gig_roles').insert(normalized)
       if (rolesError) {
         throw rolesError
       }
 
-      // Um INSERT ... VALUES (múltiplas linhas) simples no Postgres retorna as
-      // linhas na mesma ordem em que foram enviadas, então dá pra parear pelo
-      // índice com rolesToInsert (mesma ordem usada para montar "normalized").
-      const applicationsToInsert = insertedRoles
-        .map((insertedRole, index) => ({
-          insertedRole,
-          original: rolesToInsert[index],
-        }))
-        .filter(({ original }) => original?.assigned?.id)
-        .map(({ insertedRole, original }) => {
-          const isSelfInvite = original.assigned.id === user.id
+      // gig_role_id já é conhecido de antemão (mesmo uuid usado no insert
+      // acima), então não precisamos mais casar por índice com o retorno do banco.
+      const applicationsToInsert = rolesToInsert
+        .filter((r) => r.assigned?.id)
+        .map((r) => {
+          const isSelfInvite = r.assigned.id === user.id
           return {
             gig_id: gig.id,
-            gig_role_id: insertedRole.id,
-            profile_id: original.assigned.id,
+            gig_role_id: r.tempId,
+            profile_id: r.assigned.id,
             invited_by: user.id,
-            invitation_description: original.invitation_description?.trim() || null,
+            invitation_description: r.invitation_description?.trim() || null,
             // Convite: quem convida (dono da gig) já "aceitou" ao convidar;
             // quem foi convidado fica com o convite pendente até responder —
             // exceto quando a pessoa se auto-designa, caso em que já nasce
@@ -854,7 +927,7 @@ export default function NewGig() {
               Passo 1
             </Badge>
             {selectedProject && step > 1 && (
-              <Button variant="subtle" size="xs" icon onClick={handleBack}>
+              <Button variant="subtle" size="xs" onClick={handleBack}>
                 Trocar projeto
               </Button>
             )}
@@ -1284,111 +1357,134 @@ export default function NewGig() {
                 Vagas para a gig ({gigRoles.filter((role) => role.role_id).length})
               </Title>
               {gigRoles.some((role) => role.role_id) && (
-                <ScrollArea
-                  type="never"
-                  scrollbarSize={0}
-                  offsetScrollbars
-                  mt="xs"
-                  mb={step === 3 ? 'md' : 0}
-                >
-                  <Group gap={0} wrap="nowrap" align="flex-start" py={4}>
-                    {gigRoles
-                      .filter((gr) => gr.role_id)
-                      .map((gr, index, filledRoles) => {
-                        const roleData = roles.find((r) => r.id === gr.role_id)
-                        const roleName =
-                          roleData?.description_ptbr || roleData?.name_ptbr || 'Vaga'
-                        const hasFee =
-                          !gr.fee_not_informed && gr.fee !== null && gr.fee !== ''
-                        const isLast = index === filledRoles.length - 1
+                <Box mt="xs" mb={step === 3 ? 'md' : 0}>
+                  <Text size="xs" mb={4} c="dimmed">
+                    Cada pessoa designada receberá um convite ao concluir o cadastro da
+                    gig. Em caso de vagas em aberto, serão exibidas na pesquisa do Mublin
+                  </Text>
+                  <ScrollArea type="never" scrollbarSize={0} offsetScrollbars>
+                    <Group gap={0} wrap="nowrap" align="flex-start" py={4}>
+                      {gigRoles
+                        .filter((gr) => gr.role_id)
+                        .map((gr, index, filledRoles) => {
+                          const roleData = roles.find((r) => r.id === gr.role_id)
+                          const roleName =
+                            roleData?.description_ptbr || roleData?.name_ptbr || 'Vaga'
+                          // Vaga combinada: pessoa e cachê são sempre os da vaga principal.
+                          const effectiveAssigned = getEffectiveAssigned(gr)
+                          const {
+                            fee: effectiveFee,
+                            fee_not_informed: effectiveFeeNotInformed,
+                          } = getEffectiveFee(gr)
+                          const hasFee =
+                            !effectiveFeeNotInformed &&
+                            effectiveFee !== null &&
+                            effectiveFee !== ''
+                          const isLast = index === filledRoles.length - 1
 
-                        return (
-                          <Group key={gr.tempId} gap={0} wrap="nowrap" align="center">
-                            <Stack align="center" gap={4} w={64}>
-                              <Box pos="relative" w={42} h={42}>
-                                <Avatar
-                                  size={42}
-                                  radius="xl"
-                                  color="gray"
-                                  src={getAvatarUrl(gr.assigned?.avatar, 80)}
-                                >
-                                  {!gr.assigned && <IconQuestionMark size={18} />}
-                                </Avatar>
-
-                                {hasFee && (
-                                  <ThemeIcon
-                                    size={16}
-                                    radius="xl"
-                                    color="green"
-                                    style={{
-                                      position: 'absolute',
-                                      top: -2,
-                                      right: -2,
-                                    }}
-                                  >
-                                    <IconCurrencyDollar size={10} />
-                                  </ThemeIcon>
-                                )}
-
-                                {gr.is_sub && (
+                          return (
+                            <Group key={gr.tempId} gap={0} wrap="nowrap" align="center">
+                              <Stack align="center" gap={4} w={64}>
+                                <Box pos="relative" w={42} h={42}>
                                   <Avatar
-                                    size={18}
+                                    size={42}
                                     radius="xl"
                                     color="gray"
-                                    src={getAvatarUrl(gr.sub_for_profile?.avatar, 32)}
-                                    style={{
-                                      position: 'absolute',
-                                      bottom: -4,
-                                      right: hasFee ? 14 : -4,
-                                      border: '2px solid var(--mantine-color-body)',
-                                    }}
+                                    src={getAvatarUrl(effectiveAssigned?.avatar, 80)}
                                   >
-                                    <IconReplaceUser size={10} />
+                                    {!effectiveAssigned && <IconQuestionMark size={18} />}
                                   </Avatar>
+
+                                  {hasFee && (
+                                    <ThemeIcon
+                                      size={16}
+                                      radius="xl"
+                                      color="green"
+                                      style={{
+                                        position: 'absolute',
+                                        top: -2,
+                                        right: -2,
+                                      }}
+                                    >
+                                      <IconCurrencyDollar size={10} />
+                                    </ThemeIcon>
+                                  )}
+
+                                  {gr.primaryTempId && (
+                                    <ThemeIcon
+                                      size={16}
+                                      radius="xl"
+                                      color="grape"
+                                      style={{
+                                        position: 'absolute',
+                                        top: -2,
+                                        left: -2,
+                                      }}
+                                    >
+                                      <IconCirclesRelation size={10} />
+                                    </ThemeIcon>
+                                  )}
+
+                                  {gr.is_sub && (
+                                    <Avatar
+                                      size={18}
+                                      radius="xl"
+                                      color="gray"
+                                      src={getAvatarUrl(gr.sub_for_profile?.avatar, 32)}
+                                      style={{
+                                        position: 'absolute',
+                                        bottom: -4,
+                                        right: hasFee ? 14 : -4,
+                                        border: '2px solid var(--mantine-color-body)',
+                                      }}
+                                    >
+                                      <IconReplaceUser size={10} />
+                                    </Avatar>
+                                  )}
+                                </Box>
+
+                                <Text size="xs" ta="center" lh={1} fw={500}>
+                                  {roleName}
+                                </Text>
+
+                                {effectiveAssigned ? (
+                                  <Text
+                                    size="10px"
+                                    ta="center"
+                                    lh={1}
+                                    fw={300}
+                                    lineClamp={3}
+                                  >
+                                    @{effectiveAssigned.username}
+                                  </Text>
+                                ) : (
+                                  <Text
+                                    size="10px"
+                                    ta="center"
+                                    lh={1}
+                                    fw={300}
+                                    lineClamp={3}
+                                    c="dimmed"
+                                  >
+                                    A vaga ficará em aberto
+                                  </Text>
                                 )}
-                              </Box>
+                              </Stack>
 
-                              <Text size="xs" ta="center" lh={1} fw={500}>
-                                {roleName}
-                              </Text>
-
-                              {gr?.assigned ? (
-                                <Text
-                                  size="10px"
-                                  ta="center"
-                                  lh={1}
-                                  fw={300}
-                                  lineClamp={3}
-                                >
-                                  {gr?.assigned?.username} será convidado
-                                </Text>
-                              ) : (
-                                <Text
-                                  size="10px"
-                                  ta="center"
-                                  lh={1}
-                                  fw={300}
-                                  lineClamp={3}
-                                  c="dimmed"
-                                >
-                                  A vaga ficará em aberto
-                                </Text>
+                              {!isLast && (
+                                <Box
+                                  w={24}
+                                  h={1}
+                                  mt={20}
+                                  bg="light-dark(#e0e0e0, #424242)"
+                                />
                               )}
-                            </Stack>
-
-                            {!isLast && (
-                              <Box
-                                w={24}
-                                h={1}
-                                mt={20}
-                                bg="light-dark(#e0e0e0, #424242)"
-                              />
-                            )}
-                          </Group>
-                        )
-                      })}
-                  </Group>
-                </ScrollArea>
+                            </Group>
+                          )
+                        })}
+                    </Group>
+                  </ScrollArea>
+                </Box>
               )}
               {step === 3 && (
                 <Stack gap="xs" mt="md">
@@ -1408,282 +1504,460 @@ export default function NewGig() {
                     </>
                   )}
                   <Stack gap="xs">
-                    {gigRoles.map((gr, index) => {
-                      const detailsOpened = expandedRoleDetails.includes(gr.tempId)
+                    {gigRoles
+                      .filter((r) => !r.primaryTempId)
+                      .map((gr, index) => {
+                        const detailsOpened = expandedRoleDetails.includes(gr.tempId)
+                        const comboChildren = gigRoles.filter(
+                          (r) => r.primaryTempId === gr.tempId,
+                        )
 
-                      return (
-                        <Fieldset legend={`Vaga ${index + 1}`} key={gr.tempId}>
-                          <InternalSearchSelect
-                            label="Atividade"
-                            placeholder="Selecione..."
-                            data={groupedRolesData}
-                            value={gr.role_id ? String(gr.role_id) : null}
-                            onChange={(v) =>
-                              updateRole(gr.tempId, {
-                                role_id: v ? Number(v) : null,
-                              })
-                            }
-                          />
-
-                          {/* MÚSICO DESIGNADO */}
-                          {gr.role_id && selectedProject && (
-                            <Box mt="md">
-                              <Input.Label>Designar pessoa (opcional)</Input.Label>
-                              <Input.Description mb="xs">
-                                A pessoa receberá o convite. Caso deixe em branco, a vaga
-                                ficará aberta para qualquer usuário que possa se
-                                interessar.
-                              </Input.Description>
-
-                              {!gr.assigned && (
-                                <GigRoleCombobox
-                                  label=""
-                                  projectId={selectedProject.id}
-                                  roleId={gr.role_id}
-                                  onSelect={(profile) => {
-                                    console.log(gr.tempId, {
-                                      assigned: profile,
-                                    })
-                                    updateRole(gr.tempId, {
-                                      assigned: profile,
-                                    })
-                                  }}
-                                />
-                              )}
-
-                              {gr.assigned && (
-                                <Group mt="xs" gap="xs">
-                                  <Badge
-                                    px={6}
-                                    variant="default"
-                                    tt="lowercase"
-                                    fw={400}
-                                    size="lg"
-                                    radius="lg"
-                                    leftSection={
-                                      <Avatar
-                                        size="xs"
-                                        src={
-                                          gr?.assigned?.avatar
-                                            ? `https://ik.imagekit.io/mublin/users/avatars/tr:h-16,w-16/${gr.assigned.avatar}`
-                                            : null
-                                        }
-                                      />
-                                    }
-                                    rightSection={
-                                      <ActionIcon
-                                        size="xs"
-                                        variant="transparent"
-                                        color="teal"
-                                        onClick={() =>
-                                          updateRole(gr.tempId, {
-                                            assigned: null,
-                                          })
-                                        }
-                                        aria-label="Remover músico designado"
-                                      >
-                                        <IconX size={12} stroke={2.5} />
-                                      </ActionIcon>
-                                    }
-                                  >
-                                    @{gr.assigned.username}
-                                  </Badge>
-                                </Group>
-                              )}
-                            </Box>
-                          )}
-
-                          <Checkbox
-                            mt="md"
-                            size="sm"
-                            color="green"
-                            label="Tornar esta vaga pública"
-                            description={
-                              gr.assigned
-                                ? 'A vaga aparecerá nas buscas enquanto o convidado não aceitar o convite'
-                                : 'A vaga aparecerá nas buscas enquanto não for preenchida'
-                            }
-                            checked={gr.is_public || !gr.assigned}
-                            disabled={!gr.assigned}
-                            onChange={(e) =>
-                              updateRole(gr.tempId, {
-                                is_public: e.currentTarget.checked,
-                              })
-                            }
-                          />
-
-                          {gr.role_id && (
-                            <Button
-                              variant="subtle"
-                              size="xs"
-                              mt="sm"
-                              onClick={() => toggleRoleDetails(gr.tempId)}
-                              leftSection={
-                                detailsOpened ? (
-                                  <IconChevronUp size={16} />
-                                ) : (
-                                  <IconChevronDown size={16} />
-                                )
+                        return (
+                          <Fieldset legend={`Vaga ${index + 1}`} key={gr.tempId}>
+                            <InternalSearchSelect
+                              label="Atividade"
+                              placeholder="Selecione..."
+                              data={groupedRolesData}
+                              value={gr.role_id ? String(gr.role_id) : null}
+                              onChange={(v) =>
+                                updateRole(gr.tempId, {
+                                  role_id: v ? Number(v) : null,
+                                })
                               }
-                            >
-                              {detailsOpened
-                                ? 'Ocultar detalhes opcionais'
-                                : 'Detalhes opcionais'}
-                            </Button>
-                          )}
+                            />
 
-                          <Collapse expanded={detailsOpened}>
-                            <Card
-                              withBorder
-                              mt="sm"
-                              shadow="xs"
-                              bg="light-dark(#f5f5f5, #171717)"
-                            >
-                              <Stack gap="sm">
-                                <Grid>
-                                  <Grid.Col span={{ base: 12, sm: 6 }}>
-                                    <Select
-                                      label="Nível"
-                                      data={[
-                                        { value: '1', label: 'Iniciante' },
-                                        { value: '2', label: 'Intermediário' },
-                                        { value: '3', label: 'Avançado' },
-                                      ]}
-                                      value={String(gr.experience_level)}
-                                      onChange={(v) =>
-                                        updateRole(gr.tempId, {
-                                          experience_level: Number(v),
-                                        })
-                                      }
-                                    />
-                                  </Grid.Col>
-                                  <Grid.Col span={{ base: 12, sm: 6 }}>
-                                    {/* CACHÊ */}
-                                    <Box>
-                                      <NumberInput
-                                        label="Cachê"
-                                        placeholder="R$ 0,00"
-                                        min={0}
-                                        decimalScale={2}
-                                        fixedDecimalScale
-                                        thousandSeparator="."
-                                        decimalSeparator=","
-                                        prefix="R$ "
-                                        value={gr.fee}
-                                        onChange={(v) =>
-                                          updateRole(gr.tempId, { fee: v })
-                                        }
-                                        disabled={gr.fee_not_informed}
-                                      />
+                            {/* MÚSICO DESIGNADO */}
+                            {gr.role_id && selectedProject && (
+                              <Box mt="md">
+                                <Input.Label>Designar pessoa (opcional)</Input.Label>
+                                <Input.Description mb="xs">
+                                  A pessoa receberá o convite. Caso deixe em branco, a
+                                  vaga ficará aberta para qualquer usuário que possa se
+                                  interessar.
+                                </Input.Description>
 
-                                      <Checkbox
-                                        mt={6}
-                                        size="xs"
-                                        label="Não informado"
-                                        checked={gr.fee_not_informed}
-                                        onChange={(e) =>
-                                          updateRole(gr.tempId, {
-                                            fee_not_informed: e.currentTarget.checked,
-                                            fee: e.currentTarget.checked ? null : gr.fee,
-                                          })
-                                        }
-                                      />
-                                    </Box>
-                                  </Grid.Col>
-                                </Grid>
-
-                                {/* DESCRIÇÃO */}
-                                <Textarea
-                                  label="Sobre a atuação"
-                                  description="Descrição sobre esta atuação"
-                                  minRows={2}
-                                  maxRows={2}
-                                  value={gr.description}
-                                  onChange={(e) =>
-                                    updateRole(gr.tempId, {
-                                      description: e.currentTarget.value,
-                                    })
-                                  }
-                                />
-
-                                {/* MENSAGEM DO CONVITE */}
-                                {gr.assigned && (
-                                  <Textarea
-                                    label={
-                                      <Group gap={6} wrap="nowrap" mb={2}>
-                                        <Avatar
-                                          size={20}
-                                          radius="xl"
-                                          src={getAvatarUrl(gr.assigned.avatar, 40)}
-                                        >
-                                          {gr.assigned.full_name?.[0]}
-                                        </Avatar>
-                                        <span>Mensagem do convite</span>
-                                      </Group>
-                                    }
-                                    description={`Uma mensagem pessoal para @${gr.assigned.username}, enviada junto com o convite`}
-                                    placeholder="Ex: Fala! Bora tocar comigo nessa gig?"
-                                    minRows={2}
-                                    maxRows={3}
-                                    maxLength={500}
-                                    value={gr.invitation_description || ''}
-                                    onChange={(e) =>
-                                      updateRole(gr.tempId, {
-                                        invitation_description: e.currentTarget.value,
+                                {!gr.assigned && (
+                                  <GigRoleCombobox
+                                    label=""
+                                    projectId={selectedProject.id}
+                                    roleId={gr.role_id}
+                                    onSelect={(profile) => {
+                                      console.log(gr.tempId, {
+                                        assigned: profile,
                                       })
-                                    }
+                                      updateRole(gr.tempId, {
+                                        assigned: profile,
+                                      })
+                                    }}
                                   />
                                 )}
 
-                                {/* SUBSTITUIÇÃO */}
-                                <Box>
-                                  <Divider mb="sm" />
+                                {gr.assigned && (
+                                  <Group mt="xs" gap="xs">
+                                    <Badge
+                                      px={6}
+                                      variant="default"
+                                      tt="lowercase"
+                                      fw={400}
+                                      size="lg"
+                                      radius="lg"
+                                      leftSection={
+                                        <Avatar
+                                          size="xs"
+                                          src={
+                                            gr?.assigned?.avatar
+                                              ? `https://ik.imagekit.io/mublin/users/avatars/tr:h-16,w-16/${gr.assigned.avatar}`
+                                              : null
+                                          }
+                                        />
+                                      }
+                                      rightSection={
+                                        <ActionIcon
+                                          size="xs"
+                                          variant="transparent"
+                                          color="teal"
+                                          onClick={() =>
+                                            updateRole(gr.tempId, {
+                                              assigned: null,
+                                            })
+                                          }
+                                          aria-label="Remover músico designado"
+                                        >
+                                          <IconX size={12} stroke={2.5} />
+                                        </ActionIcon>
+                                      }
+                                    >
+                                      @{gr.assigned.username}
+                                    </Badge>
+                                  </Group>
+                                )}
+                              </Box>
+                            )}
 
-                                  <Checkbox
-                                    label="A vaga é um sub"
-                                    checked={gr.is_sub}
+                            <Checkbox
+                              mt="md"
+                              size="sm"
+                              color="green"
+                              label="Tornar esta vaga pública"
+                              description={
+                                gr.assigned
+                                  ? 'A vaga aparecerá nas buscas enquanto o convidado não aceitar o convite'
+                                  : 'A vaga aparecerá nas buscas enquanto não for preenchida'
+                              }
+                              checked={gr.is_public || !gr.assigned}
+                              disabled={!gr.assigned}
+                              onChange={(e) =>
+                                updateRole(gr.tempId, {
+                                  is_public: e.currentTarget.checked,
+                                })
+                              }
+                            />
+
+                            {gr.role_id && (
+                              <Button
+                                variant="subtle"
+                                size="xs"
+                                mt="sm"
+                                onClick={() => toggleRoleDetails(gr.tempId)}
+                                leftSection={
+                                  detailsOpened ? (
+                                    <IconChevronUp size={16} />
+                                  ) : (
+                                    <IconChevronDown size={16} />
+                                  )
+                                }
+                              >
+                                {detailsOpened
+                                  ? 'Ocultar detalhes opcionais'
+                                  : 'Detalhes opcionais'}
+                              </Button>
+                            )}
+
+                            <Collapse expanded={detailsOpened}>
+                              <Card
+                                withBorder
+                                mt="sm"
+                                shadow="xs"
+                                bg="light-dark(#f5f5f5, #171717)"
+                              >
+                                <Stack gap="sm">
+                                  <Grid>
+                                    <Grid.Col span={{ base: 12, sm: 6 }}>
+                                      <Select
+                                        label="Nível"
+                                        data={[
+                                          { value: '1', label: 'Iniciante' },
+                                          { value: '2', label: 'Intermediário' },
+                                          { value: '3', label: 'Avançado' },
+                                        ]}
+                                        value={String(gr.experience_level)}
+                                        onChange={(v) =>
+                                          updateRole(gr.tempId, {
+                                            experience_level: Number(v),
+                                          })
+                                        }
+                                      />
+                                    </Grid.Col>
+                                    <Grid.Col span={{ base: 12, sm: 6 }}>
+                                      {/* CACHÊ */}
+                                      <Box>
+                                        <NumberInput
+                                          label="Cachê"
+                                          placeholder="R$ 0,00"
+                                          min={0}
+                                          decimalScale={2}
+                                          fixedDecimalScale
+                                          thousandSeparator="."
+                                          decimalSeparator=","
+                                          prefix="R$ "
+                                          value={gr.fee}
+                                          onChange={(v) =>
+                                            updateRole(gr.tempId, { fee: v })
+                                          }
+                                          disabled={gr.fee_not_informed}
+                                        />
+
+                                        <Checkbox
+                                          mt={6}
+                                          size="xs"
+                                          label="Não informado"
+                                          checked={gr.fee_not_informed}
+                                          onChange={(e) =>
+                                            updateRole(gr.tempId, {
+                                              fee_not_informed: e.currentTarget.checked,
+                                              fee: e.currentTarget.checked
+                                                ? null
+                                                : gr.fee,
+                                            })
+                                          }
+                                        />
+                                      </Box>
+                                    </Grid.Col>
+                                  </Grid>
+
+                                  {/* DESCRIÇÃO */}
+                                  <Textarea
+                                    label="Sobre a atuação"
+                                    description="Descrição sobre esta atuação"
+                                    minRows={2}
+                                    maxRows={2}
+                                    value={gr.description}
                                     onChange={(e) =>
                                       updateRole(gr.tempId, {
-                                        is_sub: e.currentTarget.checked,
+                                        description: e.currentTarget.value,
                                       })
                                     }
                                   />
 
-                                  {gr.is_sub && (
-                                    <Box mt="xs">
-                                      <Text size="xs" fw={500} mb={4}>
-                                        Quem será substituído nesta vaga?
-                                      </Text>
+                                  {/* MENSAGEM DO CONVITE */}
+                                  {gr.assigned && (
+                                    <Textarea
+                                      label={
+                                        <Group gap={6} wrap="nowrap" mb={2}>
+                                          <Avatar
+                                            size={20}
+                                            radius="xl"
+                                            src={getAvatarUrl(gr.assigned.avatar, 40)}
+                                          >
+                                            {gr.assigned.full_name?.[0]}
+                                          </Avatar>
+                                          <span>Mensagem do convite</span>
+                                        </Group>
+                                      }
+                                      description={`Uma mensagem pessoal para @${gr.assigned.username}, enviada junto com o convite`}
+                                      placeholder="Ex: Fala! Bora tocar comigo nessa gig?"
+                                      minRows={2}
+                                      maxRows={3}
+                                      maxLength={500}
+                                      value={gr.invitation_description || ''}
+                                      onChange={(e) =>
+                                        updateRole(gr.tempId, {
+                                          invitation_description: e.currentTarget.value,
+                                        })
+                                      }
+                                    />
+                                  )}
 
-                                      <SubForCombobox
-                                        selected={gr.sub_for_profile}
-                                        onSelect={(profile) =>
-                                          updateRole(gr.tempId, {
-                                            sub_for_profile: profile,
+                                  {/* SUBSTITUIÇÃO */}
+                                  <Box>
+                                    <Divider mb="sm" />
+
+                                    <Checkbox
+                                      label="A vaga é um sub"
+                                      checked={gr.is_sub}
+                                      onChange={(e) =>
+                                        updateRole(gr.tempId, {
+                                          is_sub: e.currentTarget.checked,
+                                        })
+                                      }
+                                    />
+
+                                    {gr.is_sub && (
+                                      <Box mt="xs">
+                                        <Text size="xs" fw={500} mb={4}>
+                                          Quem será substituído nesta vaga?
+                                        </Text>
+
+                                        <SubForCombobox
+                                          selected={gr.sub_for_profile}
+                                          onSelect={(profile) =>
+                                            updateRole(gr.tempId, {
+                                              sub_for_profile: profile,
+                                            })
+                                          }
+                                        />
+                                      </Box>
+                                    )}
+                                  </Box>
+                                </Stack>
+                              </Card>
+                            </Collapse>
+
+                            {/* FUNÇÕES COMBINADAS (mesma pessoa, mesmo cachê da vaga acima) */}
+                            {comboChildren.length > 0 && (
+                              <Stack gap="sm" mt="md">
+                                {comboChildren.map((child) => {
+                                  const childDetailsOpened = expandedRoleDetails.includes(
+                                    child.tempId,
+                                  )
+                                  return (
+                                    <Paper
+                                      key={child.tempId}
+                                      withBorder
+                                      p="sm"
+                                      radius="md"
+                                      bg="light-dark(#fafafa, #1a1a1a)"
+                                    >
+                                      <Group
+                                        justify="space-between"
+                                        align="flex-start"
+                                        mb="xs"
+                                      >
+                                        <Badge
+                                          variant="light"
+                                          color="grape"
+                                          leftSection={<IconCirclesRelation size={12} />}
+                                        >
+                                          Função combinada
+                                        </Badge>
+                                        <ActionIcon
+                                          size="sm"
+                                          variant="subtle"
+                                          color="red"
+                                          onClick={() => removeRole(child.tempId)}
+                                          aria-label="Remover função combinada"
+                                        >
+                                          <IconTrash size={14} />
+                                        </ActionIcon>
+                                      </Group>
+
+                                      <InternalSearchSelect
+                                        label="Atividade"
+                                        placeholder="Selecione..."
+                                        data={groupedRolesData}
+                                        value={
+                                          child.role_id ? String(child.role_id) : null
+                                        }
+                                        onChange={(v) =>
+                                          updateRole(child.tempId, {
+                                            role_id: v ? Number(v) : null,
                                           })
                                         }
                                       />
-                                    </Box>
-                                  )}
-                                </Box>
-                              </Stack>
-                            </Card>
-                          </Collapse>
 
-                          {/* REMOVER */}
-                          <Group justify="flex-end" mt="xs">
-                            <Button
-                              size="xs"
-                              variant="default"
-                              leftSection={<IconTrash size={14} color="red" />}
-                              onClick={() => removeRole(gr.tempId)}
-                            >
-                              Remover vaga
-                            </Button>
-                          </Group>
-                        </Fieldset>
-                      )
-                    })}
+                                      <Text size="xs" c="dimmed" mt={6}>
+                                        Mesma pessoa e cachê da vaga principal
+                                        {gr.assigned
+                                          ? ` — @${gr.assigned.username}`
+                                          : ' (a definir)'}
+                                      </Text>
+
+                                      {child.role_id && (
+                                        <>
+                                          <Button
+                                            variant="subtle"
+                                            size="xs"
+                                            mt="sm"
+                                            onClick={() =>
+                                              toggleRoleDetails(child.tempId)
+                                            }
+                                            leftSection={
+                                              childDetailsOpened ? (
+                                                <IconChevronUp size={16} />
+                                              ) : (
+                                                <IconChevronDown size={16} />
+                                              )
+                                            }
+                                          >
+                                            {childDetailsOpened
+                                              ? 'Ocultar detalhes opcionais'
+                                              : 'Detalhes opcionais'}
+                                          </Button>
+
+                                          <Collapse expanded={childDetailsOpened}>
+                                            <Card
+                                              withBorder
+                                              mt="sm"
+                                              shadow="xs"
+                                              bg="light-dark(#f5f5f5, #171717)"
+                                            >
+                                              <Stack gap="sm">
+                                                <Select
+                                                  label="Nível"
+                                                  data={[
+                                                    { value: '1', label: 'Iniciante' },
+                                                    {
+                                                      value: '2',
+                                                      label: 'Intermediário',
+                                                    },
+                                                    { value: '3', label: 'Avançado' },
+                                                  ]}
+                                                  value={String(child.experience_level)}
+                                                  onChange={(v) =>
+                                                    updateRole(child.tempId, {
+                                                      experience_level: Number(v),
+                                                    })
+                                                  }
+                                                />
+
+                                                <Textarea
+                                                  label="Sobre a atuação"
+                                                  description="Descrição sobre esta atuação"
+                                                  minRows={2}
+                                                  maxRows={2}
+                                                  value={child.description}
+                                                  onChange={(e) =>
+                                                    updateRole(child.tempId, {
+                                                      description: e.currentTarget.value,
+                                                    })
+                                                  }
+                                                />
+
+                                                <Box>
+                                                  <Divider mb="sm" />
+                                                  <Checkbox
+                                                    label="A vaga é um sub"
+                                                    checked={child.is_sub}
+                                                    onChange={(e) =>
+                                                      updateRole(child.tempId, {
+                                                        is_sub: e.currentTarget.checked,
+                                                      })
+                                                    }
+                                                  />
+                                                  {child.is_sub && (
+                                                    <Box mt="xs">
+                                                      <Text size="xs" fw={500} mb={4}>
+                                                        Quem será substituído nesta vaga?
+                                                      </Text>
+                                                      <SubForCombobox
+                                                        selected={child.sub_for_profile}
+                                                        onSelect={(profile) =>
+                                                          updateRole(child.tempId, {
+                                                            sub_for_profile: profile,
+                                                          })
+                                                        }
+                                                      />
+                                                    </Box>
+                                                  )}
+                                                </Box>
+                                              </Stack>
+                                            </Card>
+                                          </Collapse>
+                                        </>
+                                      )}
+                                    </Paper>
+                                  )
+                                })}
+                              </Stack>
+                            )}
+
+                            {gr.role_id && (
+                              <Button
+                                variant="subtle"
+                                size="xs"
+                                mt="md"
+                                color="grape"
+                                leftSection={<IconCirclesRelation size={16} />}
+                                onClick={() => addCombinedRole(gr.tempId)}
+                              >
+                                Adicionar função combinada (mesma pessoa)
+                              </Button>
+                            )}
+
+                            {/* REMOVER */}
+                            <Group justify="flex-end" mt="xs">
+                              <Button
+                                size="xs"
+                                variant="default"
+                                leftSection={<IconTrash size={14} color="red" />}
+                                onClick={() => removeRole(gr.tempId)}
+                              >
+                                Remover vaga
+                              </Button>
+                            </Group>
+                          </Fieldset>
+                        )
+                      })}
                     <Button
                       variant="light"
                       color="var(--mantine-color-text)"

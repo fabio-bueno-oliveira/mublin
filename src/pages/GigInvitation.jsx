@@ -1,32 +1,29 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../hooks/useAuth'
 import { Helmet } from 'react-helmet-async'
 import { fetchGigInvitationsByGigId } from '../queries/gigs'
+import AppNavbarMobile from '../components/AppNavbarMobile'
+// prettier-ignore
 import {
-  Container,
-  Stack,
-  Grid,
-  Title,
-  Text,
-  Group,
+  Affix,
+  Container, Grid, Stack,
+  Center, Group,
+  Title, Text,
+  Box, Paper,
   Avatar,
-  Badge,
-  Button,
-  Paper,
+  Badge, Button,
   Collapse,
   Textarea,
   ActionIcon,
   Skeleton,
   Alert,
-  Box,
   DataList,
   Anchor,
-  Tooltip,
-  Fieldset,
-  Center,
+  Tooltip, Fieldset,
+  Divider,
 } from '@mantine/core'
 import { useDisclosure, useWindowScroll } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
@@ -36,18 +33,19 @@ import {
   IconChevronDown,
   IconChevronUp,
   IconSend,
-  IconClock,
   IconArrowLeft,
   IconThumbDown,
   IconThumbUp,
+  IconMailFast,
 } from '@tabler/icons-react'
-import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import 'dayjs/locale/pt-br'
-import { useEffect } from 'react'
-
+import dayjs from 'dayjs'
 dayjs.extend(relativeTime)
 dayjs.locale('pt-br')
+
+const PROJECT_IMAGE_PATH =
+  'https://ik.imagekit.io/mublin/projects/tr:h-100,w-100,c-maintain_ratio/'
 
 const AVATAR_PATH =
   'https://ik.imagekit.io/mublin/tr:h-200,c-maintain_ratio/users/avatars/'
@@ -56,6 +54,19 @@ const STATUS_MAP = {
   1: { label: 'Pendente', color: 'gray' },
   2: { label: 'Aceito', color: 'green' },
   3: { label: 'Declinado', color: 'red' },
+}
+
+// Junta os nomes das funções de um convite combinado — mesma convenção usada
+// em gigs.js, Gig.jsx e GigsDashboard.jsx
+function formatRoleNames(roles) {
+  const names = (roles ?? []).map((r) => r?.roles?.description_ptbr).filter(Boolean)
+  if (names.length === 0) {
+    return ''
+  }
+  if (names.length === 1) {
+    return names[0]
+  }
+  return `${names.slice(0, -1).join(', ')} e ${names[names.length - 1]}`
 }
 
 async function fetchInvitationById(invitationId) {
@@ -69,6 +80,7 @@ async function fetchInvitationById(invitationId) {
       status_request_gig_owner,
       status_request_appliant,
       profile_id,
+      gig_id,
       gigs (
         id,
         date,
@@ -77,10 +89,10 @@ async function fetchInvitationById(invitationId) {
         created_by,
         type:event_types ( name ),
         city:cities ( name ),
-        projects ( id, name, slug, picture, project_types ( name_ptbr ) )
+        projects ( id, name, slug, description, picture, project_types ( name_ptbr ) )
       ),
       gig_roles (
-        id, description, fee, is_filled, is_sub, sub_for,
+        id, description, fee, is_filled, is_sub, sub_for, primary_role_id,
         roles ( description_ptbr ),
         experience_levels ( id, name_pt ),
         profiles ( avatar, username )
@@ -112,7 +124,43 @@ async function fetchInvitationById(invitationId) {
     .single()
 
   if (error) throw error
-  return data
+
+  // Uma vaga combinada (mesma pessoa, mais de uma função) gera uma
+  // gig_applications por função — busca as irmãs (mesma gig, mesma pessoa)
+  // pra exibir o convite inteiro, não só a função que este id representa.
+  const comboRootId = data.gig_roles?.primary_role_id || data.gig_roles?.id
+  const { data: siblings, error: siblingsError } = await supabase
+    .from('gig_applications')
+    .select(
+      `
+      id, created_at,
+      gig_roles (
+        id, description, fee, is_filled, is_sub, sub_for, primary_role_id,
+        roles ( description_ptbr ),
+        experience_levels ( id, name_pt ),
+        profiles ( avatar, username )
+      )
+    `,
+    )
+    .eq('gig_id', data.gig_id)
+    .eq('profile_id', data.profile_id)
+
+  if (siblingsError) throw siblingsError
+
+  const comboMembers = (siblings ?? [])
+    .filter((s) => (s.gig_roles?.primary_role_id || s.gig_roles?.id) === comboRootId)
+    .sort((a, b) => {
+      const aIsPrimary = !a.gig_roles?.primary_role_id
+      const bIsPrimary = !b.gig_roles?.primary_role_id
+      if (aIsPrimary === bIsPrimary) return 0
+      return aIsPrimary ? -1 : 1
+    })
+
+  return {
+    ...data,
+    comboApplicationIds: comboMembers.map((m) => m.id),
+    comboRoles: comboMembers.map((m) => m.gig_roles),
+  }
 }
 
 async function fetchApplicationsCountByRoleId(gigRoleId) {
@@ -288,7 +336,7 @@ function OtherInvitedMusicians({ gigId, currentInvitationId }) {
           })
           .map((inv) => {
             const status = STATUS_MAP[inv.status_request_appliant]
-            const role = inv?.gig_roles?.roles?.description_ptbr
+            const role = formatRoleNames(inv?.comboRoles)
             return (
               <Paper key={inv.id} withBorder radius="md" p="xs">
                 <Group gap="xs" wrap="nowrap" justify="space-between">
@@ -368,10 +416,16 @@ function InvitationCard({ invitation, currentUserId, userProfile }) {
 
   const updateStatus = useMutation({
     mutationFn: async (statusId) => {
+      // Convite combinado: todas as funções do combo mudam de status juntas —
+      // a pessoa nunca vê "aceitei o guitarrista mas ainda não respondi o
+      // backing vocal" como dois convites separados.
+      const idsToUpdate = invitation.comboApplicationIds?.length
+        ? invitation.comboApplicationIds
+        : [invitation.id]
       const { error } = await supabase
         .from('gig_applications')
         .update({ status_request_appliant: statusId })
-        .eq('id', invitation.id)
+        .in('id', idsToUpdate)
       if (error) throw error
       return statusId
     },
@@ -404,11 +458,17 @@ function InvitationCard({ invitation, currentUserId, userProfile }) {
   const organizerProfile = invitation?.organizer || invitation?.profiles
   const applicantProfile = invitation?.applicant
   const profile = organizerProfile
-  const role = invitation?.gig_roles
-  const fee = invitation?.gig_roles?.fee
+  // comboRoles já vem com a principal primeiro (ver fetchInvitationById);
+  // fallback pro próprio gig_roles cobre o caso raro de comboRoles vir vazio.
+  const comboRoles = invitation?.comboRoles?.length
+    ? invitation.comboRoles
+    : [invitation?.gig_roles].filter(Boolean)
+  const role = comboRoles[0]
+  const fee = role?.fee
+  const isCombo = comboRoles.length > 1
 
   const dataListDetails = [
-    { label: 'Atividade:', value: role?.roles?.description_ptbr },
+    { label: 'Atividade:', value: formatRoleNames(comboRoles) },
     {
       label: 'Projeto/Artista:',
       value: `${invitation?.gigs?.projects?.name} (${invitation?.gigs?.projects?.project_types.name_ptbr})`,
@@ -453,20 +513,17 @@ function InvitationCard({ invitation, currentUserId, userProfile }) {
 
   return (
     <Paper withBorder radius="md" p="sm">
-      <Group gap={4} mb={4}>
+      <Group gap={6} justify="center" visibleFrom="sm">
+        <IconMailFast />
+        <Title order={1} size="h5" fw={400}>
+          Convite para gig ou evento
+        </Title>
+      </Group>
+      <Group justify="center" gap={4} mb={4}>
         <Text size="xs" c="dimmed">
-          Convite {isReceived ? 'recebido' : 'enviado'}{' '}
-          {dayjs(invitation.created_at).fromNow()}
+          {isReceived ? 'recebido' : 'enviado'}{' '}
+          {dayjs(invitation.created_at).format('dddd, D [de] MMMM [de] YYYY [às] HH:mm')}
         </Text>
-        <Tooltip
-          label={`Criado em ${dayjs(invitation.created_at).format('dddd, D [de] MMMM [de] YYYY [às] HH:mm')}`}
-          fz="xs"
-          w={200}
-          multiline
-          withArrow
-        >
-          <IconClock size={12} color="gray" />
-        </Tooltip>
         {isPastGig && (
           <Badge size="xs" color="red.9" variant="light" ml="xs">
             passou
@@ -474,29 +531,7 @@ function InvitationCard({ invitation, currentUserId, userProfile }) {
         )}
       </Group>
 
-      <Title order={2} size="xl" fw={500}>
-        {role?.roles?.description_ptbr} para {invitation?.gigs?.projects?.name} em{' '}
-        {dayjs(invitation?.gigs?.date).format('D [de] MMMM [de] YYYY')}
-      </Title>
-
-      <Group mb="sm" mt={4}>
-        <Group gap={4}>
-          <Text span size="xs" lh={1}>
-            Status da vaga:
-          </Text>
-          <Text span size="xs">
-            {invitation?.gig_roles?.is_filled ? 'Encerrada' : 'Em aberto'}
-          </Text>
-        </Group>
-        <Group gap={4}>
-          <Text span size="xs" lh={1}>
-            Total de candidaturas para esta vaga:
-          </Text>
-          <Text span size="xs" fw={600}>
-            {isLoadingCount ? '...' : (applicationsCount ?? 0)}
-          </Text>
-        </Group>
-      </Group>
+      <Divider variant="dashed" my="xs" />
 
       <Group gap="xs" wrap="nowrap" flex={1} mb="xs">
         <Avatar
@@ -528,7 +563,53 @@ function InvitationCard({ invitation, currentUserId, userProfile }) {
         </Box>
       </Group>
 
-      <Fieldset p={4} legend="Status do convite" my="sm">
+      <Divider variant="dashed" my="xs" />
+
+      <Group gap={6} mb={6} wrap="nowrap">
+        <Avatar
+          src={`${PROJECT_IMAGE_PATH}/${invitation?.gigs?.projects?.id}/${invitation?.gigs?.projects?.picture}`}
+          size={50}
+          radius="md"
+          component={Link}
+          to={`/project/${invitation?.gigs?.projects?.slug}`}
+        />
+        <Stack gap={1}>
+          <Text size="sm" truncate="end">
+            {invitation?.gigs?.projects?.name} •{' '}
+            {invitation?.gigs?.projects?.project_types?.name_ptbr}
+          </Text>
+          <Text size="xs" lh={1} c="dimmed" lineClamp={2}>
+            {invitation?.gigs?.projects?.description}
+          </Text>
+        </Stack>
+      </Group>
+
+      <Title order={2} mt="xs" size="lg" fw={500}>
+        {formatRoleNames(comboRoles)} em{' '}
+        {dayjs(invitation?.gigs?.date).format('D [de] MMMM [de] YYYY')}
+      </Title>
+
+      <Group gap={6} mb="sm" mt={4}>
+        <Group gap={4}>
+          <Text span size="xs" lh={1}>
+            Status da vaga:
+          </Text>
+          <Text span size="xs">
+            {role?.is_filled ? 'Encerrada' : 'Em aberto'}
+          </Text>
+        </Group>
+        <Divider orientation="vertical" />
+        <Group gap={4}>
+          <Text span size="xs" lh={1}>
+            Total de candidaturas:
+          </Text>
+          <Text span size="xs" fw={600}>
+            {isLoadingCount ? '...' : (applicationsCount ?? 0)}
+          </Text>
+        </Group>
+      </Group>
+
+      <Fieldset p={4} legend="Status do convite" my="md">
         <Grid columns={2} gutter="md">
           <Grid.Col span={1}>
             <Center>
@@ -622,7 +703,7 @@ function InvitationCard({ invitation, currentUserId, userProfile }) {
         {isAcceptedByAppliant && (
           <Tooltip
             label={
-              invitation?.gig_roles?.is_filled
+              role?.is_filled
                 ? 'Não é possível alterar pois a vaga já foi fechada pelo organizador'
                 : 'Clique para voltar para pendente'
             }
@@ -636,7 +717,7 @@ function InvitationCard({ invitation, currentUserId, userProfile }) {
               variant="light"
               fullWidth
               loading={updateStatus.isPending}
-              disabled={!isReceived || invitation?.gig_roles?.is_filled}
+              disabled={!isReceived || role?.is_filled}
               onClick={() =>
                 modals.openConfirmModal({
                   title: 'Retirar aceite do convite',
@@ -660,7 +741,7 @@ function InvitationCard({ invitation, currentUserId, userProfile }) {
         {isDeclinedByAppliant && (
           <Tooltip
             label={
-              invitation?.gig_roles?.is_filled
+              role?.is_filled
                 ? 'Não é possível alterar pois a vaga já foi fechada pelo organizador'
                 : 'Clique para voltar para pendente'
             }
@@ -674,7 +755,7 @@ function InvitationCard({ invitation, currentUserId, userProfile }) {
               variant="light"
               fullWidth
               loading={updateStatus.isPending}
-              disabled={!isReceived || invitation?.gig_roles?.is_filled}
+              disabled={!isReceived || role?.is_filled}
               onClick={() =>
                 modals.openConfirmModal({
                   title: 'Reverter recusa do convite',
@@ -813,13 +894,18 @@ export default function GigInvitation() {
         <title>Convite para Gig | Mublin</title>
       </Helmet>
 
-      <Container size="sm" py="lg">
+      <Affix position={{ top: 0, left: 0 }} hiddenFrom="sm">
+        <AppNavbarMobile pageName={`Convite para gig`} />
+      </Affix>
+
+      <Container size="sm" pt="xs" px={{ base: 'md', sm: 0 }} mt={{ base: 50, sm: 0 }}>
         <Button
           variant="subtle"
           size="xs"
           leftSection={<IconArrowLeft size={14} />}
           onClick={() => navigate(-1)}
           mb="md"
+          visibleFrom="sm"
         >
           Voltar
         </Button>

@@ -80,37 +80,6 @@ async function fetchBrands() {
   return data
 }
 
-// ✅ VERSÃO NOVA - resolve o seu problema da fetchCategoriesByBrand
-// Antes você buscava TODOS os produtos da marca e deduplicava no JS.
-// Isso traz 500 linhas pra rede pra extrair 5 categorias.
-// Agora a filtragem é no banco, com DISTINCT e join.
-async function fetchCategoriesByBrand(brandId) {
-  if (!brandId) {
-    return []
-  }
-  const { data, error } = await supabase
-    .from('products')
-    .select(
-      `
-      product_categories!inner ( id, name_ptbr, name_en, macro_category, slug )
-    `,
-    )
-    .eq('id_brand', brandId)
-    .eq('is_discontinued', false)
-  if (error) {
-    throw error
-  }
-  // dedup agora é em cima de pouquíssimos registros, já filtrados no banco
-  const map = new Map()
-  data.forEach((row) => {
-    const c = row.product_categories
-    if (c && !map.has(c.id)) {
-      map.set(c.id, c)
-    }
-  })
-  return Array.from(map.values()).sort((a, b) => a.name_ptbr.localeCompare(b.name_ptbr))
-}
-
 async function fetchProductsByBrandAndCategory(brandId, categoryId, search = '') {
   let q = supabase
     .from('products')
@@ -606,7 +575,7 @@ export default function NewGearRefactored() {
         color: 'green',
         icon: <IconCheck size={16} />,
       })
-      navigate('/settings/gear')
+      navigate('/home')
     } catch (e) {
       notifications.show({ title: 'Erro ao salvar', message: e.message, color: 'red' })
     } finally {

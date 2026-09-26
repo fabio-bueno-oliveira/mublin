@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react'
-import { Link } from 'react-router-dom'
+import { useState, useMemo, useEffect } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query'
 // prettier-ignore
@@ -24,11 +24,11 @@ import { fetchReceivedInvitations } from '../../queries/gigs'
 import { formatShortDate } from '../../utils/dates'
 import BannerGigs from '../banners/BannerGigs'
 import {
-  IconCalendarEvent,
   IconClock,
   IconHourglassOff,
   IconThumbDown,
   IconThumbUp,
+  IconCalendarCancel,
 } from '@tabler/icons-react'
 import dayjs from 'dayjs'
 import 'dayjs/locale/pt-br'
@@ -41,16 +41,115 @@ const PROJECT_IMAGE_PATH =
 const AVATAR_PATH =
   'https://ik.imagekit.io/mublin/tr:h-40,w-40,r-max,c-maintain_ratio/users/avatars/'
 
+function getGigUrgencyStatus(gig) {
+  if (!gig?.date || !gig?.time_stage_start) return null
+
+  const now = dayjs()
+  const start = dayjs(`${gig.date}T${gig.time_stage_start}`)
+  let end = gig.time_stage_end ? dayjs(`${gig.date}T${gig.time_stage_end}`) : null
+
+  // Se o fim for menor que o início (virada de dia), joga pro dia seguinte
+  if (end && end.isBefore(start)) {
+    end = end.add(1, 'day')
+  }
+
+  // Já começou?
+  if (now.isAfter(start)) {
+    if (!end || now.isBefore(end)) {
+      return { type: 'live' }
+    }
+    // já terminou
+    return null
+  }
+
+  const diffMinutes = start.diff(now, 'minute')
+
+  // só mostra a partir de 3h = 180min
+  if (diffMinutes > 180) return null
+  if (diffMinutes <= 0) return { type: 'live' }
+
+  if (diffMinutes <= 10) return { type: 'minutes' }
+  if (diffMinutes <= 75) return { type: '1h' }
+  if (diffMinutes <= 135) return { type: '2h' }
+  return { type: '3h' }
+}
+
+function GigUrgencyBadge({ gig }) {
+  const status = getGigUrgencyStatus(gig)
+  if (!status) return null
+
+  const map = {
+    '3h': { label: 'em 3 horas', color: 'yellow', variant: 'light' },
+    '2h': { label: 'em 2 horas', color: 'orange', variant: 'light' },
+    '1h': { label: 'daqui a 1 hora', color: 'orange', variant: 'light' },
+    minutes: { label: 'em alguns minutos!', color: 'red', variant: 'light' },
+  }
+
+  if (status.type === 'live') {
+    return (
+      <Group gap={4} wrap="nowrap">
+        <Box
+          component="span"
+          className="live-dot green small"
+          style={{ flexShrink: 0 }}
+        />
+        <Text size="8px" c="var(--mantine-color-text)" ta="center" tt="uppercase" lh={1}>
+          rolando agora
+        </Text>
+      </Group>
+    )
+  }
+
+  const cfg = map[status.type]
+  return (
+    <>
+      {/* <Badge size="xs" fw={400} color={cfg.color} variant={cfg.variant} radius="sm">
+        {cfg.label}
+      </Badge> */}
+      <Group gap={4} wrap="nowrap">
+        <Box
+          component="span"
+          className={`live-dot ${cfg.color} small`}
+          style={{ flexShrink: 0 }}
+        />
+        <Text size="8px" c="var(--mantine-color-text)" ta="center" tt="uppercase" lh={1}>
+          {cfg.label}
+        </Text>
+      </Group>
+    </>
+  )
+}
+
+// Junta os nomes das funções de um convite combinado: "Guitarrista",
+// "Guitarrista e Backing Vocal", "Guitarrista, Backing Vocal e Produtor Musical"
+function formatComboRoleNames(comboRoles) {
+  const names = (comboRoles ?? []).map((r) => r?.roles?.description_ptbr).filter(Boolean)
+  if (names.length === 0) {
+    return ''
+  }
+  if (names.length === 1) {
+    return names[0]
+  }
+  return `${names.slice(0, -1).join(', ')} e ${names[names.length - 1]}`
+}
+
 export default function GigsDashboard() {
   const { user, profile } = useAuth()
   const queryClient = useQueryClient()
+  const navigate = useNavigate()
 
   const [tempGoal, setTempGoal] = useState(10)
   const [tempNoGoal, setTempNoGoal] = useState(false)
   const [popoverOpened, setPopoverOpened] = useState(false)
 
   const [miniCalendarCurrentDate, setMiniCalendarCurrentDate] = useState(new Date())
-  const [invitationFilter, setInvitationFilter] = useState('all') // 'all' | 'pending'
+  const [nowTick, setNowTick] = useState(() => dayjs()) // força re-render do badge de urgência
+
+  useEffect(() => {
+    const id = setInterval(() => setNowTick(dayjs()), 1000 * 30) // atualiza a cada 30s
+    return () => clearInterval(id)
+  }, [])
+  const [invitationFilter, setInvitationFilter] = useState('pending') // 'all' | 'pending'
 
   const saveGigGoalMutation = useMutation({
     mutationFn: (goals) => upsertUserGigGoals(user.id, goals),
@@ -82,8 +181,10 @@ export default function GigsDashboard() {
     staleTime: 1000 * 60 * 5,
   })
   const todayIso = dayjs().format('YYYY-MM-DD')
+  const tomorrowIso = dayjs().add(1, 'day').format('YYYY-MM-DD')
   const selectedIso = dayjs(miniCalendarCurrentDate).format('YYYY-MM-DD')
   const isSelectedToday = selectedIso === todayIso
+  const isSelectedTomorrow = selectedIso === tomorrowIso
 
   const { data: nextGig } = useQuery({
     queryKey: ['user-next-gig', user?.id, todayIso],
@@ -179,7 +280,8 @@ export default function GigsDashboard() {
                 }}
               >
                 <Text size="xs" fw={500} tt="uppercase" c="dimmed">
-                  Próxima gig {nextGig && `${dayjs(nextGig?.gig?.date).fromNow()}`}
+                  Próxima gig
+                  {/* {nextGig && `${dayjs(nextGig?.gig?.date).fromNow()}`} */}
                 </Text>
 
                 <Stack gap={1} mt={2}>
@@ -344,7 +446,9 @@ export default function GigsDashboard() {
           <Title ta="center" order={3} fw={600} fz="lg" lh={1} mb={6}>
             {isSelectedToday
               ? `Hoje, ${weekDay}`
-              : `${weekDayCapitalized}, ${dayjs(miniCalendarCurrentDate).locale('pt-br').format('DD [de] MMMM')}`}
+              : isSelectedTomorrow
+                ? `Amanhã, ${weekDay}`
+                : `${weekDayCapitalized}, ${dayjs(miniCalendarCurrentDate).locale('pt-br').format('DD [de] MMMM')}`}
           </Title>
 
           {isLoadingGigsForSelectedDay ? (
@@ -358,33 +462,81 @@ export default function GigsDashboard() {
           ) : (
             <Table mt="sm">
               <Table.Tbody>
-                {gigsForSelectedDay.map((item) => (
-                  <Table.Tr
-                    key={item.id}
-                    component={Link}
-                    to={`/gig/${item.gig.id}`}
-                    style={{ textDecoration: 'none', color: 'inherit', border: 'none' }}
-                  >
-                    <Table.Td px={0} py={4}>
-                      <Group gap={4}>
-                        <IconCalendarEvent size={32} stroke={1.4} />
-                        <Stack gap={0}>
-                          <Text size="sm" fw={500} c="var(--mantine-color-text)">
+                {gigsForSelectedDay.map((item) => {
+                  const isCanceled = item.gig?.is_canceled || item.gig?.is_canceled
+                  return (
+                    <Table.Tr
+                      key={item.id}
+                      onClick={() => navigate(`/gig/${item.gig.id}`)}
+                      style={{ cursor: 'pointer', border: 'none' }}
+                    >
+                      <Table.Td px={0} py={2} style={{ opacity: isCanceled ? 0.7 : 1 }}>
+                        <Group gap={4}>
+                          {/* <IconCalendarEvent size={32} stroke={1.4} /> */}
+                          <Avatar
+                            src={`${PROJECT_IMAGE_PATH}/${item.gig?.project?.id}/${item.gig?.project?.picture}`}
+                            size={50}
+                            radius="md"
+                            component={Link}
+                            to={`/project/${item.gig?.project?.slug}`}
+                          />
+                          <Stack gap={3}>
+                            {/* <Text size="sm" fw={500} c="var(--mantine-color-text)">
                             {item.gig.title}
-                          </Text>
-                          <Text size="xs" c="dimmed">
-                            Início:{' '}
-                            {item.gig.time_stage_start
-                              ? item.gig.time_stage_start.slice(0, 5)
-                              : ''}
-                            {item.gig.time_stage_end &&
-                              ` · Fim: ${item.gig.time_stage_end.slice(0, 5)}`}
-                          </Text>
-                        </Stack>
-                      </Group>
-                    </Table.Td>
-                  </Table.Tr>
-                ))}
+                          </Text> */}
+                            <Group gap={6}>
+                              <Text
+                                size="sm"
+                                fw={500}
+                                c={isCanceled ? 'dimmed' : 'var(--mantine-color-text)'}
+                                style={{
+                                  textDecoration: isCanceled ? 'line-through' : 'none',
+                                }}
+                              >
+                                {item.gig?.type?.name} · {item.gig?.project?.name}
+                              </Text>
+                              {isCanceled && (
+                                <Badge
+                                  color="red"
+                                  variant="filled"
+                                  size="xs"
+                                  leftSection={<IconCalendarCancel size={10} />}
+                                >
+                                  CANCELADA
+                                </Badge>
+                              )}
+                            </Group>
+                            {item.comboRoles?.length > 0 && (
+                              <Group gap={4}>
+                                <Avatar
+                                  src={`${AVATAR_PATH}${profile.avatar}`}
+                                  size={14}
+                                />
+                                <Text size="xs" lh={1}>
+                                  {formatComboRoleNames(item.comboRoles)}
+                                </Text>
+                              </Group>
+                            )}
+                            <Group gap={6} wrap="wrap" align="center">
+                              <Text size="xs" c="dimmed" lh={1}>
+                                Início:{' '}
+                                {item.gig.time_stage_start
+                                  ? item.gig.time_stage_start.slice(0, 5)
+                                  : ''}
+                                {item.gig.time_stage_end &&
+                                  ` · Fim: ${item.gig.time_stage_end.slice(0, 5)}`}
+                              </Text>
+                              {/* Badge só aparece 3h antes - key com nowTick pra forçar recálculo */}
+                              <Box key={`${item.id}-${nowTick.format('HH:mm')}`}>
+                                <GigUrgencyBadge gig={item.gig} />
+                              </Box>
+                            </Group>
+                          </Stack>
+                        </Group>
+                      </Table.Td>
+                    </Table.Tr>
+                  )
+                })}
               </Table.Tbody>
             </Table>
           )}
@@ -536,22 +688,21 @@ export default function GigsDashboard() {
                       {formatShortDate(inv?.gigs?.date)}
                     </Badge>
                   </Stack>
-                  <Stack gap={2} w="100%">
-                    <Title fz="md" fw={500}>
-                      Convite para ser {inv?.gig_roles?.roles?.description_ptbr}
+                  <Stack gap={1} w="100%">
+                    <Title fz="md" fw={500} lh={1}>
+                      Convite para ser {formatComboRoleNames(inv?.comboRoles)}
                     </Title>
-                    {inv?.gigs?.title && (
-                      <Text size="xs" lh={1}>
-                        {inv?.gigs?.title}
+                    {inv?.gigs?.title && <Text size="sm">{inv?.gigs?.title}</Text>}
+                    <Text size="xs" c="dimmed">
+                      Tipo: {inv?.gigs?.type?.name} · Projeto/Artista:{' '}
+                      {inv?.gigs?.projects?.name}
+                      {/* <Text span> · {inv?.gigs?.projects?.project_types.name_ptbr}</Text> */}
+                    </Text>
+                    {inv?.gigs?.description && (
+                      <Text size="xs" c="dimmed" mt={2} lineClamp={2}>
+                        {inv?.gigs?.description}
                       </Text>
                     )}
-                    <Text size="xs" c="dimmed" mt={2} lh={1}>
-                      com {inv?.gigs?.projects?.name}{' '}
-                      <Text span> · {inv?.gigs?.projects?.project_types.name_ptbr}</Text>
-                    </Text>
-                    <Text size="xs" c="dimmed" lh={1}>
-                      Tipo do evento: {inv?.gigs?.type?.name}
-                    </Text>
                   </Stack>
                 </Group>
               </Card>
@@ -569,7 +720,7 @@ export default function GigsDashboard() {
         )}
       </Box>
 
-      <Box mb="md">
+      <Box mt="lg" mb="md">
         <BannerGigs />
       </Box>
     </>

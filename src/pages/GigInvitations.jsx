@@ -268,6 +268,7 @@ function InvitationCard({ invitation, currentUserId, mode, userProfile }) {
 
   return (
     <Paper withBorder radius="md" p="sm">
+      <Title>Convite para gig ou evento</Title>
       <Group gap={4} mb={4}>
         <Text size="xs" c="dimmed" style={{ cursor: 'default' }}>
           {isReceived ? 'Convite recebido ' : 'Convite enviado em '}
