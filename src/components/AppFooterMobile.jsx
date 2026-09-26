@@ -141,7 +141,7 @@ export default function AppFooterMobile() {
             </Text>
           </UnstyledButton>
 
-          <UnstyledButton
+          {/* <UnstyledButton
             className={navItemClass(isActive('/gigs'))}
             onClick={() => navigate('/gigs')}
             opacity={isActive('/gigs') && !drawerOpen ? 1 : 0.65}
@@ -150,7 +150,7 @@ export default function AppFooterMobile() {
             <Text size="10px" lh={1.2}>
               Gigs
             </Text>
-          </UnstyledButton>
+          </UnstyledButton> */}
 
           <UnstyledButton
             className={navItemClass(isActive('/menu'))}
