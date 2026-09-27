@@ -470,7 +470,7 @@ export default function GigsDashboard() {
                       onClick={() => navigate(`/gig/${item.gig.id}`)}
                       style={{ cursor: 'pointer', border: 'none' }}
                     >
-                      <Table.Td px={0} py={2} style={{ opacity: isCanceled ? 0.7 : 1 }}>
+                      <Table.Td px={0} py={2}>
                         <Group gap={4}>
                           {/* <IconCalendarEvent size={32} stroke={1.4} /> */}
                           <Avatar
