@@ -22,28 +22,20 @@ export async function searchExternalTracks(query) {
 
 // Cria uma faixa no catálogo do Mublin a partir de um resultado externo
 // (Spotify/iTunes/Deezer) escolhido pelo usuário no autocomplete.
-export async function createTrackFromExternalResult({
-  projectId,
-  userId,
-  result,
-  isCover,
-  isPublic,
-}) {
+export async function createTrackFromExternalResult({ userId, result, isPublic }) {
+  const project = await resolveProjectFromExternalTrack(result)
+
   const { data, error } = await supabase
     .from('tracks')
     .insert({
       profile_id: userId,
-      project_id: projectId,
+      project_id: project?.id ?? null,
       title: result.title,
       duration_seconds: result.duration_seconds,
       cover_image: result.cover_image,
       release_year: result.release_year,
       spotify_id: result.spotify_id,
-      is_cover: isCover,
       is_public: isPublic,
-      // V1: só preenchemos o nome em texto livre. original_artist_id (FK pra
-      // artists) fica pra uma V2, quando dermos match/upsert na tabela artists.
-      original_artist_name: isCover ? result.artist : null,
     })
     .select()
     .single()
@@ -53,4 +45,57 @@ export async function createTrackFromExternalResult({
   }
 
   return data
+}
+
+export async function findProjectBySpotifyId(spotifyArtistId) {
+  if (!spotifyArtistId) {
+    return null
+  }
+
+  const { data, error } = await supabase
+    .from('projects')
+    .select('id, name, spotify_id, created_source_id')
+    .eq('spotify_id', spotifyArtistId)
+    .maybeSingle()
+
+  if (error) {
+    throw error
+  }
+
+  return data
+}
+
+export async function createCatalogProject({ name, spotifyArtistId }) {
+  const { data, error } = await supabase
+    .from('projects')
+    .insert({
+      name,
+      spotify_id: spotifyArtistId,
+      created_source_id: 2,
+    })
+    .select('id, name, spotify_id, created_source_id')
+    .single()
+
+  if (error) {
+    throw error
+  }
+
+  return data
+}
+
+export async function resolveProjectFromExternalTrack(result) {
+  if (!result.spotify_artist_id) {
+    return null
+  }
+
+  const existingProject = await findProjectBySpotifyId(result.spotify_artist_id)
+
+  if (existingProject) {
+    return existingProject
+  }
+
+  return createCatalogProject({
+    name: result.artist,
+    spotifyArtistId: result.spotify_artist_id,
+  })
 }

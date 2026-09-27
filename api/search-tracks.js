@@ -80,6 +80,7 @@ async function searchSpotify(query) {
     spotify_id: t.id,
     title: t.name,
     artist: (t.artists || []).map((a) => a.name).join(', '),
+    spotify_artist_id: track.artists[0].id,
     duration_seconds: t.duration_ms ? Math.round(t.duration_ms / 1000) : null,
     cover_image: t.album?.images?.[0]?.url || null,
     release_year: t.album?.release_date

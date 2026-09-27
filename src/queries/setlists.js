@@ -43,7 +43,7 @@ export async function fetchSetlistTracks(setlistId) {
   const { data, error } = await supabase
     .from('setlist_tracks')
     .select(
-      'id, order_index, notes, tracks(id, title, duration_seconds, is_public, project_id, cover_image, spotify_id, youtube_path)',
+      'id, order_index, notes, is_cover, tracks(id, title, duration_seconds, is_public, project_id, cover_image, spotify_id, youtube_path)',
     )
     .eq('setlist_id', setlistId)
     .order('order_index', { ascending: true })
@@ -56,30 +56,48 @@ export async function fetchSetlistTracks(setlistId) {
       setlist_track_id: row.id,
       order_index: row.order_index,
       notes: row.notes,
+      is_cover: row.is_cover,
       ...row.tracks,
     }))
 }
 
-// Tracks disponíveis para adicionar: do próprio projeto OU marcadas como públicas
+// Tracks disponíveis para adicionar: do próprio projeto OU marcadas como públicas.
+// Além dos dados usados na UI, retornamos metadados necessários para reconciliar
+// resultados do catálogo do Mublin com Spotify/iTunes/Deezer.
 export async function searchAvailableTracks(projectId, query) {
   if (!projectId) {
     return []
   }
+
   let request = supabase
     .from('tracks')
-    .select('id, title, duration_seconds, is_public, project_id, projects(name)')
+    .select(
+      `
+      id,
+      title,
+      duration_seconds,
+      is_public,
+      project_id,
+      cover_image,
+      spotify_id,
+      release_year,
+      projects(name)
+    `,
+    )
     .or(`project_id.eq.${projectId},is_public.eq.true`)
     .order('title', { ascending: true })
-    .limit(20)
+    .limit(30)
 
   if (query?.trim()) {
     request = request.ilike('title', `%${query.trim()}%`)
   }
 
   const { data, error } = await request
+
   if (error) {
     throw error
   }
+
   return data || []
 }
 
@@ -103,19 +121,35 @@ export async function fetchProjectTracks(projectId) {
 }
 
 // Vincula uma track existente a uma setlist
-export async function addTrackToSetlist(setlistId, trackId, orderIndex) {
+export async function addTrackToSetlist(setlistId, trackId, orderIndex, isCover = false) {
   const { data, error } = await supabase
     .from('setlist_tracks')
     .insert({
       setlist_id: setlistId,
       track_id: trackId,
       order_index: orderIndex,
+      is_cover: isCover,
     })
-    .select('id, order_index, tracks(id, title, duration_seconds, is_public, project_id)')
+    .select(
+      `
+      id,
+      order_index,
+      is_cover,
+      tracks(
+        id,
+        title,
+        duration_seconds,
+        is_public,
+        project_id
+      )
+    `,
+    )
     .single()
+
   if (error) {
     throw error
   }
+
   return data
 }
 

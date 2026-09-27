@@ -106,8 +106,15 @@ export default function SetlistManager({ projectId, value, onChange }) {
 
   async function handleAddTrack(track) {
     const nextOrder = tracks.length + 1
-    await addTrackToSetlist(value, track.id, nextOrder)
-    queryClient.invalidateQueries({ queryKey: ['setlist-tracks', value] })
+
+    const isCover =
+      track.project_id != null && Number(track.project_id) !== Number(projectId)
+
+    await addTrackToSetlist(value, track.id, nextOrder, isCover)
+
+    queryClient.invalidateQueries({
+      queryKey: ['setlist-tracks', value],
+    })
   }
 
   async function handleCreateQuickTrack() {
@@ -407,9 +414,9 @@ export default function SetlistManager({ projectId, value, onChange }) {
                           <IconBrandYoutube size={16} color="#FF0000" />
                         </Anchor>
                       )} */}
-                      {t.project_id !== projectId && (
+                      {t.is_cover && (
                         <Badge size="xs" variant="light" color="teal">
-                          Pública
+                          Cover
                         </Badge>
                       )}
                     </Group>
