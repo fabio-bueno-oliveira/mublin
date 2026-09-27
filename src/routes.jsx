@@ -29,6 +29,7 @@ const Onboarding = lazy(() => import('./pages/Onboarding'))
 const Home = lazy(() => import('./pages/Home'))
 const Feed = lazy(() => import('./pages/Feed'))
 const MySavedFavorites = lazy(() => import('./pages/Saved'))
+const SetlistEditor = lazy(() => import('./pages/SetlistEditor'))
 
 // -- Search pages
 const Search = lazy(() => import('./pages/Search'))
@@ -163,6 +164,9 @@ export const router = createBrowserRouter([
       { path: 'school/:slug', element: <Institution /> },
       { path: 'new/scene', element: <NewScene /> },
       { path: 'saved', element: <MySavedFavorites /> },
+      { path: 'setlists', element: <SetlistEditor /> },
+      { path: 'setlists/:projectId', element: <SetlistEditor /> },
+      { path: 'setlists/:projectId/:setlistId', element: <SetlistEditor /> },
       { path: 'profile-visitors', element: <ProfileVisitors /> },
       { path: 'pro', element: <Pro /> },
     ],

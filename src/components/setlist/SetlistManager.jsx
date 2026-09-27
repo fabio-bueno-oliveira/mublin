@@ -252,6 +252,7 @@ export default function SetlistManager({ projectId, value, onChange }) {
 
           <TrackCombobox
             projectId={projectId}
+            userId={user.id}
             excludeIds={tracks.map((t) => t.id)}
             onSelect={handleAddTrack}
           />
