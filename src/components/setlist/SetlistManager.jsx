@@ -19,19 +19,24 @@ import {
   Anchor,
   Fieldset,
 } from '@mantine/core'
+import { modals } from '@mantine/modals'
 import {
   IconPlus,
   IconTrash,
+  IconPencil,
   IconChevronUp,
   IconChevronDown,
   IconHelpCircle,
   IconBrandSpotify,
   IconBrandYoutube,
+  IconX,
 } from '@tabler/icons-react'
 import { useAuth } from '../../hooks/useAuth'
 import {
   fetchProjectSetlists,
   createSetlist,
+  renameSetlist,
+  deleteSetlist,
   fetchSetlistTracks,
   addTrackToSetlist,
   removeSetlistTrack,
@@ -59,6 +64,10 @@ export default function SetlistManager({ projectId, value, onChange }) {
   const [creatingSetlist, setCreatingSetlist] = useState(false)
   const [showNewSetlistForm, setShowNewSetlistForm] = useState(false)
 
+  const [editingSetlistName, setEditingSetlistName] = useState('')
+  const [renamingSetlist, setRenamingSetlist] = useState(false)
+  const [showRenameSetlistForm, setShowRenameSetlistForm] = useState(false)
+
   const [showQuickTrack, setShowQuickTrack] = useState(false)
   const [quickTrackTitle, setQuickTrackTitle] = useState('')
   const [quickTrackIsPublic, setQuickTrackIsPublic] = useState(false)
@@ -85,6 +94,76 @@ export default function SetlistManager({ projectId, value, onChange }) {
     queryFn: () => fetchSetlistTracks(value),
     enabled: !!value,
   })
+
+  const selectedSetlist = setlists.find((setlist) => String(setlist.id) === String(value))
+
+  function handleOpenRenameSetlist() {
+    if (!selectedSetlist) {
+      return
+    }
+
+    setEditingSetlistName(selectedSetlist.name)
+    setShowRenameSetlistForm(true)
+  }
+
+  async function handleRenameSetlist() {
+    const name = editingSetlistName.trim()
+
+    if (!value || !name) {
+      return
+    }
+
+    setRenamingSetlist(true)
+
+    try {
+      await renameSetlist(value, name)
+
+      await queryClient.invalidateQueries({
+        queryKey: ['project-setlists', projectId],
+      })
+
+      setShowRenameSetlistForm(false)
+      setEditingSetlistName('')
+    } finally {
+      setRenamingSetlist(false)
+    }
+  }
+
+  function handleDeleteSetlist() {
+    if (!selectedSetlist) {
+      return
+    }
+
+    modals.openConfirmModal({
+      title: 'Excluir setlist',
+      children: (
+        <Text size="sm">
+          Tem certeza que deseja excluir a setlist <strong>{selectedSetlist.name}</strong>
+          ? As faixas não serão excluídas do catálogo do Mublin.
+        </Text>
+      ),
+      labels: {
+        confirm: 'Excluir setlist',
+        cancel: 'Cancelar',
+      },
+      confirmProps: {
+        color: 'red',
+      },
+      onConfirm: async () => {
+        await deleteSetlist(selectedSetlist.id)
+
+        const remainingSetlists = setlists.filter(
+          (setlist) => setlist.id !== selectedSetlist.id,
+        )
+
+        onChange(remainingSetlists[0]?.id ?? null)
+
+        await queryClient.invalidateQueries({
+          queryKey: ['project-setlists', projectId],
+        })
+      },
+    })
+  }
 
   async function handleCreateSetlist() {
     if (!newSetlistName.trim() || !projectId) {
@@ -179,15 +258,82 @@ export default function SetlistManager({ projectId, value, onChange }) {
   return (
     <Stack gap="md">
       {setlists.length > 0 && (
-        <Select
-          label="Setlist desta gig"
-          data={setlists.map((s) => ({
-            value: String(s.id),
-            label: `${s.name} (${s.track_count} faixa${s.track_count === 1 ? '' : 's'})`,
-          }))}
-          value={value ? String(value) : null}
-          onChange={(v) => onChange(v ? Number(v) : null)}
-        />
+        <Stack gap={6}>
+          <Select
+            label={`Setlists do projeto (${setlists.length})`}
+            data={setlists.map((s) => ({
+              value: String(s.id),
+              label: `${s.name} (${s.track_count} faixa${
+                s.track_count === 1 ? '' : 's'
+              })`,
+            }))}
+            value={value ? String(value) : null}
+            onChange={(v) => {
+              onChange(v ? Number(v) : null)
+              setShowRenameSetlistForm(false)
+            }}
+          />
+
+          {value && (
+            <Group gap={4}>
+              <Button
+                type="button"
+                variant="subtle"
+                size="compact-xs"
+                leftSection={<IconPencil size={13} />}
+                onClick={handleOpenRenameSetlist}
+              >
+                Renomear
+              </Button>
+
+              <Button
+                type="button"
+                variant="subtle"
+                color="red"
+                size="compact-xs"
+                leftSection={<IconTrash size={13} />}
+                onClick={handleDeleteSetlist}
+              >
+                Excluir
+              </Button>
+            </Group>
+          )}
+
+          <Collapse expanded={showRenameSetlistForm}>
+            <Paper withBorder p="sm" radius="md">
+              <Group align="flex-end" gap="xs">
+                <TextInput
+                  label="Nome da setlist"
+                  value={editingSetlistName}
+                  onChange={(e) => setEditingSetlistName(e.currentTarget.value)}
+                  style={{ flex: 1 }}
+                />
+
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={handleRenameSetlist}
+                  loading={renamingSetlist}
+                  disabled={!editingSetlistName.trim()}
+                >
+                  Salvar
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="default"
+                  size="sm"
+                  onClick={() => {
+                    setShowRenameSetlistForm(false)
+                    setEditingSetlistName('')
+                  }}
+                >
+                  Cancelar
+                </Button>
+              </Group>
+            </Paper>
+          </Collapse>
+        </Stack>
       )}
 
       {setlists.length === 0 ? (
@@ -216,17 +362,22 @@ export default function SetlistManager({ projectId, value, onChange }) {
         </Paper>
       ) : (
         <>
-          <Button
-            type="button"
-            variant="outline"
-            size="xs"
-            w="fit-content"
-            onClick={() => setShowNewSetlistForm((v) => !v)}
-          >
-            {showNewSetlistForm
-              ? 'Cancelar'
-              : 'ou crie uma nova setlist para este projeto'}
-          </Button>
+          <Group justify="flex-end">
+            <Button
+              type="button"
+              variant="subtle"
+              color="mublinSecondary"
+              size="compact-xs"
+              fw={400}
+              w="fit-content"
+              onClick={() => setShowNewSetlistForm((v) => !v)}
+              leftSection={<IconPlus size={12} />}
+            >
+              {showNewSetlistForm
+                ? 'Cancelar'
+                : 'criar uma nova setlist para este projeto'}
+            </Button>
+          </Group>
 
           <Collapse expanded={showNewSetlistForm}>
             <Box>
@@ -264,15 +415,22 @@ export default function SetlistManager({ projectId, value, onChange }) {
             onSelect={handleAddTrack}
           />
 
-          <Button
-            type="button"
-            variant="outline"
-            size="xs"
-            w="fit-content"
-            onClick={() => setShowQuickTrack((v) => !v)}
-          >
-            {showQuickTrack ? 'cancelar' : 'não encontrei, cadastrar nova faixa'}
-          </Button>
+          <Group justify="flex-end">
+            <Button
+              type="button"
+              variant="subtle"
+              color="mublinSecondary"
+              size="compact-xs"
+              fw={400}
+              w="fit-content"
+              onClick={() => setShowQuickTrack((v) => !v)}
+              leftSection={showQuickTrack ? <IconX size={12} /> : <IconPlus size={12} />}
+            >
+              {showQuickTrack
+                ? 'cancelar'
+                : 'não encontrei, cadastrar nova faixa manualmente'}
+            </Button>
+          </Group>
 
           <Collapse expanded={showQuickTrack}>
             <Paper withBorder p="sm" radius="md">
@@ -329,8 +487,9 @@ export default function SetlistManager({ projectId, value, onChange }) {
                   onChange={(e) => setQuickTrackIsPublic(e.currentTarget.checked)}
                 />
                 <Text size="xs" c="dimmed">
-                  O upload do áudio ainda não está disponível — a faixa será criada sem
-                  arquivo por enquanto, e o upload poderá ser feito depois.
+                  Upload de arquivo de áudio ainda não disponível — a faixa será criada
+                  sem arquivo por enquanto, e o arquivo de áudio poderá ser adicionado
+                  posteriormente na seção Backstage → Discografia do projeto.
                 </Text>
                 <Group justify="flex-end">
                   <Button
@@ -348,9 +507,7 @@ export default function SetlistManager({ projectId, value, onChange }) {
           </Collapse>
 
           <Fieldset
-            legend={`
-              Setlist ${setlists.find((s) => String(s.id) === String(value))?.name || 'Repertório'} (${tracks.length} músicas)
-            `}
+            legend={`Setlist ${selectedSetlist?.name || 'Repertório'} (${tracks.length} músicas)`}
             variant="default"
           >
             <Stack gap="xs">

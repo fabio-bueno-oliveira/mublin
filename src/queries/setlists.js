@@ -207,3 +207,33 @@ export async function createQuickTrack({
   }
   return data
 }
+
+// Renomeia uma setlist existente
+export async function renameSetlist(setlistId, name) {
+  const { data, error } = await supabase
+    .from('setlists')
+    .update({
+      name: name.trim(),
+    })
+    .eq('id', setlistId)
+    .select('id, name')
+    .single()
+
+  if (error) {
+    throw error
+  }
+
+  return data
+}
+
+// Exclui uma setlist.
+// Os registros de setlist_tracks são removidos automaticamente
+// pelo ON DELETE CASCADE da FK.
+// As tracks em si NÃO são apagadas.
+export async function deleteSetlist(setlistId) {
+  const { error } = await supabase.from('setlists').delete().eq('id', setlistId)
+
+  if (error) {
+    throw error
+  }
+}

@@ -22,7 +22,7 @@ export async function searchExternalTracks(query) {
 
 // Cria uma faixa no catálogo do Mublin a partir de um resultado externo
 // (Spotify/iTunes/Deezer) escolhido pelo usuário no autocomplete.
-export async function createTrackFromExternalResult({ userId, result, isPublic }) {
+export async function createTrackFromExternalResult({ userId, result }) {
   const project = await resolveProjectFromExternalTrack(result)
 
   const { data, error } = await supabase
@@ -35,7 +35,7 @@ export async function createTrackFromExternalResult({ userId, result, isPublic }
       cover_image: result.cover_image,
       release_year: result.release_year,
       spotify_id: result.spotify_id,
-      is_public: isPublic,
+      is_public: true,
     })
     .select()
     .single()

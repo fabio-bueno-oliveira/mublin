@@ -8,9 +8,6 @@ import {
   Text,
   Badge,
   Stack,
-  Modal,
-  Checkbox,
-  Button,
   Avatar,
   Divider,
 } from '@mantine/core'
@@ -115,12 +112,40 @@ export default function TrackCombobox({ projectId, userId, onSelect, excludeIds 
   const [localResults, setLocalResults] = useState([])
   const [externalResults, setExternalResults] = useState([])
   const [searching, setSearching] = useState(false)
+  const [importingExternalId, setImportingExternalId] = useState(null)
 
-  // Resultado externo escolhido aguardando confirmação
-  // antes de virar uma track no catálogo do Mublin.
-  const [pendingExternal, setPendingExternal] = useState(null)
-  const [pendingIsPublic, setPendingIsPublic] = useState(true)
-  const [creatingFromExternal, setCreatingFromExternal] = useState(false)
+  async function handleAddExternalTrack(item) {
+    const itemId = `${item.source}-${item.external_id}`
+
+    setImportingExternalId(itemId)
+
+    try {
+      const track = await createTrackFromExternalResult({
+        userId,
+        result: item,
+      })
+
+      await onSelect(track)
+
+      await queryClient.invalidateQueries({
+        queryKey: ['project-tracks-quick-add', projectId],
+      })
+
+      setValue('')
+      setLocalResults([])
+      setExternalResults([])
+    } catch (err) {
+      console.error(err)
+
+      notifications.show({
+        title: 'Erro',
+        message: err.message || 'Não foi possível cadastrar essa faixa',
+        color: 'red',
+      })
+    } finally {
+      setImportingExternalId(null)
+    }
+  }
 
   // Faixas já cadastradas no projeto.
   // São exibidas como quick-add antes mesmo de uma busca.
@@ -183,7 +208,7 @@ export default function TrackCombobox({ projectId, userId, onSelect, excludeIds 
     }
   }, 400)
 
-  function handleOptionSubmit(optionValue) {
+  async function handleOptionSubmit(optionValue) {
     // ---------------------------------------------
     // TRACK JÁ EXISTENTE NO MUBLIN
     // ---------------------------------------------
@@ -193,7 +218,7 @@ export default function TrackCombobox({ projectId, userId, onSelect, excludeIds 
       const item = localResults.find((track) => String(track.id) === id)
 
       if (item) {
-        onSelect(item)
+        await onSelect(item)
 
         setValue('')
         setLocalResults([])
@@ -235,7 +260,7 @@ export default function TrackCombobox({ projectId, userId, onSelect, excludeIds 
     // sempre utilizamos a track existente em vez de criar
     // outra row em tracks.
     if (item.mublinTrack) {
-      onSelect(item.mublinTrack)
+      await onSelect(item.mublinTrack)
 
       setValue('')
       setLocalResults([])
@@ -245,49 +270,9 @@ export default function TrackCombobox({ projectId, userId, onSelect, excludeIds 
       return
     }
 
-    // Não existe no catálogo do Mublin.
-    // Abre confirmação antes da importação.
-    setPendingExternal(item)
-    setPendingIsPublic(true)
-
     combobox.closeDropdown()
-  }
 
-  async function handleConfirmExternal() {
-    if (!pendingExternal) {
-      return
-    }
-
-    setCreatingFromExternal(true)
-
-    try {
-      const track = await createTrackFromExternalResult({
-        userId,
-        result: pendingExternal,
-        isPublic: pendingIsPublic,
-      })
-
-      onSelect(track)
-
-      queryClient.invalidateQueries({
-        queryKey: ['project-tracks-quick-add', projectId],
-      })
-
-      setPendingExternal(null)
-      setValue('')
-      setLocalResults([])
-      setExternalResults([])
-    } catch (err) {
-      console.error(err)
-
-      notifications.show({
-        title: 'Erro',
-        message: err.message || 'Não foi possível cadastrar essa faixa',
-        color: 'red',
-      })
-    } finally {
-      setCreatingFromExternal(false)
-    }
+    await handleAddExternalTrack(item)
   }
 
   return (
@@ -352,8 +337,14 @@ export default function TrackCombobox({ projectId, userId, onSelect, excludeIds 
                 fetchTracks(value)
               }
             }}
-            rightSection={searching ? <Loader size="xs" /> : <Combobox.Chevron />}
-            disabled={!projectId}
+            rightSection={
+              searching || importingExternalId ? (
+                <Loader size="xs" />
+              ) : (
+                <Combobox.Chevron />
+              )
+            }
+            disabled={!projectId || !!importingExternalId}
           />
         </Combobox.Target>
 
@@ -450,49 +441,6 @@ export default function TrackCombobox({ projectId, userId, onSelect, excludeIds 
           </Combobox.Options>
         </Combobox.Dropdown>
       </Combobox>
-
-      {/* ---------------------------------------------
-          CONFIRMAÇÃO DE IMPORTAÇÃO
-      --------------------------------------------- */}
-
-      <Modal
-        opened={!!pendingExternal}
-        onClose={() => setPendingExternal(null)}
-        title="Adicionar música à setlist"
-        centered
-      >
-        {pendingExternal && (
-          <Stack gap="sm">
-            <Group gap="sm">
-              <Avatar src={pendingExternal.cover_image} size={48} radius="sm" />
-
-              <Stack gap={0}>
-                <Text fw={600}>{pendingExternal.title}</Text>
-
-                <Text size="sm" c="dimmed">
-                  {pendingExternal.artist}
-                </Text>
-              </Stack>
-            </Group>
-
-            <Checkbox
-              label="Tornar esta faixa pública (outros projetos poderão usá-la também)"
-              checked={pendingIsPublic}
-              onChange={(e) => setPendingIsPublic(e.currentTarget.checked)}
-            />
-
-            <Group justify="flex-end" mt="xs">
-              <Button variant="default" onClick={() => setPendingExternal(null)}>
-                Cancelar
-              </Button>
-
-              <Button onClick={handleConfirmExternal} loading={creatingFromExternal}>
-                Adicionar música
-              </Button>
-            </Group>
-          </Stack>
-        )}
-      </Modal>
     </Stack>
   )
 }
