@@ -18,6 +18,7 @@ const BOT_UA_REGEX =
 
 export const config = {
   matcher: '/((?!api|assets|static|.*\\..*).*)',
+  runtime: 'nodejs',
 }
 
 export default async function middleware(request) {

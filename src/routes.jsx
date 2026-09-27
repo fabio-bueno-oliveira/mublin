@@ -1,3 +1,4 @@
+import { lazy } from 'react'
 import { createBrowserRouter, Navigate } from 'react-router-dom'
 import PublicLayout from './components/layouts/PublicLayout'
 import AppLayout from './components/layouts/AppLayout'
@@ -5,90 +6,105 @@ import AppProfileLayout from './components/layouts/AppProfileLayout'
 import FullScreenLayout from './components/layouts/FullScreenLayout'
 import BackstageLayout from './components/layouts/BackstageLayout'
 import AppSettingsLayout from './components/layouts/AppSettingsLayout'
-// Public pages
-import AuthCallback from './pages/AuthCallback'
-import Landing from './pages/Landing'
-import NotFound from './pages/NotFound'
-import Login from './pages/Login'
-import Signup from './pages/Signup'
-import ForgotPassword from './pages/ForgotPassword'
-import ResetPassword from './pages/ResetPassword'
-// Authenticated pages
-import Menu from './pages/Menu' // for mobile devices
-import NotificationsPage from './pages/NotificationsPage' // for mobile devices
-import CalendarPage from './pages/Calendar' // for mobile devices
-import Onboarding from './pages/Onboarding'
-import Home from './pages/Home'
-import Feed from './pages/Feed'
-import MySavedFavorites from './pages/Saved'
-// -- Search pages
-import Search from './pages/Search'
-import SearchPeople from './pages/search/People'
-// -- Profile pages
+// Route guards / shells (mantidos eager)
 import ProfileRouter from './components/ProfileRouter'
-import ProfileBio from './pages/ProfileBio'
-import ProfileGear from './pages/ProfileGear'
-import ProfileGearItem from './pages/ProfileGearItem'
-import Setup from './pages/Setup'
-import Artist from './pages/Artist'
-import ProfileVisitors from './pages/ProfileVisitors'
-// -- Project pages
 import ProjectRouter from './components/ProjectRouter'
-import Projects from './pages/Projects'
-import NewProject from './pages/NewProject'
-import Backstage from './pages/Backstage'
-// -- Gigs pages
-import Gigs from './pages/Gigs'
-import Gig from './pages/Gig'
-import GigInvitations from './pages/GigInvitations'
-import GigInvitation from './pages/GigInvitation'
-import NewGig from './pages/NewGig'
-// -- Gear pages
-import Gear from './pages/Gear'
-import GearItem from './pages/GearItem'
-import GearItemZoom from './pages/GearItemZoom'
-import GearCategory from './pages/GearCategory'
-import Brand from './pages/Brand'
-import NewGear from './pages/NewGear'
-// -- Events pages
-import NewEvent from './pages/NewEvent'
-import Event from './pages/Event'
-import NewVenue from './pages/NewVenue'
-import Venue from './pages/Venue'
-// -- School pages
-import Institution from './pages/Institution'
-// -- Feed pages
-import Post from './pages/Post'
-import NewPost from './pages/NewPost'
-// -- Scene pages
-import Scenes from './pages/Scenes'
-import NewScene from './pages/NewScene'
-// -- Pro page
-import Pro from './pages/Pro'
-// -- Settings pages
-import SettingsLayout from './pages/settings'
-import EditMyProfile from './pages/settings/EditMyProfile'
-import Plan from './pages/settings/Plan'
-import MusicalPreferences from './pages/settings/MusicalPreferences'
-import Password from './pages/settings/Password'
-import Endorsements from './pages/settings/Endorsements'
-import MyGear from './pages/settings/MyGear'
-import Availability from './pages/settings/Availability'
-import Picture from './pages/settings/Picture'
-import Portfolio from './pages/settings/Portfolio'
-import Education from './pages/settings/Education'
-// -- Admin pages
 import AdminRoute from './pages/admin/AdminRoute'
 import AdminLayout from './pages/admin/AdminLayout'
-import AdminIndex from './pages/admin/index'
-import AdminUsers from './pages/admin/AdminUsers'
-import AdminBrands from './pages/admin/AdminBrands'
-import AdminProducts from './pages/admin/AdminProducts'
-import AdminVenues from './pages/admin/AdminVenues'
-import AdminPlans from './pages/admin/AdminPlans'
-import AdminColors from './pages/admin/AdminColors'
-import AdminArtists from './pages/admin/AdminArtists'
-import SearchGenre from './pages/search/Genre'
+
+// ── Public pages ──────────────────────────────────
+const AuthCallback = lazy(() => import('./pages/AuthCallback'))
+const Landing = lazy(() => import('./pages/Landing'))
+const NotFound = lazy(() => import('./pages/NotFound'))
+const Login = lazy(() => import('./pages/Login'))
+const Signup = lazy(() => import('./pages/Signup'))
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword'))
+const ResetPassword = lazy(() => import('./pages/ResetPassword'))
+
+// ── Authenticated pages ───────────────────────────
+const Menu = lazy(() => import('./pages/Menu')) // for mobile devices
+const NotificationsPage = lazy(() => import('./pages/NotificationsPage')) // for mobile devices
+const CalendarPage = lazy(() => import('./pages/Calendar')) // for mobile devices
+const Onboarding = lazy(() => import('./pages/Onboarding'))
+const Home = lazy(() => import('./pages/Home'))
+const Feed = lazy(() => import('./pages/Feed'))
+const MySavedFavorites = lazy(() => import('./pages/Saved'))
+
+// -- Search pages
+const Search = lazy(() => import('./pages/Search'))
+const SearchPeople = lazy(() => import('./pages/search/People'))
+const SearchGenre = lazy(() => import('./pages/search/Genre'))
+
+// -- Profile pages
+const ProfileBio = lazy(() => import('./pages/ProfileBio'))
+const ProfileGear = lazy(() => import('./pages/ProfileGear'))
+const ProfileGearItem = lazy(() => import('./pages/ProfileGearItem'))
+const Setup = lazy(() => import('./pages/Setup'))
+const Artist = lazy(() => import('./pages/Artist'))
+const ProfileVisitors = lazy(() => import('./pages/ProfileVisitors'))
+
+// -- Project pages
+const Projects = lazy(() => import('./pages/Projects'))
+const NewProject = lazy(() => import('./pages/NewProject'))
+const Backstage = lazy(() => import('./pages/Backstage'))
+
+// -- Gigs pages
+const Gigs = lazy(() => import('./pages/Gigs'))
+const Gig = lazy(() => import('./pages/Gig'))
+const GigInvitations = lazy(() => import('./pages/GigInvitations'))
+const GigInvitation = lazy(() => import('./pages/GigInvitation'))
+const NewGig = lazy(() => import('./pages/NewGig'))
+
+// -- Gear pages
+const Gear = lazy(() => import('./pages/Gear'))
+const GearItem = lazy(() => import('./pages/GearItem'))
+const GearItemZoom = lazy(() => import('./pages/GearItemZoom'))
+const GearCategory = lazy(() => import('./pages/GearCategory'))
+const Brand = lazy(() => import('./pages/Brand'))
+const NewGear = lazy(() => import('./pages/NewGear'))
+
+// -- Events pages
+const NewEvent = lazy(() => import('./pages/NewEvent'))
+const Event = lazy(() => import('./pages/Event'))
+const NewVenue = lazy(() => import('./pages/NewVenue'))
+const Venue = lazy(() => import('./pages/Venue'))
+
+// -- School pages
+const Institution = lazy(() => import('./pages/Institution'))
+
+// -- Feed pages
+const Post = lazy(() => import('./pages/Post'))
+const NewPost = lazy(() => import('./pages/NewPost'))
+
+// -- Scene pages
+const Scenes = lazy(() => import('./pages/Scenes'))
+const NewScene = lazy(() => import('./pages/NewScene'))
+
+// -- Pro page
+const Pro = lazy(() => import('./pages/Pro'))
+
+// -- Settings pages
+const SettingsLayout = lazy(() => import('./pages/settings'))
+const EditMyProfile = lazy(() => import('./pages/settings/EditMyProfile'))
+const Plan = lazy(() => import('./pages/settings/Plan'))
+const MusicalPreferences = lazy(() => import('./pages/settings/MusicalPreferences'))
+const Password = lazy(() => import('./pages/settings/Password'))
+const Endorsements = lazy(() => import('./pages/settings/Endorsements'))
+const MyGear = lazy(() => import('./pages/settings/MyGear'))
+const Availability = lazy(() => import('./pages/settings/Availability'))
+const Picture = lazy(() => import('./pages/settings/Picture'))
+const Portfolio = lazy(() => import('./pages/settings/Portfolio'))
+const Education = lazy(() => import('./pages/settings/Education'))
+
+// -- Admin pages
+const AdminIndex = lazy(() => import('./pages/admin/index'))
+const AdminUsers = lazy(() => import('./pages/admin/AdminUsers'))
+const AdminBrands = lazy(() => import('./pages/admin/AdminBrands'))
+const AdminProducts = lazy(() => import('./pages/admin/AdminProducts'))
+const AdminVenues = lazy(() => import('./pages/admin/AdminVenues'))
+const AdminPlans = lazy(() => import('./pages/admin/AdminPlans'))
+const AdminColors = lazy(() => import('./pages/admin/AdminColors'))
+const AdminArtists = lazy(() => import('./pages/admin/AdminArtists'))
 
 export const router = createBrowserRouter([
   // ── Rotas públicas ──────────────────────────────

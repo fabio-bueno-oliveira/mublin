@@ -1,8 +1,11 @@
+import { Suspense } from 'react'
 import { RouterProvider } from 'react-router-dom'
 import {
   MantineProvider,
   createTheme,
   localStorageColorSchemeManager,
+  Loader,
+  Center,
   Title,
   Badge,
   Pill,
@@ -145,7 +148,15 @@ export default function App() {
           <AuthProvider>
             <UIProvider>
               <DatesProvider settings={{ locale: 'pt-br', firstDayOfWeek: 0 }}>
-                <RouterProvider router={router} />
+                <Suspense
+                  fallback={
+                    <Center h="100vh">
+                      <Loader />
+                    </Center>
+                  }
+                >
+                  <RouterProvider router={router} />
+                </Suspense>
               </DatesProvider>
             </UIProvider>
           </AuthProvider>
