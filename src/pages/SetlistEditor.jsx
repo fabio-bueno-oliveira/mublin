@@ -10,12 +10,7 @@ import SetlistManager from '../components/setlist/SetlistManager'
 import { Affix, Container, Title, Text, Group, Stack, Paper, Loader } from '@mantine/core'
 import { IconPlaylist } from '@tabler/icons-react'
 
-// Página standalone de gestão de setlists — antes essa funcionalidade só
-// existia embutida no fluxo de criação de gig (NewGig.jsx). Aqui ela vira uma
-// página própria: /setlists (escolhe o projeto) ou /setlists/:projectId
-// (gerencia direto). O SetlistManager é o mesmo componente usado na gig,
-// então qualquer melhoria nele (como a busca externa de tracks) vale pros
-// dois lugares automaticamente.
+// Página standalone de gestão de setlists
 export default function SetlistEditor() {
   const { projectId, setlistId } = useParams()
   const navigate = useNavigate()
@@ -68,7 +63,7 @@ export default function SetlistEditor() {
           </Title>
         </Group>
         <Text size="sm" c="dimmed" mb="lg">
-          Crie e organize o repertório de músicas dos seus projetos
+          Gerencie o repertório de músicas dos projetos que você administra
         </Text>
 
         {!projectId ? (

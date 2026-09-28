@@ -1,6 +1,18 @@
 import { Outlet, Navigate } from 'react-router-dom'
-import { AppShell, Flex, Center, Box, Container, Loader } from '@mantine/core'
-import { useMediaQuery } from '@mantine/hooks'
+import {
+  AppShell,
+  Flex,
+  ActionIcon,
+  Burger,
+  Drawer,
+  Group,
+  Text,
+  Center,
+  Box,
+  Container,
+  Loader,
+} from '@mantine/core'
+import { useMediaQuery, useDisclosure } from '@mantine/hooks'
 import { useAuth } from '../../hooks/useAuth'
 import { useUI } from '../../contexts/UIContext'
 import AppNavbar from '../AppNavbar'
@@ -12,6 +24,8 @@ export default function AppLayout({ children }) {
   const isMobile = useMediaQuery('(max-width: 48em)')
   const isDesktop = !isMobile
   const { hideFooter } = useUI()
+  const [mobileMenuOpened, { open: openMobileMenu, close: closeMobileMenu }] =
+    useDisclosure(false)
 
   if (loading) {
     return (
@@ -36,6 +50,39 @@ export default function AppLayout({ children }) {
         <AppShell.Header>
           <AppNavbar />
         </AppShell.Header>
+      )}
+
+      {isMobile && (
+        <>
+          <Group
+            hiddenFrom="md"
+            h={56}
+            px="md"
+            justify="space-between"
+            style={{
+              borderBottom: '1px solid var(--mantine-color-default-border)',
+            }}
+          >
+            <Text fw={600}>Backstage</Text>
+
+            <Burger
+              opened={mobileMenuOpened}
+              onClick={openMobileMenu}
+              size="sm"
+              aria-label="Abrir menu"
+            />
+          </Group>
+
+          <Drawer
+            opened={mobileMenuOpened}
+            onClose={closeMobileMenu}
+            size="85%"
+            padding={0}
+            hiddenFrom="md"
+          >
+            <BackstageSidebar onNavigate={closeMobileMenu} />
+          </Drawer>
+        </>
       )}
 
       <AppShell.Main pb={{ base: 'calc(130px + var(--mantine-spacing-md))', sm: '60px' }}>

@@ -23,6 +23,7 @@ import {
   IconBriefcase,
   IconCamera,
   IconMicrophone2,
+  IconDisc,
 } from '@tabler/icons-react'
 import { MEMBER_REQUEST_STATUS } from '../../constants/projects'
 import BackstageLogo from './BackstageLogo'
@@ -33,12 +34,13 @@ const SECTIONS = [
   { value: 'dashboard', label: 'Dashboard', icon: IconLayoutDashboard },
   { value: 'info', label: 'Informações', icon: IconInfoCircle },
   { value: 'picture', label: 'Foto', icon: IconCamera },
+  { value: 'discography', label: 'Discografia', icon: IconDisc },
   { value: 'gigs', label: 'Gigs', icon: IconMicrophone2 },
   { value: 'requests', label: 'Solicitações de acesso', icon: IconUserCheck },
   { value: 'openings', label: 'Vagas', icon: IconBriefcase },
 ]
 
-export default function BackstageSidebar() {
+export default function BackstageSidebar({ onNavigate }) {
   const { projectId } = useParams()
   const { user } = useAuth()
   const [searchParams, setSearchParams] = useSearchParams()
@@ -74,6 +76,8 @@ export default function BackstageSidebar() {
       next.set('section', value)
       return next
     })
+
+    onNavigate?.()
   }
 
   return (

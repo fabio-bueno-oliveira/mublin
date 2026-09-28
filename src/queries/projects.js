@@ -67,6 +67,26 @@ export async function fetchProjectDetails(slug) {
   }
 }
 
+export async function fetchProjectDetailsById(projectId) {
+  const { data, error } = await supabase
+    .from('projects')
+    .select(
+      `
+      id,
+      name,
+      slug,
+      picture,
+      type:project_types ( id, name_ptbr )
+    `,
+    )
+    .eq('id', projectId)
+    .single()
+  if (error) {
+    throw new Error(error.message)
+  }
+  return data
+}
+
 export async function fetchProjectAdmins(projectId) {
   const { data, error } = await supabase
     .from('project_members')

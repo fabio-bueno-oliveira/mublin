@@ -508,6 +508,8 @@ export default function GigApplicationDetail() {
     },
   ]
 
+  const loggedUserIsTheGigCreator = gig?.profiles?.username === profile.username
+
   return (
     <>
       <Helmet>
@@ -643,26 +645,37 @@ export default function GigApplicationDetail() {
                       </Anchor>
                     </Text>
                   )}
-                  <Group gap={4} align="center" mb="xs">
-                    <Text size="xs" c="dimmed">
-                      evento criado por{' '}
+                  <Group gap={6} align="center" wrap="nowrap" mb="xs">
+                    <Text size="xs" c="dimmed" lh={1}>
+                      evento criado por
                     </Text>
-                    <Group gap={4}>
+                    <Group gap={5} align="center" wrap="nowrap">
                       <Avatar
                         component={Link}
                         to={`/${gig?.profiles?.username}`}
-                        src={profile?.avatar ? AVATAR_PATH + profile.avatar : undefined}
+                        src={
+                          loggedUserIsTheGigCreator
+                            ? AVATAR_PATH + profile.avatar
+                            : AVATAR_PATH + gig?.profiles?.avatar
+                        }
                         radius="xl"
-                        size={12}
+                        size={18}
+                        title={gig?.profiles?.username}
                       />
-                      <Anchor component={Link} to={`/${gig?.profiles?.username}`} fz="xs">
-                        {gig?.profiles?.username === profile.username
-                          ? 'mim'
-                          : gig?.profiles?.full_name}
+                      <Anchor
+                        component={Link}
+                        to={`/${gig?.profiles?.username}`}
+                        fz="xs"
+                        fw={500}
+                        lh={1}
+                        c="dimmed"
+                        underline="hover"
+                      >
+                        {loggedUserIsTheGigCreator ? 'mim' : gig?.profiles?.full_name}
                       </Anchor>
                     </Group>
-                    <Text size="xs" c="dimmed">
-                      {dayjs(gig?.created_at).fromNow()}
+                    <Text size="xs" c="dimmed" lh={1}>
+                      · {dayjs(gig?.created_at).fromNow()}
                     </Text>
                   </Group>
                   <Group my={4} gap="xs">
@@ -720,7 +733,7 @@ export default function GigApplicationDetail() {
 
           {isSuccess && (
             <Paper p="sm" radius="lg" withBorder>
-              <Title order={5}>Sobre a gig</Title>
+              <Title order={5}>Descrição</Title>
               {gig?.description ? (
                 <Spoiler
                   mt="xs"

@@ -21,31 +21,21 @@ import {
   fetchProjectEngagementTypeOptions,
   fetchRateTypeOptions,
 } from '../queries/projectOpenings'
+import { MEMBER_REQUEST_STATUS } from '../constants/projects'
+import BackstageDiscography from './backstage/BackstageDiscography'
 import { modals } from '@mantine/modals'
+// prettier-ignore
 import {
-  Container,
-  SimpleGrid,
-  Box,
-  Avatar,
-  Button,
-  Title,
-  Text,
-  TextInput,
-  Textarea,
-  Select,
-  Checkbox,
-  NumberInput,
-  FileInput,
-  Badge,
-  Group,
-  Stack,
-  Card,
-  Paper,
-  Center,
-  Tooltip,
-  ActionIcon,
-  Modal,
-  Skeleton,
+  Container, Group, Center,
+  SimpleGrid, Box, Stack,
+  Card, Paper,
+  Avatar, Button, Badge,
+  Title, Text,
+  TextInput, Textarea,
+  NumberInput, FileInput,
+  Select, Checkbox,
+  Tooltip, ActionIcon,
+  Modal, Skeleton,
 } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
@@ -59,7 +49,6 @@ import {
   IconPencil,
   IconRotateClockwise,
 } from '@tabler/icons-react'
-import { MEMBER_REQUEST_STATUS } from '../constants/projects'
 
 const DEFAULT_OPENING_FORM = {
   role_id: null,
@@ -813,6 +802,8 @@ export default function Backstage() {
             </Stack>
           </Card>
         )}
+
+        {activeSection === 'discography' && <BackstageDiscography />}
 
         {activeSection === 'gigs' && (
           <Card withBorder radius="lg" p="lg">

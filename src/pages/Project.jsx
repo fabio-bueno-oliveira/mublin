@@ -317,7 +317,9 @@ export default function Project() {
                   component="a"
                   href={`/backstage/${project.id}`}
                   target={`backstage-${project.id}`}
-                  size="xs"
+                  size="sm"
+                  variant="gradient"
+                  gradient={{ from: 'mublinColor', to: 'grape', deg: 96 }}
                   w="fit-content"
                   rightSection={<IconArrowUpRight size={16} />}
                   mt={{ base: 6, sm: 30 }}

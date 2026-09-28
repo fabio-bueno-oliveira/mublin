@@ -5,9 +5,11 @@ import {
   Group,
   Box,
   Paper,
+  Avatar,
   Select,
   TextInput,
   Button,
+  Title,
   Text,
   Badge,
   ActionIcon,
@@ -16,8 +18,8 @@ import {
   Checkbox,
   Collapse,
   Popover,
-  Anchor,
   Fieldset,
+  Image,
 } from '@mantine/core'
 import { modals } from '@mantine/modals'
 import {
@@ -43,6 +45,7 @@ import {
   updateSetlistTrackOrder,
   createQuickTrack,
 } from '../../queries/setlists'
+import { fetchProjectDetailsById } from '../../queries/projects'
 import { extractSpotifyTrackId, buildSpotifyTrackUrl } from '../../utils/musicLinks'
 import TrackCombobox from './TrackCombobox'
 
@@ -88,6 +91,13 @@ export default function SetlistManager({ projectId, value, onChange }) {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [setlists])
+
+  const { data: projectBasicDetails, isLoading: loadingProjectDetails } = useQuery({
+    queryKey: ['project-basic-details', projectId],
+    queryFn: () => fetchProjectDetailsById(projectId),
+    enabled: !!projectId,
+    retry: 1,
+  })
 
   const { data: tracks = [], isLoading: loadingTracks } = useQuery({
     queryKey: ['setlist-tracks', value],
@@ -255,8 +265,23 @@ export default function SetlistManager({ projectId, value, onChange }) {
     )
   }
 
+  const PROJECT_AVATAR_PATH = `https://ik.imagekit.io/mublin/projects/${projectId}/tr:h-100,w-100,c-maintain_ratio/`
+
   return (
     <Stack gap="md">
+      <Group gap="xs">
+        <Avatar
+          radius="md"
+          src={PROJECT_AVATAR_PATH + projectBasicDetails?.picture}
+          size={50}
+        />
+        <Stack gap={1}>
+          <Title size="lg">{projectBasicDetails?.name}</Title>
+          <Text size="xs" c="dimmed" lh={1}>
+            {projectBasicDetails?.type?.name_ptbr}{' '}
+          </Text>
+        </Stack>
+      </Group>
       {setlists.length > 0 && (
         <Stack gap={6}>
           <Select
@@ -507,7 +532,7 @@ export default function SetlistManager({ projectId, value, onChange }) {
           </Collapse>
 
           <Fieldset
-            legend={`Setlist ${selectedSetlist?.name || 'Repertório'} (${tracks.length} músicas)`}
+            legend={`Setlist "${selectedSetlist?.name || 'Repertório'}" (${tracks.length === 0 ? 'nenhuma música' : `${tracks.length} ${tracks.length === 1 ? 'música' : 'músicas'}`})`}
             variant="default"
           >
             <Stack gap="xs">
@@ -525,7 +550,7 @@ export default function SetlistManager({ projectId, value, onChange }) {
                 <Paper key={t.setlist_track_id} p="xs" withBorder radius="md">
                   <Group justify="space-between" wrap="nowrap">
                     <Group gap="xs" wrap="nowrap">
-                      <Stack gap={0}>
+                      <Stack gap={2}>
                         <ActionIcon
                           type="button"
                           size="xs"
@@ -545,6 +570,7 @@ export default function SetlistManager({ projectId, value, onChange }) {
                           <IconChevronDown size={12} />
                         </ActionIcon>
                       </Stack>
+                      <Image src={t?.cover_image} w={30} h={30} />
                       <Text size="sm" fw={500}>
                         {index + 1}. {t.title}
                       </Text>
