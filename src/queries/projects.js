@@ -108,25 +108,54 @@ export async function fetchProjectAdmins(projectId) {
   return data
 }
 
-export async function fetchProjectPeople(projectId) {
-  const { data, error } = await supabase
+export async function fetchProjectPeople(
+  projectId,
+  { limit, orderBy = 'created_at', ascending = false } = {},
+) {
+  let query = supabase
     .from('portfolio')
     .select(
       `
-      year_start, year_end, is_sporadic, is_mublin_facilitated,
-      profile:profiles ( id, full_name, username, avatar ),
+      id,
+      year_start,
+      year_end,
+      is_sporadic,
+      is_mublin_facilitated,
+      is_currently_working,
+      created_at,
+      profile:profiles (
+        id,
+        full_name,
+        username,
+        avatar
+      ),
       roles:portfolio_roles (
-        role:roles ( id, name_ptbr )
+        role:roles (
+          id,
+          name_ptbr
+        )
       ),
       engagement_types:portfolio_engagement_types (
-        engagement_type:project_engagement_types ( id, name_ptbr )
+        engagement_type:project_engagement_types (
+          id,
+          name_ptbr
+        )
       )
     `,
     )
     .eq('project_id', projectId)
+    .order(orderBy, { ascending })
+
+  if (limit) {
+    query = query.limit(limit)
+  }
+
+  const { data, error } = await query
+
   if (error) {
     throw new Error(error.message)
   }
+
   return data
 }
 

@@ -24,6 +24,7 @@ import {
   IconCamera,
   IconMicrophone2,
   IconDisc,
+  IconSettings,
 } from '@tabler/icons-react'
 import { MEMBER_REQUEST_STATUS } from '../../constants/projects'
 import BackstageLogo from './BackstageLogo'
@@ -38,6 +39,7 @@ const SECTIONS = [
   { value: 'gigs', label: 'Gigs', icon: IconMicrophone2 },
   { value: 'requests', label: 'Solicitações de acesso', icon: IconUserCheck },
   { value: 'openings', label: 'Vagas', icon: IconBriefcase },
+  // { value: 'settings', label: 'Configurações', icon: IconSettings },
 ]
 
 export default function BackstageSidebar({ onNavigate }) {
