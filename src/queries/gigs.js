@@ -344,3 +344,65 @@ export async function fetchGigInvitationsByGigId(gigId, excludeApplicationId) {
     }
   })
 }
+
+/**
+ * Avaliação feita pelo usuário para uma gig (ou null, se ainda não avaliou).
+ * Usa maybeSingle porque "não avaliou ainda" é o caso mais comum.
+ */
+export async function fetchGigAssessment(gigId, profileId) {
+  const { data, error } = await supabase
+    .from('gig_assessments')
+    .select('id, rating, would_repeat, comment, is_public, gig_role_id')
+    .eq('gig_id', gigId)
+    .eq('profile_id', profileId)
+    .maybeSingle()
+
+  if (error) {
+    throw new Error(error.message)
+  }
+  return data
+}
+
+/**
+ * Cria ou atualiza a avaliação (UNIQUE gig_id + profile_id).
+ * rating: 1 = Fraco / Pode melhorar, 2 = Bom, 3 = Excelente
+ */
+export async function upsertGigAssessment({
+  gigId,
+  profileId,
+  rating,
+  wouldRepeat,
+  comment,
+  isPublic,
+  gigRoleId,
+}) {
+  const { data, error } = await supabase
+    .from('gig_assessments')
+    .upsert(
+      {
+        gig_id: gigId,
+        profile_id: profileId,
+        rating,
+        would_repeat: wouldRepeat,
+        comment: comment?.trim() || null,
+        is_public: isPublic,
+        ...(gigRoleId ? { gig_role_id: gigRoleId } : {}),
+      },
+      { onConflict: 'gig_id,profile_id' },
+    )
+    .select('id, rating, would_repeat, comment, is_public, gig_role_id')
+    .single()
+
+  if (error) {
+    throw new Error(error.message)
+  }
+  return data
+}
+
+export async function deleteGigAssessment(assessmentId) {
+  const { error } = await supabase.from('gig_assessments').delete().eq('id', assessmentId)
+
+  if (error) {
+    throw new Error(error.message)
+  }
+}

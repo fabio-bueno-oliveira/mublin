@@ -554,7 +554,8 @@ export async function fetchUserGigsByDate(userId, isoDate) {
         canceled_at,
         cancellation_reason,
         type:event_types ( name ),
-        project:projects ( id, name, slug, picture )
+        project:projects ( id, name, slug, picture ),
+        setlist:setlists ( id, name )
       ),
       gig_role:gig_roles (
         id,
