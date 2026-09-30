@@ -14,9 +14,9 @@ import {
 
 export const NAV_ITEMS = [
   { label: 'Home', icon: IconHome, path: '/home' },
-  { label: 'Scenes', icon: IconMovie, path: '/scenes' },
-  { label: 'Feed', icon: IconRss, path: '/feed' },
+  // { label: 'Scenes', icon: IconMovie, path: '/scenes' },
   { label: 'Projetos', icon: IconMusic, path: '/projects' },
+  { label: 'Feed', icon: IconRss, path: '/feed' },
   // { label: 'Descobrir', icon: IconGps, path: '/search' },
 ]
 

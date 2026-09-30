@@ -14,59 +14,60 @@ import {
   IconMicrophone2,
   IconMusic,
   IconMovie,
+  IconBell,
 } from '@tabler/icons-react'
 import { motion } from 'motion/react'
 import './AppFooterMobile.css'
 
-function ScenesAnimatedIcon({ isActive }) {
-  if (isActive) {
-    return <IconMovie stroke={1} />
-  }
+// function ScenesAnimatedIcon({ isActive }) {
+//   if (isActive) {
+//     return <IconMovie stroke={1} />
+//   }
 
-  return (
-    <Box className="scenes-swipe-container">
-      {/* Ícone 1: sai rápido por cima */}
-      <motion.div
-        className="scenes-swipe-icon"
-        initial={{ y: 0, opacity: 1, filter: 'blur(0px)' }}
-        animate={{
-          y: [0, -28, -28],
-          opacity: [1, 0, 0],
-          filter: ['blur(0px)', 'blur(16px)', 'blur(16px)'],
-        }}
-        transition={{
-          duration: 0.65,
-          times: [0, 0.55, 1],
-          ease: [0.7, 0, 0.84, 0],
-          repeat: Infinity,
-          repeatDelay: 3,
-        }}
-      >
-        <IconMovie stroke={1} />
-      </motion.div>
+//   return (
+//     <Box className="scenes-swipe-container">
+//       {/* Ícone 1: sai rápido por cima */}
+//       <motion.div
+//         className="scenes-swipe-icon"
+//         initial={{ y: 0, opacity: 1, filter: 'blur(0px)' }}
+//         animate={{
+//           y: [0, -28, -28],
+//           opacity: [1, 0, 0],
+//           filter: ['blur(0px)', 'blur(16px)', 'blur(16px)'],
+//         }}
+//         transition={{
+//           duration: 0.65,
+//           times: [0, 0.55, 1],
+//           ease: [0.7, 0, 0.84, 0],
+//           repeat: Infinity,
+//           repeatDelay: 3,
+//         }}
+//       >
+//         <IconMovie stroke={1} />
+//       </motion.div>
 
-      {/* Ícone 2: entra QUASE logo em seguida */}
-      <motion.div
-        className="scenes-swipe-icon"
-        initial={{ y: 22, opacity: 0, filter: 'blur(5px)' }}
-        animate={{
-          y: [22, 22, 0],
-          opacity: [0, 0, 1],
-          filter: ['blur(5px)', 'blur(5px)', 'blur(0px)'],
-        }}
-        transition={{
-          duration: 0.65,
-          times: [0, 0.5, 0.75],
-          ease: [0.16, 1, 1.3, 1],
-          repeat: Infinity,
-          repeatDelay: 3,
-        }}
-      >
-        <IconMovie stroke={1} />
-      </motion.div>
-    </Box>
-  )
-}
+//       {/* Ícone 2: entra QUASE logo em seguida */}
+//       <motion.div
+//         className="scenes-swipe-icon"
+//         initial={{ y: 22, opacity: 0, filter: 'blur(5px)' }}
+//         animate={{
+//           y: [22, 22, 0],
+//           opacity: [0, 0, 1],
+//           filter: ['blur(5px)', 'blur(5px)', 'blur(0px)'],
+//         }}
+//         transition={{
+//           duration: 0.65,
+//           times: [0, 0.5, 0.75],
+//           ease: [0.16, 1, 1.3, 1],
+//           repeat: Infinity,
+//           repeatDelay: 3,
+//         }}
+//       >
+//         <IconMovie stroke={1} />
+//       </motion.div>
+//     </Box>
+//   )
+// }
 
 export default function AppFooterMobile() {
   const { profile } = useAuth()
@@ -95,7 +96,7 @@ export default function AppFooterMobile() {
             </Text>
           </UnstyledButton>
 
-          <UnstyledButton
+          {/* <UnstyledButton
             className={`${navItemClass(isScenesActive)} scenes-nav-item`}
             onClick={() => navigate('/scenes')}
             opacity={isScenesActive && !drawerOpen ? 1 : 0.65}
@@ -104,16 +105,27 @@ export default function AppFooterMobile() {
             <Text size="10px" lh={1.2}>
               Scenes
             </Text>
+          </UnstyledButton> */}
+
+          <UnstyledButton
+            className={navItemClass(isActive('/projects'))}
+            onClick={() => navigate('/projects')}
+            opacity={isActive('/projects') && !drawerOpen ? 1 : 0.65}
+          >
+            <IconMusic />
+            <Text size="10px" lh={1.2}>
+              Projetos
+            </Text>
           </UnstyledButton>
 
           <UnstyledButton
-            className={navItemClass(isActive('/feed') || isActive('/post'))}
-            onClick={() => navigate('/feed')}
-            opacity={(isActive('/feed') || isActive('/post')) && !drawerOpen ? 1 : 0.65}
+            className={navItemClass(isActive('/search'))}
+            onClick={() => navigate('/search')}
+            opacity={isActive('/search') && !drawerOpen ? 1 : 0.65}
           >
-            <IconRss />
+            <IconSearch />
             <Text size="10px" lh={1.2}>
-              Feed
+              Buscar
             </Text>
           </UnstyledButton>
 
@@ -131,13 +143,24 @@ export default function AppFooterMobile() {
           </UnstyledButton>
 
           <UnstyledButton
+            className={navItemClass(isActive('/feed') || isActive('/post'))}
+            onClick={() => navigate('/feed')}
+            opacity={(isActive('/feed') || isActive('/post')) && !drawerOpen ? 1 : 0.65}
+          >
+            <IconRss />
+            <Text size="10px" lh={1.2}>
+              Feed
+            </Text>
+          </UnstyledButton>
+
+          <UnstyledButton
             className={navItemClass(isActive('/search'))}
             onClick={() => navigate('/search')}
             opacity={isActive('/search') && !drawerOpen ? 1 : 0.65}
           >
-            <IconSearch />
+            <IconBell />
             <Text size="10px" lh={1.2}>
-              Buscar
+              Notificações
             </Text>
           </UnstyledButton>
 

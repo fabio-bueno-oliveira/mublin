@@ -810,11 +810,10 @@ export default function Profile() {
                     <Center mt={-24} mb="xs">
                       <Avatar
                         size={120}
-                        radius="md"
                         src={
                           profile.avatar
                             ? getAvatarUrl(profile.avatar, profile.is_open_to_work, 120)
-                            : `https://api.dicebear.com/10.x/initials/svg?seed=${profile.full_name}`
+                            : `https://api.dicebear.com/10.x/initials/svg?seed=${profile.full_name}&borderRadius=50`
                         }
                         style={{ cursor: profile.avatar ? 'pointer' : 'default' }}
                         onClick={() =>

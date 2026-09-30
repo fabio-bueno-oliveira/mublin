@@ -17,7 +17,7 @@ import {
   TextInput,
   Avatar,
 } from '@mantine/core'
-import { IconMusic, IconDisc } from '@tabler/icons-react'
+import { IconMusic, IconDisc, IconSearch } from '@tabler/icons-react'
 
 const PROJECT_AVATAR_PATH = 'https://ik.imagekit.io/mublin/projects'
 const ARTISTS_PATH =
@@ -89,8 +89,8 @@ export default function MyProjects() {
         <AppNavbarMobile pageName="Meus projetos" />
       </Affix>
 
-      <Container size="xl" pt="xs" px={{ base: 'md', sm: 0 }} mt={{ base: 50, sm: 0 }}>
-        <Group gap="xs" mb={4} visibleFrom="sm">
+      <Container size="xl" pt="xs" px={{ base: 'md', sm: 0 }} mt={{ base: 44, sm: 0 }}>
+        <Group gap="xs" mb="xs" visibleFrom="sm">
           <IconMusic size={32} />
           <Title order={1} fz="h3" ta="left" fw={600}>
             Meus projetos
@@ -105,9 +105,10 @@ export default function MyProjects() {
             <TextInput
               ref={searchInputRef}
               placeholder="Buscar por nome..."
-              size="lg"
+              size="md"
               mb="xs"
               variant="unstyled"
+              leftSection={<IconSearch />}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               disabled={loadingProjects || loadingPortfolio}
@@ -162,11 +163,11 @@ export default function MyProjects() {
                               }
                               leftSection={
                                 <Avatar
-                                  size={40}
+                                  size={50}
                                   radius="md"
                                   src={
                                     isProject
-                                      ? `https://ik.imagekit.io/mublin/projects/${entity.id}/tr:h-120,w-120,c-maintain_ratio/${entity.picture}`
+                                      ? `https://ik.imagekit.io/mublin/projects/${entity.id}/tr:h-100,w-100,c-maintain_ratio/${entity.picture}`
                                       : ARTISTS_PATH + entity.picture
                                   }
                                   title={entity?.name}
@@ -212,11 +213,11 @@ export default function MyProjects() {
                               .join(' · ')}
                             leftSection={
                               <Avatar
-                                size={40}
+                                size={50}
                                 radius="md"
                                 src={
                                   project?.picture
-                                    ? `${PROJECT_AVATAR_PATH}/${project?.id}/tr:h-80,w-80,c-maintain_ratio/${project?.picture}`
+                                    ? `${PROJECT_AVATAR_PATH}/${project?.id}/tr:h-100,w-100,c-maintain_ratio/${project?.picture}`
                                     : undefined
                                 }
                                 title={project.name}

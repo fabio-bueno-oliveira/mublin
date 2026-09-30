@@ -394,22 +394,22 @@ export default function Search() {
                         <Stack mt="xs">
                           {profileResults?.map((profile) => (
                             <Flex gap="xs" align="center" key={profile.id}>
-                              <Box w={80}>
+                              <Box w={70}>
                                 <Link
                                   component={Link}
                                   to={`/${profile.username}`}
                                   style={{ textDecoration: 'none', color: 'inherit' }}
                                 >
                                   <Avatar
-                                    size={80}
+                                    size={70}
                                     src={
                                       profile.avatar
                                         ? getAvatarUrl(
                                             profile.avatar,
                                             profile.is_open_to_work,
-                                            80,
+                                            70,
                                           )
-                                        : undefined
+                                        : `https://api.dicebear.com/10.x/initials/svg?seed=${profile.full_name}&borderRadius=50`
                                     }
                                   />
                                 </Link>
