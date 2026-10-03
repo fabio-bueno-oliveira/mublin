@@ -24,6 +24,7 @@ import { fetchReceivedInvitations } from '../../queries/gigs'
 import { formatShortDate } from '../../utils/dates'
 import BannerGigs from '../banners/BannerGigs'
 import GigAssessmentForm from '../gigs/GigAssessmentForm'
+import OtherGigsScroller from '../gigs/OtherGigsScroller'
 import {
   IconClock,
   IconHourglassOff,
@@ -480,109 +481,115 @@ export default function GigsDashboard() {
                             size={50}
                             radius="md"
                             component={Link}
-                            to={`/project/${item.gig?.project?.slug}`}
-                            onClick={() => navigate(`/gig/${item.gig.id}`)}
-                            style={{ cursor: 'pointer', border: 'none' }}
+                            to={`/gig/${item.gig.id}`}
                           />
-                          <Stack gap={5}>
-                            <Group
-                              gap={6}
-                              wrap="wrap"
-                              align="center"
-                              onClick={() => navigate(`/gig/${item.gig.id}`)}
-                              style={{ cursor: 'pointer', border: 'none' }}
-                            >
-                              <Text size="xs" c="dimmed" lh={1}>
-                                {item.gig?.time_stage_start
-                                  ? item.gig?.time_stage_start.slice(0, 5)
-                                  : ''}
-                                {item.gig?.time_stage_end &&
-                                  ` às: ${item.gig?.time_stage_end.slice(0, 5)}`}
-                                {dayjs(
-                                  `${item.gig?.date}T${item.gig?.time_stage_start}`,
-                                ).isBefore(dayjs())
-                                  ? ` (foi ${dayjs(item.gig?.date).fromNow()})`
-                                  : ` (será ${dayjs(item.gig?.date).fromNow()})`}
-                              </Text>
-                              {/* Badge só aparece 3h antes - key com nowTick pra forçar recálculo */}
-                              <Box key={`${item.id}-${nowTick.format('HH:mm')}`}>
-                                <GigUrgencyBadge gig={item.gig} />
-                              </Box>
-                            </Group>
-                            {/* <Text size="sm" fw={500} c="var(--mantine-color-text)">
-                              {item.gig.title}
-                            </Text> */}
-                            <Group gap={6}>
-                              <Text
-                                size="sm"
-                                fw={500}
-                                lh={1}
-                                c={isCanceled ? 'dimmed' : 'var(--mantine-color-text)'}
-                                style={{
-                                  textDecoration: isCanceled ? 'line-through' : 'none',
-                                }}
-                              >
-                                {item.gig?.type?.name} · {item.gig?.project?.name}
-                              </Text>
-                              {isCanceled && (
-                                <Badge color="red.9" fw={400} variant="filled" size="xs">
-                                  Cancelada
-                                </Badge>
-                              )}
-                            </Group>
-                            {item.comboRoles?.length > 0 && (
-                              <Group gap={4}>
-                                <Avatar
-                                  src={`${AVATAR_PATH}${profile.avatar}`}
-                                  size={14}
-                                />
-                                <Text size="xs" lh={1}>
-                                  {formatComboRoleNames(item.comboRoles)}
+                          <Link
+                            to={`/gig/${item.gig.id}`}
+                            style={{
+                              display: 'inline',
+                              textDecoration: 'none',
+                              color: 'inherit',
+                            }}
+                          >
+                            <Stack gap={4}>
+                              <Group gap={6} wrap="wrap" align="center">
+                                <Text size="xs" c="dimmed" lh={1}>
+                                  {item.gig?.time_stage_start
+                                    ? item.gig?.time_stage_start.slice(0, 5)
+                                    : ''}
+                                  {item.gig?.time_stage_end &&
+                                    ` às: ${item.gig?.time_stage_end.slice(0, 5)}`}
+                                  {dayjs(
+                                    `${item.gig?.date}T${item.gig?.time_stage_start}`,
+                                  ).isBefore(dayjs())
+                                    ? ` (foi ${dayjs(item.gig?.date).fromNow()})`
+                                    : ` (será ${dayjs(item.gig?.date).fromNow()})`}
                                 </Text>
+                                {/* Badge só aparece 3h antes - key com nowTick pra forçar recálculo */}
+                                <Box key={`${item.id}-${nowTick.format('HH:mm')}`}>
+                                  <GigUrgencyBadge gig={item.gig} />
+                                </Box>
                               </Group>
-                            )}
-                            {item.gig?.setlist?.id && (
-                              <Group gap={2} align="anchor-center">
-                                <IconPlaylist size={14} />
-                                <Text size="xs" fw={300}>
-                                  Playlist: <Text span>{item.gig?.setlist?.name}</Text>
-                                </Text>
-                              </Group>
-                            )}
-
-                            {dayjs(
-                              `${item.gig?.date}T${item.gig?.time_stage_start}`,
-                            ).isBefore(dayjs()) && (
-                              <>
-                                <Stack gap={4}>
-                                  <Text>{item.gig?.title}</Text>
-                                  <Button
-                                    size="xs"
-                                    variant="filled"
-                                    w={140}
-                                    onClick={() => setAssessingGigId(item.gig?.id)}
-                                  >
-                                    Avaliar gig
-                                  </Button>
-                                </Stack>
-
-                                <Modal
-                                  opened={!!assessingGigId}
-                                  onClose={() => setAssessingGigId(null)}
-                                  title="Avaliar gig"
-                                  centered
+                              {/* <Text size="sm" fw={500} c="var(--mantine-color-text)">
+                                {item.gig.title}
+                              </Text> */}
+                              <Group gap={6}>
+                                <Text
+                                  size="sm"
+                                  fw={500}
+                                  lh={1}
+                                  c={isCanceled ? 'dimmed' : 'var(--mantine-color-text)'}
+                                  style={{
+                                    textDecoration: isCanceled ? 'line-through' : 'none',
+                                  }}
                                 >
-                                  {assessingGigId && (
-                                    <GigAssessmentForm
-                                      gigId={assessingGigId}
-                                      onSaved={() => setAssessingGigId(null)}
-                                      onDeleted={() => setAssessingGigId(null)}
-                                    />
-                                  )}
-                                </Modal>
-                              </>
-                            )}
-                          </Stack>
+                                  {item.gig?.type?.name} · {item.gig?.project?.name}
+                                </Text>
+                                {isCanceled && (
+                                  <Badge
+                                    color="red.9"
+                                    fw={400}
+                                    variant="filled"
+                                    size="xs"
+                                  >
+                                    Cancelada
+                                  </Badge>
+                                )}
+                              </Group>
+                              {item.comboRoles?.length > 0 && (
+                                <Group gap={4}>
+                                  <Avatar
+                                    src={`${AVATAR_PATH}${profile.avatar}`}
+                                    size={14}
+                                  />
+                                  <Text size="xs" lh={1}>
+                                    {formatComboRoleNames(item.comboRoles)}
+                                  </Text>
+                                </Group>
+                              )}
+                              {item.gig?.setlist?.id && (
+                                <Group gap={2} align="anchor-center">
+                                  <IconPlaylist size={14} />
+                                  <Text size="xs" fw={300}>
+                                    Playlist: <Text span>{item.gig?.setlist?.name}</Text>
+                                  </Text>
+                                </Group>
+                              )}
+
+                              {dayjs(
+                                `${item.gig?.date}T${item.gig?.time_stage_start}`,
+                              ).isBefore(dayjs()) && (
+                                <>
+                                  <Stack gap={4}>
+                                    <Text>{item.gig?.title}</Text>
+                                    <Button
+                                      size="xs"
+                                      variant="filled"
+                                      w={140}
+                                      onClick={() => setAssessingGigId(item.gig?.id)}
+                                    >
+                                      Avaliar gig
+                                    </Button>
+                                  </Stack>
+
+                                  <Modal
+                                    opened={!!assessingGigId}
+                                    onClose={() => setAssessingGigId(null)}
+                                    title="Avaliar gig"
+                                    centered
+                                  >
+                                    {assessingGigId && (
+                                      <GigAssessmentForm
+                                        gigId={assessingGigId}
+                                        onSaved={() => setAssessingGigId(null)}
+                                        onDeleted={() => setAssessingGigId(null)}
+                                      />
+                                    )}
+                                  </Modal>
+                                </>
+                              )}
+                            </Stack>
+                          </Link>
                         </Group>
                       </Table.Td>
                     </Table.Tr>
@@ -770,6 +777,10 @@ export default function GigsDashboard() {
           )
         )}
       </Box>
+
+      {/* Mockup por enquanto — ainda não há registros suficientes de gigs de
+          outros projetos pra uma query real. Ver OtherGigsScroller.jsx. */}
+      <OtherGigsScroller title="Outras gigs esta semana" />
 
       <Box mt="lg" mb="md">
         <BannerGigs />

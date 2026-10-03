@@ -102,6 +102,7 @@ function daysUntil(dateStr) {
 
 function UrgencyBadge({ dateStr }) {
   const days = daysUntil(dateStr)
+  const daysText = days === 1 ? 'dia' : 'dias'
   if (days === null) {
     return null
   }
@@ -122,27 +123,27 @@ function UrgencyBadge({ dateStr }) {
   }
   if (days <= 2) {
     return (
-      <Badge size="md" color="red" variant="light" mb="xs">
-        em {days} dias
+      <Badge size="md" color="red" variant="outline" mb="xs">
+        em {days} {daysText}
       </Badge>
     )
   }
   if (days <= 7) {
     return (
-      <Badge size="md" color="orange" variant="light" mb="xs">
-        em {days} dias
+      <Badge size="md" color="orange" variant="outline" mb="xs">
+        em {days} {daysText}
       </Badge>
     )
   }
   if (days <= 30) {
     return (
-      <Badge size="md" color="yellow" variant="light" mb="xs">
-        em {days} dias
+      <Badge size="md" color="yellow" variant="outline" mb="xs">
+        em {days} {daysText}
       </Badge>
     )
   }
   return (
-    <Badge size="sm" color="gray" variant="light" mb="xs">
+    <Badge size="sm" color="gray" variant="outline" mb="xs">
       {dayjs(dateStr).fromNow()}
     </Badge>
   )
@@ -548,10 +549,16 @@ export default function GigApplicationDetail() {
                         </Badge>
                       )}
                     </Group>
-                    <Menu shadow="md" width={210} position="bottom-end" withinPortal>
+                    <Menu
+                      mr="xs"
+                      shadow="md"
+                      width={210}
+                      position="bottom-end"
+                      withinPortal
+                    >
                       <Menu.Target>
-                        <ActionIcon variant="subtle" size="sm">
-                          <IconDotsVertical size={18} />
+                        <ActionIcon variant="subtle" color="gray" size="sm">
+                          <IconDotsVertical size={22} />
                         </ActionIcon>
                       </Menu.Target>
                       <Menu.Dropdown>
@@ -601,7 +608,8 @@ export default function GigApplicationDetail() {
                   </Group>
                   <Title
                     order={1}
-                    fz="h3"
+                    fw={500}
+                    fz="h2"
                     w="100%"
                     style={{
                       textDecoration: isCanceled ? 'line-through' : 'none',
@@ -699,7 +707,7 @@ export default function GigApplicationDetail() {
                       >
                         {gig?.projects?.name}
                       </Text>
-                      <Text size="xs" c="dimmed">
+                      <Text size="xs" c="dimmed" lh={1}>
                         {gig?.projects?.project_types?.name_ptbr}
                       </Text>
                     </Stack>

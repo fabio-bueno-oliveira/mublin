@@ -152,11 +152,21 @@ export default function GigAssessmentForm({
     <Paper mt="sm" withBorder radius="md" p={0} pos="relative">
       <LoadingOverlay visible={isLoading} zIndex={10} />
 
-      <Stack gap="md">
-        <div>
-          <Text fw={600}>{assessment ? 'Sua avaliação' : 'Como foi essa gig?'}</Text>
-        </div>
+      {assessment && (
+        <Alert
+          mb="sm"
+          p={8}
+          variant="light"
+          style={{
+            borderColor: `var(--mantine-color-teal-filled)`,
+            backgroundColor: `var(--mantine-color-teal-light)`,
+          }}
+        >
+          Você já avaliou esta gig! :)
+        </Alert>
+      )}
 
+      <Stack gap="md">
         <Radio.Group
           value={rating}
           onChange={(v) => {

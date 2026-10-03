@@ -11,6 +11,7 @@ import {
 } from '../queries/search'
 import MublinLogoBlack from '../assets/svg/mublin-logo-black.svg'
 import MublinLogoWhite from '../assets/svg/mublin-logo-white.svg'
+import { IconExplore } from '../components/icons/IconExplore'
 import Notifications from './Notifications'
 import { useDisclosure } from '@mantine/hooks'
 import {
@@ -265,7 +266,7 @@ export default function AppNavbar({ children }) {
               }}
               visibleFrom="sm"
               flex={2}
-              maw="42%"
+              maw="40%"
             >
               <Combobox.Target>
                 <TextInput
@@ -336,6 +337,21 @@ export default function AppNavbar({ children }) {
               )}
             </Combobox>
 
+            <Flex
+              direction="column"
+              align="center"
+              gap={1}
+              component={Link}
+              to="/search"
+              opacity={
+                location.pathname === '/search' && !searchParams.has('q') ? 1 : 0.8
+              }
+              style={NAV_LINK_STYLE}
+            >
+              <IconExplore size={24} />
+              <Text size="xs">Descobrir</Text>
+            </Flex>
+
             {/* Direita: Notificações + Perfil */}
             <Group gap="sm">
               {/* Busca mobile */}
@@ -350,21 +366,6 @@ export default function AppNavbar({ children }) {
               >
                 <IconSearch size={18} />
               </ActionIcon>
-              <Flex
-                direction="column"
-                align="center"
-                gap={1}
-                mr="sm"
-                component={Link}
-                to="/search"
-                opacity={
-                  location.pathname === '/search' && !searchParams.has('q') ? 1 : 0.8
-                }
-                style={NAV_LINK_STYLE}
-              >
-                <IconGps size={20} stroke={1.7} />
-                <Text size="xs">Descobrir</Text>
-              </Flex>
               <Menu
                 shadow="md"
                 width={300}
@@ -375,7 +376,7 @@ export default function AppNavbar({ children }) {
               >
                 <Menu.Target>
                   <ActionIcon
-                    variant="default"
+                    variant="subtle"
                     color="gray"
                     size="lg"
                     radius="xl"
@@ -390,7 +391,7 @@ export default function AppNavbar({ children }) {
                       offset={6}
                       disabled={unreadNotifications === 0}
                     >
-                      <IconBell size={20} />
+                      <IconBell size={22} />
                     </Indicator>
                   </ActionIcon>
                 </Menu.Target>
