@@ -41,7 +41,7 @@ const ProfileBio = lazy(() => import('./pages/ProfileBio'))
 const ProfileGear = lazy(() => import('./pages/ProfileGear'))
 const ProfileGearItem = lazy(() => import('./pages/ProfileGearItem'))
 const Setup = lazy(() => import('./pages/Setup'))
-const Artist = lazy(() => import('./pages/Artist'))
+// const Artist = lazy(() => import('./pages/Artist'))
 const ProfileVisitors = lazy(() => import('./pages/ProfileVisitors'))
 
 // -- Project pages
@@ -126,6 +126,10 @@ export const router = createBrowserRouter([
     path: 'project/:slug',
     element: <ProjectRouter />,
   },
+  {
+    path: 'artist/:slug',
+    element: <ProjectRouter />,
+  },
   // ── Onboarding ──────────────────────────────────
   { path: 'onboarding', element: <Onboarding /> },
   // ── Rotas autenticadas ──────────────────────────
@@ -156,7 +160,7 @@ export const router = createBrowserRouter([
       { path: 'gear/category/:slug', element: <GearCategory /> },
       { path: 'new/gear', element: <NewGear /> },
       { path: 'setup/:id', element: <Setup /> },
-      { path: 'artist/:slug', element: <Artist /> },
+      // { path: 'artist/:slug', element: <Artist /> },
       { path: 'new/event', element: <NewEvent /> },
       { path: 'event/:slug', element: <Event /> },
       { path: 'new/venue', element: <NewVenue /> },

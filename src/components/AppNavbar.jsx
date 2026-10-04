@@ -201,7 +201,7 @@ export default function AppNavbar({ children }) {
                 </Link>
                 <Badge
                   variant="gradient"
-                  gradient={{ from: 'mublinColor', to: 'blue', deg: 96 }}
+                  gradient={{ from: 'blue', to: 'mublinColor', deg: 70 }}
                   size="sm"
                   mt={4}
                   px={6}

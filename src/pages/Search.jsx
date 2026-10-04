@@ -21,6 +21,7 @@ import { useAuth } from '../hooks/useAuth'
 import { getAvatarUrl } from '../utils/profile'
 import InspirationSpotlight from '../components/home/InspirationSpotlight'
 import UpcomingEvents from '../components/UpcomingEvents'
+import NewProjects from '../components/explore/NewProjects'
 import FeaturedSetup from '../components/explore/FeaturedSetup'
 // prettier-ignore
 import {
@@ -788,9 +789,9 @@ export default function Search() {
                 </Stack>
               )}
 
-              <Box mt="md">
+              <Box mt="md" mb="md">
                 <Title order={3} fw={600} fz="lg" mb="xs">
-                  Novos por aqui
+                  Novos usuários por aqui
                 </Title>
 
                 <Scroller
@@ -929,7 +930,7 @@ export default function Search() {
                 </Scroller>
               </Box>
 
-              <InspirationSpotlight />
+              <NewProjects limit={10} />
 
               {!!genreCategories?.length && (
                 <Box>
@@ -1024,6 +1025,8 @@ export default function Search() {
                   </SimpleGrid>
                 </Box>
               )}
+
+              <InspirationSpotlight />
 
               <UpcomingEvents />
 

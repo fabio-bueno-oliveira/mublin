@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useQuery } from '@tanstack/react-query'
@@ -12,6 +12,7 @@ import {
   Textarea,
   NativeSelect,
   Select,
+  MultiSelect,
   NumberInput,
   Checkbox,
   Radio,
@@ -54,11 +55,47 @@ function generateSlug(name) {
 }
 
 // ── Queries ──────────────────────────────────────────────
-async function fetchRegions() {
+const BRAZIL_COUNTRY_ID = '27'
+
+// Valores vazios ou salvos como texto 'NULL' no banco não contam como nome válido
+function isValidText(v) {
+  return typeof v === 'string' && v.trim() !== '' && v.trim().toLowerCase() !== 'null'
+}
+
+// Nome do país em pt-BR: name_ptbr -> Intl.DisplayNames (via code ISO) -> name
+const regionNames = new Intl.DisplayNames(['pt-BR'], { type: 'region' })
+function getCountryLabel(country) {
+  if (isValidText(country.name_ptbr)) {
+    return country.name_ptbr.trim()
+  }
+  if (isValidText(country.code)) {
+    try {
+      const code = country.code.trim().toUpperCase()
+      const translated = regionNames.of(code)
+      if (translated && translated !== code) {
+        return translated
+      }
+    } catch {
+      // código ISO inválido: segue para o fallback
+    }
+  }
+  return isValidText(country.name) ? country.name.trim() : null
+}
+
+async function fetchCountries() {
+  const { data, error } = await supabase
+    .from('countries')
+    .select('id, name, name_ptbr, code')
+  if (error) {
+    throw new Error(error.message)
+  }
+  return data
+}
+async function fetchRegions(countryId) {
   const { data, error } = await supabase
     .from('regions')
     .select('id, name, uf')
-    .eq('country_id', 27)
+    .eq('country_id', Number(countryId))
     .order('name')
   if (error) {
     throw new Error(error.message)
@@ -68,7 +105,7 @@ async function fetchRegions() {
 async function searchProjectsByName(name) {
   const { data, error } = await supabase
     .from('projects')
-    .select('id, name, slug, picture, genres ( id, name_ptbr )')
+    .select('id, name, slug, picture, project_genres ( genres ( id, name_ptbr ) )')
     .ilike('name', `%${name}%`)
     .limit(5)
   if (error) {
@@ -76,14 +113,19 @@ async function searchProjectsByName(name) {
   }
   return data
 }
-async function searchCitiesByName(query, regionId) {
-  const { data, error } = await supabase
+// Se houver regionId, busca dentro da região; senão (países sem regiões
+// cadastradas), busca direto pelo país.
+async function searchCitiesByName(query, { regionId, countryId }) {
+  let request = supabase
     .from('cities')
-    .select('id, name')
-    .eq('region_id', regionId)
+    .select('id, name, regions ( name )')
     .ilike('name', `%${query}%`)
     .order('name')
     .limit(20)
+  request = regionId
+    ? request.eq('region_id', Number(regionId))
+    : request.eq('country_id', Number(countryId))
+  const { data, error } = await request
   if (error) {
     throw new Error(error.message)
   }
@@ -150,11 +192,15 @@ export default function NewProject({ onSuccess, isModal = false }) {
     value: String(type?.id),
     label: type?.name_ptbr,
   }))
-  const { data: regions = [] } = useQuery({
-    queryKey: ['regions-br'],
-    queryFn: fetchRegions,
-    staleTime: 1000 * 60 * 60,
+  const { data: countries = [], isLoading: isLoadingCountries } = useQuery({
+    queryKey: ['countries'],
+    queryFn: fetchCountries,
+    staleTime: Infinity,
   })
+  const countriesList = countries
+    .map((c) => ({ value: String(c.id), label: getCountryLabel(c) }))
+    .filter((c) => c.label)
+    .sort((a, b) => a.label.localeCompare(b.label, 'pt-BR'))
   const { data: genreCategories = [] } = useQuery({
     queryKey: ['genre-categories'],
     queryFn: fetchGenreCategories,
@@ -180,6 +226,8 @@ export default function NewProject({ onSuccess, isModal = false }) {
   }))
 
   // Form
+  // Estado/região só é obrigatório se o país escolhido tiver regiões cadastradas
+  const regionsRequiredRef = useRef(true)
   const form = useForm({
     // mode: 'uncontrolled',
     initialValues: {
@@ -192,8 +240,9 @@ export default function NewProject({ onSuccess, isModal = false }) {
       kind: '1',
       activity_status: '1',
       is_public: '1',
+      country_id: BRAZIL_COUNTRY_ID,
       region_id: '',
-      genre_id: '',
+      genre_ids: [],
       is_founder: true,
     },
     validate: {
@@ -206,9 +255,22 @@ export default function NewProject({ onSuccess, isModal = false }) {
         !v && values.activity_status === '2' ? 'Informe o ano de encerramento' : null,
       project_type_id: isNotEmpty('Informe o tipo do projeto'),
       activity_status: isNotEmpty('Informe o status do projeto'),
-      region_id: isNotEmpty('Informe o Estado de origem'),
+      country_id: isNotEmpty('Informe o país de origem'),
+      region_id: (v) =>
+        regionsRequiredRef.current && !v ? 'Informe o Estado/região de origem' : null,
     },
   })
+
+  const countryId = form.getValues().country_id
+  const { data: regions = [], isLoading: isLoadingRegions } = useQuery({
+    queryKey: ['regions', countryId],
+    queryFn: () => fetchRegions(countryId),
+    enabled: !!countryId,
+    staleTime: 1000 * 60 * 60,
+  })
+  const hasRegions = regions.length > 0
+  regionsRequiredRef.current = hasRegions
+  const isBrazil = countryId === BRAZIL_COUNTRY_ID
 
   const checkSlug = useDebouncedCallback(async (slug) => {
     if (slug.length < 2) {
@@ -262,13 +324,16 @@ export default function NewProject({ onSuccess, isModal = false }) {
   }
 
   const handleCitySearch = useDebouncedCallback(async (query) => {
-    const regionId = form.getValues().region_id
-    if (!query || query.length < 2 || !regionId) {
+    const { region_id: regionId, country_id: countryId } = form.getValues()
+    if (!query || query.length < 2 || !countryId || (hasRegions && !regionId)) {
       return
     }
     setCitySearchLoading(true)
     setNoCityResults(false)
-    const results = await searchCitiesByName(query, regionId)
+    const results = await searchCitiesByName(query, {
+      regionId: hasRegions ? regionId : null,
+      countryId,
+    })
     if (results.length) {
       setCityResults(results)
     } else {
@@ -411,9 +476,14 @@ export default function NewProject({ onSuccess, isModal = false }) {
         slug: finalSlug,
         description: values.description || null,
         project_type_id: Number(values.project_type_id),
-        genre_id: values.genre_id ? Number(values.genre_id) : null,
         on_tour: false,
         city_id: selectedCity?.id || null,
+        country_id: Number(values.country_id),
+        foundation_year: values.foundation_year ? Number(values.foundation_year) : null,
+        end_year:
+          values.activity_status === '2' && values.end_year
+            ? Number(values.end_year)
+            : null,
         activity_status: values.activity_status,
         is_public: values.is_public === '1',
       })
@@ -433,10 +503,54 @@ export default function NewProject({ onSuccess, isModal = false }) {
     const projectId = newProject.id
     const targetFolder = `/projects/${projectId}/`
 
+    // 2. Adiciona o membro fundador ANTES de qualquer UPDATE em projects.
+    // A policy de UPDATE exige um registro em project_members com
+    // is_admin = true e status = 2, senão a RLS bloqueia silenciosamente.
+    setLoadingStep('Configurando permissões...')
+    const { error: memberError } = await supabase.from('project_members').insert({
+      project_id: projectId,
+      profile_id: user.id,
+      is_founder: values.is_founder,
+      is_admin: true,
+      status: 2,
+    })
+
+    if (memberError) {
+      console.error('Erro ao adicionar membro fundador:', memberError)
+      notifications.show({
+        color: 'red',
+        title: 'Erro',
+        message: 'Projeto criado, mas não foi possível adicionar você como membro.',
+      })
+      setIsSubmitting(false)
+      return
+    }
+
+    // 2.1 Gêneros do projeto (tabela project_genres, N:N)
+    if (values.genre_ids?.length) {
+      setLoadingStep('Salvando gêneros...')
+      const { error: genresError } = await supabase.from('project_genres').insert(
+        values.genre_ids.map((genreId) => ({
+          project_id: projectId,
+          genre_id: Number(genreId),
+        })),
+      )
+      if (genresError) {
+        console.error('Erro ao salvar gêneros do projeto:', genresError)
+        notifications.show({
+          color: 'yellow',
+          title: 'Aviso',
+          message: 'Projeto criado, mas os gêneros não puderam ser salvos.',
+        })
+      }
+    }
+
+    // 3. Upload da imagem definitiva na pasta do projeto
     let finalPicture = null
 
     try {
       if (projectImageFile) {
+        setLoadingStep('Trabalhando as imagens...')
         if (projectFileId) {
           await deleteFromImageKit(projectFileId).catch(() => {})
         }
@@ -458,16 +572,20 @@ export default function NewProject({ onSuccess, isModal = false }) {
       })
     }
 
-    // UPDATE com imagens (fora do try para garantir execução)
-    setLoadingStep('Trabalhando as imagens...')
+    // 4. UPDATE da imagem. O .select('id') faz o Supabase devolver as linhas
+    // afetadas, permitindo detectar bloqueio silencioso por RLS (0 linhas).
     if (finalPicture) {
-      const { error: updateError } = await supabase
+      const { data: updatedRows, error: updateError } = await supabase
         .from('projects')
         .update({ picture: finalPicture })
         .eq('id', projectId)
+        .select('id')
 
-      if (updateError) {
-        console.error('Erro ao atualizar imagem do projeto:', updateError)
+      if (updateError || !updatedRows?.length) {
+        console.error(
+          'Erro ao atualizar imagem do projeto:',
+          updateError ?? 'nenhuma linha afetada (possível bloqueio de RLS)',
+        )
         notifications.show({
           color: 'yellow',
           title: 'Aviso',
@@ -475,26 +593,6 @@ export default function NewProject({ onSuccess, isModal = false }) {
             'Projeto criado, mas a imagem não pôde ser salva. Tente atualizá-la depois.',
         })
       }
-    }
-
-    // Adiciona membro fundador
-    setLoadingStep('Quase lá...')
-    const { error: memberError } = await supabase.from('project_members').insert({
-      project_id: projectId,
-      profile_id: user.id,
-      is_founder: values.is_founder,
-      is_admin: true,
-      status: 2,
-    })
-
-    if (memberError) {
-      notifications.show({
-        color: 'red',
-        title: 'Erro',
-        message: 'Projeto criado, mas não foi possível adicionar você como membro.',
-      })
-      setIsSubmitting(false)
-      return
     }
 
     notifications.show({
@@ -511,6 +609,15 @@ export default function NewProject({ onSuccess, isModal = false }) {
 
   const activityStatus = form.getValues().activity_status
   const regionId = form.getValues().region_id
+  // Cidade liberada: com região (se o país tem regiões) ou direto pelo país
+  const canPickCity = !!countryId && !isLoadingRegions && (hasRegions ? !!regionId : true)
+
+  function resetCity() {
+    setSelectedCity(null)
+    setCitySearchQuery('')
+    setCityResults([])
+    setNoCityResults(false)
+  }
 
   return (
     <Container size="sm" py="md" px={{ base: 'xs', sm: 'xs' }} pos="relative">
@@ -605,7 +712,7 @@ export default function NewProject({ onSuccess, isModal = false }) {
                           {p.name}
                         </Text>
                         <Text size="10px" c="dimmed">
-                          {p.genres?.name_ptbr}
+                          {p.project_genres?.[0]?.genres?.name_ptbr}
                         </Text>
                       </Flex>
                     </Anchor>
@@ -720,30 +827,55 @@ export default function NewProject({ onSuccess, isModal = false }) {
             </Grid.Col>
           </Grid>
 
-          <Select
-            label="Gênero principal"
-            description="Gênero ou estilo musical que melhor define"
+          <MultiSelect
+            label="Gêneros"
+            description="Gêneros ou estilos musicais que melhor definem (até 5)"
             placeholder="Selecione (opcional)"
             searchable
+            clearable
+            hidePickedOptions
+            maxValues={5}
             comboboxProps={{ position: 'bottom', middlewares: { flip: false } }}
             data={genresList}
-            key={form.key('genre_id')}
-            {...form.getInputProps('genre_id')}
+            key={form.key('genre_ids')}
+            {...form.getInputProps('genre_ids')}
+          />
+
+          <Select
+            withAsterisk
+            label="País"
+            placeholder="Selecione"
+            searchable
+            data={countriesList}
+            disabled={isLoadingCountries}
+            comboboxProps={{ position: 'bottom', middlewares: { flip: false } }}
+            key={form.key('country_id')}
+            {...form.getInputProps('country_id')}
+            onChange={(value) => {
+              form.setFieldValue('country_id', value ?? '')
+              form.setFieldValue('region_id', '')
+              resetCity()
+            }}
           />
 
           <Grid>
             <Grid.Col span={6}>
               <NativeSelect
-                withAsterisk
-                label="Estado"
+                withAsterisk={hasRegions}
+                label={isBrazil ? 'Estado' : 'Estado / Região'}
+                disabled={!countryId || isLoadingRegions || !hasRegions}
                 key={form.key('region_id')}
                 {...form.getInputProps('region_id')}
                 onChange={(e) => {
                   form.setFieldValue('region_id', e.target.value)
-                  setSelectedCity(null)
+                  resetCity()
                 }}
               >
-                <option value="">Selecione</option>
+                <option value="">
+                  {countryId && !isLoadingRegions && !hasRegions
+                    ? 'Sem regiões cadastradas'
+                    : 'Selecione'}
+                </option>
                 {regions.map((r) => (
                   <option key={r.id} value={String(r.id)}>
                     {r.name}
@@ -756,12 +888,18 @@ export default function NewProject({ onSuccess, isModal = false }) {
                 <Input
                   pointer
                   readOnly
-                  placeholder={regionId ? 'Selecionar...' : 'Selecione o Estado'}
-                  disabled={!regionId}
+                  placeholder={
+                    canPickCity
+                      ? 'Selecionar...'
+                      : countryId
+                        ? 'Selecione o Estado/região'
+                        : 'Selecione o país'
+                  }
+                  disabled={!canPickCity}
                   value={selectedCity?.name ?? ''}
-                  rightSection={regionId ? <IconSearch size={15} /> : undefined}
+                  rightSection={canPickCity ? <IconSearch size={15} /> : undefined}
                   onClick={() => {
-                    if (regionId) {
+                    if (canPickCity) {
                       openCityModal()
                     }
                   }}
@@ -773,8 +911,8 @@ export default function NewProject({ onSuccess, isModal = false }) {
           <Textarea
             label="Bio"
             placeholder="Conte um pouco sobre o projeto (opcional)"
-            maxLength={2000}
-            description={`${descriptionValue.length}/2000`}
+            maxLength={3000}
+            description={`${descriptionValue.length}/3000`}
             autosize
             minRows={3}
             maxRows={9}
@@ -852,7 +990,7 @@ export default function NewProject({ onSuccess, isModal = false }) {
           />
           {noCityResults && (
             <Text size="xs" c="dimmed">
-              Nenhuma cidade encontrada neste Estado.
+              Nenhuma cidade encontrada {hasRegions ? 'nesta região' : 'neste país'}.
             </Text>
           )}
           {cityResults.length > 0 && (
@@ -874,6 +1012,12 @@ export default function NewProject({ onSuccess, isModal = false }) {
                       }}
                     >
                       {city.name}
+                      {!hasRegions && city.regions?.name ? (
+                        <Text span size="xs" c="dimmed">
+                          {' '}
+                          — {city.regions.name}
+                        </Text>
+                      ) : null}
                     </Anchor>
                     <Divider />
                   </Box>

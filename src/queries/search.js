@@ -298,3 +298,38 @@ export async function fetchGenreCategories() {
   }
   return data
 }
+
+// Projetos mais recentes da plataforma (vitrine "Novos projetos" em /search).
+// Só entram projetos públicos, ativos e com slug (necessário para o link).
+// - withPictureOnly: esconde projetos sem foto, para a vitrine não ter avatares vazios
+// - createdSourceId: restringe pela origem do cadastro (projects.created_source_id),
+//   útil para separar projetos criados por usuários de artistas cadastrados pelo time
+export async function fetchRecentProjects(
+  limit = 10,
+  { withPictureOnly = false, createdSourceId = null } = {},
+) {
+  let query = supabase
+    .from('projects')
+    .select(
+      'id, name, slug, picture, created_at, is_verified, type:project_types ( id, name_ptbr )',
+    )
+    .eq('is_public', true)
+    .eq('is_active', true)
+    .not('slug', 'is', null)
+
+  if (withPictureOnly) {
+    query = query.not('picture', 'is', null)
+  }
+  if (createdSourceId !== null) {
+    query = query.eq('created_source_id', createdSourceId)
+  }
+
+  const { data, error } = await query
+    .order('created_at', { ascending: false })
+    .limit(limit)
+
+  if (error) {
+    throw new Error(error.message)
+  }
+  return data
+}

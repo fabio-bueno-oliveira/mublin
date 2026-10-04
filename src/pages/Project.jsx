@@ -8,6 +8,7 @@ import {
   fetchprojectsInspirated,
   fetchProjectAdmins,
   fetchProjectPeople,
+  fetchProjectGenres,
   fetchMyProjectAdminRequest,
   requestProjectAdminAccess,
   fetchProjectClaimPolicy,
@@ -28,6 +29,7 @@ import {
   Badge,
   Avatar,
   Image,
+  Anchor,
   Title,
   Text,
   Textarea,
@@ -41,10 +43,8 @@ import {
   Divider,
   ThemeIcon,
 } from '@mantine/core'
-
 import { useMediaQuery, useDisclosure } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
-
 import {
   IconBrandInstagram,
   IconBrandSpotify,
@@ -60,9 +60,11 @@ import {
   IconChevronRight,
   IconExternalLink,
 } from '@tabler/icons-react'
-
 import AppNavbarMobile from '../components/AppNavbarMobile'
 import { MEMBER_REQUEST_STATUS } from '../constants/projects'
+import dayjs from 'dayjs'
+import 'dayjs/locale/pt-br'
+dayjs.locale('pt-br')
 
 const ADMIN_REQUEST_STATUS = {
   PENDING: 1,
@@ -86,7 +88,7 @@ function formatClaimPolicyMessage(policy) {
     ? `${hours / 24} dia${hours / 24 > 1 ? 's' : ''}`
     : `${hours} horas`
 
-  return `Sua solicitação ficará pendente de aprovação da curadoria do Mublin, ou será aprovada automaticamente em até ${timeLabel} caso ninguém conteste.`
+  return `Para este projeto, sua solicitação ficará pendente de aprovação da curadoria do Mublin, ou será aprovada automaticamente em até ${timeLabel} caso ninguém conteste.`
 }
 
 export default function Project() {
@@ -147,6 +149,13 @@ export default function Project() {
     staleTime: 1000 * 60 * 5,
   })
 
+  const { data: projectGenres = [], isLoading: loadingProjectGenres } = useQuery({
+    queryKey: ['project-genres', project?.id],
+    queryFn: () => fetchProjectGenres(project?.id),
+    enabled: !!project?.id,
+    staleTime: 1000 * 60 * 5,
+  })
+
   const { data: projectPeople = [], isLoading: loadingProjectPeople } = useQuery({
     queryKey: ['project-people', project?.id],
     queryFn: () => fetchProjectPeople(project?.id),
@@ -185,7 +194,11 @@ export default function Project() {
 
   const [endorsementMessage, setEndorsementMessage] = useState('')
 
-  const { data: claimPolicy, isLoading: loadingClaimPolicy } = useQuery({
+  const {
+    data: claimPolicy,
+    isLoading: loadingClaimPolicy,
+    isError: claimPolicyError,
+  } = useQuery({
     queryKey: ['project-claim-policy', project?.id],
     queryFn: () => fetchProjectClaimPolicy(project?.id),
     enabled: !!project?.id && claimModalOpened,
@@ -264,6 +277,7 @@ export default function Project() {
   const AVATAR_MINI_PATH =
     'https://ik.imagekit.io/mublin/tr:h-35,c-maintain_ratio/users/avatars/'
 
+  const PICTURE_AVATAR_SMALL_PATH = `https://ik.imagekit.io/mublin/projects/${project?.id}/tr:h-192,w-192,c-maintain_ratio/`
   const PICTURE_AVATAR_PATH = `https://ik.imagekit.io/mublin/projects/${project?.id}/tr:h-220,w-220,c-maintain_ratio/`
 
   const PICTURE_AVATAR_LARGE_PATH = `https://ik.imagekit.io/mublin/projects/${project?.id}/tr:h-400,w-400,c-maintain_ratio/`
@@ -324,21 +338,31 @@ export default function Project() {
   }
 
   const handleConfirmClaimRequest = () => {
-    requestAdminMutation.mutate(endorsementMessage)
-    closeClaimModal()
+    requestAdminMutation.mutate(endorsementMessage, {
+      onSuccess: closeClaimModal,
+    })
   }
+
+  // projectGenres vem como { genre: { name_ptbr } }
+  const validGenreNames =
+    projectGenres?.map((g) => g?.genre?.name_ptbr || g?.name_ptbr).filter(Boolean) ?? []
+
+  const hasValidGenres = validGenreNames.length > 0
+  const hasFallbackGenre = !!project?.genre
+
+  // REGRA QUE VOCÊ PEDIU: interpunct só se tiver registro em projectGenres
+  const shouldShowDot =
+    !!project?.project_type && (loadingProjectGenres || hasValidGenres)
+
+  const shouldShowGenreBlock = loadingProjectGenres || hasValidGenres || hasFallbackGenre
 
   return (
     <>
       <Helmet>
         <meta charSet="utf-8" />
-
-        <title>{`${project?.name} · ${project?.project_type} · Mublin`}</title>
-
+        <title>{`${project?.name} | ${project?.project_type} | Mublin`}</title>
         <link rel="canonical" href={`https://mublin.com/project/${project?.name}`} />
-
         <meta name="description" content={`${project?.name} no Mublin`} />
-
         <meta
           property="og:image"
           content={
@@ -422,16 +446,15 @@ export default function Project() {
               <Button
                 component="a"
                 href={`/backstage/${project.id}`}
-                target={`backstage-${project.id}`}
+                // target={`backstage-${project.id}`}
                 pos="absolute"
-                top={{ base: 54, sm: 20 }}
-                right={{ base: 14, sm: 20 }}
-                size="sm"
-                variant="filled"
+                top={{ base: 30, sm: 20 }}
+                right={{ base: 20, sm: 20 }}
+                size="xs"
+                variant="white"
                 color="dark"
                 rightSection={<IconArrowUpRight size={14} />}
                 style={{
-                  background: 'rgba(15, 15, 15, 0.72)',
                   backdropFilter: 'blur(12px)',
                   border: '1px solid rgba(255,255,255,.12)',
                 }}
@@ -463,14 +486,18 @@ export default function Project() {
                   />
                 ) : (
                   <Avatar
-                    src={PICTURE_AVATAR_PATH + project?.picture}
+                    src={
+                      isMobile
+                        ? PICTURE_AVATAR_PATH + project?.picture
+                        : PICTURE_AVATAR_SMALL_PATH + project?.picture
+                    }
                     size={isMobile ? 76 : 96}
                     radius="lg"
                     onClick={openModal}
                     style={{
                       flexShrink: 0,
                       cursor: 'pointer',
-                      border: '2px solid rgba(255,255,255,.18)',
+                      // border: '2px solid rgba(255,255,255,.18)',
                       boxShadow: '0 8px 30px rgba(0,0,0,.4)',
                     }}
                   />
@@ -536,14 +563,20 @@ export default function Project() {
                           </Text>
                         )}
 
-                        {project?.genre && (
+                        {shouldShowGenreBlock && (
                           <>
-                            <Text size="sm" c="rgba(255,255,255,.35)">
-                              ·
-                            </Text>
+                            {shouldShowDot && (
+                              <Text size="sm" c="rgba(255,255,255,.35)">
+                                ·
+                              </Text>
+                            )}
 
                             <Text size="sm" c="rgba(255,255,255,.76)">
-                              {project.genre}
+                              {loadingProjectGenres
+                                ? 'Carregando gêneros...'
+                                : hasValidGenres
+                                  ? validGenreNames.join(', ')
+                                  : project.genre}
                             </Text>
                           </>
                         )}
@@ -601,7 +634,9 @@ export default function Project() {
 
               <Tabs.Tab value="about">Sobre</Tabs.Tab>
 
-              <Tabs.Tab value="people">Pessoas</Tabs.Tab>
+              <Tabs.Tab value="people">
+                Pessoas {projectPeople?.length > 0 && `(${projectPeople.length})`}
+              </Tabs.Tab>
 
               <Tabs.Tab value="gigs">Gigs</Tabs.Tab>
 
@@ -642,8 +677,8 @@ export default function Project() {
                  * ABOUT
                  */}
 
-                <Card withBorder radius="lg" p="lg">
-                  <Title order={3} fz="lg" fw={600} mb="sm">
+                <Card withBorder radius="lg" px="lg" pt="lg" pb="sm">
+                  <Title order={3} fw={600} size="17px" mb={6}>
                     Sobre
                   </Title>
 
@@ -659,8 +694,8 @@ export default function Project() {
                       >
                         {project.description}
                       </Text>
+                      <Divider mt="sm" mb="xs" />
                       <Button
-                        mt="xs"
                         radius="md"
                         fullWidth
                         size="compact-xs"
@@ -772,7 +807,9 @@ export default function Project() {
 
                 {recentProjectPeople.length > 0 && (
                   <Card withBorder radius="lg" p="lg">
-                    <Text size="sm">Pessoas associadas recentemente</Text>
+                    <Title order={3} fw={600} size="17px" mb={6}>
+                      Pessoas associadas recentemente
+                    </Title>
 
                     <SimpleGrid
                       cols={{
@@ -915,11 +952,15 @@ export default function Project() {
                  */}
 
                 <Card withBorder radius="lg" p="lg">
-                  <Text size="xs" c="dimmed" fw={600} tt="uppercase" lts=".05em" mb="md">
-                    Projeto
-                  </Text>
-
                   <Stack gap="sm">
+                    {project?.slug && (
+                      <Group justify="flex-end">
+                        <Text size="xs" c="dimmed">
+                          mublin.com/project/{project.slug}
+                        </Text>
+                      </Group>
+                    )}
+
                     {project?.project_type && (
                       <Group justify="space-between" gap="md">
                         <Text size="sm" c="dimmed">
@@ -944,16 +985,6 @@ export default function Project() {
                       </Group>
                     )}
 
-                    <Group justify="space-between" gap="md">
-                      <Text size="sm" c="dimmed">
-                        Pessoas
-                      </Text>
-
-                      <Text size="sm" fw={500}>
-                        {projectPeople.length}
-                      </Text>
-                    </Group>
-
                     {openProjectOpenings.length > 0 && (
                       <Group justify="space-between" gap="md">
                         <Text size="sm" c="dimmed">
@@ -966,43 +997,34 @@ export default function Project() {
                       </Group>
                     )}
 
-                    {project?.on_tour && (
+                    {project?.website && (
                       <Group justify="space-between" gap="md">
                         <Text size="sm" c="dimmed">
-                          Status
+                          Site
                         </Text>
 
-                        <Badge
-                          variant="light"
-                          color="grape"
-                          size="sm"
-                          leftSection={<IconRoad size={13} />}
+                        <Anchor
+                          href={project?.website}
+                          underline="hover"
+                          fz="xs"
+                          target="_blank"
                         >
-                          Em turnê
-                        </Badge>
+                          {project?.website
+                            .replace(/^https?:\/\/(www\.)?/, '')
+                            .replace(/\/$/, '')}
+                        </Anchor>
                       </Group>
                     )}
                   </Stack>
                 </Card>
 
                 {/*
-                 * SOCIAL LINKS
+                 * SOCIAL
                  */}
 
                 {hasSocialLinks && (
                   <Card withBorder radius="lg" p="lg">
-                    <Text
-                      size="xs"
-                      c="dimmed"
-                      fw={600}
-                      tt="uppercase"
-                      lts=".05em"
-                      mb="md"
-                    >
-                      Na internet
-                    </Text>
-
-                    <Stack gap={4}>
+                    <Stack gap="xs">
                       {project?.instagram && (
                         <Group
                           component="a"
@@ -1010,7 +1032,6 @@ export default function Project() {
                           target="_blank"
                           rel="noopener noreferrer"
                           justify="space-between"
-                          p="xs"
                           style={{
                             textDecoration: 'none',
                             color: 'inherit',
@@ -1036,7 +1057,6 @@ export default function Project() {
                           target="_blank"
                           rel="noopener noreferrer"
                           justify="space-between"
-                          p="xs"
                           style={{
                             textDecoration: 'none',
                             color: 'inherit',
@@ -1062,7 +1082,6 @@ export default function Project() {
                           target="_blank"
                           rel="noopener noreferrer"
                           justify="space-between"
-                          p="xs"
                           style={{
                             textDecoration: 'none',
                             color: 'inherit',
@@ -1082,6 +1101,21 @@ export default function Project() {
                       )}
                     </Stack>
                   </Card>
+                )}
+
+                {project?.spotify_id && (
+                  <Box px={isMobile ? 10 : 0}>
+                    <iframe
+                      title={`Spotify - ${project?.name}`}
+                      src={`https://open.spotify.com/embed/artist/${encodeURIComponent(project.spotify_id)}?utm_source=generator&theme=0`}
+                      width="100%"
+                      height="352"
+                      style={{ borderRadius: 15, border: 0 }}
+                      allowFullScreen
+                      allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                      loading="lazy"
+                    />
+                  </Box>
                 )}
               </Stack>
             </SimpleGrid>
@@ -1127,6 +1161,52 @@ export default function Project() {
 
                   <Text size="sm" lh={1.6}>
                     {project.purpose}
+                  </Text>
+                </>
+              )}
+
+              {project?.is_verified && (
+                <>
+                  <Divider mt="md" mb="sm" />
+                  <Group gap="sm" align="flex-start" wrap="nowrap">
+                    <IconRosetteDiscountCheckFilled
+                      size={22}
+                      color="var(--mantine-color-mublinColor-filled)"
+                      style={{ flexShrink: 0, marginTop: 1 }}
+                    />
+
+                    <Box>
+                      <Text size="sm" fw={600} mb={4}>
+                        Projeto verificado
+                      </Text>
+                      <Text size="xs" c="dimmed" lh={1}>
+                        A equipe do Mublin confirmou que este projeto é representado por
+                        pessoas reais ligadas a ele.
+                      </Text>
+
+                      {(project?.verified_at ||
+                        project?.verified_method?.method_name_pt) && (
+                        <Text size="xs" c="dimmed" mt={4}>
+                          {[
+                            project?.verified_at &&
+                              `Verificado em ${dayjs(project.verified_at).format('DD/MM/YYYY')}`,
+                            project?.verified_method?.method_name_pt,
+                          ]
+                            .filter(Boolean)
+                            .join(' · ')}
+                        </Text>
+                      )}
+                    </Box>
+                  </Group>
+                </>
+              )}
+
+              {project?.created_at && (
+                <>
+                  <Divider mt="md" mb="sm" />
+                  <Text size="xs" c="dimmed">
+                    Cadastrado no Mublin em{' '}
+                    {dayjs(project.created_at).format('DD/MM/YYYY [às] HH:mm')}
                   </Text>
                 </>
               )}
@@ -1183,34 +1263,28 @@ export default function Project() {
                 ) : (
                   <Text c="dimmed" size="sm">
                     Nenhum administrador neste projeto.{' '}
-                    <Text
-                      span
-                      fw={500}
-                      c="var(--mantine-color-text)"
-                      style={{
-                        cursor: 'pointer',
-                      }}
-                      onClick={handleOpenClaimModal}
-                    >
-                      Quero ser administrador
-                    </Text>
                   </Text>
                 )}
+                <Text mt="xs" c="dimmed" size="xs">
+                  É fundador ou faz parte do staff?{' '}
+                  <Text
+                    span
+                    fw={500}
+                    c="var(--mantine-color-text)"
+                    style={{
+                      cursor: 'pointer',
+                    }}
+                    onClick={handleOpenClaimModal}
+                  >
+                    Quero ser administrador
+                  </Text>
+                </Text>
               </Box>
 
               <Box>
-                <Group justify="space-between" mb="md">
-                  <Box>
-                    <Title order={3} fz="lg" fw={600}>
-                      Pessoas associadas
-                    </Title>
-
-                    <Text size="xs" c="dimmed">
-                      {projectPeople.length}{' '}
-                      {projectPeople.length === 1 ? 'pessoa' : 'pessoas'}
-                    </Text>
-                  </Box>
-                </Group>
+                <Title order={3} fz="lg" fw={600} mb="xs">
+                  Pessoas associadas ({projectPeople.length})
+                </Title>
 
                 {loadingProjectPeople ? (
                   <SimpleGrid
@@ -1234,7 +1308,7 @@ export default function Project() {
                     spacing="sm"
                   >
                     {projectPeople.map((person) => (
-                      <Paper key={person.id} withBorder radius="lg" p="md" pos="relative">
+                      <Paper key={person.id} withBorder radius="lg" p="sm" pos="relative">
                         {userIsAdmin && (
                           <ActionIcon
                             pos="absolute"
@@ -1286,8 +1360,8 @@ export default function Project() {
                           </Text>
 
                           <Text fz="11px" ta="center" opacity={0.7}>
-                            {person.year_start} ›{' '}
-                            {person.year_end ? person.year_end : 'Atualmente'}
+                            {person.year_start}
+                            {person.year_end && ` › ${person.year_end}`}
                           </Text>
                         </Stack>
                       </Paper>
@@ -1312,18 +1386,12 @@ export default function Project() {
         {activeTab === 'gigs' && (
           <Container size="lg" px={{ base: 'sm', sm: 'md' }}>
             <Card withBorder radius="lg" p="lg">
-              <Group gap="sm" mb="sm">
-                <ThemeIcon variant="light" radius="md">
-                  <IconMusic size={18} />
-                </ThemeIcon>
-
-                <Title order={3} fz="lg" fw={600}>
-                  Gigs
-                </Title>
-              </Group>
+              <Title order={3} fz="lg" fw={600} mb="sm">
+                Gigs
+              </Title>
 
               <Text c="dimmed" size="sm">
-                Nenhuma gig deste projeto cadastrada no momento.
+                Nenhuma gig deste projeto cadastrada no momento
               </Text>
             </Card>
           </Container>
@@ -1458,13 +1526,13 @@ export default function Project() {
                 <IconInfoCircle
                   color="orange"
                   size={24}
-                  style={{
-                    marginTop: 2,
-                    flexShrink: 0,
-                  }}
+                  style={{ marginTop: 2, flexShrink: 0 }}
                 />
-
-                <Text size="xs">{formatClaimPolicyMessage(claimPolicy)}</Text>
+                <Text size="xs">
+                  {claimPolicyError
+                    ? 'Não foi possível carregar a regra de aprovação. Sua solicitação será analisada pela curadoria do Mublin.'
+                    : formatClaimPolicyMessage(claimPolicy)}
+                </Text>
               </Group>
             </Paper>
           )}

@@ -1505,7 +1505,7 @@ export default function Profile() {
                           if (!entity) {
                             return null
                           }
-                          const url = `/artist/${entity.slug}`
+                          const url = `/project/${entity.slug}`
                           const roleNames =
                             item.roles?.map((r) => r.role?.name_ptbr).filter(Boolean) ??
                             []
@@ -1590,20 +1590,20 @@ export default function Profile() {
                                     </Text>
                                   </Group>
                                   {engagementNames.length > 0 && (
-                                    <Text size="xs" opacity={0.7} mt={2} mb={4} lh={1}>
-                                      {engagementNames.length === 1
+                                    <Text size="xs" c="dimmed" mt={2} mb={2} lh={1}>
+                                      {/* {engagementNames.length === 1
                                         ? 'Vínculo:'
-                                        : 'Vínculos:'}{' '}
+                                        : 'Vínculos:'}{' '} */}
                                       {engagementNames.join(', ')}
                                     </Text>
                                   )}
                                   {item.is_sporadic ? (
-                                    <Text size="xs" opacity={0.7}>
+                                    <Text size="xs" c="dimmed">
                                       Colaboração esporádica
                                     </Text>
                                   ) : (
                                     period && (
-                                      <Text size="xs" opacity={0.7}>
+                                      <Text size="xs" c="dimmed">
                                         {period}
                                       </Text>
                                     )
@@ -2229,7 +2229,7 @@ export default function Profile() {
                           gap={4}
                           w={64}
                           component={Link}
-                          to={`/artist/${artist?.slug}`}
+                          to={`/project/${artist?.slug}`}
                           style={{ textDecoration: 'none', color: 'inherit' }}
                         >
                           <Avatar

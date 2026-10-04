@@ -9,6 +9,7 @@ import {
   Box,
   Group,
   Avatar,
+  Title,
   Text,
   Stack,
   NavLink,
@@ -24,10 +25,8 @@ import {
   IconCamera,
   IconMicrophone2,
   IconDisc,
-  IconSettings,
 } from '@tabler/icons-react'
 import { MEMBER_REQUEST_STATUS } from '../../constants/projects'
-import BackstageLogo from './BackstageLogo'
 
 const PICTURE_AVATAR_PATH = 'https://ik.imagekit.io/mublin/projects'
 
@@ -85,7 +84,12 @@ export default function BackstageSidebar({ onNavigate }) {
   return (
     <Box p="md" h="100%" pt="xl">
       <Box mb="lg">
-        <BackstageLogo />
+        <Title fz="h4" tt="uppercase">
+          <Text fz="h4" fw={300} span>
+            Mublin
+          </Text>{' '}
+          Backstage
+        </Title>
       </Box>
       {isLoading ? (
         <Group gap="sm" mb="lg" wrap="nowrap">
@@ -111,7 +115,7 @@ export default function BackstageSidebar({ onNavigate }) {
               {project?.name}
             </Text>
             <Text size="xs" c="dimmed">
-              Backstage
+              {project?.type?.name_ptbr || 'Tipo não definido'}
             </Text>
           </Box>
         </Group>
@@ -141,9 +145,9 @@ export default function BackstageSidebar({ onNavigate }) {
 
       <Divider my="md" />
 
-      <Text size="xs" c="dimmed" px="xs">
+      {/* <Text size="xs" c="dimmed" px="xs">
         Mais seções em breve: métricas, mídia, gigs.
-      </Text>
+      </Text> */}
     </Box>
   )
 }

@@ -116,17 +116,7 @@ export default function Landing() {
         <Container size="lg" py={50} w="100%">
           <Grid p={0}>
             <Grid.Col span={{ base: 12, sm: 8 }}>
-              <Stack gap="md" align={isMobile ? 'center' : 'flex-start'}>
-                <Group gap={6} wrap="nowrap" align="center">
-                  <IconQuote
-                    size={18}
-                    color="var(--mantine-color-blue-7)"
-                    style={{ transform: 'scaleX(-1)' }}
-                  />
-                  <Text fs="italic" fw={500} size="md" c="dimmed">
-                    o LinkedIn para músicos
-                  </Text>
-                </Group>
+              <Stack gap="sm" align={isMobile ? 'center' : 'flex-start'}>
                 <Title
                   order={1}
                   ta={isMobile ? 'center' : 'left'}
@@ -156,6 +146,12 @@ export default function Landing() {
                   Encontre gigs, monte bandas, mostre seu setup. Tudo em um só lugar,
                   feito pra quem vive de música.
                 </Text>
+                <Group ml="xs" gap={6} wrap="nowrap" align="center">
+                  <IconQuote color="gray" size={16} style={{ transform: 'scaleX(-1)' }} />
+                  <Text fs="italic" size="sm" c="dimmed">
+                    o Mublin é o LinkedIn para músicos
+                  </Text>
+                </Group>
                 <Group gap="sm" my="xs" justify="center">
                   <Button
                     size="md"

@@ -6,6 +6,7 @@ import {
   Burger,
   Drawer,
   Group,
+  Title,
   Text,
   Center,
   Box,
@@ -63,7 +64,12 @@ export default function AppLayout({ children }) {
               borderBottom: '1px solid var(--mantine-color-default-border)',
             }}
           >
-            <Text fw={600}>Backstage</Text>
+            <Title mt={4} fz="h5" tt="uppercase">
+              <Text fz="h5" fw={300} span>
+                Mublin
+              </Text>{' '}
+              Backstage
+            </Title>
 
             <Burger
               opened={mobileMenuOpened}

@@ -288,13 +288,13 @@ export default function GigsDashboard() {
                 </Text>
 
                 <Stack gap={1} mt={2}>
-                  <Text size="sm" fw={500} lineClamp={1}>
+                  <Text size="sm" fw={600} lineClamp={1}>
                     {nextGig ? nextGig?.gig?.title : 'Nenhum evento futuro'}
                   </Text>
                   {nextGig && (
                     <>
                       <Group gap={4}>
-                        <Text size="xs" c="dimmed" lineClamp={1}>
+                        <Text size="xs" lineClamp={1}>
                           {dayjs(nextGig?.gig?.date).format('DD [de] MMMM')}{' '}
                           <Text span>
                             {nextGig?.gig?.venue_city
@@ -780,7 +780,7 @@ export default function GigsDashboard() {
 
       {/* Mockup por enquanto — ainda não há registros suficientes de gigs de
           outros projetos pra uma query real. Ver OtherGigsScroller.jsx. */}
-      <OtherGigsScroller title="Outras gigs esta semana" />
+      {/* <OtherGigsScroller title="Gigs de outros projetos" /> */}
 
       <Box mt="lg" mb="md">
         <BannerGigs />

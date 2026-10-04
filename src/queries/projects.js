@@ -5,6 +5,7 @@ export async function fetchProjectDetails(slug) {
     .from('projects')
     .select(
       `
+      created_at,
       id,
       name,
       slug,
@@ -17,7 +18,10 @@ export async function fetchProjectDetails(slug) {
       instagram,
       spotify_id,
       soundcloud,
+      website,
       is_verified,
+      verified_at,
+      verified_method:project_verification_methods ( method_name, method_name_pt ),
       genres ( id, name_ptbr ),
       project_types ( id, name_ptbr ),
       activity_status,
@@ -101,6 +105,23 @@ export async function fetchProjectAdmins(projectId) {
     .eq('project_id', projectId)
     .eq('status', 2)
     .eq('is_admin', true)
+
+  if (error) {
+    throw new Error(error.message)
+  }
+  return data
+}
+
+export async function fetchProjectGenres(projectId) {
+  const { data, error } = await supabase
+    .from('project_genres')
+    .select(
+      `
+      id,
+      genre:genres ( id, name, name_ptbr )
+    `,
+    )
+    .eq('project_id', projectId)
 
   if (error) {
     throw new Error(error.message)
@@ -347,6 +368,7 @@ export async function fetchProjectBackstageInfo(projectId) {
       cover_picture,
       on_tour,
       activity_status,
+      type:project_types ( id, name_ptbr ),
       genres ( id, name_ptbr ),
       cities (
         id,
