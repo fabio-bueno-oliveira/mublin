@@ -561,7 +561,6 @@ export default function GigsDashboard() {
                               ).isBefore(dayjs()) && (
                                 <>
                                   <Stack gap={4}>
-                                    <Text>{item.gig?.title}</Text>
                                     <Button
                                       size="xs"
                                       variant="filled"

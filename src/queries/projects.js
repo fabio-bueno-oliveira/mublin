@@ -143,6 +143,7 @@ export async function fetchProjectPeople(
       is_sporadic,
       is_mublin_facilitated,
       is_currently_working,
+      notes,
       created_at,
       profile:profiles (
         id,
@@ -617,4 +618,32 @@ export async function fetchprojectsInspirated(projectId) {
     throw new Error(error.message)
   }
   return data
+}
+
+// Projetos similares (RPC get_similar_projects): prioriza gêneros em comum de
+// project_genres e desempata por categoria, tipo de projeto e tier de popularidade.
+// Retorna: id, name, slug, picture, is_verified, project_type_name,
+// project_type_slug, genre_name, shared_genres, score
+export async function fetchSimilarProjects(projectId, limit = 5) {
+  const { data, error } = await supabase.rpc('get_similar_projects', {
+    p_project_id: projectId,
+    p_limit: limit,
+  })
+  if (error) {
+    throw new Error(error.message)
+  }
+  return data
+}
+
+// Perfil pessoal vinculado ao projeto (projects.profile_id), já filtrado pelas
+// regras de visibilidade no banco (RPC get_project_profile).
+// Retorna { id, full_name, username, avatar, is_verified } ou null.
+export async function fetchProjectProfile(projectId) {
+  const { data, error } = await supabase.rpc('get_project_profile', {
+    p_project_id: projectId,
+  })
+  if (error) {
+    throw new Error(error.message)
+  }
+  return data?.[0] ?? null
 }

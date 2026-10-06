@@ -321,6 +321,19 @@ export default function SetlistManager({ projectId, value, onChange }) {
               >
                 Excluir
               </Button>
+              <Button
+                type="button"
+                variant="subtle"
+                color="green"
+                size="compact-xs"
+                fw={400}
+                onClick={() => setShowNewSetlistForm((v) => !v)}
+                leftSection={
+                  showNewSetlistForm ? <IconX size={12} /> : <IconPlus size={12} />
+                }
+              >
+                {showNewSetlistForm ? 'Cancelar' : 'Criar novo setlist para este projeto'}
+              </Button>
             </Group>
           )}
 
@@ -363,7 +376,7 @@ export default function SetlistManager({ projectId, value, onChange }) {
 
       {setlists.length === 0 ? (
         <Paper withBorder p="sm" radius="md">
-          <Text size="xs" fw={500} mb={6}>
+          <Text size="sm" fw={500} mb="xs">
             Este projeto ainda não tem nenhuma setlist. Crie a primeira:
           </Text>
           <Group align="flex-end" gap="xs">
@@ -386,47 +399,28 @@ export default function SetlistManager({ projectId, value, onChange }) {
           </Group>
         </Paper>
       ) : (
-        <>
-          <Group justify="flex-end">
-            <Button
-              type="button"
-              variant="subtle"
-              color="mublinSecondary"
-              size="compact-xs"
-              fw={400}
-              w="fit-content"
-              onClick={() => setShowNewSetlistForm((v) => !v)}
-              leftSection={<IconPlus size={12} />}
-            >
-              {showNewSetlistForm
-                ? 'Cancelar'
-                : 'criar uma nova setlist para este projeto'}
-            </Button>
-          </Group>
-
-          <Collapse expanded={showNewSetlistForm}>
-            <Box>
-              <Group align="flex-end" gap="xs">
-                <TextInput
-                  placeholder="Ex: Repertório acústico"
-                  value={newSetlistName}
-                  onChange={(e) => setNewSetlistName(e.currentTarget.value)}
-                  style={{ flex: 1 }}
-                />
-                <Button
-                  type="button"
-                  leftSection={<IconPlus size={16} />}
-                  onClick={handleCreateSetlist}
-                  loading={creatingSetlist}
-                  disabled={!newSetlistName.trim()}
-                  size="sm"
-                >
-                  Criar setlist
-                </Button>
-              </Group>
-            </Box>
-          </Collapse>
-        </>
+        <Collapse expanded={showNewSetlistForm}>
+          <Box>
+            <Group align="flex-end" gap="xs">
+              <TextInput
+                placeholder="Ex: Repertório acústico"
+                value={newSetlistName}
+                onChange={(e) => setNewSetlistName(e.currentTarget.value)}
+                style={{ flex: 1 }}
+              />
+              <Button
+                type="button"
+                leftSection={<IconPlus size={16} />}
+                onClick={handleCreateSetlist}
+                loading={creatingSetlist}
+                disabled={!newSetlistName.trim()}
+                size="sm"
+              >
+                Criar setlist
+              </Button>
+            </Group>
+          </Box>
+        </Collapse>
       )}
 
       {value && (

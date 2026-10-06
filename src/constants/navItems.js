@@ -1,15 +1,10 @@
 import {
   IconHome,
   IconRss,
-  IconCubePlus,
-  IconBulb,
-  IconPencilPlus,
-  IconCalendarPlus,
-  IconGps,
   IconMusicPlus,
   IconMicrophone2,
   IconMusic,
-  IconMovie,
+  IconPlaylist,
 } from '@tabler/icons-react'
 
 export const NAV_ITEMS = [
@@ -21,11 +16,12 @@ export const NAV_ITEMS = [
 ]
 
 export const QUICK_ACTIONS = [
-  { label: 'Novo Post', icon: IconPencilPlus, path: '/new/post' },
-  { label: 'Nova Scene', icon: IconMovie, path: '/new/scene' },
   { label: 'Nova Gig', icon: IconMicrophone2, path: '/new/gig' },
-  { label: 'Novo Projeto', icon: IconBulb, path: '/new/project' },
-  { label: 'Novo Música', icon: IconMusicPlus, path: '/new/song' },
-  { label: 'Novo Evento', icon: IconCalendarPlus, path: '/new/event' },
-  { label: 'Novo Equipamento', icon: IconCubePlus, path: '/new/gear' },
+  { label: 'Novo Projeto', icon: IconMusic, path: '/new/project' },
+  { label: 'Nova Setlist', icon: IconPlaylist, path: '/setlists' },
+  // { label: 'Nova Música', icon: IconMusicPlus, path: '/new/song' },
+  // { label: 'Novo Evento', icon: IconCalendarPlus, path: '/new/event' },
+  // { label: 'Novo Equipamento', icon: IconCubePlus, path: '/new/gear' },
+  // { label: 'Novo Post', icon: IconPencilPlus, path: '/new/post' },
+  // { label: 'Nova Scene', icon: IconMovie, path: '/new/scene' },
 ]
