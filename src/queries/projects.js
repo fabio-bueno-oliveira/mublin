@@ -444,8 +444,8 @@ export async function fetchProjectStatuses() {
 export async function fetchProjectTypes() {
   const { data, error } = await supabase
     .from('project_types')
-    .select('id, name_ptbr')
-    .order('id, name_ptbr')
+    .select('id, name_ptbr, display_order')
+    .order('display_order')
   if (error) {
     throw new Error(error.message)
   }

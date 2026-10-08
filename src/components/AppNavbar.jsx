@@ -38,7 +38,6 @@ import {
 } from '@mantine/core'
 import {
   IconSearch,
-  IconGps,
   IconArrowRight,
   IconPlus,
   IconBell,

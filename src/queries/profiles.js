@@ -390,6 +390,7 @@ export async function fetchProfileInspirations(profileId) {
         slug,
         picture,
         is_verified,
+        project_type_id,
         project_type:project_types ( name_ptbr, slug ),
         genre:genres!projects_genre_id_fkey ( name, name_ptbr ),
         countries ( name ),

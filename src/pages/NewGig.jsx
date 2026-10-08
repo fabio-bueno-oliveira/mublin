@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { Helmet } from 'react-helmet-async'
 import { useQuery } from '@tanstack/react-query'
@@ -316,9 +316,27 @@ function CityCombobox({ selected, onSelect }) {
   )
 }
 
+// Aceita só datas reais no formato YYYY-MM-DD (ex: "2026-10-07"). Qualquer
+// outra coisa vinda da URL — "abc", "2026-13-45", "2026-02-31" — é ignorada,
+// e o campo de data simplesmente começa vazio, como sempre foi.
+function parseInitialDateParam(value) {
+  if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return ''
+  }
+  const parsed = new Date(`${value}T00:00:00`)
+  if (Number.isNaN(parsed.getTime())) {
+    return ''
+  }
+  // evita datas "roladas" pelo JS (ex: 2026-02-31 virando 2026-03-03)
+  return dayjs(parsed).format('YYYY-MM-DD') === value ? value : ''
+}
+
 export default function NewGig() {
   const { user } = useAuth()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  // Ex: /new/gig?date=2026-10-07 — vem do link "Criar nova" do GigsDashboard
+  const initialDate = parseInitialDateParam(searchParams.get('date'))
   const [selectedProject, setSelectedProject] = useState(null)
   const [step, setStep] = useState(1) // 1 = projeto, 2 = detalhes, 3 = vagas, 4 = repertório
   const [selectedSetlistId, setSelectedSetlistId] = useState(null)
@@ -393,7 +411,7 @@ export default function NewGig() {
       dress_code_id: '11',
       event_id: '',
       venue_id: '',
-      date: '',
+      date: initialDate,
       time_stage_start: '',
       time_stage_end: '',
       venue_name: '',

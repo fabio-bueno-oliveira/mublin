@@ -3,9 +3,8 @@ import { Helmet } from 'react-helmet-async'
 import { Link, useParams } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { fetchPersonDetails, fetchPersonInspirated } from '../queries/person'
 import {
-  fetchProjectDetails,
-  fetchprojectsInspirated,
   fetchProjectAdmins,
   fetchProjectPeople,
   fetchProjectGenres,
@@ -24,18 +23,16 @@ import {
   Button, Badge,
   Avatar, Image, ActionIcon,
   Anchor, Title, Text,
-  Textarea,
+  Textarea, Spoiler, 
   Card, Paper,
   Scroller, Tooltip, Popover,
-  Tabs, Divider, ThemeIcon,
+  Tabs, ThemeIcon,
+  Divider,
 } from '@mantine/core'
 import { useMediaQuery, useDisclosure } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
 import {
   IconBrandInstagram,
-  IconBrandSpotify,
-  IconBrandSoundcloud,
-  IconRoad,
   IconInfoCircle,
   IconRosetteDiscountCheckFilled,
   IconArrowUpRight,
@@ -43,7 +40,6 @@ import {
   IconArrowRight,
   IconBriefcase2,
   IconChevronRight,
-  IconExternalLink,
 } from '@tabler/icons-react'
 import AppNavbarMobile from '../components/AppNavbarMobile'
 import SimilarProjects from '../components/explore/SimilarProjects'
@@ -100,18 +96,18 @@ export default function Project() {
    */
 
   const {
-    data: project,
+    data: person,
     isLoading,
     isError,
   } = useQuery({
-    queryKey: ['project', slug],
-    queryFn: () => fetchProjectDetails(slug),
+    queryKey: ['person', slug],
+    queryFn: () => fetchPersonDetails(slug),
     enabled: !!slug,
     staleTime: 1000 * 60 * 5,
     retry: 1,
   })
 
-  const userMembership = project?.members?.find((m) => m.profile_id === user?.id)
+  const userMembership = person?.members?.find((m) => m.profile_id === user?.id)
 
   const userIsAdmin =
     userMembership?.is_admin === true &&
@@ -124,43 +120,43 @@ export default function Project() {
    */
 
   const { data: inspirated = [] } = useQuery({
-    queryKey: ['project-inspirated', project?.id],
-    queryFn: () => fetchprojectsInspirated(project?.id),
-    enabled: !!project?.id,
+    queryKey: ['person-inspirated', person?.id],
+    queryFn: () => fetchPersonInspirated(person?.id),
+    enabled: !!person?.id,
     staleTime: 1000 * 60 * 5,
   })
 
   const { data: projectAdmins = [], isLoading: loadingProjectAdmins } = useQuery({
-    queryKey: ['project-admins', project?.id],
-    queryFn: () => fetchProjectAdmins(project?.id),
-    enabled: !!project?.id,
+    queryKey: ['project-admins', person?.id],
+    queryFn: () => fetchProjectAdmins(person?.id),
+    enabled: !!person?.id,
     staleTime: 1000 * 60 * 5,
   })
 
   const { data: projectGenres = [], isLoading: loadingProjectGenres } = useQuery({
-    queryKey: ['project-genres', project?.id],
-    queryFn: () => fetchProjectGenres(project?.id),
-    enabled: !!project?.id,
+    queryKey: ['project-genres', person?.id],
+    queryFn: () => fetchProjectGenres(person?.id),
+    enabled: !!person?.id,
     staleTime: 1000 * 60 * 5,
   })
 
   const { data: projectPeople = [], isLoading: loadingProjectPeople } = useQuery({
-    queryKey: ['project-people', project?.id],
-    queryFn: () => fetchProjectPeople(project?.id),
-    enabled: !!project?.id,
+    queryKey: ['project-people', person?.id],
+    queryFn: () => fetchProjectPeople(person?.id),
+    enabled: !!person?.id,
     staleTime: 1000 * 60 * 5,
   })
 
   const { data: recentProjectPeople = [], isLoading: loadingRecentProjectPeople } =
     useQuery({
-      queryKey: ['project-people-recent', project?.id],
+      queryKey: ['project-people-recent', person?.id],
       queryFn: () =>
-        fetchProjectPeople(project?.id, {
+        fetchProjectPeople(person?.id, {
           limit: 2,
           orderBy: 'created_at',
           ascending: false,
         }),
-      enabled: !!project?.id,
+      enabled: !!person?.id,
       staleTime: 1000 * 60 * 5,
     })
 
@@ -171,9 +167,9 @@ export default function Project() {
    */
 
   const { data: myAdminRequest } = useQuery({
-    queryKey: ['project-admin-request', project?.id, user?.id],
-    queryFn: () => fetchMyProjectAdminRequest(project?.id, user?.id),
-    enabled: !!project?.id && !!user?.id,
+    queryKey: ['project-admin-request', person?.id, user?.id],
+    queryFn: () => fetchMyProjectAdminRequest(person?.id, user?.id),
+    enabled: !!person?.id && !!user?.id,
     staleTime: 1000 * 30,
   })
 
@@ -187,9 +183,9 @@ export default function Project() {
     isLoading: loadingClaimPolicy,
     isError: claimPolicyError,
   } = useQuery({
-    queryKey: ['project-claim-policy', project?.id],
-    queryFn: () => fetchProjectClaimPolicy(project?.id),
-    enabled: !!project?.id && claimModalOpened,
+    queryKey: ['project-claim-policy', person?.id],
+    queryFn: () => fetchProjectClaimPolicy(person?.id),
+    enabled: !!person?.id && claimModalOpened,
     staleTime: 1000 * 60,
   })
 
@@ -201,9 +197,9 @@ export default function Project() {
 
   const { data: openProjectOpenings = [], isLoading: loadingOpenProjectOpenings } =
     useQuery({
-      queryKey: ['project-openings-open', project?.id],
-      queryFn: () => fetchOpenProjectOpenings(project?.id),
-      enabled: !!project?.id,
+      queryKey: ['project-openings-open', person?.id],
+      queryFn: () => fetchOpenProjectOpenings(person?.id),
+      enabled: !!person?.id,
       staleTime: 1000 * 60,
     })
 
@@ -214,7 +210,7 @@ export default function Project() {
    */
 
   const requestAdminMutation = useMutation({
-    mutationFn: (message) => requestProjectAdminAccess(project.id, message),
+    mutationFn: (message) => requestProjectAdminAccess(person.id, message),
 
     onSuccess: (data) => {
       const autoApproved = data?.status === ADMIN_REQUEST_STATUS.ACCEPTED
@@ -229,15 +225,15 @@ export default function Project() {
       })
 
       queryClient.invalidateQueries({
-        queryKey: ['project', slug],
+        queryKey: ['person', slug],
       })
 
       queryClient.invalidateQueries({
-        queryKey: ['project-admins', project.id],
+        queryKey: ['project-admins', person.id],
       })
 
       queryClient.invalidateQueries({
-        queryKey: ['project-admin-request', project.id, user.id],
+        queryKey: ['project-admin-request', person.id, user.id],
       })
     },
 
@@ -265,10 +261,10 @@ export default function Project() {
   const AVATAR_MINI_PATH =
     'https://ik.imagekit.io/mublin/tr:h-35,c-maintain_ratio/users/avatars/'
 
-  const PICTURE_AVATAR_SMALL_PATH = `https://ik.imagekit.io/mublin/projects/${project?.id}/tr:h-192,w-192,c-maintain_ratio/`
-  const PICTURE_AVATAR_PATH = `https://ik.imagekit.io/mublin/projects/${project?.id}/tr:h-220,w-220,c-maintain_ratio/`
+  const PICTURE_AVATAR_SMALL_PATH = `https://ik.imagekit.io/mublin/projects/${person?.id}/tr:h-192,w-192,c-maintain_ratio/`
+  const PICTURE_AVATAR_PATH = `https://ik.imagekit.io/mublin/projects/${person?.id}/tr:h-220,w-220,c-maintain_ratio/`
 
-  const PICTURE_AVATAR_LARGE_PATH = `https://ik.imagekit.io/mublin/projects/${project?.id}/tr:h-400,w-400,c-maintain_ratio/`
+  const PICTURE_AVATAR_LARGE_PATH = `https://ik.imagekit.io/mublin/projects/${person?.id}/tr:h-400,w-400,c-maintain_ratio/`
 
   /*
    * A capa agora é maior.
@@ -276,7 +272,7 @@ export default function Project() {
    * Evitamos fixar 100px como anteriormente porque ela passa
    * a funcionar como parte real da identidade visual.
    */
-  const PICTURE_COVER_PATH = `https://ik.imagekit.io/mublin/projects/${project?.id}/tr:h-500,w-1400,fo-top,c-maintain_ratio/`
+  const PICTURE_COVER_PATH = `https://ik.imagekit.io/mublin/projects/${person?.id}/tr:h-500,w-1400,fo-top,c-maintain_ratio/`
 
   const DEFAULT_COVER_PICTURE =
     'https://ik.imagekit.io/mublin/bg/default-project-cover.png'
@@ -307,8 +303,6 @@ export default function Project() {
 
   const myAdminRequestIsPending = myAdminRequestStatus === ADMIN_REQUEST_STATUS.PENDING
 
-  const hasSocialLinks = project?.instagram || project?.spotify_id || project?.soundcloud
-
   const handleOpenClaimModal = () => {
     if (!user?.id) {
       notifications.show({
@@ -331,35 +325,27 @@ export default function Project() {
     })
   }
 
-  // projectGenres vem como { genre: { name_ptbr } }
   const validGenreNames =
     projectGenres?.map((g) => g?.genre?.name_ptbr || g?.name_ptbr).filter(Boolean) ?? []
 
   const hasValidGenres = validGenreNames.length > 0
-  const hasFallbackGenre = !!project?.genre
 
-  // REGRA QUE VOCÊ PEDIU: interpunct só se tiver registro em projectGenres
-  const shouldShowDot =
-    !!project?.project_type && (loadingProjectGenres || hasValidGenres)
-
-  const shouldShowGenreBlock = loadingProjectGenres || hasValidGenres || hasFallbackGenre
+  const shouldShowGenreBlock = loadingProjectGenres || hasValidGenres
 
   return (
     <>
       <Helmet>
         <meta charSet="utf-8" />
-        <title>{`${project?.name} | Página de projeto | Mublin`}</title>
-        <link rel="canonical" href={`https://mublin.com/project/${project?.name}`} />
+        <title>{`${person?.name} | Página de pessoa | Mublin`}</title>
+        <link rel="canonical" href={`https://mublin.com/person/${person?.name}`} />
         <meta
           name="description"
-          content={`${project?.name} (${project?.project_type}) no Mublin`}
+          content={`${person?.name} (${person?.type?.name_ptbr}) no Mublin`}
         />
         <meta
           property="og:image"
           content={
-            project?.cover_picture
-              ? PICTURE_COVER_PATH + project?.cover_picture
-              : undefined
+            person?.cover_picture ? PICTURE_COVER_PATH + person?.cover_picture : undefined
           }
         />
       </Helmet>
@@ -395,15 +381,15 @@ export default function Project() {
                 ) : (
                   <Image
                     src={
-                      project?.cover_picture
-                        ? PICTURE_COVER_PATH + project.cover_picture
+                      person?.cover_picture
+                        ? PICTURE_COVER_PATH + person?.cover_picture
                         : DEFAULT_COVER_PICTURE
                     }
                     fallbackSrc="https://placehold.co/1400x500?text=."
                     h="100%"
                     w="100%"
                     fit="cover"
-                    alt={`Capa de ${project?.name}`}
+                    alt={`Capa de ${person?.name}`}
                   />
                 )}
 
@@ -434,11 +420,11 @@ export default function Project() {
                  * ─────────────────────────────────────────────
                  */}
 
-                {userIsAdmin && project?.id && (
+                {userIsAdmin && person?.id && (
                   <Button
                     component="a"
-                    href={`/backstage/${project.id}`}
-                    // target={`backstage-${project.id}`}
+                    href={`/backstage/${person.id}`}
+                    // target={`backstage-${person.id}`}
                     pos="absolute"
                     top={{ base: 30, sm: 20 }}
                     right={{ base: 20, sm: 20 }}
@@ -480,8 +466,8 @@ export default function Project() {
                       <Avatar
                         src={
                           isMobile
-                            ? PICTURE_AVATAR_PATH + project?.picture
-                            : PICTURE_AVATAR_SMALL_PATH + project?.picture
+                            ? PICTURE_AVATAR_PATH + person?.picture
+                            : PICTURE_AVATAR_SMALL_PATH + person?.picture
                         }
                         size={isMobile ? 76 : 96}
                         radius="lg"
@@ -510,17 +496,6 @@ export default function Project() {
                         </>
                       ) : (
                         <>
-                          {project?.on_tour && (
-                            <Badge
-                              size="xs"
-                              variant="light"
-                              color="rgba(255,255,255,.76)"
-                              mb={4}
-                              leftSection={<IconRoad size={14} />}
-                            >
-                              Em turnê
-                            </Badge>
-                          )}
                           <Group gap={7} wrap="nowrap">
                             <Title
                               order={1}
@@ -534,10 +509,10 @@ export default function Project() {
                               lineClamp={1}
                               lh={1}
                             >
-                              {project?.name}
+                              {person?.name}
                             </Title>
 
-                            {project?.is_verified && (
+                            {person?.is_verified && (
                               <IconRosetteDiscountCheckFilled
                                 size={isMobile ? 21 : 25}
                                 color="var(--mantine-color-mublinSecondary-2)"
@@ -549,33 +524,13 @@ export default function Project() {
                             )}
                           </Group>
 
-                          <Group gap={7} wrap="wrap">
-                            {project?.project_type && (
-                              <Text size="sm" c="rgba(255,255,255,.76)">
-                                {project.project_type}
-                              </Text>
-                            )}
+                          {person?.type && (
+                            <Text size="sm" c="dimmed">
+                              {person.type?.name_ptbr}
+                            </Text>
+                          )}
 
-                            {shouldShowGenreBlock && (
-                              <>
-                                {shouldShowDot && (
-                                  <Text size="sm" c="rgba(255,255,255,.35)">
-                                    ·
-                                  </Text>
-                                )}
-
-                                <Text size="sm" c="rgba(255,255,255,.76)">
-                                  {loadingProjectGenres
-                                    ? 'Carregando...'
-                                    : hasValidGenres
-                                      ? validGenreNames.join(', ')
-                                      : project.genre}
-                                </Text>
-                              </>
-                            )}
-
-                            <ProjectProfileBadge projectId={project?.id} />
-                          </Group>
+                          <ProjectProfileBadge projectId={person?.id} />
                         </>
                       )}
                     </Stack>
@@ -627,16 +582,14 @@ export default function Project() {
                 <Scroller>
                   <Tabs.Tab value="overview">Visão geral</Tabs.Tab>
 
-                  <Tabs.Tab value="about">Sobre</Tabs.Tab>
-
                   <Tabs.Tab value="people">
-                    Pessoas associadas{' '}
+                    Perfis associados{' '}
                     {projectPeople?.length > 0 && `(${projectPeople.length})`}
                   </Tabs.Tab>
 
-                  <Tabs.Tab value="gigs">Gigs</Tabs.Tab>
-
-                  <Tabs.Tab value="music">Música</Tabs.Tab>
+                  {person?.is_active_in_business && (
+                    <Tabs.Tab value="gigs">Gigs</Tabs.Tab>
+                  )}
                 </Scroller>
               </Tabs.List>
             </Tabs>
@@ -678,35 +631,56 @@ export default function Project() {
                         Sobre
                       </Title>
 
-                      {project?.description ? (
-                        <>
-                          <Text
-                            size="sm"
-                            lh={1.6}
-                            lineClamp={3}
-                            style={{
-                              whiteSpace: 'pre-line',
-                            }}
-                          >
-                            {project.description}
+                      {person?.description ? (
+                        <Spoiler
+                          mb={40}
+                          maxHeight={64}
+                          showLabel={
+                            <Text size="sm" c="var(--mantine-color-text)">
+                              Ver mais
+                            </Text>
+                          }
+                          hideLabel={
+                            <Text size="sm" c="var(--mantine-color-text)">
+                              Ver menos
+                            </Text>
+                          }
+                        >
+                          <Text size="sm" style={{ whiteSpace: 'pre-line' }}>
+                            {person.description}
                           </Text>
-                          <Divider mt="sm" mb="xs" />
-                          <Button
-                            radius="md"
-                            fullWidth
-                            size="compact-xs"
-                            variant="transparent"
-                            color="var(--mantine-color-text)"
-                            onClick={() => setActiveTab('about')}
-                            rightSection={<IconArrowRight size={16} />}
-                          >
-                            Ver tudo
-                          </Button>
-                        </>
+                        </Spoiler>
                       ) : (
                         <Text size="sm" c="dimmed">
-                          Descrição não disponível.
+                          Descrição não disponível
                         </Text>
+                      )}
+
+                      {person?.instagram && (
+                        <>
+                          <Divider mt="md" />
+                          <Group
+                            mt="sm"
+                            component="a"
+                            href={`https://instagram.com/${person.instagram}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            justify="flex-start"
+                            style={{
+                              textDecoration: 'none',
+                              color: 'inherit',
+                              borderRadius: 'var(--mantine-radius-md)',
+                              width: 'fit-content',
+                            }}
+                          >
+                            <Group gap={6}>
+                              <IconBrandInstagram size={18} />
+                              <Text size="xs" lh={1} lineClamp={1}>
+                                instagram.com/{person.instagram}
+                              </Text>
+                            </Group>
+                          </Group>
+                        </>
                       )}
                     </Card>
 
@@ -804,7 +778,7 @@ export default function Project() {
                     {recentProjectPeople.length > 0 && (
                       <Card withBorder radius="lg" p="lg">
                         <Title order={3} fw={600} size="17px" mb={6}>
-                          Pessoas associadas recentemente
+                          Perfis associados recentemente
                         </Title>
 
                         <Stack gap="xs">
@@ -886,14 +860,10 @@ export default function Project() {
 
                     {inspirated.length > 0 && (
                       <Card withBorder radius="lg" p="lg">
-                        <Title order={3} fz="lg" fw={600}>
-                          Inspirando pessoas
-                        </Title>
-
-                        <Text size="xs" c="dimmed" mt={2} mb="md">
+                        <Text size="sm" mb="md">
                           {inspirated.length === 1
-                            ? `1 pessoa se inspira no trabalho de ${project?.name}`
-                            : `${inspirated.length} pessoas se inspiram no trabalho de ${project?.name}`}
+                            ? `1 perfil se inspira no trabalho de ${person?.name}`
+                            : `${inspirated.length} perfis se inspiram no trabalho de ${person?.name}`}
                         </Text>
 
                         <Group wrap="wrap">
@@ -945,21 +915,6 @@ export default function Project() {
                         </Group>
                       </Card>
                     )}
-
-                    {project?.spotify_id && (
-                      <Box px={isMobile ? 10 : 0}>
-                        <iframe
-                          title={`Spotify - ${project?.name}`}
-                          src={`https://open.spotify.com/embed/artist/${encodeURIComponent(project.spotify_id)}?utm_source=generator&theme=0`}
-                          width="100%"
-                          height="352"
-                          style={{ borderRadius: 15, border: 0 }}
-                          allowFullScreen
-                          allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-                          loading="lazy"
-                        />
-                      </Box>
-                    )}
                   </Stack>
 
                   {/*
@@ -975,37 +930,21 @@ export default function Project() {
 
                     <Card withBorder radius="lg" p="lg">
                       <Stack gap="sm">
-                        {project?.slug && (
-                          <Group justify="flex-end">
-                            <Text size="xs" c="dimmed">
-                              mublin.com/project/{project.slug}
-                            </Text>
-                          </Group>
-                        )}
+                        <Box>
+                          <Text size="sm" c="dimmed" mb="xs">
+                            {validGenreNames.length === 1 ? 'Gênero' : 'Gêneros'}
+                          </Text>
 
-                        {project?.project_type && (
-                          <Group justify="space-between" gap="md">
-                            <Text size="sm" c="dimmed">
-                              Tipo
+                          {shouldShowGenreBlock && (
+                            <Text size="sm">
+                              {loadingProjectGenres
+                                ? 'Carregando...'
+                                : hasValidGenres
+                                  ? validGenreNames.join(', ')
+                                  : person.genre}
                             </Text>
-
-                            <Text size="sm" fw={500}>
-                              {project.project_type}
-                            </Text>
-                          </Group>
-                        )}
-
-                        {project?.genre && (
-                          <Group justify="space-between" gap="md">
-                            <Text size="sm" c="dimmed">
-                              Gênero
-                            </Text>
-
-                            <Text size="sm" fw={500}>
-                              {project.genre}
-                            </Text>
-                          </Group>
-                        )}
+                          )}
+                        </Box>
 
                         {openProjectOpenings.length > 0 && (
                           <Group justify="space-between" gap="md">
@@ -1019,19 +958,19 @@ export default function Project() {
                           </Group>
                         )}
 
-                        {project?.website && (
+                        {person?.website && (
                           <Group justify="space-between" gap="md">
                             <Text size="sm" c="dimmed">
                               Site
                             </Text>
 
                             <Anchor
-                              href={project?.website}
+                              href={person?.website}
                               underline="hover"
                               fz="xs"
                               target="_blank"
                             >
-                              {project?.website
+                              {person?.website
                                 .replace(/^https?:\/\/(www\.)?/, '')
                                 .replace(/\/$/, '')}
                             </Anchor>
@@ -1039,192 +978,8 @@ export default function Project() {
                         )}
                       </Stack>
                     </Card>
-
-                    {/*
-                     * SOCIAL
-                     */}
-
-                    {hasSocialLinks && (
-                      <Card withBorder radius="lg" p="lg">
-                        <Stack gap="xs">
-                          {project?.instagram && (
-                            <Group
-                              component="a"
-                              href={`https://instagram.com/${project.instagram}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              justify="space-between"
-                              style={{
-                                textDecoration: 'none',
-                                color: 'inherit',
-                                borderRadius: 'var(--mantine-radius-md)',
-                              }}
-                            >
-                              <Group gap="sm">
-                                <IconBrandInstagram size={22} stroke={1.5} />
-
-                                <Text size="sm" fw={500}>
-                                  Instagram
-                                </Text>
-                              </Group>
-
-                              <IconExternalLink size={14} opacity={0.5} />
-                            </Group>
-                          )}
-
-                          {project?.spotify_id && (
-                            <Group
-                              component="a"
-                              href={`https://open.spotify.com/artist/${project.spotify_id}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              justify="space-between"
-                              style={{
-                                textDecoration: 'none',
-                                color: 'inherit',
-                                borderRadius: 'var(--mantine-radius-md)',
-                              }}
-                            >
-                              <Group gap="sm">
-                                <IconBrandSpotify size={22} stroke={1.5} />
-
-                                <Text size="sm" fw={500}>
-                                  Spotify
-                                </Text>
-                              </Group>
-
-                              <IconExternalLink size={14} opacity={0.5} />
-                            </Group>
-                          )}
-
-                          {project?.soundcloud && (
-                            <Group
-                              component="a"
-                              href={`https://soundcloud.com/${project.soundcloud}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              justify="space-between"
-                              style={{
-                                textDecoration: 'none',
-                                color: 'inherit',
-                                borderRadius: 'var(--mantine-radius-md)',
-                              }}
-                            >
-                              <Group gap="sm">
-                                <IconBrandSoundcloud size={22} stroke={1.5} />
-
-                                <Text size="sm" fw={500}>
-                                  SoundCloud
-                                </Text>
-                              </Group>
-
-                              <IconExternalLink size={14} opacity={0.5} />
-                            </Group>
-                          )}
-                        </Stack>
-                      </Card>
-                    )}
                   </Stack>
                 </SimpleGrid>
-              </Container>
-            )}
-
-            {/*
-             * ════════════════════════════════════════════════
-             * ABOUT
-             * ════════════════════════════════════════════════
-             */}
-
-            {activeTab === 'about' && (
-              <Container size="lg" px={{ base: 'sm', sm: 'md' }}>
-                <Card withBorder radius="lg" p="lg">
-                  <Title order={3} fz="lg" fw={600} mb="xs">
-                    Sobre
-                  </Title>
-
-                  {project?.description ? (
-                    <Text
-                      size="sm"
-                      lh={1.6}
-                      style={{
-                        whiteSpace: 'pre-line',
-                      }}
-                    >
-                      {project.description}
-                    </Text>
-                  ) : (
-                    <Text size="sm" c="dimmed">
-                      Descrição não disponível.
-                    </Text>
-                  )}
-
-                  {project?.purpose && (
-                    <>
-                      <Divider my="lg" />
-
-                      <Text
-                        size="xs"
-                        c="dimmed"
-                        fw={600}
-                        tt="uppercase"
-                        lts=".04em"
-                        mb={5}
-                      >
-                        Objetivo do projeto
-                      </Text>
-
-                      <Text size="sm" lh={1.6}>
-                        {project.purpose}
-                      </Text>
-                    </>
-                  )}
-
-                  {project?.is_verified && (
-                    <>
-                      <Divider mt="md" mb="sm" />
-                      <Group gap="sm" align="flex-start" wrap="nowrap">
-                        <IconRosetteDiscountCheckFilled
-                          size={22}
-                          color="var(--mantine-color-mublinColor-filled)"
-                          style={{ flexShrink: 0, marginTop: 1 }}
-                        />
-
-                        <Box>
-                          <Text size="sm" fw={600} mb={4}>
-                            Projeto verificado
-                          </Text>
-                          <Text size="xs" c="dimmed" lh={1}>
-                            A equipe do Mublin confirmou que este projeto é representado
-                            por pessoas reais ligadas a ele.
-                          </Text>
-
-                          {(project?.verified_at ||
-                            project?.verified_method?.method_name_pt) && (
-                            <Text size="xs" c="dimmed" mt={4}>
-                              {[
-                                project?.verified_at &&
-                                  `Verificado em ${dayjs(project.verified_at).format('DD/MM/YYYY')}`,
-                                project?.verified_method?.method_name_pt,
-                              ]
-                                .filter(Boolean)
-                                .join(' · ')}
-                            </Text>
-                          )}
-                        </Box>
-                      </Group>
-                    </>
-                  )}
-
-                  {project?.created_at && (
-                    <>
-                      <Divider mt="md" mb="sm" />
-                      <Text size="xs" c="dimmed">
-                        Cadastrado no Mublin em{' '}
-                        {dayjs(project.created_at).format('DD/MM/YYYY')}
-                      </Text>
-                    </>
-                  )}
-                </Card>
               </Container>
             )}
 
@@ -1235,172 +990,173 @@ export default function Project() {
              */}
 
             {activeTab === 'people' && (
-              <Container size="lg" px={{ base: 'sm', sm: 'md' }}>
-                <Stack gap="xl">
+              <Stack gap="xl" px={{ base: 'sm', sm: 'md' }} mt="xl">
+                {person?.id && (
                   <Box>
                     <Title order={3} fz="lg" fw={600} mb="xs">
-                      Administradores
+                      Perfil pessoal no Mublin
                     </Title>
-
-                    {loadingProjectAdmins ? (
-                      <Skeleton h={60} radius="md" />
-                    ) : projectAdmins.length > 0 ? (
-                      <Group gap="sm">
-                        {projectAdmins.map((person) => (
-                          <Paper key={person.id} withBorder radius="md" p="sm">
-                            <Group gap="sm">
-                              <Avatar
-                                component={Link}
-                                to={`/${person?.profile?.username}`}
-                                size={38}
-                                src={`${AVATAR_MINI_PATH}${person?.profile?.avatar}`}
-                              />
-
-                              <Box>
-                                <Text size="sm" fw={500}>
-                                  {person?.profile?.full_name}
-                                </Text>
-
-                                <Text size="xs" c="dimmed">
-                                  @{person?.profile?.username}
-                                </Text>
-                              </Box>
-                            </Group>
-                          </Paper>
-                        ))}
-                      </Group>
-                    ) : userIsAdmin ? null : myAdminRequestIsPending ? (
-                      <Text c="dimmed" size="sm">
-                        Nenhum administrador neste projeto. Sua solicitação está sendo
-                        processada
-                      </Text>
-                    ) : (
-                      <Text c="dimmed" size="sm">
-                        Nenhum administrador neste projeto
-                      </Text>
-                    )}
-                    <Text mt="xs" c="dimmed" size="xs">
-                      É fundador ou faz parte do staff?{' '}
-                      <Text
-                        span
-                        fw={500}
-                        c="var(--mantine-color-text)"
-                        style={{
-                          cursor: 'pointer',
-                        }}
-                        onClick={handleOpenClaimModal}
-                      >
-                        Quero ser administrador
-                      </Text>
-                    </Text>
+                    <ProjectProfileBadge projectId={person?.id} />
                   </Box>
+                )}
 
-                  <Box>
-                    <Title order={3} fz="lg" fw={600} mb="xs">
-                      Pessoas associadas
-                    </Title>
+                <Box>
+                  <Title order={3} fz="lg" fw={600} mb="xs">
+                    Administradores
+                  </Title>
 
-                    {loadingProjectPeople ? (
-                      <SimpleGrid
-                        cols={{
-                          base: 2,
-                          sm: 3,
-                          md: 4,
-                        }}
-                      >
-                        {[1, 2, 3, 4].map((item) => (
-                          <Skeleton key={item} h={160} radius="lg" />
-                        ))}
-                      </SimpleGrid>
-                    ) : projectPeople.length > 0 ? (
-                      <SimpleGrid
-                        cols={{
-                          base: 2,
-                          sm: 3,
-                          md: 4,
-                        }}
-                        spacing="sm"
-                      >
-                        {projectPeople.map((person) => (
-                          <Paper
-                            key={person.id}
-                            withBorder
-                            radius="lg"
-                            p="sm"
-                            pos="relative"
-                          >
-                            {userIsAdmin && (
-                              <ActionIcon
-                                pos="absolute"
-                                top={8}
-                                right={8}
-                                variant="subtle"
-                                color="gray"
-                                aria-label="Editar pessoa"
-                                component={Link}
-                                to="/settings/portfolio"
-                              >
-                                <IconPencil size={15} />
-                              </ActionIcon>
+                  {loadingProjectAdmins ? (
+                    <Skeleton h={60} radius="md" />
+                  ) : projectAdmins.length > 0 ? (
+                    <Group gap="sm">
+                      {projectAdmins.map((person) => (
+                        <Paper key={person.id} withBorder radius="md" p="sm">
+                          <Group gap="sm">
+                            <Avatar
+                              component={Link}
+                              to={`/${person?.profile?.username}`}
+                              size={38}
+                              src={`${AVATAR_MINI_PATH}${person?.profile?.avatar}`}
+                            />
+
+                            <Box>
+                              <Text size="sm" fw={500}>
+                                {person?.profile?.full_name}
+                              </Text>
+
+                              <Text size="xs" c="dimmed">
+                                @{person?.profile?.username}
+                              </Text>
+                            </Box>
+                          </Group>
+                        </Paper>
+                      ))}
+                    </Group>
+                  ) : userIsAdmin ? null : myAdminRequestIsPending ? (
+                    <Text c="dimmed" size="sm">
+                      Nenhum administrador associado a esta página. Sua solicitação está
+                      sendo processada
+                    </Text>
+                  ) : (
+                    <Text c="dimmed" size="sm">
+                      Nenhum administrador associado a esta página
+                    </Text>
+                  )}
+                  <Text c="dimmed" size="xs">
+                    Você é esta pessoa ou faz parte do staff?{' '}
+                    <Text
+                      span
+                      fw={500}
+                      c="var(--mantine-color-text)"
+                      style={{
+                        cursor: 'pointer',
+                      }}
+                      onClick={handleOpenClaimModal}
+                    >
+                      Quero ser administrador
+                    </Text>
+                  </Text>
+                </Box>
+
+                <Box>
+                  <Title order={3} fz="lg" fw={600} mb="xs">
+                    Perfis associados
+                  </Title>
+
+                  {loadingProjectPeople ? (
+                    <SimpleGrid
+                      cols={{
+                        base: 2,
+                        sm: 3,
+                        md: 4,
+                      }}
+                    >
+                      {[1, 2, 3, 4].map((item) => (
+                        <Skeleton key={item} h={160} radius="lg" />
+                      ))}
+                    </SimpleGrid>
+                  ) : projectPeople.length > 0 ? (
+                    <SimpleGrid
+                      cols={{
+                        base: 2,
+                        sm: 3,
+                        md: 4,
+                      }}
+                      spacing="sm"
+                    >
+                      {projectPeople.map((person) => (
+                        <Paper
+                          key={person.id}
+                          withBorder
+                          radius="lg"
+                          p="sm"
+                          pos="relative"
+                        >
+                          {userIsAdmin && (
+                            <ActionIcon
+                              pos="absolute"
+                              top={8}
+                              right={8}
+                              variant="subtle"
+                              color="gray"
+                              aria-label="Editar pessoa"
+                              component={Link}
+                              to="/settings/portfolio"
+                            >
+                              <IconPencil size={15} />
+                            </ActionIcon>
+                          )}
+
+                          <Stack gap={5} align="center">
+                            <Avatar
+                              component={Link}
+                              to={`/${person?.profile?.username}`}
+                              size={64}
+                              src={`${AVATAR_PATH}${person.profile?.avatar}`}
+                            />
+
+                            <Text
+                              component={Link}
+                              to={`/${person?.profile?.username}`}
+                              fz="13px"
+                              fw={600}
+                              ta="center"
+                              lineClamp={1}
+                              style={{
+                                textDecoration: 'none',
+                                color: 'inherit',
+                              }}
+                            >
+                              {person.profile.full_name}
+                            </Text>
+
+                            {person.engagement_types?.length > 0 && (
+                              <Badge size="xs" fw={400} variant="light">
+                                {person.engagement_types
+                                  .map((e) => e.engagement_type.name_ptbr)
+                                  .join(', ')}
+                              </Badge>
                             )}
 
-                            <Stack gap={5} align="center">
-                              <Avatar
-                                component={Link}
-                                to={`/${person?.profile?.username}`}
-                                size={64}
-                                src={`${AVATAR_PATH}${person.profile?.avatar}`}
-                              />
+                            <Text fz="11px" ta="center" c="dimmed" lh={1.2} lineClamp={2}>
+                              {person.roles?.map((r) => r.role.name_ptbr).join(', ')}
+                            </Text>
 
-                              <Text
-                                component={Link}
-                                to={`/${person?.profile?.username}`}
-                                fz="13px"
-                                fw={600}
-                                ta="center"
-                                lineClamp={1}
-                                style={{
-                                  textDecoration: 'none',
-                                  color: 'inherit',
-                                }}
-                              >
-                                {person.profile.full_name}
-                              </Text>
-
-                              {person.engagement_types?.length > 0 && (
-                                <Badge size="xs" fw={400} variant="light">
-                                  {person.engagement_types
-                                    .map((e) => e.engagement_type.name_ptbr)
-                                    .join(', ')}
-                                </Badge>
-                              )}
-
-                              <Text
-                                fz="11px"
-                                ta="center"
-                                c="dimmed"
-                                lh={1.2}
-                                lineClamp={2}
-                              >
-                                {person.roles?.map((r) => r.role.name_ptbr).join(', ')}
-                              </Text>
-
-                              <Text fz="11px" ta="center" opacity={0.7}>
-                                {person.year_start}
-                                {person.year_end && ` › ${person.year_end}`}
-                              </Text>
-                            </Stack>
-                          </Paper>
-                        ))}
-                      </SimpleGrid>
-                    ) : (
-                      <Text c="dimmed" size="sm">
-                        Nenhum perfil associado a este projeto até o momento
-                      </Text>
-                    )}
-                  </Box>
-                </Stack>
-              </Container>
+                            <Text fz="11px" ta="center" opacity={0.7}>
+                              {person.year_start}
+                              {person.year_end && ` › ${person.year_end}`}
+                            </Text>
+                          </Stack>
+                        </Paper>
+                      ))}
+                    </SimpleGrid>
+                  ) : (
+                    <Text c="dimmed" size="sm">
+                      Nenhum perfil associado a esta página até o momento
+                    </Text>
+                  )}
+                </Box>
+              </Stack>
             )}
 
             {/*
@@ -1417,82 +1173,14 @@ export default function Project() {
                   </Title>
 
                   <Text c="dimmed" size="sm">
-                    Nenhuma gig deste projeto cadastrada no momento
+                    Nenhuma gig desta pessoa cadastrada no momento
                   </Text>
                 </Card>
               </Container>
             )}
-
-            {/*
-             * ════════════════════════════════════════════════
-             * MUSIC
-             * ════════════════════════════════════════════════
-             */}
-
-            {activeTab === 'music' && (
-              <Container size="lg" px={{ base: 'sm', sm: 'md' }}>
-                <SimpleGrid
-                  cols={{
-                    base: 1,
-                    md: 2,
-                  }}
-                  spacing="md"
-                >
-                  <Card withBorder radius="lg" p="lg">
-                    <Title order={3} fz="lg" fw={600} mb="xs">
-                      Discografia
-                    </Title>
-
-                    <Text c="dimmed" size="sm">
-                      Nenhum álbum cadastrado para este projeto no momento.
-                    </Text>
-                  </Card>
-
-                  {hasSocialLinks && (
-                    <Card withBorder radius="lg" p="lg">
-                      <Title order={3} fz="lg" fw={600} mb="md">
-                        Ouça também
-                      </Title>
-
-                      <Stack gap="xs">
-                        {project?.spotify_id && (
-                          <Button
-                            component="a"
-                            href={`https://open.spotify.com/artist/${project.spotify_id}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            variant="default"
-                            justify="space-between"
-                            leftSection={<IconBrandSpotify size={20} />}
-                            rightSection={<IconExternalLink size={14} />}
-                          >
-                            Spotify
-                          </Button>
-                        )}
-
-                        {project?.soundcloud && (
-                          <Button
-                            component="a"
-                            href={`https://soundcloud.com/${project.soundcloud}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            variant="default"
-                            justify="space-between"
-                            leftSection={<IconBrandSoundcloud size={20} />}
-                            rightSection={<IconExternalLink size={14} />}
-                          >
-                            SoundCloud
-                          </Button>
-                        )}
-                      </Stack>
-                    </Card>
-                  )}
-                </SimpleGrid>
-              </Container>
-            )}
           </Grid.Col>
           <Grid.Col span={{ base: 12, md: 2.5 }}>
-            <SimilarProjects projectId={project?.id} title="Descubra mais" />
+            <SimilarProjects projectId={person?.id} title="Veja também" />
           </Grid.Col>
         </Grid>
       </Container>
@@ -1509,8 +1197,8 @@ export default function Project() {
         <Modal.Content>
           <Modal.Body p={0}>
             <img
-              src={PICTURE_AVATAR_LARGE_PATH + project?.picture}
-              alt={project?.name}
+              src={PICTURE_AVATAR_LARGE_PATH + person?.picture}
+              alt={person?.name}
               style={{
                 display: 'block',
                 width: 'inherit',

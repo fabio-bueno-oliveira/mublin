@@ -7,7 +7,7 @@ import {
   Grid, Stack,
   Group, Center, Table,
   Box, Card, Paper,
-  Text, Title, Avatar,
+  Text, Title, Anchor, Avatar,
   Select, Switch, Slider,
   Button, Badge, Modal,
   Popover, Divider,
@@ -24,13 +24,14 @@ import { fetchReceivedInvitations } from '../../queries/gigs'
 import { formatShortDate } from '../../utils/dates'
 import BannerGigs from '../banners/BannerGigs'
 import GigAssessmentForm from '../gigs/GigAssessmentForm'
-import OtherGigsScroller from '../gigs/OtherGigsScroller'
+// import OtherGigsScroller from '../gigs/OtherGigsScroller'
 import {
   IconClock,
   IconHourglassOff,
   IconThumbDown,
   IconThumbUp,
   IconPlaylist,
+  IconPlus,
 } from '@tabler/icons-react'
 import dayjs from 'dayjs'
 import 'dayjs/locale/pt-br'
@@ -250,21 +251,32 @@ export default function GigsDashboard() {
   return (
     <>
       <Card radius="lg" withBorder p="sm" mb="md" mt={{ base: 2, sm: 8 }}>
-        <Group justify="flex-start" gap={6} mb="xs">
-          <Avatar
-            size={25}
-            radius="xl"
-            src={
-              profile?.avatar
-                ? `https://ik.imagekit.io/mublin/tr:h-50,c-maintain_ratio/users/avatars/${profile?.avatar}`
-                : `https://api.dicebear.com/10.x/initials/svg?seed=${profile?.full_name}`
-            }
-            component={Link}
-            to={`/${profile?.username}`}
-          />
-          <Title order={3} fz="xl" fw={600} ml={2} lh={1}>
-            Olá, {profile?.full_name?.split(' ')[0]}
-          </Title>
+        <Group justify="space-between" mb="xs">
+          <Group gap={6}>
+            <Avatar
+              size={25}
+              radius="xl"
+              src={
+                profile?.avatar
+                  ? `https://ik.imagekit.io/mublin/tr:h-50,c-maintain_ratio/users/avatars/${profile?.avatar}`
+                  : `https://api.dicebear.com/10.x/initials/svg?seed=${profile?.full_name}`
+              }
+              component={Link}
+              to={`/${profile?.username}`}
+            />
+            <Title order={3} fz="xl" fw={600} ml={2} lh={1}>
+              Olá, {profile?.full_name?.split(' ')[0]}
+            </Title>
+          </Group>
+          <Button
+            size="xs"
+            variant="subtle"
+            color="var(--mantine-color-text)"
+            leftSection={<IconPlus size={14} />}
+            onClick={() => navigate('/new/gig')}
+          >
+            Criar nova gig
+          </Button>
         </Group>
 
         <Card.Section px="md">
@@ -462,9 +474,23 @@ export default function GigsDashboard() {
               Carregando gigs...
             </Text>
           ) : gigsForSelectedDay.length === 0 ? (
-            <Text c="dimmed" ta="center" size="sm">
-              Nenhuma gig nesta data
-            </Text>
+            <Box mt={12}>
+              <Text c="dimmed" ta="center" size="sm">
+                Nenhuma gig nesta data.{' '}
+              </Text>
+              <Center mt={0}>
+                <Anchor
+                  c="var(--mantine-color-text)"
+                  underline="hover"
+                  fz="xs"
+                  onClick={() =>
+                    navigate(selectedIso ? `/new/gig?date=${selectedIso}` : `/new/gig`)
+                  }
+                >
+                  + criar nova
+                </Anchor>
+              </Center>
+            </Box>
           ) : (
             <Table>
               <Table.Tbody>

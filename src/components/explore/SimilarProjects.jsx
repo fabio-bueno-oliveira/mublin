@@ -45,15 +45,21 @@ export default function SimilarProjects({
             <Skeleton key={i} h={68} radius="lg" />
           ))
         : projects.map((project) => {
-            const subtitle = [project.project_type_name, project.genre_name]
-              .filter(Boolean)
-              .join(' • ')
+            const subtitle = project.project_type_name
+
+            // [project.project_type_name, project.genre_name]
+            //   .filter(Boolean)
+            //   .join(' • ')
 
             return (
               <Card
                 key={project.id}
                 component={Link}
-                to={`/project/${project.slug}`}
+                to={
+                  project.project_type_id === 19
+                    ? `/person/${project.slug}`
+                    : `/project/${project.slug}`
+                }
                 withBorder
                 radius="lg"
                 p="sm"
@@ -86,7 +92,7 @@ export default function SimilarProjects({
                       )}
                     </Group>
                     {subtitle && (
-                      <Text size="xs" c="dimmed" truncate="end">
+                      <Text size="xs" c="dimmed" lineClamp={2}>
                         {subtitle}
                       </Text>
                     )}

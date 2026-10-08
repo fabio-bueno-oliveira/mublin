@@ -7,7 +7,7 @@ import AppNavbar from '../AppNavbar'
 import AppFooterMobile from '../AppFooterMobile'
 // import Dashbar from '../Dashbar'
 
-export default function AppLayout({ children }) {
+export default function AppProfileLayout({ children }) {
   const { session, loading } = useAuth()
   const isMobile = useMediaQuery('(max-width: 48em)')
   const isDesktop = !isMobile

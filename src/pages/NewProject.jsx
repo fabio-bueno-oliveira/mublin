@@ -39,7 +39,8 @@ import { useForm, isNotEmpty, isInRange } from '@mantine/form'
 import { useDebouncedCallback, useDisclosure } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
 import { upload } from '@imagekit/react'
-import { IconTrash, IconSearch, IconCamera } from '@tabler/icons-react'
+import { IconTrash, IconSearch, IconCamera, IconCheck } from '@tabler/icons-react'
+import slugify from 'slugify'
 
 // ── Helpers ──────────────────────────────────────────────
 function generateSlug(name) {
@@ -642,45 +643,55 @@ export default function NewProject({ onSuccess, isModal = false }) {
       )}
       <form onSubmit={form.onSubmit(handleSubmit)}>
         <Stack gap="sm">
-          <Grid>
-            <Grid.Col span={{ base: 12, md: 6 }}>
+          <TextInput
+            withAsterisk
+            label="Nome do projeto"
+            placeholder="Ex: Viajantes do Espaço"
+            description="Nome da banda, projeto solo, DJ, personalidade, profissional da música, etc"
+            value={nameValue}
+            onChange={(e) => {
+              handleNameChange(e.target.value)
+              handleSlugChange(
+                slugify(e.target.value, {
+                  lower: true,
+                  strict: true,
+                  replacement: '', // sem hífen
+                }),
+              )
+            }}
+            onBlur={() => {
+              form.setFieldValue('name', nameValue)
+              form.validateField('name')
+            }}
+            error={form.errors.name}
+          />
+
+          <Stack gap={0} mb={0}>
+            <Group gap={0}>
+              <Text c="dimmed" lh={1} size="sm" opacity={0.7}>
+                mublin.com/project/
+              </Text>
               <TextInput
-                withAsterisk
-                label="Nome do projeto"
-                placeholder="Ex: Viajantes do Espaço"
-                description="Nome da banda, projeto solo, DJ, etc"
-                value={nameValue}
-                onChange={(e) => handleNameChange(e.target.value)}
-                onBlur={() => {
-                  form.setFieldValue('name', nameValue)
-                  form.validateField('name')
-                }}
-                error={form.errors.name}
-              />
-            </Grid.Col>
-            <Grid.Col span={{ base: 12, md: 6 }}>
-              <TextInput
-                withAsterisk
-                label="URL do projeto"
-                placeholder="Ex: viajantesdoespaco"
-                description={`mublin.com/project/${slugValue}`}
+                size="sm"
+                variant="unstyled"
+                pl={4}
                 maxLength={70}
-                rightSection={slugChecking ? <Loader size={16} /> : undefined}
-                success={
-                  slugValue.length >= 2 && !slugChecking && slugAvailable === true
-                    ? 'Username disponível'
-                    : undefined
-                }
-                error={
-                  slugValue.length >= 2 && !slugChecking && slugAvailable === false
-                    ? 'Username não disponível'
-                    : undefined
-                }
+                disabled={slugChecking}
                 value={slugValue}
                 onChange={(e) => handleSlugChange(e.target.value)}
               />
-            </Grid.Col>
-          </Grid>
+            </Group>
+            {slugValue.length >= 2 && !slugChecking && slugAvailable === true && (
+              <Text c="green" lh={1} size="xs">
+                ✓ Username disponível
+              </Text>
+            )}
+            {slugValue.length >= 2 && !slugChecking && slugAvailable === false && (
+              <Text c="red" lh={1} size="xs">
+                Username não disponível ou em uso
+              </Text>
+            )}
+          </Stack>
 
           {/* Projetos similares */}
           {similarProjects.length > 0 && (
@@ -691,7 +702,7 @@ export default function NewProject({ onSuccess, isModal = false }) {
               <Text size="xs" c="dimmed" mb={8}>
                 Será que já está cadastrado?{' '}
                 <Anchor onClick={() => setSimilarProjects([])}>
-                  Não é nenhum destes
+                  (não é nenhum destes)
                 </Anchor>
               </Text>
               <ScrollArea w="100%" type="hover" scrollbarSize={6}>
@@ -721,6 +732,8 @@ export default function NewProject({ onSuccess, isModal = false }) {
               </ScrollArea>
             </Paper>
           )}
+
+          <Divider labelPosition="center" />
 
           {/* ── Imagem ── */}
 

@@ -1296,63 +1296,66 @@ export default function Profile() {
                       </>
                     )}
 
-                    <Group gap={4} align="center" mt={profile.bio ? 'md' : 0} mb={2}>
-                      <Title order={3} fz="sm" fw={300} opacity={0.8}>
-                        Principais atividades
-                      </Title>
-                      {isOwnProfile && (
-                        <ActionIcon
-                          variant="subtle"
-                          color="gray"
-                          radius="xl"
-                          size="xs"
-                          p={0}
-                          aria-label="Editar minhas atividades"
-                          title="Editar minhas atividades"
-                          component={Link}
-                          to="/settings/musical-preferences"
-                        >
-                          <IconPencil style={{ width: '92%', height: '92%' }} />
-                        </ActionIcon>
-                      )}
-                    </Group>
+                    <Title
+                      order={3}
+                      fz="sm"
+                      fw={300}
+                      c="dimmed"
+                      mt={profile.bio ? 'md' : 0}
+                      mb={2}
+                    >
+                      Principais atividades
+                    </Title>
                     {rolesOrdered && rolesOrdered.length > 0 && (
                       <Text size="sm" fw={500}>
                         {rolesOrdered
                           .map((role) => role?.roles?.description_ptbr)
                           .filter(Boolean)
                           .join(', ')}
+                        {isOwnProfile && (
+                          <ActionIcon
+                            variant="subtle"
+                            color="gray"
+                            radius="xl"
+                            size="xs"
+                            p={0}
+                            aria-label="Editar minhas atividades"
+                            title="Editar minhas atividades"
+                            component={Link}
+                            to="/settings/musical-preferences"
+                          >
+                            <IconPencil style={{ width: '92%', height: '92%' }} />
+                          </ActionIcon>
+                        )}
                       </Text>
                     )}
 
                     {genres && genres.length > 0 && (
                       <>
-                        <Group gap={4} align="center" mt="xs" mb={2}>
-                          <Title order={3} fz="sm" fw={300} opacity={0.8}>
-                            Gêneros musicais de atuação
-                          </Title>
-                          {isOwnProfile && (
-                            <ActionIcon
-                              variant="subtle"
-                              color="gray"
-                              radius="xl"
-                              size="xs"
-                              p={0}
-                              aria-label="Editar meus gêneros musicais"
-                              title="Editar meus gêneros musicais"
-                              component={Link}
-                              to="/settings/musical-preferences"
-                            >
-                              <IconPencil style={{ width: '92%', height: '92%' }} />
-                            </ActionIcon>
-                          )}
-                        </Group>
+                        <Title mt="xs" mb={2} order={3} fz="sm" fw={300} c="dimmed">
+                          Gêneros musicais de atuação
+                        </Title>
                         {genres && genres.length > 0 ? (
                           <Text size="sm" fw={500}>
                             {genres
                               .map(({ genres: genre }) => genre?.name)
                               .filter(Boolean)
                               .join(', ')}
+                            {isOwnProfile && (
+                              <ActionIcon
+                                variant="subtle"
+                                color="gray"
+                                radius="xl"
+                                size="xs"
+                                p={0}
+                                aria-label="Editar meus gêneros musicais"
+                                title="Editar meus gêneros musicais"
+                                component={Link}
+                                to="/settings/musical-preferences"
+                              >
+                                <IconPencil style={{ width: '92%', height: '92%' }} />
+                              </ActionIcon>
+                            )}
                           </Text>
                         ) : (
                           <Text size="sm" c="dimmed">
@@ -1499,8 +1502,8 @@ export default function Profile() {
                     {loadingPortfolio ? (
                       <Text mt="md">Carregando...</Text>
                     ) : portfolio.length > 0 ? (
-                      <Stack mt="md" gap="lg">
-                        {portfolio.map((item) => {
+                      <Stack mt="md" gap="md">
+                        {portfolio.map((item, index) => {
                           const entity = item.project
                           if (!entity) {
                             return null
@@ -1643,6 +1646,9 @@ export default function Profile() {
                                   )}
                                 </Stack>
                               </Group>
+                              {index + 1 < portfolio.length && (
+                                <Divider mt="sm" opacity={0.4} />
+                              )}
                             </Box>
                           )
                         })}
@@ -2201,8 +2207,8 @@ export default function Profile() {
                   )}
                 </Group>
                 {inspirations.length > 0 && (
-                  <Text size="xs" c="dimmed" mb="sm">
-                    Figuras consagradas que inspiram {profile?.full_name}
+                  <Text size="xs" c="dimmed" mb="md">
+                    Figuras que inspiram {profile?.full_name}
                   </Text>
                 )}
                 {loadingInspirations ? (
@@ -2229,7 +2235,11 @@ export default function Profile() {
                           gap={4}
                           w={64}
                           component={Link}
-                          to={`/project/${artist?.slug}`}
+                          to={
+                            artist?.project_type_id === 19
+                              ? `/person/${artist?.slug}`
+                              : `/project/${artist?.slug}`
+                          }
                           style={{ textDecoration: 'none', color: 'inherit' }}
                         >
                           <Avatar

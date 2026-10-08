@@ -46,6 +46,7 @@ const ProfileVisitors = lazy(() => import('./pages/ProfileVisitors'))
 
 // -- Project pages
 const Projects = lazy(() => import('./pages/Projects'))
+const Person = lazy(() => import('./pages/Person'))
 const NewProject = lazy(() => import('./pages/NewProject'))
 const Backstage = lazy(() => import('./pages/Backstage'))
 
@@ -121,7 +122,7 @@ export const router = createBrowserRouter([
       { path: 'auth/callback', element: <AuthCallback /> },
     ],
   },
-  // ── Projeto ────────────────────────────────────
+  // ── Projetos, Artistas, Personalidades ─────────
   {
     path: 'project/:slug',
     element: <ProjectRouter />,
@@ -182,6 +183,7 @@ export const router = createBrowserRouter([
       { path: '/:username/bio', element: <ProfileBio /> },
       { path: '/:username/gear', element: <ProfileGear /> },
       { path: '/:username/gear/:profileGearItemId', element: <ProfileGearItem /> },
+      { path: 'person/:slug', element: <Person /> },
     ],
   },
   // ── Cenas (FullScreen) ──────────────
