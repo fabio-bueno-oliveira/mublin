@@ -223,6 +223,14 @@ export default function GigsDashboard() {
   const progress = noGoal ? 0 : Math.min((gigsThisMonth / goal) * 100, 100)
   const subtleBg = 'light-dark(rgba(0,0,0,0.01), rgba(0,0,0,0.09))'
 
+  const nextGigData = nextGig?.gig
+  const nextGigRole = formatComboRoleNames(nextGig?.comboRoles)
+  const nextGigProject = nextGigData?.projects
+
+  const nextGigLocation = nextGigData?.venue_city
+    ? `${nextGigData.venue_city.name}${nextGigData.venue_city.region?.uf ? `/${nextGigData.venue_city.region.uf}` : ''}`
+    : nextGigData?.venue_name
+
   const { data: receivedInvitations = [], isLoading: loadingReceivedInvitations } =
     useQuery({
       queryKey: ['received-invitations', user?.id],
@@ -282,54 +290,68 @@ export default function GigsDashboard() {
         <Card.Section px="md">
           <Grid gap="xs">
             <Grid.Col span={7.3}>
-              <Paper
-                radius="md"
-                p="xs"
-                h={84}
-                style={{
-                  boxShadow: 'none',
-                  background: subtleBg,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'flex-start',
-                }}
-              >
+              <Paper radius="md" p="xs" h={84} bg={subtleBg}>
                 <Text size="xs" fw={500} tt="uppercase" c="dimmed">
                   Próxima gig
-                  {/* {nextGig && `${dayjs(nextGig?.gig?.date).fromNow()}`} */}
                 </Text>
 
                 <Stack gap={1} mt={2}>
-                  <Text size="sm" fw={600} lineClamp={1}>
-                    {nextGig ? nextGig?.gig?.title : 'Nenhum evento futuro'}
-                  </Text>
-                  {nextGig && (
+                  {nextGigData ? (
                     <>
-                      <Group gap={4}>
-                        <Text size="xs" lineClamp={1}>
-                          {dayjs(nextGig?.gig?.date).format('DD [de] MMMM')}{' '}
-                          <Text span>
-                            {nextGig?.gig?.venue_city
-                              ? `em ${nextGig.gig.venue_city.name}/${nextGig.gig.venue_city.region?.uf || ''}`
-                              : nextGig?.gig?.venue_name || ''}
+                      <Text
+                        component={Link}
+                        to={`/gig/${nextGigData.id}`}
+                        size="sm"
+                        fw={400}
+                        lineClamp={1}
+                        c="var(--mantine-color-text)"
+                        style={{ width: 'fit-content' }}
+                      >
+                        {nextGigRole && (
+                          <>
+                            <Text span fw={600}>
+                              {nextGigRole}
+                            </Text>
+                            {' em '}
+                          </>
+                        )}
+                        <Text span fw={600}>
+                          {nextGigData.title}
+                        </Text>
+                      </Text>
+
+                      <Text size="xs" lineClamp={1}>
+                        {dayjs(nextGigData.date).format('DD [de] MMMM')}
+                        {nextGigLocation && ` em ${nextGigLocation}`}
+                      </Text>
+
+                      {nextGigProject && (
+                        <Group gap={4} wrap="nowrap">
+                          <Text size="10px" c="dimmed" lh={1}>
+                            com
                           </Text>
-                        </Text>
-                      </Group>
-                      <Group gap={4}>
-                        <Text span size="10px" c="dimmed" lh={1}>
-                          com
-                        </Text>
-                        <Avatar
-                          src={`${PROJECT_IMAGE_PATH}/${nextGig?.gig?.projects?.id}/${nextGig?.gig?.projects?.picture}`}
-                          size={20}
-                          component={Link}
-                          to={`/project/${nextGig?.gig?.projects?.slug}`}
-                        />
-                        <Text span size="10px" c="dimmed" lh={1}>
-                          {nextGig?.gig?.projects?.name}
-                        </Text>
-                      </Group>
+
+                          <Avatar
+                            src={
+                              nextGigProject.picture
+                                ? `${PROJECT_IMAGE_PATH}${nextGigProject.id}/${nextGigProject.picture}`
+                                : null
+                            }
+                            size={20}
+                            component={Link}
+                            to={`/project/${nextGigProject.slug}`}
+                          />
+
+                          <Text size="10px" c="dimmed" lh={1} lineClamp={1}>
+                            {nextGigProject.name}
+                          </Text>
+                        </Group>
+                      )}
                     </>
+                  ) : (
+                    <Text size="sm" fw={600}>
+                      Nenhum evento futuro
+                    </Text>
                   )}
                 </Stack>
               </Paper>
@@ -492,16 +514,18 @@ export default function GigsDashboard() {
               </Center>
             </Box>
           ) : (
-            <Table>
+            <Table withRowBorders={false}>
               <Table.Tbody>
                 {gigsForSelectedDay.map((item) => {
                   const isCanceled = item.gig?.is_canceled || item.gig?.is_canceled
+                  const gigDateTime = dayjs(
+                    `${item.gig?.date}T${item.gig?.time_stage_start || '00:00:00'}`,
+                  )
                   return (
                     <Table.Tr key={item.id}>
-                      <Table.Td px={0} py={2}>
+                      <Table.Td px={0} py={0}>
                         <Divider variant="dashed" mt="sm" mb="sm" />
-                        <Group gap={4} align="flex-start">
-                          {/* <IconCalendarEvent size={32} stroke={1.4} /> */}
+                        <Group gap="xs" align="flex-start">
                           <Avatar
                             src={`${PROJECT_IMAGE_PATH}/${item.gig?.project?.id}/${item.gig?.project?.picture}`}
                             size={50}
@@ -525,11 +549,9 @@ export default function GigsDashboard() {
                                     : ''}
                                   {item.gig?.time_stage_end &&
                                     ` às: ${item.gig?.time_stage_end.slice(0, 5)}`}
-                                  {dayjs(
-                                    `${item.gig?.date}T${item.gig?.time_stage_start}`,
-                                  ).isBefore(dayjs())
-                                    ? ` (foi ${dayjs(item.gig?.date).fromNow()})`
-                                    : ` (será ${dayjs(item.gig?.date).fromNow()})`}
+                                  {gigDateTime.isBefore(dayjs())
+                                    ? ` (há ${gigDateTime.fromNow(true)})`
+                                    : ` (daqui a ${gigDateTime.fromNow(true)})`}
                                 </Text>
                                 {/* Badge só aparece 3h antes - key com nowTick pra forçar recálculo */}
                                 <Box key={`${item.id}-${nowTick.format('HH:mm')}`}>

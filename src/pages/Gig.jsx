@@ -1,35 +1,32 @@
-import { useState } from 'react'
 import { Helmet } from 'react-helmet-async'
 import { useParams, Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useQuery } from '@tanstack/react-query'
 import { fetchGigDetails, fetchGigApplicationDetails } from '../queries/gigs'
+import { fetchSetlistTracks } from '../queries/setlists'
 import AppNavbarMobile from '../components/AppNavbarMobile'
 // prettier-ignore
 import {
-  Container, Group, Stack,
+  Container, Group, Stack, Accordion,
   Affix, Anchor, Divider,
-  Table, DataList, Paper, Modal,
+  Table, DataList, Paper,
   Title, Text,
   Badge, Button, ActionIcon,
   Avatar, Alert, Spoiler,
   EmptyState,
+  Image, Loader,
   Menu, Textarea, ScrollArea,
 } from '@mantine/core'
-import { useDisclosure } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
 import { modals } from '@mantine/modals'
+// prettier-ignore
 import {
-  IconClock,
-  IconEye,
-  IconX,
-  IconMoodSad,
+  IconClock, IconX,
+  IconMoodSad, IconLink,
   IconDotsVertical,
-  IconLink,
-  IconTrash,
-  IconCheck,
-  IconCalendarCancel,
-  IconBan,
+  IconTrash, IconCheck, IconBan,
+  IconCalendarCancel, 
+  IconPlaylist, IconMusic,
 } from '@tabler/icons-react'
 import { supabase } from '../lib/supabaseClient'
 import dayjs from 'dayjs'
@@ -109,59 +106,72 @@ function UrgencyBadge({ dateStr }) {
 
   if (days < 0) {
     return (
-      <Badge size="md" color="gray" variant="light" mb="xs">
+      <Badge size="xs" color="gray" variant="light" mb="xs">
         Passou
       </Badge>
     )
   }
   if (days === 0) {
     return (
-      <Badge size="md" color="green.9" variant="filled" mb="xs">
+      <Badge size="xs" color="green.9" variant="filled" mb="xs">
         Hoje
       </Badge>
     )
   }
   if (days <= 2) {
     return (
-      <Badge size="md" color="red" variant="outline" mb="xs">
+      <Badge size="xs" color="red" variant="filled" mb="xs">
         em {days} {daysText}
       </Badge>
     )
   }
   if (days <= 7) {
     return (
-      <Badge size="md" color="orange" variant="outline" mb="xs">
+      <Badge size="xs" color="orange" variant="filled" mb="xs">
         em {days} {daysText}
       </Badge>
     )
   }
   if (days <= 30) {
     return (
-      <Badge size="md" color="yellow" variant="outline" mb="xs">
+      <Badge size="xs" color="yellow" variant="filled" mb="xs">
         em {days} {daysText}
       </Badge>
     )
   }
   return (
-    <Badge size="sm" color="gray" variant="outline" mb="xs">
+    <Badge size="xs" color="gray" variant="filled" mb="xs">
       {dayjs(dateStr).fromNow()}
     </Badge>
   )
 }
 
+function formatTrackDuration(seconds) {
+  if (!seconds || seconds <= 0) return '--:--'
+
+  const minutes = Math.floor(seconds / 60)
+  const remainingSeconds = Math.floor(seconds % 60)
+
+  return `${minutes}:${String(remainingSeconds).padStart(2, '0')}`
+}
+
+function formatTotalDuration(seconds) {
+  if (!seconds || seconds <= 0) return null
+
+  const totalMinutes = Math.floor(seconds / 60)
+  const hours = Math.floor(totalMinutes / 60)
+  const minutes = totalMinutes % 60
+
+  if (hours > 0) {
+    return `${hours}h ${String(minutes).padStart(2, '0')}min`
+  }
+
+  return `${minutes} min`
+}
+
 export default function GigApplicationDetail() {
   const { id } = useParams()
   const { user, profile } = useAuth()
-
-  const [roleDetailOpened, { open: openRoleDetail, close: closeRoleDetail }] =
-    useDisclosure(false)
-  const [selectedRoleGroup, setSelectedRoleGroup] = useState(null)
-  // cancelReason capturado via ref dentro do modal (ver handleCancelGig)
-
-  const handleOpenModalRoleDetail = (group) => {
-    setSelectedRoleGroup(group)
-    openRoleDetail()
-  }
 
   const {
     data: gig = [],
@@ -171,6 +181,38 @@ export default function GigApplicationDetail() {
     queryKey: ['gig-details', id],
     queryFn: () => fetchGigDetails(id),
     enabled: !!id,
+    staleTime: 1000 * 60 * 4,
+  })
+
+  const {
+    data: gigSetlist,
+    isLoading: loadingGigSetlist,
+    isError: gigSetlistError,
+  } = useQuery({
+    queryKey: ['setlist-details', gig?.setlist_id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('setlists')
+        .select('id, name, project_id')
+        .eq('id', gig.setlist_id)
+        .single()
+
+      if (error) throw error
+
+      return data
+    },
+    enabled: !!gig?.setlist_id,
+    staleTime: 1000 * 60 * 4,
+  })
+
+  const {
+    data: setlistTracks = [],
+    isLoading: loadingSetlistTracks,
+    isError: setlistTracksError,
+  } = useQuery({
+    queryKey: ['setlist-tracks', gig?.setlist_id],
+    queryFn: () => fetchSetlistTracks(gig.setlist_id),
+    enabled: !!gig?.setlist_id,
     staleTime: 1000 * 60 * 4,
   })
 
@@ -490,11 +532,20 @@ export default function GigApplicationDetail() {
     },
     {
       label: 'Local',
-      value: gigVenue(gig) || 'Não informado',
+      value: (
+        <Text
+          size="sm"
+          c="var(--mantine-color-text)"
+          component={Link}
+          to={`/venue/${gig?.venues?.slug}`}
+        >
+          {gigVenue(gig) || 'Não informado'}
+        </Text>
+      ),
       disabled: !gigVenue(gig),
     },
     {
-      label: 'Tipo',
+      label: 'Tipo da gig',
       value: gig?.event_types?.name || 'Não informado',
       disabled: !gig?.event_types?.name,
     },
@@ -510,6 +561,18 @@ export default function GigApplicationDetail() {
   ]
 
   const loggedUserIsTheGigCreator = gig?.profiles?.username === profile.username
+
+  const totalSetlistDuration = setlistTracks.reduce(
+    (total, track) => total + (Number(track.duration_seconds) || 0),
+    0,
+  )
+
+  const tracksWithDuration = setlistTracks.filter(
+    (track) => Number(track.duration_seconds) > 0,
+  )
+
+  const hasCompleteSetlistDuration =
+    setlistTracks.length > 0 && tracksWithDuration.length === setlistTracks.length
 
   return (
     <>
@@ -759,223 +822,428 @@ export default function GigApplicationDetail() {
             </Paper>
           )}
 
+          {isSuccess && gig?.setlist_id ? (
+            <Paper p="sm" radius="lg" withBorder>
+              <Stack gap="sm">
+                <Group justify="space-between" align="center">
+                  <Group gap="xs">
+                    <IconPlaylist size={20} />
+
+                    <Title order={5}>Repertório</Title>
+                  </Group>
+
+                  {!loadingSetlistTracks && !setlistTracksError && (
+                    <Badge variant="light" color="gray">
+                      {setlistTracks.length}{' '}
+                      {setlistTracks.length === 1 ? 'música' : 'músicas'}
+                    </Badge>
+                  )}
+                </Group>
+
+                {loadingGigSetlist ? (
+                  <Text size="xs" c="dimmed">
+                    Carregando repertório...
+                  </Text>
+                ) : (
+                  gigSetlist && (
+                    <Text size="sm" fw={500}>
+                      <Text span fw={300}>
+                        Setlist:
+                      </Text>{' '}
+                      {gigSetlist.name}
+                    </Text>
+                  )
+                )}
+
+                {(gigSetlistError || setlistTracksError) && (
+                  <Alert color="red" variant="light">
+                    Não foi possível carregar o repertório desta gig.
+                  </Alert>
+                )}
+
+                {loadingSetlistTracks && (
+                  <Group justify="center" py="md">
+                    <Loader size="sm" />
+                  </Group>
+                )}
+
+                {!loadingSetlistTracks &&
+                  !setlistTracksError &&
+                  setlistTracks.length === 0 && (
+                    <Text size="sm" c="dimmed">
+                      Esta setlist ainda não possui músicas cadastradas.
+                    </Text>
+                  )}
+
+                {!loadingSetlistTracks &&
+                  !setlistTracksError &&
+                  setlistTracks.length > 0 && (
+                    <Stack gap={0}>
+                      {setlistTracks.map((track, index) => (
+                        <Group
+                          key={track.setlist_track_id}
+                          justify="space-between"
+                          align="center"
+                          wrap="nowrap"
+                          gap="xs"
+                          py="xs"
+                          style={{
+                            borderBottom:
+                              index < setlistTracks.length - 1
+                                ? '1px solid var(--mantine-color-default-border)'
+                                : 'none',
+                          }}
+                        >
+                          <Text
+                            size="xs"
+                            c="dimmed"
+                            w={20}
+                            ta="center"
+                            style={{ flexShrink: 0 }}
+                          >
+                            {index + 1}
+                          </Text>
+
+                          {track.cover_image ? (
+                            <Image
+                              src={track.cover_image}
+                              w={42}
+                              h={42}
+                              radius="sm"
+                              fit="cover"
+                              fallbackSrc={null}
+                            />
+                          ) : (
+                            <Paper
+                              w={42}
+                              h={42}
+                              radius="sm"
+                              bg="var(--mantine-color-default-hover)"
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                flexShrink: 0,
+                              }}
+                            >
+                              <IconMusic size={18} />
+                            </Paper>
+                          )}
+
+                          <Stack gap={3} style={{ flex: 1, minWidth: 0 }}>
+                            <Text size="sm" fw={500} lineClamp={1}>
+                              {track.title}
+                            </Text>
+
+                            <Group gap={6}>
+                              {track.is_cover && (
+                                <Badge size="xs" variant="light" color="teal">
+                                  Cover
+                                </Badge>
+                              )}
+
+                              {track.notes && (
+                                <Text
+                                  size="xs"
+                                  c="dimmed"
+                                  lineClamp={1}
+                                  title={track.notes}
+                                >
+                                  {track.notes}
+                                </Text>
+                              )}
+                            </Group>
+                          </Stack>
+
+                          <Text size="xs" c="dimmed" style={{ flexShrink: 0 }}>
+                            {formatTrackDuration(track.duration_seconds)}
+                          </Text>
+                        </Group>
+                      ))}
+
+                      {totalSetlistDuration > 0 && (
+                        <>
+                          <Divider my="xs" />
+
+                          <Group justify="space-between">
+                            <Text size="xs" c="dimmed">
+                              {hasCompleteSetlistDuration
+                                ? 'Duração total estimada'
+                                : 'Duração parcial conhecida'}
+                            </Text>
+
+                            <Text size="sm" fw={500}>
+                              {formatTotalDuration(totalSetlistDuration)}
+                            </Text>
+                          </Group>
+                        </>
+                      )}
+                    </Stack>
+                  )}
+              </Stack>
+            </Paper>
+          ) : (
+            <Paper p="sm" radius="lg" withBorder>
+              <Title order={5}>Repertório</Title>
+              <Text size="sm" c="dimmed" mt={4}>
+                Nenhuma setlist vinculada a essa gig até o momento
+              </Text>
+            </Paper>
+          )}
+
           {gig?.id && (
             <Paper p="sm" radius="lg" withBorder>
-              <Title order={5} mb="xs">
+              <Title order={5} mb="sm">
                 Vagas para esta gig:
               </Title>
+
               {!loadingGig && !loadingGigApplicationDetails && (
-                <Stack>
+                <Accordion
+                  variant="separated"
+                  radius="md"
+                  multiple
+                  styles={{
+                    item: {
+                      border: '1px solid var(--mantine-color-default-border)',
+                      overflow: 'hidden',
+                    },
+                    control: {
+                      padding: '12px',
+                    },
+                    content: {
+                      padding: '12px',
+                      paddingTop: 0,
+                    },
+                  }}
+                >
                   {groupGigRoles(gig?.gig_roles).map((group) => {
-                    const primary = group[0] // já ordenado: principal primeiro
+                    const primary = group[0]
+                    const isCombo = group.length > 1
+
                     const myApplicationInGroup = gigApplications.find((app) =>
                       group.some((r) => r.id === app.gig_roles?.id),
                     )
+
+                    const combinedDescription = group
+                      .filter((r) => r.description)
+                      .map((r) =>
+                        isCombo
+                          ? `${r.roles?.description_ptbr}: ${r.description}`
+                          : r.description,
+                      )
+                      .join('\n\n')
+
                     return (
-                      <Paper
-                        withBorder
-                        bg="mublinColor.8"
-                        c="white"
-                        key={primary.id}
-                        p="xs"
-                      >
-                        <Group justify="space-between">
-                          <Stack gap={4}>
-                            <Group gap={6} align="center">
-                              <Text size="md" lh={1}>
+                      <Accordion.Item key={primary.id} value={String(primary.id)}>
+                        <Accordion.Control py={0} px="md">
+                          <Stack gap={6}>
+                            <Group gap="xs" align="center">
+                              <Text size="xl" fw={500}>
                                 {formatRoleNames(group)}
                               </Text>
-                              {gig?.has_remuneration && !primary.is_filled && (
-                                <Badge
-                                  variant="filled"
-                                  size="md"
-                                  color="lime.2"
-                                  autoContrast
-                                >
-                                  {primary.fee
-                                    ? primary.fee.toLocaleString('pt-br', {
-                                        style: 'currency',
-                                        currency: 'BRL',
-                                      })
-                                    : 'Não disponível'}
-                                </Badge>
-                              )}
-                              {primary.is_filled && (
-                                <Badge variant="outline" size="md" color="white">
-                                  Vaga preenchida
+
+                              {isCombo && (
+                                <Badge size="xs" variant="light" color="grape">
+                                  Funções combinadas
                                 </Badge>
                               )}
                             </Group>
-                            {myApplicationInGroup && (
-                              <Text size="xs" lh={1}>
-                                ✓ Você aplicou para esta vaga{' '}
-                                {dayjs(myApplicationInGroup.created_at).fromNow()}
+
+                            <Group gap={6}>
+                              {gig?.has_remuneration && !primary.is_filled && (
+                                <Badge variant="light" size="sm" color="lime">
+                                  {primary.fee
+                                    ? primary.fee.toLocaleString('pt-BR', {
+                                        style: 'currency',
+                                        currency: 'BRL',
+                                      })
+                                    : 'Cachê não disponível'}
+                                </Badge>
+                              )}
+
+                              {primary.is_filled ? (
+                                <Badge variant="light" size="sm" color="gray">
+                                  Vaga preenchida
+                                </Badge>
+                              ) : (
+                                <Badge variant="light" size="sm" color="teal">
+                                  Vaga aberta
+                                </Badge>
+                              )}
+
+                              {myApplicationInGroup && (
+                                <Badge
+                                  variant="light"
+                                  size="sm"
+                                  color="blue"
+                                  leftSection={<IconCheck size={11} />}
+                                >
+                                  Você se candidatou
+                                </Badge>
+                              )}
+                            </Group>
+                          </Stack>
+                        </Accordion.Control>
+
+                        <Accordion.Panel>
+                          <Stack gap="sm">
+                            <Divider />
+
+                            {primary.is_filled ? (
+                              <Alert variant="light" color="lime" p="xs">
+                                Esta vaga já foi preenchida!
+                              </Alert>
+                            ) : (
+                              <Alert
+                                variant="light"
+                                color="gray"
+                                p="xs"
+                                icon={<IconClock size={16} />}
+                              >
+                                O criador da vaga ainda está avaliando candidaturas.
+                              </Alert>
+                            )}
+
+                            <Table
+                              verticalSpacing={4}
+                              horizontalSpacing={0}
+                              fz="sm"
+                              variant="vertical"
+                              layout="fixed"
+                              withRowBorders={false}
+                            >
+                              <Table.Tbody>
+                                {group.map((r) => (
+                                  <Table.Tr key={r.id}>
+                                    <Table.Th
+                                      bg="transparent"
+                                      w={140}
+                                      c="dimmed"
+                                      fw={400}
+                                    >
+                                      {isCombo
+                                        ? r.roles?.description_ptbr
+                                        : 'Nível desejado'}
+                                    </Table.Th>
+
+                                    <Table.Td>
+                                      {r.experience_levels?.name_pt || 'Não informado'}
+                                    </Table.Td>
+                                  </Table.Tr>
+                                ))}
+
+                                {!primary.is_filled && (
+                                  <Table.Tr>
+                                    <Table.Th bg="transparent" c="dimmed" fw={400}>
+                                      Cachê
+                                    </Table.Th>
+
+                                    <Table.Td>
+                                      {primary.fee
+                                        ? primary.fee.toLocaleString('pt-BR', {
+                                            style: 'currency',
+                                            currency: 'BRL',
+                                          })
+                                        : 'Não disponível'}
+
+                                      {isCombo && (
+                                        <Text span size="xs" c="dimmed">
+                                          {' '}
+                                          (combinado — cobre todas as funções acima)
+                                        </Text>
+                                      )}
+                                    </Table.Td>
+                                  </Table.Tr>
+                                )}
+
+                                {group
+                                  .filter((r) => r.is_sub)
+                                  .map((r) => (
+                                    <Table.Tr key={`sub-${r.id}`}>
+                                      <Table.Th bg="transparent" c="dimmed" fw={400}>
+                                        Substituindo
+                                        {isCombo ? ` (${r.roles?.description_ptbr})` : ''}
+                                      </Table.Th>
+
+                                      <Table.Td>
+                                        <Group gap={6}>
+                                          <Avatar
+                                            size="xs"
+                                            radius="xl"
+                                            src={
+                                              r.profiles?.avatar
+                                                ? `https://ik.imagekit.io/mublin/users/avatars/tr:h-60,w-60,c-maintain_ratio/${r.profiles.avatar}`
+                                                : undefined
+                                            }
+                                          />
+
+                                          <Text size="sm">
+                                            {r.sub_for
+                                              ? r.profiles?.username
+                                              : 'Nome não disponível'}
+                                          </Text>
+                                        </Group>
+                                      </Table.Td>
+                                    </Table.Tr>
+                                  ))}
+                              </Table.Tbody>
+                            </Table>
+
+                            <Stack gap={4}>
+                              <Text size="sm">Sobre a vaga</Text>
+
+                              <Text
+                                size="sm"
+                                c={combinedDescription ? undefined : 'dimmed'}
+                                style={{ whiteSpace: 'pre-line' }}
+                              >
+                                {combinedDescription || 'Nenhuma descrição fornecida'}
                               </Text>
+                            </Stack>
+
+                            {myApplicationInGroup && (
+                              <>
+                                <Divider />
+
+                                <Stack gap="xs">
+                                  <Text size="xs">
+                                    <IconCheck
+                                      color="green"
+                                      size={14}
+                                      style={{
+                                        verticalAlign: 'middle',
+                                        marginRight: 4,
+                                      }}
+                                    />
+                                    Você aplicou para esta vaga em{' '}
+                                    {dayjs(myApplicationInGroup.created_at).format(
+                                      'D [de] MMMM [de] YYYY',
+                                    )}
+                                  </Text>
+
+                                  <Button
+                                    size="xs"
+                                    color="red"
+                                    radius="md"
+                                    variant="light"
+                                    leftSection={<IconX size={14} stroke={2} />}
+                                  >
+                                    Retirar meu interesse
+                                  </Button>
+                                </Stack>
+                              </>
                             )}
                           </Stack>
-                          <ActionIcon
-                            size="md"
-                            variant="subtle"
-                            onClick={() => handleOpenModalRoleDetail(group)}
-                          >
-                            <IconEye size={18} color="white" />
-                          </ActionIcon>
-                        </Group>
-                      </Paper>
+                        </Accordion.Panel>
+                      </Accordion.Item>
                     )
                   })}
-                </Stack>
+                </Accordion>
               )}
             </Paper>
           )}
         </Stack>
       </Container>
-      <Modal
-        opened={roleDetailOpened}
-        onClose={closeRoleDetail}
-        title={`${formatRoleNames(selectedRoleGroup)} para atuar em ${gig?.projects?.name} em ${dayjs(gigDate(gig)).format('dddd, D [de] MMMM [de] YYYY')}`}
-        centered
-        overlayProps={{
-          backgroundOpacity: 0.55,
-          blur: 3,
-        }}
-      >
-        {(() => {
-          const groupPrimary = selectedRoleGroup?.[0]
-          const isCombo = (selectedRoleGroup?.length ?? 0) > 1
-          const myApplicationInGroup = gigApplications.find((app) =>
-            selectedRoleGroup?.some((r) => r.id === app.gig_roles?.id),
-          )
-          const combinedDescription = (selectedRoleGroup ?? [])
-            .filter((r) => r.description)
-            .map((r) =>
-              isCombo ? `${r.roles?.description_ptbr}: ${r.description}` : r.description,
-            )
-            .join('\n\n')
-
-          return (
-            <>
-              <Stack gap="xs" mt="sm">
-                {groupPrimary?.is_filled && (
-                  <Alert variant="light" color="lime" p="xs">
-                    Esta vaga já foi preenchida!
-                  </Alert>
-                )}
-                {!groupPrimary?.is_filled && (
-                  <Alert variant="light" color="gray" p={4}>
-                    <Group gap={6}>
-                      <IconClock size={16} />
-                      <Text size="xs">
-                        O criador da vaga ainda está avaliando candidaturas
-                      </Text>
-                    </Group>
-                  </Alert>
-                )}
-                <Table
-                  verticalSpacing={2}
-                  horizontalSpacing={0}
-                  fz="sm"
-                  variant="vertical"
-                  layout="fixed"
-                  withRowBorders={false}
-                >
-                  <Table.Tbody>
-                    {selectedRoleGroup?.map((r) => (
-                      <Table.Tr key={r.id}>
-                        <Table.Th bg="transparent" w={140} c="dimmed" fw={400}>
-                          {isCombo ? r.roles?.description_ptbr : 'Nível desejado'}
-                        </Table.Th>
-                        <Table.Td>{r.experience_levels?.name_pt}</Table.Td>
-                      </Table.Tr>
-                    ))}
-
-                    {!groupPrimary?.is_filled && (
-                      <Table.Tr>
-                        <Table.Th bg="transparent" c="dimmed" fw={400}>
-                          Cachê
-                        </Table.Th>
-                        <Table.Td>
-                          {groupPrimary?.fee
-                            ? groupPrimary.fee.toLocaleString('pt-br', {
-                                style: 'currency',
-                                currency: 'BRL',
-                              })
-                            : 'Não disponível'}
-                          {isCombo && (
-                            <Text span size="xs" c="dimmed">
-                              {' '}
-                              (combinado — cobre todas as funções acima)
-                            </Text>
-                          )}
-                        </Table.Td>
-                      </Table.Tr>
-                    )}
-
-                    {selectedRoleGroup
-                      ?.filter((r) => r.is_sub)
-                      .map((r) => (
-                        <Table.Tr key={`sub-${r.id}`}>
-                          <Table.Th bg="transparent" c="dimmed" fw={400}>
-                            Substituindo{isCombo ? ` (${r.roles?.description_ptbr})` : ''}
-                          </Table.Th>
-                          <Table.Td>
-                            <Group gap={6}>
-                              <Avatar
-                                size="xs"
-                                radius="xl"
-                                src={
-                                  r.profiles?.avatar
-                                    ? `https://ik.imagekit.io/mublin/users/avatars/tr:h-60,w-60,c-maintain_ratio/${r.profiles.avatar}`
-                                    : undefined
-                                }
-                              />
-                              <Text size="sm">
-                                {r.sub_for ? r.profiles?.username : 'Nome não disponível'}
-                              </Text>
-                            </Group>
-                          </Table.Td>
-                        </Table.Tr>
-                      ))}
-                  </Table.Tbody>
-                </Table>
-
-                <Text size="sm" fw={400} c="dimmed">
-                  Sobre a vaga:
-                </Text>
-                <Spoiler
-                  fz="sm"
-                  maxHeight={60}
-                  showLabel="...ver mais"
-                  hideLabel="...ver menos"
-                >
-                  {combinedDescription || 'Nenhuma descrição fornecida'}
-                </Spoiler>
-              </Stack>
-
-              {myApplicationInGroup && (
-                <>
-                  <Divider my="sm" />
-                  <Text size="xs" mb={6}>
-                    ✓ Você aplicou para esta vaga em{' '}
-                    {dayjs(myApplicationInGroup.created_at).format(
-                      'D [de] MMMM [de] YYYY',
-                    )}
-                  </Text>
-                  <Button
-                    fullWidth
-                    size="xs"
-                    color="red"
-                    variant="outline"
-                    leftSection={<IconX size={14} stroke={3} />}
-                  >
-                    Retirar meu interesse
-                  </Button>
-                </>
-              )}
-            </>
-          )
-        })()}
-      </Modal>
     </>
   )
 }

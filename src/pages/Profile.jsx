@@ -379,8 +379,8 @@ export default function Profile() {
   })
 
   const { data: similarProfiles = [], isLoading: loadingSimilarProfiles } = useQuery({
-    queryKey: ['similar-profiles', profile?.id],
-    queryFn: () => fetchSimilarProfiles(profile.id, profile.region_id),
+    queryKey: ['similar-profiles', profile?.id, profile?.region_id ?? null],
+    queryFn: () => fetchSimilarProfiles(profile.id, profile.region_id ?? null),
     enabled: !!profile?.id,
     staleTime: 1000 * 60 * 10,
   })

@@ -975,12 +975,12 @@ export default function Onboarding() {
             </>
           )}
         </Stack>
-        <Stepper active={active} color="mublinColor" size="sm">
-          <Stepper.Step icon={<IconCamera stroke={2} />} />
-          <Stepper.Step icon={<IconUserEdit stroke={2} />} />
-          <Stepper.Step icon={<IconMusic stroke={2} />} />
-          <Stepper.Step icon={<IconVinyl stroke={2} />} />
-          <Stepper.Step icon={<IconUsersGroup stroke={2} />} />
+        <Stepper active={active} color="mublinColor" size="xs" labelPosition="bottom">
+          <Stepper.Step label="Foto" />
+          <Stepper.Step label="Dados" loading={isSubmitting} />
+          <Stepper.Step label="Atuação" />
+          <Stepper.Step label="Estilos" />
+          <Stepper.Step label="Portfolio" loading={isSubmitting} />
         </Stepper>
         {/* ── Step 0: Foto de perfil ───────────────────── */}
         {active === 0 && (

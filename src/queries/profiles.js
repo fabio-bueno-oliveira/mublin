@@ -136,7 +136,7 @@ export async function fetchCheckFollowing(profileUsername, userUsername) {
 export async function fetchSimilarProfiles(profileId, regionId, limit = 5) {
   const { data, error } = await supabase.rpc('get_similar_profiles_v2', {
     p_profile_id: profileId,
-    p_region_id: regionId,
+    p_region_id: regionId ?? null,
     p_limit: limit,
   })
   if (error) {

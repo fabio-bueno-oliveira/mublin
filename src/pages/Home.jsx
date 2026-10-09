@@ -62,7 +62,7 @@ export default function Home() {
           <Grid.Col span={{ base: 12, md: 8, lg: 8 }}>
             {loading ? (
               <Title size="h4" fw={500} lh={1.2} mt="sm" mb={4}>
-                Carregando....
+                Carregando...
               </Title>
             ) : (
               <>

@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { Helmet } from 'react-helmet-async'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { fetchUserProjects } from '../queries/user'
 import { fetchActiveProjectMembersForGigRoles } from '../queries/projects'
 import { fetchAllRoles } from '../queries/roles'
@@ -335,6 +335,7 @@ export default function NewGig() {
   const { user } = useAuth()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
+  const queryClient = useQueryClient()
   // Ex: /new/gig?date=2026-10-07 — vem do link "Criar nova" do GigsDashboard
   const initialDate = parseInitialDateParam(searchParams.get('date'))
   const [selectedProject, setSelectedProject] = useState(null)
@@ -834,6 +835,10 @@ export default function NewGig() {
           return
         }
       }
+
+      await queryClient.invalidateQueries({
+        queryKey: ['user-gigs', user.id],
+      })
 
       notifications.show({ title: 'Gig criada!', color: 'green' })
       navigate('/home')
@@ -1954,11 +1959,11 @@ export default function NewGig() {
                                 variant="subtle"
                                 size="xs"
                                 mt="md"
-                                color="grape"
-                                leftSection={<IconCirclesRelation size={16} />}
+                                color="green"
+                                leftSection={<IconPlus size={16} />}
                                 onClick={() => addCombinedRole(gr.tempId)}
                               >
-                                Adicionar função combinada (mesma pessoa)
+                                Adicionar função
                               </Button>
                             )}
 

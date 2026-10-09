@@ -118,9 +118,17 @@ export function AuthProvider({ children }) {
   }
 
   async function signOut() {
-    await supabase.auth.signOut()
+    const { error } = await supabase.auth.signOut()
+
+    if (error) {
+      console.error('Erro ao sair:', error)
+      return { error }
+    }
+
     setProfile(null)
     sessionStorage.removeItem('feed_redirected')
+
+    return { error: null }
   }
 
   const value = {

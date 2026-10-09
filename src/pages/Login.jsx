@@ -36,29 +36,57 @@ export default function Login() {
 
   async function handleSubmit(values) {
     setLoading(true)
-    const { error } = await signInWithEmail(values.email, values.password)
-    if (error) {
-      setLoading(false)
+
+    try {
+      const { data, error } = await signInWithEmail(values.email, values.password)
+
+      if (error) {
+        notifications.show({
+          position: 'top-center',
+          color: 'red',
+          title: 'Ops...',
+          message: 'E-mail ou senha incorretos. Verifique e tente novamente',
+        })
+        return
+      }
+
+      // O signInWithEmail já retorna os dados do usuário
+      const userId = data.user.id
+
+      // Verifica se o usuário completou o onboarding
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('onboarding_completed')
+        .eq('id', userId)
+        .single()
+
+      if (profileError) {
+        console.error('Erro ao consultar perfil:', profileError)
+
+        notifications.show({
+          position: 'top-center',
+          color: 'red',
+          title: 'Ops...',
+          message: 'Não foi possível carregar seu perfil. Tente novamente.',
+        })
+        return
+      }
+
+      navigate(profile.onboarding_completed ? '/home' : '/onboarding', {
+        replace: true,
+      })
+    } catch (error) {
+      console.error('Erro inesperado no login:', error)
+
       notifications.show({
         position: 'top-center',
         color: 'red',
         title: 'Ops...',
-        message: 'E-mail ou senha incorretos. Verifique e tente novamente',
+        message: 'Ocorreu um erro inesperado. Tente novamente.',
       })
-      return
+    } finally {
+      setLoading(false)
     }
-
-    const {
-      data: { session },
-    } = await supabase.auth.getSession()
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('onboarding_completed')
-      .eq('id', session.user.id)
-      .single()
-
-    setLoading(false)
-    navigate(profile?.onboarding_completed ? '/home' : '/onboarding')
   }
 
   async function handleGoogle() {

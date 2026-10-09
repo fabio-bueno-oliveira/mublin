@@ -68,6 +68,7 @@ export async function fetchGigDetails(gigId) {
       venues ( id, name, slug ),
       event_types ( name ),
       dress_code_types ( name ),
+      setlist_id,
       gig_roles (
         id, description, fee, is_filled, is_sub, sub_for, primary_role_id,
         roles ( description_ptbr ),

@@ -38,7 +38,7 @@ export default function ProfilePublic() {
     isLoading,
     isError,
   } = useQuery({
-    queryKey: ['profile', username],
+    queryKey: ['profile-public', username],
     queryFn: () => fetchProfileBasicDetails(username),
     enabled: !!username && !authLoading && !session,
     staleTime: 1000 * 60 * 5,

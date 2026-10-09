@@ -164,7 +164,6 @@ export default function AppNavbar({ children }) {
 
   async function handleSignOut() {
     await signOut()
-    navigate('/')
   }
 
   const suggestions = useMemo(
