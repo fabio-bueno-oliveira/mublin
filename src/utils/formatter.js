@@ -33,3 +33,20 @@ export const showYears = (years) => {
   }
   return '(menos de 1 ano)'
 }
+
+export const generateGigSlug = (title) => {
+  const base = slugify(title) || 'gig'
+  const suffix = Math.random().toString(36).slice(2, 8)
+  return `${base}-${suffix}`
+}
+
+export const slugify = (text) => {
+  return (text || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // remove acentos
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+}

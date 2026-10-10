@@ -99,3 +99,18 @@ export const formatShortDate = (dataISO) => {
     .replace('.', '') // alguns navegadores retornam "set." com ponto, isso garante que saia limpo
     .toUpperCase() // "SET 20"
 }
+
+// parseInitialDateParam
+// Aceita só datas reais no formato YYYY-MM-DD (ex: "2026-10-07"). Qualquer
+// outra coisa vinda da URL — "abc", "2026-13-45", "2026-02-31" — é ignorada
+export const parseInitialDateParam = (value) => {
+  if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return ''
+  }
+  const parsed = new Date(`${value}T00:00:00`)
+  if (Number.isNaN(parsed.getTime())) {
+    return ''
+  }
+  // evita datas "roladas" pelo JS (ex: 2026-02-31 virando 2026-03-03)
+  return dayjs(parsed).format('YYYY-MM-DD') === value ? value : ''
+}

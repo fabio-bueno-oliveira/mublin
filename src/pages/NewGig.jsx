@@ -1,25 +1,25 @@
 import { useState, useEffect, useMemo } from 'react'
+import { supabase } from '../lib/supabaseClient'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { Helmet } from 'react-helmet-async'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { fetchUserProjects } from '../queries/user'
+import { fetchUserProjects, fetchUserGigsByDate } from '../queries/user'
 import { fetchActiveProjectMembersForGigRoles } from '../queries/projects'
 import { fetchAllRoles } from '../queries/roles'
 import { fetchEventTypes, fetchDressCodeTypes } from '../queries/events'
-import { searchEvents, searchProfiles } from '../queries/search'
-import { supabase } from '../lib/supabaseClient'
-import { useForm } from '@mantine/form'
-import { notifications } from '@mantine/notifications'
-import GigRoleCombobox from '../components/gigs/GigRoleCombobox'
-import ProjectSelector from '../components/gigs/ProjectSelector'
-import VenueSelector from '../components/gigs/VenueSelector'
-import InternalSearchSelect from '../components/gigs/InternalSearchSelect'
+import { searchProfiles } from '../queries/search'
+// prettier-ignore
+import {
+  GigRoleCombobox, ProjectSelector, 
+  VenueSelector, InternalSearchSelect,
+} from '../components/gigs'
+import EventCombobox from '../components/EventCombobox'
 import SetlistManager from '../components/setlist/SetlistManager'
 import AppNavbarMobile from '../components/AppNavbarMobile'
-import { useDebouncedCallback } from '@mantine/hooks'
-import { TimeInput } from '@mantine/dates'
-import { getDateSuggestions } from '../utils/dates'
+import { generateGigSlug } from '../utils/formatter'
+import { getDateSuggestions, parseInitialDateParam } from '../utils/dates'
+import { findGigTimeConflicts } from '../utils/gigConflicts'
 // prettier-ignore
 import {
   useCombobox, Affix, 
@@ -33,42 +33,26 @@ import {
   Combobox, Checkbox, Radio, Loader,
   Button, ActionIcon, ThemeIcon,
 } from '@mantine/core'
+import { useDebouncedCallback } from '@mantine/hooks'
+import { TimeInput } from '@mantine/dates'
+import { useForm } from '@mantine/form'
+import { notifications } from '@mantine/notifications'
 // prettier-ignore
 import {
   IconPlus, IconTrash,
-  IconSend, IconCalendar, IconClock,
   IconMapPin, IconShirt,
-  IconMicrophone2,
-  IconCalendarEvent, IconBuildingStore, IconEdit,
-  IconCirclesRelation,
+  IconSend, IconCalendar, IconClock,
   IconCheck, IconX,
-  IconChevronRightFilled,
+  IconCalendarEvent, IconBuildingStore, IconEdit,
+  IconMicrophone2, IconCirclesRelation,
+  IconChevronRightFilled, IconChevronUp, IconChevronDown,
   IconExclamationCircle,
-  IconHistory,
-  IconChevronUp, IconChevronDown,
-  IconQuestionMark,
+  IconHistory, IconWand,
+  IconQuestionMark, IconAlertTriangle,
   IconReplaceUser,
   IconCurrencyDollar,
-  IconWand,
 } from '@tabler/icons-react'
 import dayjs from 'dayjs'
-
-function slugify(text) {
-  return (text || '')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '') // remove acentos
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9\s-]/g, '')
-    .replace(/\s+/g, '-')
-    .replace(/-+/g, '-')
-}
-
-function generateGigSlug(title) {
-  const base = slugify(title) || 'gig'
-  const suffix = Math.random().toString(36).slice(2, 8)
-  return `${base}-${suffix}`
-}
 
 const PROJECT_IMAGE_PATH = 'https://ik.imagekit.io/mublin/projects/'
 const AVATAR_IMAGE_PATH = 'https://ik.imagekit.io/mublin/users/avatars/'
@@ -104,69 +88,6 @@ const UPCOMING_STEPS = [
   { number: 3, title: 'Vagas para a gig', id: 'gig-roles-placeholder' },
   { number: 4, title: 'Repertório / Setlist', id: 'gig-setlist-placeholder' },
 ]
-
-function EventCombobox({ selected, onSelect, onClear, isPastGig }) {
-  const combobox = useCombobox()
-  const [value, setValue] = useState('')
-  const [results, setResults] = useState([])
-  const fetch = useDebouncedCallback(async (val) => {
-    if (val.length < 2) {
-      return
-    }
-    const data = await searchEvents(val)
-    setResults(data)
-    combobox.openDropdown()
-  }, 400)
-  if (selected) {
-    return (
-      <Group gap="xs">
-        <Text size="md" fw={600}>
-          Evento: {selected.name}
-        </Text>
-        <CloseButton size="sm" onClick={onClear} />
-      </Group>
-    )
-  }
-  return (
-    <Combobox
-      store={combobox}
-      onOptionSubmit={(val) => {
-        const item = results.find((r) => String(r.id) === val)
-        if (item) {
-          onSelect(item)
-          setValue('')
-          setResults([])
-        }
-        combobox.closeDropdown()
-      }}
-    >
-      <Combobox.Target>
-        <InputBase
-          label={isPastGig ? 'Foi em um evento' : 'Será em um evento'}
-          placeholder="Digite o nome do evento..."
-          value={value}
-          onChange={(e) => {
-            setValue(e.currentTarget.value)
-            fetch(e.currentTarget.value)
-          }}
-        />
-      </Combobox.Target>
-      <Combobox.Dropdown>
-        <Combobox.Options>
-          {value.length >= 2 && results.length === 0 ? (
-            <Combobox.Empty>Nenhum evento encontrado</Combobox.Empty>
-          ) : (
-            results.map((i) => (
-              <Combobox.Option key={i.id} value={String(i.id)}>
-                {i.name}
-              </Combobox.Option>
-            ))
-          )}
-        </Combobox.Options>
-      </Combobox.Dropdown>
-    </Combobox>
-  )
-}
 
 function SubForCombobox({ onSelect, selected }) {
   const combobox = useCombobox()
@@ -316,21 +237,6 @@ function CityCombobox({ selected, onSelect }) {
   )
 }
 
-// Aceita só datas reais no formato YYYY-MM-DD (ex: "2026-10-07"). Qualquer
-// outra coisa vinda da URL — "abc", "2026-13-45", "2026-02-31" — é ignorada,
-// e o campo de data simplesmente começa vazio, como sempre foi.
-function parseInitialDateParam(value) {
-  if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-    return ''
-  }
-  const parsed = new Date(`${value}T00:00:00`)
-  if (Number.isNaN(parsed.getTime())) {
-    return ''
-  }
-  // evita datas "roladas" pelo JS (ex: 2026-02-31 virando 2026-03-03)
-  return dayjs(parsed).format('YYYY-MM-DD') === value ? value : ''
-}
-
 export default function NewGig() {
   const { user } = useAuth()
   const navigate = useNavigate()
@@ -426,6 +332,23 @@ export default function NewGig() {
       time_stage_start: (value) => (!value ? 'Informe o horário de início' : null),
     },
   })
+
+  const { data: gigsOnSelectedDate } = useQuery({
+    queryKey: ['user-gigs-by-date', user?.id, form.values.date],
+    queryFn: () => fetchUserGigsByDate(user.id, form.values.date),
+    enabled: !!user?.id && !!form.values.date,
+    staleTime: 60 * 1000,
+  })
+
+  const timeConflicts = useMemo(() => {
+    if (!gigsOnSelectedDate) {
+      return []
+    }
+    return findGigTimeConflicts(gigsOnSelectedDate, {
+      start: form.values.time_stage_start,
+      end: form.values.time_stage_end,
+    })
+  }, [gigsOnSelectedDate, form.values.time_stage_start, form.values.time_stage_end])
 
   const isPastGig = useMemo(() => {
     if (!form.values.date) {
@@ -928,7 +851,7 @@ export default function NewGig() {
   return (
     <>
       <Helmet>
-        <title>Cadastrar gig · Mublin</title>
+        <title>Cadastrar gig | Mublin</title>
       </Helmet>
       <Affix position={{ top: 0, left: 0 }} hiddenFrom="sm">
         <AppNavbarMobile pageName="Cadastrar nova gig" />
@@ -1341,6 +1264,37 @@ export default function NewGig() {
                     >
                       Você está cadastrando uma gig que já aconteceu. Ela será registrada
                       no histórico do projeto normalmente.
+                    </Alert>
+                  )}
+
+                  {timeConflicts.length > 0 && (
+                    <Alert
+                      icon={<IconAlertTriangle size={18} />}
+                      title="Conflito de horário"
+                      color="yellow"
+                      variant="light"
+                      p="xs"
+                    >
+                      <Stack gap={2}>
+                        <Text size="sm">
+                          Você já tem{' '}
+                          {timeConflicts.length === 1
+                            ? 'uma gig'
+                            : `${timeConflicts.length} gigs`}{' '}
+                          nesse horário:
+                        </Text>
+                        {timeConflicts.map(({ gig }) => (
+                          <Text key={gig.id} size="xs">
+                            {gig.title}
+                            {gig.project?.name ? ` · ${gig.project.name}` : ''}
+                            {' · '}
+                            {gig.time_stage_start?.slice(0, 5)}
+                            {gig.time_stage_end
+                              ? `–${gig.time_stage_end.slice(0, 5)}`
+                              : ''}
+                          </Text>
+                        ))}
+                      </Stack>
                     </Alert>
                   )}
 
