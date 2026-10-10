@@ -471,6 +471,12 @@ export async function fetchUserNextGig(userId, fromIsoDate) {
         time_stage_start,
         venue_name,
         venue_city:venue_city_id ( name, region:region_id ( name, uf ) ),
+        venues ( 
+          id, name, slug, picture_url, 
+          address, address_number, neighborhood, 
+          instagram_handle,
+          cities ( name, regions ( name, uf ) ) 
+        ),
         projects ( id, name, slug, picture, project_types ( name_ptbr ) )
       ),
       gig_role:gig_roles (

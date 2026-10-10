@@ -62,10 +62,16 @@ export async function fetchGigDetails(gigId) {
       time_stage_start, time_stage_end, 
       profiles!gigs_created_by_fkey ( id, full_name, username, avatar ),
       projects ( id, name, slug, picture, project_types ( name_ptbr ) ),
+      venue_id,
       venue_name, venue_address,
       venue_city:venue_city_id ( name, regions ( name, uf ) ),
       events ( id, name, slug, date_start ),
-      venues ( id, name, slug ),
+      venues ( 
+        id, name, slug, picture_url, 
+        address, address_number, neighborhood, 
+        instagram_handle,
+        cities ( name, regions ( name, uf ) ) 
+      ),
       event_types ( name ),
       dress_code_types ( name ),
       setlist_id,

@@ -8,13 +8,12 @@ import AppNavbarMobile from '../components/AppNavbarMobile'
 // prettier-ignore
 import {
   Container, Group, Stack, Accordion,
-  Affix, Anchor, Divider,
+  Affix, Anchor, Divider, Grid,
   Table, DataList, Paper,
   Title, Text,
   Badge, Button, ActionIcon,
-  Avatar, Alert, Spoiler,
-  EmptyState,
-  Image, Loader,
+  Alert, Spoiler, EmptyState,
+  Avatar, Image, Loader,
   Menu, Textarea, ScrollArea,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
@@ -35,6 +34,8 @@ import 'dayjs/locale/pt-br'
 dayjs.extend(relativeTime)
 dayjs.locale('pt-br')
 
+const VENUE_AVATAR_PATH =
+  'https://ik.imagekit.io/mublin/venues/tr:h-200,c-maintain_ratio/'
 const PROJECT_AVATAR_PATH = 'https://ik.imagekit.io/mublin/projects'
 const AVATAR_PATH =
   'https://ik.imagekit.io/mublin/tr:h-200,c-maintain_ratio/users/avatars/'
@@ -45,13 +46,27 @@ function gigDate(gig) {
   return gig?.date ?? null
 }
 
-function gigVenue(gig) {
-  if (!gig?.venue_name) {
-    return null
+// function gigVenue(gig) {
+//   if (!gig?.venue_name) {
+//     return null
+//   }
+//   const city = gig?.venue_city?.name
+//   const uf = gig?.venue_city?.regions?.uf
+//   return `${gig.venue_name}${city ? ` · ${city}` : ''}${uf ? `/${uf}` : ''}`
+// }
+
+function gigVenueAddressRegion(gig) {
+  if (gig?.venues?.id) {
+    const city = gig?.venues?.cities?.name
+    const regionName = gig?.venues?.cities?.regions?.name
+    const regionUf = gig?.venues?.cities?.regions?.uf
+    return `${city ? `${city}` : ''}${!regionUf && regionName ? `, ${regionName}` : ''}${regionUf ? `/${regionUf}` : ''}`
+  } else {
+    const city = gig?.venue_city?.name
+    const regionName = gig?.venue_city?.regions?.name
+    const regionUf = gig?.venue_city?.regions?.uf
+    return `${city ? `${city}` : ''}${regionName ? `, ${regionName}` : ''}${regionUf ? `/${regionUf}` : ''}`
   }
-  const city = gig?.venue_city?.name
-  const uf = gig?.venue_city?.regions?.uf
-  return `${gig.venue_name}${city ? ` · ${city}` : ''}${uf ? `/${uf}` : ''}`
 }
 
 // Agrupa gig_roles em combos (mesma pessoa, mais de uma função) — mesmo
@@ -512,7 +527,7 @@ export default function GigApplicationDetail() {
 
   const dataListDetails = [
     {
-      label: 'Data',
+      label: 'Data:',
       value: gigDate(gig)
         ? `${dayjs(gigDate(gig)).format('dddd, D [de] MMMM [de] YYYY')}${
             nextDays > 0 ? ` (em ${nextDays} dias)` : ''
@@ -521,7 +536,7 @@ export default function GigApplicationDetail() {
       disabled: !gigDate(gig),
     },
     {
-      label: 'Horário',
+      label: 'Horário:',
       value:
         gig?.time_stage_start || gig?.time_stage_end
           ? `das ${gig?.time_stage_start?.slice(0, 5) || '--:--'} às ${
@@ -530,31 +545,31 @@ export default function GigApplicationDetail() {
           : 'Não informado',
       disabled: !gig?.time_stage_start && !gig?.time_stage_end,
     },
+    // {
+    //   label: 'Local:',
+    //   value: (
+    //     <Text
+    //       size="sm"
+    //       c="var(--mantine-color-text)"
+    //       component={Link}
+    //       to={`/venue/${gig?.venues?.slug}`}
+    //     >
+    //       {gigVenue(gig) || 'Não informado'}
+    //     </Text>
+    //   ),
+    //   disabled: !gigVenue(gig),
+    // },
     {
-      label: 'Local',
-      value: (
-        <Text
-          size="sm"
-          c="var(--mantine-color-text)"
-          component={Link}
-          to={`/venue/${gig?.venues?.slug}`}
-        >
-          {gigVenue(gig) || 'Não informado'}
-        </Text>
-      ),
-      disabled: !gigVenue(gig),
-    },
-    {
-      label: 'Tipo da gig',
+      label: 'Tipo da gig:',
       value: gig?.event_types?.name || 'Não informado',
       disabled: !gig?.event_types?.name,
     },
     {
-      label: 'Remunerado',
+      label: 'Remunerado:',
       value: gig?.has_remuneration ? 'Sim' : 'Não',
     },
     {
-      label: 'Dress code',
+      label: 'Dress code:',
       value: gig?.dress_code_types?.name || 'Não informado',
       disabled: !gig?.dress_code_types?.name,
     },
@@ -776,16 +791,88 @@ export default function GigApplicationDetail() {
                     </Stack>
                   </Group>
                 </Stack>
-                <DataList p={0} gap={4} size="sm" orientation="horizontal">
-                  {dataListDetails.map((item) => (
-                    <DataList.Item key={item.label}>
-                      <DataList.ItemLabel>{item.label}</DataList.ItemLabel>
-                      <DataList.ItemValue c={item.disabled ? 'dimmed' : undefined}>
-                        {item.value}
-                      </DataList.ItemValue>
-                    </DataList.Item>
-                  ))}
-                </DataList>
+                <Grid>
+                  <Grid.Col span={{ base: 12, sm: 6 }}>
+                    <DataList p={0} gap={4} size="sm" orientation="horizontal">
+                      {dataListDetails.map((item) => (
+                        <DataList.Item key={item.label}>
+                          <DataList.ItemLabel miw={94}>{item.label}</DataList.ItemLabel>
+                          <DataList.ItemValue c={item.disabled ? 'dimmed' : undefined}>
+                            {item.value}
+                          </DataList.ItemValue>
+                        </DataList.Item>
+                      ))}
+                    </DataList>
+                  </Grid.Col>
+                  <Grid.Col span={{ base: 12, sm: 6 }}>
+                    <Divider my="xs" hiddenFrom="sm" />
+                    {/* {
+                      label: 'Local',
+                      value: (
+                        <Text
+                          size="sm"
+                          c="var(--mantine-color-text)"
+                          component={Link}
+                          to={`/venue/${gig?.venues?.slug}`}
+                        >
+                          {gigVenue(gig) || 'Não informado'}
+                        </Text>
+                      ),
+                      disabled: !gigVenue(gig),
+                    }, */}
+                    <DataList p={0} gap={4} size="sm" orientation="horizontal">
+                      <DataList.Item style={{ alignItems: 'flex-start' }}>
+                        <DataList.ItemLabel miw={48}>Local:</DataList.ItemLabel>
+                        <DataList.ItemValue flex={1}>
+                          <Group gap="xs">
+                            {gig?.venues?.picture_url && (
+                              <Avatar
+                                radius="md"
+                                src={VENUE_AVATAR_PATH + gig?.venues?.picture_url}
+                                size={60}
+                                component={Link}
+                                to={`/venue/${gig?.venues?.slug}`}
+                              />
+                            )}
+                            <Stack gap={2}>
+                              {gig?.venues?.id ? (
+                                <>
+                                  <Text
+                                    w="fit-content"
+                                    size="sm"
+                                    fw={600}
+                                    c="var(--mantine-color-text)"
+                                    component={Link}
+                                    to={`/venue/${gig?.venues?.slug}`}
+                                  >
+                                    {gig?.venues?.name}
+                                  </Text>
+                                  <Text w="fit-content" size="xs">
+                                    {gig?.venues?.address} {gig?.venues?.address_number}
+                                    {gig?.venues?.neighborhood &&
+                                      `, ${gig?.venues?.neighborhood}`}
+                                  </Text>
+                                </>
+                              ) : (
+                                <>
+                                  <Text w="fit-content" size="sm">
+                                    {gig?.venue_name || 'Não informado'}
+                                  </Text>
+                                  <Text size="xs" mt={3} c="dimmed">
+                                    {gig?.venue_address}
+                                  </Text>
+                                </>
+                              )}
+                              <Text size="xs" c="dimmed">
+                                {gigVenueAddressRegion(gig)}
+                              </Text>
+                            </Stack>
+                          </Group>
+                        </DataList.ItemValue>
+                      </DataList.Item>
+                    </DataList>
+                  </Grid.Col>
+                </Grid>
               </Stack>
             </Paper>
           ) : (
@@ -994,7 +1081,7 @@ export default function GigApplicationDetail() {
           {gig?.id && (
             <Paper p="sm" radius="lg" withBorder>
               <Title order={5} mb="sm">
-                Vagas para esta gig:
+                Vagas para esta gig
               </Title>
 
               {!loadingGig && !loadingGigApplicationDetails && (

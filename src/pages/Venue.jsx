@@ -104,7 +104,7 @@ export default function Venue() {
                       >
                         https://instagram.com/{venue?.instagram_handle}
                       </Anchor>
-                      <Anchor mt="md" size="xs" href={venue?.website_url} target="_blank">
+                      <Anchor size="xs" href={venue?.website_url} target="_blank">
                         {venue?.website_url}
                       </Anchor>
                     </Stack>

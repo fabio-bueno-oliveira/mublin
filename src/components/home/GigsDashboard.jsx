@@ -295,7 +295,7 @@ export default function GigsDashboard() {
                   Próxima gig
                 </Text>
 
-                <Stack gap={1} mt={2}>
+                <Stack gap={2} mt={2}>
                   {nextGigData ? (
                     <>
                       <Text
@@ -320,9 +320,12 @@ export default function GigsDashboard() {
                         </Text>
                       </Text>
 
-                      <Text size="xs" lineClamp={1}>
+                      <Text size="11px" lineClamp={1}>
                         {dayjs(nextGigData.date).format('DD [de] MMMM')}
-                        {nextGigLocation && ` em ${nextGigLocation}`}
+                        {nextGigData?.venues?.name
+                          ? ` em ${nextGigData?.venues?.name}`
+                          : ` em ${nextGigData.venue_name}`}
+                        {nextGigLocation && ` (${nextGigLocation})`}
                       </Text>
 
                       {nextGigProject && (
