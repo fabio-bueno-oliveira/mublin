@@ -7,18 +7,12 @@ export async function fetchProjectDetails(slug) {
       `
       created_at,
       id,
-      name,
-      slug,
-      picture,
-      cover_picture,
-      logo,
-      description,
-      purpose,
+      name, slug,
+      foundation_year,
+      picture, cover_picture, logo,
+      description, purpose,
+      instagram, spotify_id, soundcloud, website,
       on_tour,
-      instagram,
-      spotify_id,
-      soundcloud,
-      website,
       is_verified,
       verified_at,
       verified_method:project_verification_methods ( method_name, method_name_pt ),
@@ -26,6 +20,7 @@ export async function fetchProjectDetails(slug) {
       project_types ( id, name_ptbr ),
       activity_status,
       status:project_statuses ( description_ptbr, color ),
+      creator:profiles!created_by_profile_id ( id, full_name, username, avatar ),
       project_members (
         id,
         is_founder,
@@ -88,6 +83,44 @@ export async function fetchProjectDetailsById(projectId) {
   if (error) {
     throw new Error(error.message)
   }
+  return data
+}
+
+export async function fetchProjectGigs(projectId) {
+  const { data, error } = await supabase
+    .from('gigs')
+    .select(
+      `
+      id,
+      created_at,
+      project_id,
+      title,
+      slug,
+      is_public,
+      is_canceled,
+      date, time_stage_start, time_stage_end,
+      type:event_types ( name ),
+      event:events ( id, name, slug, date_start ),
+      privacy:event_privacy_types!gigs_privacy_type_fkey ( id, name ),
+      author:profiles!gigs_created_by_fkey ( id, full_name, username, avatar ),
+      gig_roles (
+        id, is_filled, is_sub, sub_for, primary_role_id,
+        role:roles ( description_ptbr ),
+        sub_for_profile:profiles!gig_roles_sub_for_fkey ( id, avatar, username ),
+        gig_applications (
+          id,
+          status_request_appliant,
+          status_request_gig_owner,
+          profile:profiles!gig_applications_profile_id_fkey ( id, full_name, username, avatar )
+        )
+      )
+    `,
+    )
+    .eq('project_id', projectId)
+    .eq('gig_roles.gig_applications.status_request_gig_owner', 2)
+    .eq('gig_roles.gig_applications.status_request_appliant', 2)
+
+  if (error) throw new Error(error.message)
   return data
 }
 

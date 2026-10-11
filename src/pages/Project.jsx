@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Helmet } from 'react-helmet-async'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
@@ -48,6 +48,7 @@ import {
 import AppNavbarMobile from '../components/AppNavbarMobile'
 import SimilarProjects from '../components/explore/SimilarProjects'
 import ProjectProfileBadge from '../components/ProjectProfileBadge'
+import SectionGigs from '../components/project/SectionGigs'
 import { MEMBER_REQUEST_STATUS } from '../constants/projects'
 import dayjs from 'dayjs'
 import 'dayjs/locale/pt-br'
@@ -84,7 +85,24 @@ export default function Project() {
   const isMobile = useMediaQuery(`(max-width: ${em(750)})`)
   const queryClient = useQueryClient()
 
-  const [activeTab, setActiveTab] = useState('overview')
+  const [searchParams, setSearchParams] = useSearchParams()
+  const validTabs = ['overview', 'about', 'people', 'gigs', 'music']
+  const section = searchParams.get('section')
+  const activeTab = validTabs.includes(section) ? section : 'overview'
+  const setActiveTab = (tab) => {
+    setSearchParams((prev) => {
+      const params = new URLSearchParams(prev)
+
+      if (!tab || tab === 'overview') {
+        params.delete('section')
+      } else {
+        params.set('section', tab)
+      }
+
+      return params
+    })
+  }
+
   const [opened, { open: openModal, close: closeModal }] = useDisclosure(false)
   const [profileDetailOpened, { open: openProfileDetail, close: closeProfileDetail }] =
     useDisclosure(false)
@@ -264,6 +282,9 @@ export default function Project() {
 
   const AVATAR_MINI_PATH =
     'https://ik.imagekit.io/mublin/tr:h-35,c-maintain_ratio/users/avatars/'
+
+  const AVATAR_MINI2_PATH =
+    'https://ik.imagekit.io/mublin/tr:h-22,c-maintain_ratio/users/avatars/'
 
   const PICTURE_AVATAR_SMALL_PATH = `https://ik.imagekit.io/mublin/projects/${project?.id}/tr:h-192,w-192,c-maintain_ratio/`
   const PICTURE_AVATAR_PATH = `https://ik.imagekit.io/mublin/projects/${project?.id}/tr:h-220,w-220,c-maintain_ratio/`
@@ -946,7 +967,7 @@ export default function Project() {
                       </Card>
                     )}
 
-                    {project?.spotify_id && (
+                    {/* {project?.spotify_id && (
                       <Box px={isMobile ? 10 : 0}>
                         <iframe
                           title={`Spotify - ${project?.name}`}
@@ -959,7 +980,7 @@ export default function Project() {
                           loading="lazy"
                         />
                       </Box>
-                    )}
+                    )} */}
                   </Stack>
 
                   {/*
@@ -1179,6 +1200,18 @@ export default function Project() {
                     </>
                   )}
 
+                  {project?.foundation_year && (
+                    <>
+                      <Divider my="sm" />
+                      <Text size="xs" lh={1}>
+                        <Text span c="dimmed">
+                          Ano de fundação:
+                        </Text>{' '}
+                        {project.foundation_year}
+                      </Text>
+                    </>
+                  )}
+
                   {project?.is_verified && (
                     <>
                       <Divider mt="md" mb="sm" />
@@ -1218,10 +1251,28 @@ export default function Project() {
                   {project?.created_at && (
                     <>
                       <Divider mt="md" mb="sm" />
-                      <Text size="xs" c="dimmed">
-                        Cadastrado no Mublin em{' '}
-                        {dayjs(project.created_at).format('DD/MM/YYYY')}
-                      </Text>
+                      <Group gap={4}>
+                        <Text size="xs" c="dimmed">
+                          Cadastrado em {dayjs(project.created_at).format('DD/MM/YYYY')}
+                        </Text>
+                        {project?.creator?.username && (
+                          <>
+                            <Avatar
+                              src={AVATAR_MINI2_PATH + project?.creator?.avatar}
+                              size={22}
+                              component={Link}
+                              to={`/${project?.creator?.username}`}
+                              title={project?.creator?.full_name}
+                            />
+                            <Text size="xs" c="dimmed">
+                              por{' '}
+                              <Text span fw={600}>
+                                {project?.creator?.username}
+                              </Text>
+                            </Text>
+                          </>
+                        )}
+                      </Group>
                     </>
                   )}
                 </Card>
@@ -1409,19 +1460,7 @@ export default function Project() {
              * ════════════════════════════════════════════════
              */}
 
-            {activeTab === 'gigs' && (
-              <Container size="lg" px={{ base: 'sm', sm: 'md' }}>
-                <Card withBorder radius="lg" p="lg">
-                  <Title order={3} fz="lg" fw={600} mb="sm">
-                    Gigs
-                  </Title>
-
-                  <Text c="dimmed" size="sm">
-                    Nenhuma gig deste projeto cadastrada no momento
-                  </Text>
-                </Card>
-              </Container>
-            )}
+            {activeTab === 'gigs' && <SectionGigs projectId={project?.id} />}
 
             {/*
              * ════════════════════════════════════════════════

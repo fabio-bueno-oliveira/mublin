@@ -774,6 +774,8 @@ export default function GigApplicationDetail() {
                           : undefined
                       }
                       alt={gig?.projects?.name}
+                      component={Link}
+                      to={`/project/${gig?.projects?.slug}`}
                     />
                     <Stack gap={0}>
                       <Text

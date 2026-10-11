@@ -545,16 +545,27 @@ export default function GigsDashboard() {
                             }}
                           >
                             <Stack gap={4}>
-                              <Group gap={6} wrap="wrap" align="center">
+                              {item.comboRoles?.length > 0 && (
+                                <Group gap={4}>
+                                  <Avatar
+                                    src={`${AVATAR_PATH}${profile.avatar}`}
+                                    size={14}
+                                  />
+                                  <Text size="xs" lh={1}>
+                                    {formatComboRoleNames(item.comboRoles)}
+                                  </Text>
+                                </Group>
+                              )}
+                              <Group gap={7} wrap="wrap" align="center">
                                 <Text size="xs" c="dimmed" lh={1}>
                                   {item.gig?.time_stage_start
                                     ? item.gig?.time_stage_start.slice(0, 5)
                                     : ''}
                                   {item.gig?.time_stage_end &&
                                     ` às: ${item.gig?.time_stage_end.slice(0, 5)}`}
-                                  {gigDateTime.isBefore(dayjs())
+                                  {/* {gigDateTime.isBefore(dayjs())
                                     ? ` (há ${gigDateTime.fromNow(true)})`
-                                    : ` (daqui a ${gigDateTime.fromNow(true)})`}
+                                    : ` (daqui a ${gigDateTime.fromNow(true)})`} */}
                                 </Text>
                                 {/* Badge só aparece 3h antes - key com nowTick pra forçar recálculo */}
                                 <Box key={`${item.id}-${nowTick.format('HH:mm')}`}>
@@ -587,21 +598,10 @@ export default function GigsDashboard() {
                                   </Badge>
                                 )}
                               </Group>
-                              {item.comboRoles?.length > 0 && (
-                                <Group gap={4}>
-                                  <Avatar
-                                    src={`${AVATAR_PATH}${profile.avatar}`}
-                                    size={14}
-                                  />
-                                  <Text size="xs" lh={1}>
-                                    {formatComboRoleNames(item.comboRoles)}
-                                  </Text>
-                                </Group>
-                              )}
                               {item.gig?.setlist?.id && (
-                                <Group gap={2} align="anchor-center">
-                                  <IconPlaylist size={14} />
-                                  <Text size="xs" fw={300}>
+                                <Group gap={2} mt={2} align="center">
+                                  <IconPlaylist size={12} />
+                                  <Text size="11px" fw={300} lh={1}>
                                     Playlist: <Text span>{item.gig?.setlist?.name}</Text>
                                   </Text>
                                 </Group>
@@ -611,11 +611,11 @@ export default function GigsDashboard() {
                                 `${item.gig?.date}T${item.gig?.time_stage_start}`,
                               ).isBefore(dayjs()) && (
                                 <>
-                                  <Stack gap={4}>
+                                  <Stack gap={4} mt={2}>
                                     <Button
-                                      size="xs"
+                                      size="compact-xs"
                                       variant="filled"
-                                      w={140}
+                                      w={120}
                                       onClick={() => setAssessingGigId(item.gig?.id)}
                                     >
                                       Avaliar gig

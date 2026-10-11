@@ -459,6 +459,15 @@ export default function NewProject({ onSuccess, isModal = false }) {
   // ── Submit ────────────────────────────────────────────────
 
   async function handleSubmit(values) {
+    if (!user?.id) {
+      notifications.show({
+        color: 'red',
+        title: 'Erro',
+        message: 'Você precisa estar logado para criar um projeto.',
+      })
+      return
+    }
+
     setIsSubmitting(true)
     if (slugAvailable === false) {
       setIsSubmitting(false)
@@ -487,6 +496,7 @@ export default function NewProject({ onSuccess, isModal = false }) {
             : null,
         activity_status: values.activity_status,
         is_public: values.is_public === '1',
+        created_by_profile_id: user.id,
       })
       .select('id')
       .single()
