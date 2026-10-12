@@ -50,3 +50,18 @@ export const slugify = (text) => {
     .replace(/\s+/g, '-')
     .replace(/-+/g, '-')
 }
+
+export const truncateDescription = (text, maxLength = 160) => {
+  if (!text) return ''
+
+  const cleanText = text.replace(/\s+/g, ' ').trim()
+
+  if (cleanText.length <= maxLength) {
+    return cleanText
+  }
+
+  const truncated = cleanText.slice(0, maxLength - 3)
+  const lastSpace = truncated.lastIndexOf(' ')
+
+  return `${truncated.slice(0, lastSpace > 0 ? lastSpace : undefined).replace(/[.,;:!?-]+$/, '')}...`
+}

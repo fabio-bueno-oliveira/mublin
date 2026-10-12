@@ -25,9 +25,9 @@ import {
   IconRoad,
   IconRosetteDiscountCheckFilled,
   IconArrowRight,
-  IconPin,
   IconMapPin,
 } from '@tabler/icons-react'
+import { truncateDescription } from '../utils/formatter'
 
 export default function Project() {
   const { slug } = useParams()
@@ -89,20 +89,20 @@ export default function Project() {
     .filter(Boolean)
     .join(', ')
 
+  const metaDescription = project
+    ? truncateDescription(
+        project.description ||
+          `Confira ${project.name}, ${project.type?.name_ptbr || 'este projeto musical'} no Mublin. Pessoas relacionadas, gigs e muito mais!`,
+      )
+    : ''
+
   return (
     <>
       {project && (
         <Helmet>
           <title>{`${project.name} | Mublin`}</title>
 
-          <meta
-            name="description"
-            content={
-              project.description?.trim()
-                ? `${project.description.trim().slice(0, 155)}`
-                : `Conheça ${project.name}, ${project.type?.name_ptbr || 'projeto musical'} no Mublin. Descubra mais sobre sua trajetória musical.`
-            }
-          />
+          <meta name="description" content={metaDescription} />
 
           <link
             rel="canonical"
@@ -113,10 +113,7 @@ export default function Project() {
           <meta property="og:site_name" content="Mublin" />
           <meta property="og:title" content={`${project.name} | Mublin`} />
 
-          <meta
-            property="og:description"
-            content={project.description?.trim() || `Conheça ${project.name} no Mublin.`}
-          />
+          <meta property="og:description" content={metaDescription} />
 
           <meta
             property="og:url"

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { Helmet } from 'react-helmet-async'
 import { useNavigate, Navigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useInViewport, useMediaQuery } from '@mantine/hooks'
@@ -27,7 +28,6 @@ import {
   IconMicrophone2,
   IconBrandSpotify,
   IconArrowRight,
-  IconBolt,
   IconQuote,
 } from '@tabler/icons-react'
 import { IconGuitarPedal } from '../components/icons/GuitarPedal'
@@ -103,184 +103,225 @@ export default function Landing() {
   }
 
   return (
-    <Box style={{ overflowX: 'hidden', width: '100%' }}>
-      {/* ── Hero ───────────────────────────────────── */}
-      <Box
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          minHeight: '54vh',
-          width: '100%',
-        }}
-      >
-        <Container size="lg" py={50} w="100%">
-          <Grid p={0}>
-            <Grid.Col span={{ base: 12, sm: 8 }}>
-              <Stack gap="sm" align={isMobile ? 'center' : 'flex-start'}>
-                <Title
-                  order={1}
-                  ta={isMobile ? 'center' : 'left'}
-                  lts="-0.03em"
-                  lh={1.1}
-                  fz="clamp(40px, 6vw, 72px)"
-                  fw={700}
-                >
-                  Sua próxima gig
-                  <br />
+    <>
+      <Helmet>
+        <title>Mublin — A rede profissional para músicos</title>
+
+        <meta
+          name="description"
+          content="Mublin é a rede profissional para músicos, produtores, roadies e todos que fazem a música acontecer. Conecte-se, encontre gigs e gerencie sua carreira musical."
+        />
+
+        <link rel="canonical" href="https://mublin.com/" />
+
+        <meta property="og:type" content="website" />
+        <meta property="og:site_name" content="Mublin" />
+        <meta property="og:title" content="Mublin — A rede profissional para músicos" />
+
+        <meta
+          property="og:description"
+          content="Encontre gigs, conecte-se com músicos e gerencie sua carreira musical no Mublin."
+        />
+
+        <meta property="og:url" content="https://mublin.com/" />
+        <meta property="og:locale" content="pt_BR" />
+
+        <meta property="og:image" content="https://mublin.com/og-default.png" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Mublin — A rede profissional para músicos" />
+        <meta
+          name="twitter:description"
+          content="Encontre gigs, conecte-se com músicos e gerencie sua carreira musical no Mublin."
+        />
+        <meta name="twitter:image" content="https://mublin.com/og-default.png" />
+      </Helmet>
+
+      <Box style={{ overflowX: 'hidden', width: '100%' }}>
+        {/* ── Hero ───────────────────────────────────── */}
+        <Box
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            minHeight: '54vh',
+            width: '100%',
+          }}
+        >
+          <Container size="lg" py={50} w="100%">
+            <Grid p={0}>
+              <Grid.Col span={{ base: 12, sm: 8 }}>
+                <Stack gap="sm" align={isMobile ? 'center' : 'flex-start'}>
+                  <Title
+                    order={1}
+                    ta={isMobile ? 'center' : 'left'}
+                    lts="-0.03em"
+                    lh={1.1}
+                    fz="clamp(40px, 6vw, 72px)"
+                    fw={700}
+                  >
+                    Sua próxima gig
+                    <br />
+                    <Text
+                      component="span"
+                      inherit
+                      variant="gradient"
+                      gradient={{ from: 'mublinColor', to: 'blue', deg: 96 }}
+                    >
+                      começa aqui.
+                    </Text>
+                  </Title>
                   <Text
-                    component="span"
-                    inherit
-                    variant="gradient"
-                    gradient={{ from: 'mublinColor', to: 'blue', deg: 96 }}
+                    ta={isMobile ? 'center' : 'left'}
+                    size="xl"
+                    c="dimmed"
+                    maw={500}
+                    lh={1.5}
                   >
-                    começa aqui.
+                    Encontre gigs, monte bandas, mostre seu setup. Tudo em um só lugar,
+                    feito pra quem vive de música.
                   </Text>
+                  <Group ml="xs" gap={6} wrap="nowrap" align="center">
+                    <IconQuote
+                      color="gray"
+                      size={16}
+                      style={{ transform: 'scaleX(-1)' }}
+                    />
+                    <Text fs="italic" size="sm" c="dimmed">
+                      o Mublin é o LinkedIn para músicos
+                    </Text>
+                  </Group>
+                  <Group gap="sm" my="xs" justify="center">
+                    <Button
+                      size="md"
+                      radius="xl"
+                      variant="gradient"
+                      gradient={{ from: 'mublinColor.9', to: 'blue.8', deg: 96 }}
+                      onClick={() => navigate('/signup')}
+                      rightSection={<IconArrowRight size={16} />}
+                    >
+                      Criar conta grátis
+                    </Button>
+                    <Button
+                      size="md"
+                      radius="xl"
+                      variant="subtle"
+                      color="gray"
+                      onClick={() => navigate('/login')}
+                    >
+                      Já tenho conta
+                    </Button>
+                  </Group>
+                </Stack>
+              </Grid.Col>
+              <Grid.Col span={{ base: 12, sm: 4 }} pt={{ base: 30, sm: 40 }}>
+                <Center>
+                  <Image
+                    src="https://ik.imagekit.io/mublin/misc/backstage_laughter.jpg?tr=w-340,q-80"
+                    w={340}
+                    h="auto"
+                    fit="cover"
+                    radius="lg"
+                  />
+                </Center>
+              </Grid.Col>
+            </Grid>
+          </Container>
+        </Box>
+
+        {/* ── Features ───────────────────────────────── */}
+        <Box py={54} style={{ width: '100%' }}>
+          <Container size="md" w="100%">
+            <Stack gap={48} align="center">
+              <Stack gap={8} align="center" ta="center">
+                <Title order={2} fz={36} fw={800}>
+                  Tudo que você precisa
                 </Title>
-                <Text
-                  ta={isMobile ? 'center' : 'left'}
-                  size="xl"
-                  c="dimmed"
-                  maw={500}
-                  lh={1.5}
-                >
-                  Encontre gigs, monte bandas, mostre seu setup. Tudo em um só lugar,
-                  feito pra quem vive de música.
+                <Text c="dimmed" size="md" maw={400}>
+                  Uma plataforma construída especialmente para o ecossistema musical.
                 </Text>
-                <Group ml="xs" gap={6} wrap="nowrap" align="center">
-                  <IconQuote color="gray" size={16} style={{ transform: 'scaleX(-1)' }} />
-                  <Text fs="italic" size="sm" c="dimmed">
-                    o Mublin é o LinkedIn para músicos
-                  </Text>
-                </Group>
-                <Group gap="sm" my="xs" justify="center">
-                  <Button
-                    size="md"
-                    radius="xl"
-                    variant="gradient"
-                    gradient={{ from: 'mublinColor.9', to: 'blue.8', deg: 96 }}
-                    onClick={() => navigate('/signup')}
-                    rightSection={<IconArrowRight size={16} />}
-                  >
-                    Criar conta grátis
-                  </Button>
-                  <Button
-                    size="md"
-                    radius="xl"
-                    variant="subtle"
-                    color="gray"
-                    onClick={() => navigate('/login')}
-                  >
-                    Já tenho conta
-                  </Button>
-                </Group>
               </Stack>
-            </Grid.Col>
-            <Grid.Col span={{ base: 12, sm: 4 }} pt={{ base: 30, sm: 40 }}>
-              <Center>
-                <Image
-                  src="https://ik.imagekit.io/mublin/misc/backstage_laughter.jpg?tr=w-340,q-80"
-                  w={340}
-                  h="auto"
-                  fit="cover"
-                  radius="lg"
-                />
-              </Center>
-            </Grid.Col>
-          </Grid>
-        </Container>
-      </Box>
-
-      {/* ── Features ───────────────────────────────── */}
-      <Box py={54} style={{ width: '100%' }}>
-        <Container size="md" w="100%">
-          <Stack gap={48} align="center">
-            <Stack gap={8} align="center" ta="center">
-              <Title order={2} fz={36} fw={800}>
-                Tudo que você precisa
-              </Title>
-              <Text c="dimmed" size="md" maw={400}>
-                Uma plataforma construída especialmente para o ecossistema musical.
-              </Text>
+              <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="lg" w="100%">
+                {FEATURES.map(({ icon: Icon, label }) => (
+                  <Flex
+                    key={label}
+                    gap="md"
+                    p="lg"
+                    direction="column"
+                    mih={140}
+                    style={{
+                      borderRadius: 16,
+                      border: '1px solid var(--mantine-color-default-border)',
+                      background: 'var(--mantine-color-default)',
+                    }}
+                  >
+                    <ThemeIcon size={40} radius="xl" color="gray" variant="light">
+                      <Icon size={20} />
+                    </ThemeIcon>
+                    <Text size="md" fw={500} lh={1.5}>
+                      {label}
+                    </Text>
+                  </Flex>
+                ))}
+              </SimpleGrid>
             </Stack>
-            <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="lg" w="100%">
-              {FEATURES.map(({ icon: Icon, label }) => (
-                <Flex
-                  key={label}
-                  gap="md"
-                  p="lg"
-                  direction="column"
-                  mih={140}
-                  style={{
-                    borderRadius: 16,
-                    border: '1px solid var(--mantine-color-default-border)',
-                    background: 'var(--mantine-color-default)',
-                  }}
-                >
-                  <ThemeIcon size={40} radius="xl" color="gray" variant="light">
-                    <Icon size={20} />
-                  </ThemeIcon>
-                  <Text size="md" fw={500} lh={1.5}>
-                    {label}
-                  </Text>
-                </Flex>
-              ))}
-            </SimpleGrid>
-          </Stack>
-        </Container>
-      </Box>
+          </Container>
+        </Box>
 
-      {/* ── Equipamentos ───────────────────────────── */}
-      <Box py={80}>
-        <Container size="sm" w="100%">
-          <Stack gap="sm" align="center" ta="center" ref={equipmentSectionRef}>
-            <Center>
-              <IconGuitarPedal size={60} color="currentColor" stroke={1} />
-            </Center>
-            <Title order={2} fz={36} fw={800}>
-              Seu equipamento, no seu perfil
-            </Title>
-            <Text c="dimmed" size="md" maw={480} lh={1.6}>
-              Cadastre instrumentos, pedais, amplificadores e tudo que você usa pra tocar.
-              Já são mais de{' '}
-              <Text component="span" inherit fw={700} c="mublinColor">
-                3 mil itens
-              </Text>{' '}
-              catalogados.
-            </Text>
-            <RollingNumber
-              value={animatedEquipmentCount}
-              fz="clamp(48px, 8vw, 80px)"
-              fw={800}
-              suffix="+"
-              c="mublinColor"
-            />
-          </Stack>
-        </Container>
-      </Box>
+        {/* ── Equipamentos ───────────────────────────── */}
+        <Box py={80}>
+          <Container size="sm" w="100%">
+            <Stack gap="sm" align="center" ta="center" ref={equipmentSectionRef}>
+              <Center>
+                <IconGuitarPedal size={60} color="currentColor" stroke={1} />
+              </Center>
+              <Title order={2} fz={36} fw={800}>
+                Seu equipamento, no seu perfil
+              </Title>
+              <Text c="dimmed" size="md" maw={480} lh={1.6}>
+                Cadastre instrumentos, pedais, amplificadores e tudo que você usa pra
+                tocar. Já são mais de{' '}
+                <Text component="span" inherit fw={700} c="mublinColor">
+                  3 mil itens
+                </Text>{' '}
+                catalogados.
+              </Text>
+              <RollingNumber
+                value={animatedEquipmentCount}
+                fz="clamp(48px, 8vw, 80px)"
+                fw={800}
+                suffix="+"
+                c="mublinColor"
+              />
+            </Stack>
+          </Container>
+        </Box>
 
-      {/* ── CTA final ──────────────────────────────── */}
-      <Box py={40} style={{ width: '100%' }}>
-        <Container size="sm" w="100%">
-          <Stack gap="xl" align="center" ta="center">
-            <Title order={2} fz={36} fw={800}>
-              Pronto para começar?
-            </Title>
-            <Text c="dimmed" maw={380} lh={1.7}>
-              Crie seu perfil, entre em projetos e encontre sua próxima gig.
-            </Text>
-            <Button
-              size="lg"
-              radius="xl"
-              fw={700}
-              color="mublinColor"
-              px={40}
-              onClick={() => navigate('/signup')}
-            >
-              Criar minha conta
-            </Button>
-          </Stack>
-        </Container>
+        {/* ── CTA final ──────────────────────────────── */}
+        <Box py={40} style={{ width: '100%' }}>
+          <Container size="sm" w="100%">
+            <Stack gap="xl" align="center" ta="center">
+              <Title order={2} fz={36} fw={800}>
+                Pronto para começar?
+              </Title>
+              <Text c="dimmed" maw={380} lh={1.7}>
+                Crie seu perfil, entre em projetos e encontre sua próxima gig.
+              </Text>
+              <Button
+                size="lg"
+                radius="xl"
+                fw={700}
+                color="mublinColor"
+                px={40}
+                onClick={() => navigate('/signup')}
+              >
+                Criar minha conta
+              </Button>
+            </Stack>
+          </Container>
+        </Box>
       </Box>
-    </Box>
+    </>
   )
 }
