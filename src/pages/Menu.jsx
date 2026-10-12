@@ -21,16 +21,14 @@ import {
 import { notifications } from '@mantine/notifications'
 import {
   IconUser,
-  IconSettings,
+  IconSettings2,
   IconCamera,
   IconChevronRight,
   IconLogout,
   IconBrightnessUp,
   IconMoon,
   IconUpload,
-  IconMusic,
-  IconCalendar,
-  IconBookmark,
+  IconBookmarks,
   IconKey,
 } from '@tabler/icons-react'
 
@@ -122,10 +120,10 @@ export default function Menu() {
   const menuItems = [
     // { icon: IconHome, label: 'Home', to: '/home' },
     { icon: IconUser, label: 'Ir para meu perfil', to: `/${profile?.username}` },
-    { icon: IconMusic, label: 'Meus projetos de música', to: `/projects` },
-    { icon: IconCalendar, label: 'Minhas gigs', to: `/gigs` },
-    { icon: IconBookmark, label: 'Meus itens salvos', to: `/saved` },
-    { icon: IconSettings, label: 'Configurações', to: `/settings` },
+    // { icon: IconMusic, label: 'Meus projetos de música', to: `/projects` },
+    // { icon: IconCalendar, label: 'Minhas gigs', to: `/gigs` },
+    { icon: IconBookmarks, label: 'Meus itens salvos', to: `/saved` },
+    { icon: IconSettings2, label: 'Configurações', to: `/settings` },
   ]
 
   return (
@@ -186,7 +184,7 @@ export default function Menu() {
         </Center>
 
         {/* ── Menu items ── */}
-        <Stack gap={3} pt="xs">
+        <Stack gap={3} pt="lg">
           {menuItems.map(({ icon: Icon, label, to }) => (
             <Button
               key={to}
@@ -204,7 +202,7 @@ export default function Menu() {
             </Button>
           ))}
 
-          {profile.is_admin && (
+          {profile?.is_admin && (
             <Button
               variant="transparent"
               justify="space-between"
@@ -220,19 +218,17 @@ export default function Menu() {
             </Button>
           )}
 
-          {/* Logout — separado pois é action, não rota */}
           <Button
-            mt="sm"
-            variant="light"
+            mt="lg"
+            variant="transparent"
             color="var(--mantine-color-text)"
             size="md"
             justify="center"
             leftSection={<IconLogout style={iconStyle} />}
-            // rightSection={<IconChevronRight />}
             fw={550}
             onClick={handleLogout}
           >
-            Sair
+            Encerrar sessão
           </Button>
         </Stack>
       </Container>

@@ -15,10 +15,9 @@ import {
   Stack, Center,
   Box, Card, Paper,
   SegmentedControl,
-  Title, Text,
-  Button,
+  Text, Button,
   Image, Avatar,
-  ActionIcon,
+  ActionIcon, Select,
   Modal, Divider,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
@@ -34,16 +33,14 @@ import {
   IconUser,
 } from '@tabler/icons-react'
 import LinkedItem from '../components/feed/LinkedItem'
-import VideoPlayerNative from '../components/VideoPlayerNative'
 import VideoPlayerYoutube from '../components/feed/VideoPlayerYoutube'
 import LikeButton from '../components/feed/LikeButton'
 import NewsFeed from '../components/feed/NewsFeed'
-import ScenesScroller from '../components/scenes/ScenesScroller'
+// import ScenesScroller from '../components/scenes/ScenesScroller'
 import parse from 'html-react-parser'
 import linkifyStr from 'linkify-string'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
-
 dayjs.extend(relativeTime)
 
 const AVATAR_PATH =
@@ -53,7 +50,7 @@ export default function Feed({ from = '' }) {
   const navigate = useNavigate()
   const { colorScheme } = useMantineColorScheme()
   const isDesktop = useMediaQuery('(min-width: 48em)')
-  const isMobile = useMediaQuery('(max-width: 48em)')
+  // const isMobile = useMediaQuery('(max-width: 48em)')
   const queryClient = useQueryClient()
   const { profile, user } = useAuth()
   const [isStale, setIsStale] = useState(false)
@@ -154,7 +151,7 @@ export default function Feed({ from = '' }) {
   return (
     <>
       <Helmet>
-        <title>Feed · Mublin</title>
+        <title>Feed | Mublin</title>
       </Helmet>
       <Grid px={0}>
         <Grid.Col span={{ base: 12, md: 8 }}>
@@ -188,14 +185,14 @@ export default function Feed({ from = '' }) {
               value={feedType}
               onChange={setFeedType}
               data={[
-                { label: 'Explorar', value: 'explore' },
+                { label: 'Principais', value: 'explore' },
                 { label: 'Seguindo', value: 'following' },
                 { label: 'Notícias', value: 'news' },
               ]}
             />
           </Flex>
 
-          {(loadingScenes || scenes?.length > 0) && (
+          {/* {(loadingScenes || scenes?.length > 0) && (
             <Box mb="xs" mt="sm">
               {loadingScenes ? (
                 <Group wrap="nowrap" gap={10}>
@@ -212,363 +209,345 @@ export default function Feed({ from = '' }) {
                 />
               )}
             </Box>
-          )}
+          )} */}
 
-          {loadingFeed ? (
-            <Stack>
-              <Skeleton h={200} />
-              <Skeleton h={200} />
-            </Stack>
-          ) : (
-            <>
-              {(feedType === 'explore' || feedType === 'following') && (
-                <ScrollArea
-                  h={{ base: 'auto', md: from ? 'calc(90vh - 120px)' : 'auto' }}
-                  scrollHideDelay={0}
-                >
-                  {/* Caixa de novo post */}
-                  <Paper
-                    className="paperWrapper"
-                    mb="sm"
-                    mt="xs"
-                    py="xs"
-                    px={{ base: 'md', md: 14 }}
-                  >
-                    <Flex gap={10} align="center">
-                      <Link to={`/${profile?.username}`}>
-                        <Avatar
-                          size={36}
-                          radius="xl"
-                          src={
-                            profile?.avatar
-                              ? `https://ik.imagekit.io/mublin/tr:h-76,w-76,r-max,c-maintain_ratio/users/avatars/${profile.avatar}`
-                              : undefined
-                          }
-                          alt={profile?.username}
-                        />
-                      </Link>
-                      <Text
-                        w="100%"
-                        c="dimmed"
-                        size="md"
-                        lh={0}
-                        component={Link}
-                        to="/new/post"
-                      >
-                        Quais as novidades?
-                      </Text>
-                    </Flex>
-                  </Paper>
-
-                  <Flex mb="xs" gap="xs" justify="center" align="center" visibleFrom="sm">
-                    <Divider flex={1} />
-                    <SegmentedControl
-                      size="xs"
-                      value={feedType}
-                      onChange={setFeedType}
-                      data={[
-                        { label: 'Explorar', value: 'explore' },
-                        { label: 'Seguindo', value: 'following' },
-                      ]}
+          {(feedType === 'explore' || feedType === 'following') && (
+            <ScrollArea
+              h={{ base: 'auto', md: from ? 'calc(90vh - 120px)' : 'auto' }}
+              scrollHideDelay={0}
+            >
+              {/* Caixa de novo post */}
+              <Paper
+                className="paperWrapper"
+                mb="sm"
+                mt="xs"
+                py="xs"
+                px={{ base: 'md', md: 14 }}
+              >
+                <Flex gap={10} align="center">
+                  <Link to={`/${profile?.username}`}>
+                    <Avatar
+                      size={36}
+                      radius="xl"
+                      src={
+                        profile?.avatar
+                          ? `https://ik.imagekit.io/mublin/tr:h-76,w-76,r-max,c-maintain_ratio/users/avatars/${profile.avatar}`
+                          : undefined
+                      }
+                      alt={profile?.username}
                     />
-                  </Flex>
+                  </Link>
+                  <Text
+                    w="100%"
+                    c="dimmed"
+                    size="md"
+                    lh={0}
+                    component={Link}
+                    to="/new/post"
+                  >
+                    Quais as novidades?
+                  </Text>
+                </Flex>
+              </Paper>
 
-                  {isStale && (
-                    <Flex mb="xs" gap="xs" justify="center" align="center">
-                      <Button
-                        variant="light"
-                        color="mublinColor"
-                        size="compact-sm"
-                        leftSection={<IconRefresh size={14} />}
-                        onClick={() => refetch()}
-                      >
-                        Atualizar publicações
-                      </Button>
-                    </Flex>
-                  )}
+              <Flex mb="xs" gap="xs" justify="center" align="center" visibleFrom="sm">
+                <Divider flex={1} opacity={0.6} />
+                <Select
+                  size="xs"
+                  w={122}
+                  variant="unstyled"
+                  value={feedType}
+                  onChange={setFeedType}
+                  data={[
+                    { label: 'Principais', value: 'explore' },
+                    { label: 'Perfis que sigo', value: 'following' },
+                  ]}
+                />
+              </Flex>
 
-                  {/* Feed */}
-                  {loadingFeed || isRefetching ? (
-                    [1, 2].map((i) => (
-                      <Card key={i} mt="sm" className="feedPostWrapper">
+              {isStale && (
+                <Flex mb="xs" gap="xs" justify="center" align="center">
+                  <Button
+                    variant="light"
+                    color="mublinColor"
+                    size="compact-sm"
+                    leftSection={<IconRefresh size={14} />}
+                    onClick={() => refetch()}
+                  >
+                    Atualizar publicações
+                  </Button>
+                </Flex>
+              )}
+
+              {/* Feed */}
+              {loadingFeed || isRefetching ? (
+                [1, 2].map((i) => (
+                  <Card key={i} mt="sm" className="feedPostWrapper">
+                    <Group
+                      gap={6}
+                      align="center"
+                      justify="flex-start"
+                      className="paddingX"
+                      mb="xs"
+                    >
+                      <Skeleton circle height={36} width={36} />
+                      <Stack gap={5}>
+                        <Skeleton width={110} height={14} />
+                        <Skeleton width={150} height={8} />
+                      </Stack>
+                    </Group>
+                    <Stack gap={5} mb="sm">
+                      <Skeleton width="88%" height={12} />
+                      <Skeleton width="84%" height={12} />
+                      <Skeleton width="92%" height={12} />
+                    </Stack>
+                  </Card>
+                ))
+              ) : error ? (
+                <Paper p="md" withBorder radius="md" mx="sm" mt="xl">
+                  <Center style={{ flexDirection: 'column' }}>
+                    <Text size="sm" c="dimmed" mb="md">
+                      Ocorreu um erro ao carregar o feed.
+                    </Text>
+                    <Button
+                      variant="light"
+                      color="red"
+                      size="xs"
+                      onClick={() =>
+                        queryClient.invalidateQueries({ queryKey: ['feed'] })
+                      }
+                    >
+                      Tentar novamente
+                    </Button>
+                  </Center>
+                </Paper>
+              ) : (
+                <>
+                  <Stack gap={14}>
+                    {feedPosts.map((post) => (
+                      <Card className="feedPostWrapper" key={post.id}>
                         <Group
                           gap={6}
-                          align="center"
-                          justify="flex-start"
+                          align="flex-start"
+                          justify="space-between"
                           className="paddingX"
-                          mb="xs"
                         >
-                          <Skeleton circle height={36} width={36} />
-                          <Stack gap={5}>
-                            <Skeleton width={110} height={14} />
-                            <Skeleton width={150} height={8} />
-                          </Stack>
-                        </Group>
-                        <Stack gap={5} mb="sm">
-                          <Skeleton width="88%" height={12} />
-                          <Skeleton width="84%" height={12} />
-                          <Skeleton width="92%" height={12} />
-                        </Stack>
-                      </Card>
-                    ))
-                  ) : error ? (
-                    <Paper p="md" withBorder radius="md" mx="sm" mt="xl">
-                      <Center style={{ flexDirection: 'column' }}>
-                        <Text size="sm" c="dimmed" mb="md">
-                          Ocorreu um erro ao carregar o feed.
-                        </Text>
-                        <Button
-                          variant="light"
-                          color="red"
-                          size="xs"
-                          onClick={() =>
-                            queryClient.invalidateQueries({ queryKey: ['feed'] })
-                          }
-                        >
-                          Tentar novamente
-                        </Button>
-                      </Center>
-                    </Paper>
-                  ) : (
-                    <>
-                      <Stack gap={14}>
-                        {feedPosts.map((post) => (
-                          <Card className="feedPostWrapper" key={post.id}>
-                            <Group
-                              gap={6}
-                              align="flex-start"
-                              justify="space-between"
-                              className="paddingX"
-                            >
-                              <Avatar
-                                size={36}
-                                radius="xl"
-                                src={
-                                  post.author_avatar
-                                    ? AVATAR_PATH + post.author_avatar
-                                    : undefined
-                                }
-                                component={Link}
-                                to={`/${post.author_username}`}
-                                title={post.author_full_name}
-                              />
-                              <Flex mih={37} direction="column" justify="center" flex={1}>
-                                <Stack gap={0}>
-                                  <Flex
-                                    gap={post.author_is_verified ? 2 : 6}
-                                    align="center"
-                                    wrap="wrap"
-                                  >
-                                    <Text
-                                      component={Link}
-                                      to={`/${post.author_username}`}
-                                      size="md"
-                                      fw={600}
-                                      lh={1}
-                                      c="var(--mantine-color-text)"
-                                      className="noDecoration"
-                                    >
-                                      {post.author_username}
-                                    </Text>
-                                    {!!post.author_is_verified && (
-                                      <IconRosetteDiscountCheckFilled
-                                        className="iconVerified small"
-                                        title="Usuário verificado"
-                                      />
-                                    )}
-                                    {post.author_project_id && (
-                                      <Text size="xs" c="dimmed">
-                                        Projeto
-                                      </Text>
-                                    )}
-                                    <Text
-                                      size="xs"
-                                      fw={400}
-                                      c="var(--mantine-color-text)"
-                                      opacity={0.6}
-                                      title={dayjs(post.created_at).format(
-                                        'dddd, D [de] MMMM [de] YYYY [às] HH:mm',
-                                      )}
-                                      component={Link}
-                                      to={`/post/${post.id}`}
-                                      style={{ textDecoration: 'none' }}
-                                      lh={1}
-                                      ml={3}
-                                    >
-                                      {dayjs(post.created_at).fromNow()}
-                                    </Text>
-                                  </Flex>
-                                  <Text
-                                    size="xs"
-                                    opacity={0.6}
-                                    maw={240}
-                                    fw={300}
-                                    truncate="end"
-                                    title={post.author_title}
-                                  >
-                                    {post.author_title}
-                                  </Text>
-                                </Stack>
-                              </Flex>
-                              <Menu shadow="md" radius="md" position="bottom-end">
-                                <Menu.Target>
-                                  <ActionIcon
-                                    variant="subtle"
-                                    color="gray"
-                                    size="sm"
-                                    radius="xl"
-                                    mr={{ base: 0, sm: 'xs' }}
-                                  >
-                                    <IconDots size={18} color="gray" />
-                                  </ActionIcon>
-                                </Menu.Target>
-                                <Menu.Dropdown>
-                                  <Menu.Item
-                                    leftSection={<IconArrowNarrowRightDashed size={14} />}
-                                    onClick={() => navigate(`/post/${post.id}`)}
-                                  >
-                                    Ver postagem
-                                  </Menu.Item>
-                                  <Menu.Item
-                                    leftSection={<IconUser size={14} />}
-                                    onClick={() => navigate(`/${post.author_username}`)}
-                                  >
-                                    Ver perfil de {post.author_username}
-                                  </Menu.Item>
-                                  <Menu.Item
-                                    leftSection={<IconLink size={14} />}
-                                    onClick={() =>
-                                      navigator.clipboard.writeText(
-                                        `${window.location.origin}/post/${post.id}`,
-                                      )
-                                    }
-                                  >
-                                    Copiar link
-                                  </Menu.Item>
-                                  {post.author_profile_id === user?.id && (
-                                    <>
-                                      <Menu.Divider />
-                                      <Menu.Item
-                                        color="red"
-                                        leftSection={<IconTrash size={14} />}
-                                        onClick={() => {
-                                          setPostToDelete(post.id)
-                                          openConfirmDeletePost()
-                                        }}
-                                      >
-                                        Apagar postagem
-                                      </Menu.Item>
-                                    </>
-                                  )}
-                                </Menu.Dropdown>
-                              </Menu>
-                            </Group>
-                            {/* Corpo da postagem */}
-                            {post.body && (
-                              <Text
-                                size="0.90em"
-                                c="var(--mantine-color-text)"
-                                lh={1.4}
-                                fw={420}
-                                my={7}
-                                onClick={(event) => handleTextClick(event, post.id)}
-                                style={{
-                                  textDecoration: 'none',
-                                  whiteSpace: 'pre-line',
-                                  cursor: 'pointer',
-                                }}
-                                className="paddingX"
+                          <Avatar
+                            size={36}
+                            radius="xl"
+                            src={
+                              post.author_avatar
+                                ? AVATAR_PATH + post.author_avatar
+                                : undefined
+                            }
+                            component={Link}
+                            to={`/${post.author_username}`}
+                            title={post.author_full_name}
+                          />
+                          <Flex mih={37} direction="column" justify="center" flex={1}>
+                            <Stack gap={0}>
+                              <Flex
+                                gap={post.author_is_verified ? 2 : 6}
+                                align="center"
+                                wrap="wrap"
                               >
-                                {parse(
-                                  linkifyStr(post.body, {
-                                    target: '_blank',
-                                    format: (value, type) => formatLinkText(value, type),
-                                  }),
+                                <Text
+                                  component={Link}
+                                  to={`/${post.author_username}`}
+                                  size="md"
+                                  fw={600}
+                                  lh={1}
+                                  c="var(--mantine-color-text)"
+                                  className="noDecoration"
+                                >
+                                  {post.author_username}
+                                </Text>
+                                {!!post.author_is_verified && (
+                                  <IconRosetteDiscountCheckFilled
+                                    className="iconVerified small"
+                                    title="Usuário verificado"
+                                  />
                                 )}
-                              </Text>
-                            )}
-                            {post.image && (
-                              <Link to={`/post/${post.id}`}>
-                                <Image
-                                  src={`https://ik.imagekit.io/mublin/posts/tr:w-700/${post.image}`}
-                                  className="post-image"
-                                  mt={2}
-                                />
-                              </Link>
-                            )}
-                            {post.video_source === 'mublin' && (
-                              <Box className="paddingX" mt={5}>
-                                <VideoPlayerNative
-                                  src={post.video_storage_path}
-                                  title={post.video_title}
-                                  isVertical={post.video_is_vertical ?? true}
-                                />
-                              </Box>
-                            )}
-                            {post.video_url && (
-                              <VideoPlayerYoutube
-                                url={post.video_url}
-                                title={post.body?.slice(0, 60)}
-                              />
-                            )}
-                            {(post.linked_gig_id || post.linked_product_id) && (
-                              <Box className="paddingX">
-                                <LinkedItem post={post} />
-                              </Box>
-                            )}
-
-                            <Group gap={4} mt={6} px={{ base: '0.4rem', sm: 0 }}>
-                              <LikeButton
-                                postId={post.id}
-                                userId={user?.id}
-                                liked={post.viewer_has_liked}
-                                likesCount={post.likes_count}
-                              />
-                              {!post.comments_disabled && (
-                                <Button
+                                {post.author_project_id && (
+                                  <Text size="xs" c="dimmed">
+                                    Projeto
+                                  </Text>
+                                )}
+                                <Text
+                                  size="xs"
+                                  fw={400}
+                                  c="var(--mantine-color-text)"
+                                  opacity={0.6}
+                                  title={dayjs(post.created_at).format(
+                                    'dddd, D [de] MMMM [de] YYYY [às] HH:mm',
+                                  )}
                                   component={Link}
                                   to={`/post/${post.id}`}
-                                  variant="subtle"
-                                  color="gray"
-                                  size="sm"
-                                  radius="md"
-                                  fw={400}
-                                  px={10}
-                                  leftSection={
-                                    post.comments_count > 0 && (
-                                      <IconMessageCircle size={21} />
-                                    )
-                                  }
+                                  style={{ textDecoration: 'none' }}
+                                  lh={1}
+                                  ml={3}
                                 >
-                                  {post.comments_count === 0 && (
-                                    <IconMessageCircle size={21} />
-                                  )}{' '}
-                                  {post.comments_count > 0 ? post.comments_count : ''}
-                                </Button>
+                                  {dayjs(post.created_at).fromNow()}
+                                </Text>
+                              </Flex>
+                              <Text
+                                size="xs"
+                                opacity={0.6}
+                                maw={240}
+                                fw={300}
+                                truncate="end"
+                                title={post.author_title}
+                              >
+                                {post.author_title}
+                              </Text>
+                            </Stack>
+                          </Flex>
+                          <Menu shadow="md" radius="md" position="bottom-end">
+                            <Menu.Target>
+                              <ActionIcon
+                                variant="subtle"
+                                color="gray"
+                                size="sm"
+                                radius="xl"
+                                mr={{ base: 0, sm: 'xs' }}
+                              >
+                                <IconDots size={18} color="gray" />
+                              </ActionIcon>
+                            </Menu.Target>
+                            <Menu.Dropdown>
+                              <Menu.Item
+                                leftSection={<IconArrowNarrowRightDashed size={14} />}
+                                onClick={() => navigate(`/post/${post.id}`)}
+                              >
+                                Ver postagem
+                              </Menu.Item>
+                              <Menu.Item
+                                leftSection={<IconUser size={14} />}
+                                onClick={() => navigate(`/${post.author_username}`)}
+                              >
+                                Ver perfil de {post.author_username}
+                              </Menu.Item>
+                              <Menu.Item
+                                leftSection={<IconLink size={14} />}
+                                onClick={() =>
+                                  navigator.clipboard.writeText(
+                                    `${window.location.origin}/post/${post.id}`,
+                                  )
+                                }
+                              >
+                                Copiar link
+                              </Menu.Item>
+                              {post.author_profile_id === user?.id && (
+                                <>
+                                  <Menu.Divider />
+                                  <Menu.Item
+                                    color="red"
+                                    leftSection={<IconTrash size={14} />}
+                                    onClick={() => {
+                                      setPostToDelete(post.id)
+                                      openConfirmDeletePost()
+                                    }}
+                                  >
+                                    Apagar postagem
+                                  </Menu.Item>
+                                </>
                               )}
-                            </Group>
-                          </Card>
-                        ))}
-                      </Stack>
+                            </Menu.Dropdown>
+                          </Menu>
+                        </Group>
+                        {/* Corpo da postagem */}
+                        {post.body && (
+                          <Text
+                            size="0.90em"
+                            c="var(--mantine-color-text)"
+                            lh={1.4}
+                            fw={420}
+                            my={7}
+                            onClick={(event) => handleTextClick(event, post.id)}
+                            style={{
+                              textDecoration: 'none',
+                              whiteSpace: 'pre-line',
+                              cursor: 'pointer',
+                            }}
+                            className="paddingX"
+                          >
+                            {parse(
+                              linkifyStr(post.body, {
+                                target: '_blank',
+                                format: (value, type) => formatLinkText(value, type),
+                              }),
+                            )}
+                          </Text>
+                        )}
+                        {post.image && (
+                          <Link to={`/post/${post.id}`}>
+                            <Image
+                              src={`https://ik.imagekit.io/mublin/posts/tr:w-700/${post.image}`}
+                              className="post-image"
+                              mt={2}
+                            />
+                          </Link>
+                        )}
+                        {post.video_url && (
+                          <VideoPlayerYoutube
+                            url={post.video_url}
+                            title={post.body?.slice(0, 60)}
+                          />
+                        )}
+                        {(post.linked_gig_id || post.linked_product_id) && (
+                          <Box className="paddingX">
+                            <LinkedItem post={post} />
+                          </Box>
+                        )}
 
-                      {hasNextPage && (
-                        <Button
-                          variant="subtle"
-                          color="gray"
-                          size="xs"
-                          fullWidth
-                          mt="sm"
-                          loading={isFetchingNextPage}
-                          onClick={() => fetchNextPage()}
-                        >
-                          Carregar mais
-                        </Button>
-                      )}
-                    </>
+                        <Group gap={4} mt={6} px={{ base: '0.4rem', sm: 0 }}>
+                          <LikeButton
+                            postId={post.id}
+                            userId={user?.id}
+                            liked={post.viewer_has_liked}
+                            likesCount={post.likes_count}
+                          />
+                          {!post.comments_disabled && (
+                            <Button
+                              component={Link}
+                              to={`/post/${post.id}`}
+                              variant="subtle"
+                              color="gray"
+                              size="sm"
+                              radius="md"
+                              fw={400}
+                              px={10}
+                              leftSection={
+                                post.comments_count > 0 && <IconMessageCircle size={21} />
+                              }
+                            >
+                              {post.comments_count === 0 && (
+                                <IconMessageCircle size={21} />
+                              )}{' '}
+                              {post.comments_count > 0 ? post.comments_count : ''}
+                            </Button>
+                          )}
+                        </Group>
+                      </Card>
+                    ))}
+                  </Stack>
+
+                  {hasNextPage && (
+                    <Button
+                      variant="subtle"
+                      color="gray"
+                      size="xs"
+                      fullWidth
+                      mt="sm"
+                      loading={isFetchingNextPage}
+                      onClick={() => fetchNextPage()}
+                    >
+                      Carregar mais
+                    </Button>
                   )}
-                </ScrollArea>
+                </>
               )}
-            </>
+            </ScrollArea>
           )}
         </Grid.Col>
         {(isDesktop || feedType === 'news') && (

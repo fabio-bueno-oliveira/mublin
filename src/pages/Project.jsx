@@ -1,17 +1,14 @@
-import { useState, useEffect } from 'react'
+import { useEffect } from 'react'
 import { Helmet } from 'react-helmet-async'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import {
   fetchProjectDetails,
   fetchprojectsInspirated,
-  fetchProjectAdmins,
   fetchProjectPeople,
   fetchProjectGenres,
   fetchMyProjectAdminRequest,
-  requestProjectAdminAccess,
-  fetchProjectClaimPolicy,
 } from '../queries/projects'
 import { fetchOpenProjectOpenings } from '../queries/projectOpenings'
 // prettier-ignore
@@ -22,24 +19,20 @@ import {
   Skeleton, em,
   Modal, Affix,
   Button, Badge,
-  Avatar, Image, ActionIcon,
+  Avatar, Image,
   Anchor, Title, Text,
-  Textarea,
   Card, Paper,
   Scroller, Tooltip, Popover,
   Tabs, Divider, ThemeIcon,
 } from '@mantine/core'
 import { useMediaQuery, useDisclosure } from '@mantine/hooks'
-import { notifications } from '@mantine/notifications'
 import {
   IconBrandInstagram,
   IconBrandSpotify,
   IconBrandSoundcloud,
   IconRoad,
-  IconInfoCircle,
   IconRosetteDiscountCheckFilled,
   IconArrowUpRight,
-  IconPencil,
   IconArrowRight,
   IconBriefcase2,
   IconChevronRight,
@@ -48,7 +41,7 @@ import {
 import AppNavbarMobile from '../components/AppNavbarMobile'
 import SimilarProjects from '../components/explore/SimilarProjects'
 import ProjectProfileBadge from '../components/ProjectProfileBadge'
-import SectionGigs from '../components/project/SectionGigs'
+import { SectionGigs, SectionPeople } from '../components/project'
 import { MEMBER_REQUEST_STATUS } from '../constants/projects'
 import dayjs from 'dayjs'
 import 'dayjs/locale/pt-br'
@@ -60,30 +53,10 @@ const ADMIN_REQUEST_STATUS = {
   DECLINED: 3,
 }
 
-function formatClaimPolicyMessage(policy) {
-  if (!policy) {
-    return 'Carregando regra de aprovação...'
-  }
-
-  if (policy.requires_curation) {
-    return 'Este é um projeto de grande visibilidade — sua solicitação será revisada manualmente pela curadoria do Mublin antes de ser aprovada.'
-  }
-
-  const hours = policy.auto_approval_hours
-  const isFullDays = hours % 24 === 0
-
-  const timeLabel = isFullDays
-    ? `${hours / 24} dia${hours / 24 > 1 ? 's' : ''}`
-    : `${hours} horas`
-
-  return `Para este projeto, sua solicitação ficará pendente de aprovação da curadoria do Mublin, ou será aprovada automaticamente em até ${timeLabel} caso ninguém conteste.`
-}
-
 export default function Project() {
   const { user } = useAuth()
   const { slug } = useParams()
   const isMobile = useMediaQuery(`(max-width: ${em(750)})`)
-  const queryClient = useQueryClient()
 
   const [searchParams, setSearchParams] = useSearchParams()
   const validTabs = ['overview', 'about', 'people', 'gigs', 'music']
@@ -148,13 +121,6 @@ export default function Project() {
     staleTime: 1000 * 60 * 5,
   })
 
-  const { data: projectAdmins = [], isLoading: loadingProjectAdmins } = useQuery({
-    queryKey: ['project-admins', project?.id],
-    queryFn: () => fetchProjectAdmins(project?.id),
-    enabled: !!project?.id,
-    staleTime: 1000 * 60 * 5,
-  })
-
   const { data: projectGenres = [], isLoading: loadingProjectGenres } = useQuery({
     queryKey: ['project-genres', project?.id],
     queryFn: () => fetchProjectGenres(project?.id),
@@ -195,22 +161,6 @@ export default function Project() {
     staleTime: 1000 * 30,
   })
 
-  const [claimModalOpened, { open: openClaimModal, close: closeClaimModal }] =
-    useDisclosure(false)
-
-  const [endorsementMessage, setEndorsementMessage] = useState('')
-
-  const {
-    data: claimPolicy,
-    isLoading: loadingClaimPolicy,
-    isError: claimPolicyError,
-  } = useQuery({
-    queryKey: ['project-claim-policy', project?.id],
-    queryFn: () => fetchProjectClaimPolicy(project?.id),
-    enabled: !!project?.id && claimModalOpened,
-    staleTime: 1000 * 60,
-  })
-
   /*
    * ─────────────────────────────────────────────
    * OPENINGS
@@ -227,61 +177,12 @@ export default function Project() {
 
   /*
    * ─────────────────────────────────────────────
-   * ADMIN MUTATION
-   * ─────────────────────────────────────────────
-   */
-
-  const requestAdminMutation = useMutation({
-    mutationFn: (message) => requestProjectAdminAccess(project.id, message),
-
-    onSuccess: (data) => {
-      const autoApproved = data?.status === ADMIN_REQUEST_STATUS.ACCEPTED
-
-      notifications.show({
-        title: autoApproved ? 'Você agora é administrador' : 'Solicitação enviada',
-        message: autoApproved
-          ? 'Como o projeto ainda não tinha administrador, seu acesso foi aprovado automaticamente.'
-          : 'Assim que um administrador atual responder, você será avisado.',
-        color: 'green',
-        position: 'top-center',
-      })
-
-      queryClient.invalidateQueries({
-        queryKey: ['project', slug],
-      })
-
-      queryClient.invalidateQueries({
-        queryKey: ['project-admins', project.id],
-      })
-
-      queryClient.invalidateQueries({
-        queryKey: ['project-admin-request', project.id, user.id],
-      })
-    },
-
-    onError: (error) => {
-      notifications.show({
-        title: 'Ops!',
-        message:
-          error?.message ||
-          'Não conseguimos solicitar acesso de admin a este projeto neste momento. Tente novamente em instantes.',
-        color: 'red',
-        position: 'top-center',
-      })
-    },
-  })
-
-  /*
-   * ─────────────────────────────────────────────
    * IMAGE PATHS
    * ─────────────────────────────────────────────
    */
 
   const AVATAR_PATH =
     'https://ik.imagekit.io/mublin/tr:h-200,c-maintain_ratio/users/avatars/'
-
-  const AVATAR_MINI_PATH =
-    'https://ik.imagekit.io/mublin/tr:h-35,c-maintain_ratio/users/avatars/'
 
   const AVATAR_MINI2_PATH =
     'https://ik.imagekit.io/mublin/tr:h-22,c-maintain_ratio/users/avatars/'
@@ -291,12 +192,6 @@ export default function Project() {
 
   const PICTURE_AVATAR_LARGE_PATH = `https://ik.imagekit.io/mublin/projects/${project?.id}/tr:h-400,w-400,c-maintain_ratio/`
 
-  /*
-   * A capa agora é maior.
-   *
-   * Evitamos fixar 100px como anteriormente porque ela passa
-   * a funcionar como parte real da identidade visual.
-   */
   const PICTURE_COVER_PATH = `https://ik.imagekit.io/mublin/projects/${project?.id}/tr:h-500,w-1400,fo-top,c-maintain_ratio/`
 
   const DEFAULT_COVER_PICTURE =
@@ -330,40 +225,8 @@ export default function Project() {
 
   const hasSocialLinks = project?.instagram || project?.spotify_id || project?.soundcloud
 
-  const handleOpenClaimModal = () => {
-    if (!user?.id) {
-      notifications.show({
-        title: 'Faça login',
-        message: 'Você precisa estar logado para solicitar acesso de admin.',
-        color: 'red',
-        position: 'top-center',
-      })
-
-      return
-    }
-
-    setEndorsementMessage('')
-    openClaimModal()
-  }
-
-  const handleConfirmClaimRequest = () => {
-    requestAdminMutation.mutate(endorsementMessage, {
-      onSuccess: closeClaimModal,
-    })
-  }
-
-  // projectGenres vem como { genre: { name_ptbr } }
   const validGenreNames =
     projectGenres?.map((g) => g?.genre?.name_ptbr || g?.name_ptbr).filter(Boolean) ?? []
-
-  const hasValidGenres = validGenreNames.length > 0
-  const hasFallbackGenre = !!project?.genre
-
-  // REGRA QUE VOCÊ PEDIU: interpunct só se tiver registro em projectGenres
-  const shouldShowDot =
-    !!project?.project_type && (loadingProjectGenres || hasValidGenres)
-
-  const shouldShowGenreBlock = loadingProjectGenres || hasValidGenres || hasFallbackGenre
 
   return (
     <>
@@ -577,24 +440,6 @@ export default function Project() {
                               </Text>
                             )}
 
-                            {shouldShowGenreBlock && (
-                              <>
-                                {shouldShowDot && (
-                                  <Text size="sm" c="rgba(255,255,255,.35)">
-                                    ·
-                                  </Text>
-                                )}
-
-                                <Text size="sm" c="rgba(255,255,255,.76)">
-                                  {loadingProjectGenres
-                                    ? 'Carregando...'
-                                    : hasValidGenres
-                                      ? validGenreNames.join(', ')
-                                      : project.genre}
-                                </Text>
-                              </>
-                            )}
-
                             <ProjectProfileBadge projectId={project?.id} />
                           </Group>
                         </>
@@ -651,8 +496,7 @@ export default function Project() {
                   <Tabs.Tab value="about">Sobre</Tabs.Tab>
 
                   <Tabs.Tab value="people">
-                    Pessoas associadas{' '}
-                    {projectPeople?.length > 0 && `(${projectPeople.length})`}
+                    Pessoas {projectPeople?.length > 0 && `(${projectPeople.length})`}
                   </Tabs.Tab>
 
                   <Tabs.Tab value="gigs">Gigs</Tabs.Tab>
@@ -995,38 +839,41 @@ export default function Project() {
                      */}
 
                     <Card withBorder radius="lg" p="lg">
-                      <Stack gap="sm">
+                      <Stack gap="xs">
                         {project?.slug && (
-                          <Group justify="flex-end">
-                            <Text size="xs" c="dimmed">
-                              mublin.com/project/{project.slug}
-                            </Text>
-                          </Group>
+                          <Divider
+                            label={`mublin.com/project/${project.slug}`}
+                            labelPosition="right"
+                            opacity={0.6}
+                          />
                         )}
 
                         {project?.project_type && (
                           <Group justify="space-between" gap="md">
-                            <Text size="sm" c="dimmed">
+                            <Text size="xs" c="dimmed">
                               Tipo
                             </Text>
 
-                            <Text size="sm" fw={500}>
-                              {project.project_type}
-                            </Text>
+                            <Text size="xs">{project.project_type}</Text>
                           </Group>
                         )}
 
-                        {project?.genre && (
-                          <Group justify="space-between" gap="md">
-                            <Text size="sm" c="dimmed">
-                              Gênero
-                            </Text>
+                        <Group
+                          justify="space-around"
+                          align="flex-start"
+                          wrap="nowrap"
+                          gap="md"
+                        >
+                          <Text size="xs" c="dimmed">
+                            {validGenreNames.length === 1 ? 'Gênero' : 'Gêneros'}
+                          </Text>
 
-                            <Text size="sm" fw={500}>
-                              {project.genre}
-                            </Text>
-                          </Group>
-                        )}
+                          <Text size="xs" ta="right">
+                            {loadingProjectGenres
+                              ? 'Carregando gêneros musicais...'
+                              : validGenreNames.join(', ')}
+                          </Text>
+                        </Group>
 
                         {openProjectOpenings.length > 0 && (
                           <Group justify="space-between" gap="md">
@@ -1201,15 +1048,12 @@ export default function Project() {
                   )}
 
                   {project?.foundation_year && (
-                    <>
-                      <Divider my="sm" />
-                      <Text size="xs" lh={1}>
-                        <Text span c="dimmed">
-                          Ano de fundação:
-                        </Text>{' '}
-                        {project.foundation_year}
-                      </Text>
-                    </>
+                    <Text size="xs" lh={1} mt="sm">
+                      <Text span c="dimmed">
+                        Ano de fundação:
+                      </Text>{' '}
+                      {project.foundation_year}
+                    </Text>
                   )}
 
                   {project?.is_verified && (
@@ -1286,172 +1130,11 @@ export default function Project() {
              */}
 
             {activeTab === 'people' && (
-              <Container size="lg" px={{ base: 'sm', sm: 'md' }}>
-                <Stack gap="xl">
-                  <Box>
-                    <Title order={3} fz="lg" fw={600} mb="xs">
-                      Administradores
-                    </Title>
-
-                    {loadingProjectAdmins ? (
-                      <Skeleton h={60} radius="md" />
-                    ) : projectAdmins.length > 0 ? (
-                      <Group gap="sm">
-                        {projectAdmins.map((person) => (
-                          <Paper key={person.id} withBorder radius="md" p="sm">
-                            <Group gap="sm">
-                              <Avatar
-                                component={Link}
-                                to={`/${person?.profile?.username}`}
-                                size={38}
-                                src={`${AVATAR_MINI_PATH}${person?.profile?.avatar}`}
-                              />
-
-                              <Box>
-                                <Text size="sm" fw={500}>
-                                  {person?.profile?.full_name}
-                                </Text>
-
-                                <Text size="xs" c="dimmed">
-                                  @{person?.profile?.username}
-                                </Text>
-                              </Box>
-                            </Group>
-                          </Paper>
-                        ))}
-                      </Group>
-                    ) : userIsAdmin ? null : myAdminRequestIsPending ? (
-                      <Text c="dimmed" size="sm">
-                        Nenhum administrador neste projeto. Sua solicitação está sendo
-                        processada
-                      </Text>
-                    ) : (
-                      <Text c="dimmed" size="sm">
-                        Nenhum administrador neste projeto
-                      </Text>
-                    )}
-                    <Text mt="xs" c="dimmed" size="xs">
-                      É fundador ou faz parte do staff?{' '}
-                      <Text
-                        span
-                        fw={500}
-                        c="var(--mantine-color-text)"
-                        style={{
-                          cursor: 'pointer',
-                        }}
-                        onClick={handleOpenClaimModal}
-                      >
-                        Quero ser administrador
-                      </Text>
-                    </Text>
-                  </Box>
-
-                  <Box>
-                    <Title order={3} fz="lg" fw={600} mb="xs">
-                      Pessoas associadas
-                    </Title>
-
-                    {loadingProjectPeople ? (
-                      <SimpleGrid
-                        cols={{
-                          base: 2,
-                          sm: 3,
-                          md: 4,
-                        }}
-                      >
-                        {[1, 2, 3, 4].map((item) => (
-                          <Skeleton key={item} h={160} radius="lg" />
-                        ))}
-                      </SimpleGrid>
-                    ) : projectPeople.length > 0 ? (
-                      <SimpleGrid
-                        cols={{
-                          base: 2,
-                          sm: 3,
-                          md: 4,
-                        }}
-                        spacing="sm"
-                      >
-                        {projectPeople.map((person) => (
-                          <Paper
-                            key={person.id}
-                            withBorder
-                            radius="lg"
-                            p="sm"
-                            pos="relative"
-                          >
-                            {userIsAdmin && (
-                              <ActionIcon
-                                pos="absolute"
-                                top={8}
-                                right={8}
-                                variant="subtle"
-                                color="gray"
-                                aria-label="Editar pessoa"
-                                component={Link}
-                                to="/settings/portfolio"
-                              >
-                                <IconPencil size={15} />
-                              </ActionIcon>
-                            )}
-
-                            <Stack gap={5} align="center">
-                              <Avatar
-                                component={Link}
-                                to={`/${person?.profile?.username}`}
-                                size={64}
-                                src={`${AVATAR_PATH}${person.profile?.avatar}`}
-                              />
-
-                              <Text
-                                component={Link}
-                                to={`/${person?.profile?.username}`}
-                                fz="13px"
-                                fw={600}
-                                ta="center"
-                                lineClamp={1}
-                                style={{
-                                  textDecoration: 'none',
-                                  color: 'inherit',
-                                }}
-                              >
-                                {person.profile.full_name}
-                              </Text>
-
-                              {person.engagement_types?.length > 0 && (
-                                <Badge size="xs" fw={400} variant="light">
-                                  {person.engagement_types
-                                    .map((e) => e.engagement_type.name_ptbr)
-                                    .join(', ')}
-                                </Badge>
-                              )}
-
-                              <Text
-                                fz="11px"
-                                ta="center"
-                                c="dimmed"
-                                lh={1.2}
-                                lineClamp={2}
-                              >
-                                {person.roles?.map((r) => r.role.name_ptbr).join(', ')}
-                              </Text>
-
-                              <Text fz="11px" ta="center" opacity={0.7}>
-                                {person.year_start}
-                                {person.year_end && ` › ${person.year_end}`}
-                              </Text>
-                            </Stack>
-                          </Paper>
-                        ))}
-                      </SimpleGrid>
-                    ) : (
-                      <Text c="dimmed" size="sm">
-                        Nenhum perfil associado a este projeto até o momento
-                      </Text>
-                    )}
-                  </Box>
-                </Stack>
-              </Container>
+              <SectionPeople
+                projectId={project?.id}
+                userIsAdmin={userIsAdmin}
+                myAdminRequestIsPending={myAdminRequestIsPending}
+              />
             )}
 
             {/*
@@ -1569,79 +1252,6 @@ export default function Project() {
           </Modal.Body>
         </Modal.Content>
       </Modal.Root>
-
-      {/*
-       * ════════════════════════════════════════════════
-       * CLAIM PROJECT MODAL
-       * ════════════════════════════════════════════════
-       */}
-
-      <Modal
-        opened={claimModalOpened}
-        onClose={closeClaimModal}
-        title="Solicitar acesso de administrador"
-        centered
-      >
-        <Stack gap="sm">
-          <Text size="sm">
-            Como administrador, você poderá editar as informações do projeto, publicar
-            vagas e aprovar outras pessoas como staff ou demais administradores.
-          </Text>
-
-          {loadingClaimPolicy ? (
-            <Skeleton h={44} radius="md" />
-          ) : (
-            <Paper withBorder radius="md" p="xs">
-              <Group gap={8} wrap="nowrap" align="flex-start">
-                <IconInfoCircle
-                  color="orange"
-                  size={24}
-                  style={{ marginTop: 2, flexShrink: 0 }}
-                />
-                <Text size="xs">
-                  {claimPolicyError
-                    ? 'Não foi possível carregar a regra de aprovação. Sua solicitação será analisada pela curadoria do Mublin.'
-                    : formatClaimPolicyMessage(claimPolicy)}
-                </Text>
-              </Group>
-            </Paper>
-          )}
-
-          {claimPolicy?.associates_count > 0 && (
-            <Text size="xs" c="dimmed">
-              Este projeto já aparece no portfólio de {claimPolicy.associates_count}{' '}
-              pessoa
-              {claimPolicy.associates_count > 1 ? 's' : ''} — isso será considerado para
-              sua aprovação.
-            </Text>
-          )}
-
-          <Textarea
-            label="Mensagem (opcional)"
-            placeholder="Conte brevemente por que você deveria administrar este projeto..."
-            value={endorsementMessage}
-            onChange={(e) => setEndorsementMessage(e.currentTarget.value)}
-            maxLength={500}
-            autosize
-            minRows={2}
-            maxRows={5}
-          />
-
-          <Group justify="flex-end" mt="xs">
-            <Button variant="default" onClick={closeClaimModal}>
-              Cancelar
-            </Button>
-
-            <Button
-              color="mublinColor"
-              loading={requestAdminMutation.isPending}
-              onClick={handleConfirmClaimRequest}
-            >
-              Solicitar acesso
-            </Button>
-          </Group>
-        </Stack>
-      </Modal>
     </>
   )
 }

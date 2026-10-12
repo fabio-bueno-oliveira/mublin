@@ -98,8 +98,7 @@ export default function AppNavbarMobile({
               fit="contain"
             />
             <Badge
-              variant="gradient"
-              gradient={{ from: 'mublinColor', to: 'blue', deg: 96 }}
+              color="dark"
               size="md"
               mt={3}
               px={5}
