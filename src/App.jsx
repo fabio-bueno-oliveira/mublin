@@ -138,7 +138,7 @@ export default function App() {
   return (
     <MantineProvider
       theme={theme}
-      defaultColorScheme="auto"
+      defaultColorScheme="dark"
       colorSchemeManager={colorSchemeManager}
       cssVariablesResolver={resolver}
     >

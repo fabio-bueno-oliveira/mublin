@@ -36,24 +36,22 @@ export default function MyProjects() {
     staleTime: 1000 * 60 * 4,
   })
 
-  const userProjects = projects
-    .filter((x) => x.is_admin)
-    .map((p) => ({
-      id: p?.project?.id,
-      name: p?.project?.name,
-      slug: p?.project?.slug,
-      end_year: p?.project?.end_year,
-      is_admin: p?.is_admin,
-      is_founder: p?.is_founder,
-      picture: p?.project?.picture,
-      request_status: p?.status,
-      activity_status: p?.project?.activity_status,
-      activity_status_name: p?.project?.status?.description_ptbr,
-      activity_status_color: p?.project?.status?.color,
-      genre: p?.project?.genre?.name,
-      type: p?.project?.type?.name_ptbr,
-      totalMembers: p?.project?.members?.length || 0,
-    }))
+  const userProjects = projects.map((p) => ({
+    id: p?.project?.id,
+    name: p?.project?.name,
+    slug: p?.project?.slug,
+    end_year: p?.project?.end_year,
+    is_admin: p?.is_admin,
+    is_founder: p?.is_founder,
+    picture: p?.project?.picture,
+    request_status: p?.status,
+    activity_status: p?.project?.activity_status,
+    activity_status_name: p?.project?.status?.description_ptbr,
+    activity_status_color: p?.project?.status?.color,
+    genre: p?.project?.genre?.name,
+    type: p?.project?.type?.name_ptbr,
+    totalMembers: p?.project?.members?.length || 0,
+  }))
 
   const filteredProjects = normalizedQuery
     ? userProjects.filter((project) =>
@@ -80,7 +78,7 @@ export default function MyProjects() {
     <>
       <Helmet>
         <meta charSet="utf-8" />
-        <title>Meus projetos · Mublin</title>
+        <title>Meus projetos | Mublin</title>
         <link rel="canonical" href="https://mublin.com/projects" />
         <meta name="description" content="Projetos de música em que estou associado" />
       </Helmet>
@@ -113,15 +111,62 @@ export default function MyProjects() {
               onChange={(e) => setSearchQuery(e.target.value)}
               disabled={loadingProjects || loadingPortfolio}
             />
-            <Tabs defaultValue="portfolio">
+            <Tabs defaultValue="admin">
               <Tabs.List>
+                <Tabs.Tab value="admin">
+                  Sou administrador/staff ({filteredProjects.length})
+                </Tabs.Tab>
                 <Tabs.Tab value="portfolio">
                   Portfolio ({filteredPortfolio.length})
                 </Tabs.Tab>
-                <Tabs.Tab value="admin">
-                  Sou administrador ({filteredProjects.length})
-                </Tabs.Tab>
               </Tabs.List>
+
+              <Tabs.Panel value="admin" mt="sm">
+                {userProjects.length > 0 ? (
+                  <>
+                    {filteredProjects.length > 0 ? (
+                      <Stack gap={0}>
+                        {filteredProjects.map((project) => (
+                          <NavLink
+                            key={project.id}
+                            // href={`#/project/${project?.slug}`}
+                            component={Link}
+                            to={`/project/${project?.slug}`}
+                            label={project.name}
+                            description={[
+                              project.type,
+                              project.genre,
+                              project.end_year && `Encerrado em ${project.end_year}`,
+                            ]
+                              .filter(Boolean)
+                              .join(' · ')}
+                            leftSection={
+                              <Avatar
+                                size={50}
+                                radius="md"
+                                src={
+                                  project?.picture
+                                    ? `${PROJECT_AVATAR_PATH}/${project?.id}/tr:h-100,w-100,c-maintain_ratio/${project?.picture}`
+                                    : undefined
+                                }
+                                title={project.name}
+                              />
+                            }
+                          />
+                        ))}
+                      </Stack>
+                    ) : (
+                      <Text size="sm" c="dimmed">
+                        Nenhum projeto encontrado
+                      </Text>
+                    )}
+                  </>
+                ) : (
+                  <Text size="xs" c="dimmed">
+                    Você não é administrador de nenhum projeto no momento
+                  </Text>
+                )}
+              </Tabs.Panel>
 
               <Tabs.Panel value="portfolio" mt="sm">
                 {userPortfolio.length > 0 ? (
@@ -188,53 +233,6 @@ export default function MyProjects() {
                 ) : (
                   <Text size="xs" c="dimmed">
                     Você ainda não possui projetos no seu portfólio
-                  </Text>
-                )}
-              </Tabs.Panel>
-
-              <Tabs.Panel value="admin" mt="sm">
-                {userProjects.length > 0 ? (
-                  <>
-                    {filteredProjects.length > 0 ? (
-                      <Stack gap={0}>
-                        {filteredProjects.map((project) => (
-                          <NavLink
-                            key={project.id}
-                            // href={`#/project/${project?.slug}`}
-                            component={Link}
-                            to={`/project/${project?.slug}`}
-                            label={project.name}
-                            description={[
-                              project.type,
-                              project.genre,
-                              project.end_year && `Encerrado em ${project.end_year}`,
-                            ]
-                              .filter(Boolean)
-                              .join(' · ')}
-                            leftSection={
-                              <Avatar
-                                size={50}
-                                radius="md"
-                                src={
-                                  project?.picture
-                                    ? `${PROJECT_AVATAR_PATH}/${project?.id}/tr:h-100,w-100,c-maintain_ratio/${project?.picture}`
-                                    : undefined
-                                }
-                                title={project.name}
-                              />
-                            }
-                          />
-                        ))}
-                      </Stack>
-                    ) : (
-                      <Text size="sm" c="dimmed">
-                        Nenhum projeto encontrado
-                      </Text>
-                    )}
-                  </>
-                ) : (
-                  <Text size="xs" c="dimmed">
-                    Você não é administrador de nenhum projeto no momento
                   </Text>
                 )}
               </Tabs.Panel>

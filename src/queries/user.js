@@ -187,7 +187,7 @@ export async function fetchUserAdminProjects(userId) {
     )
     .eq('profile_id', userId)
     .eq('projects.project_members.status', 2)
-    .eq('is_admin', true)
+  // .eq('is_admin', true)
   if (error) {
     throw new Error(error.message)
   }

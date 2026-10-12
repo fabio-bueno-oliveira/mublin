@@ -136,6 +136,13 @@ export default function Backstage() {
       m.status === MEMBER_REQUEST_STATUS.ACCEPTED,
   )
 
+  const userIsStaff = project?.members?.some(
+    (m) =>
+      m.profile_id === user?.id &&
+      !m.is_admin &&
+      m.status === MEMBER_REQUEST_STATUS.ACCEPTED,
+  )
+
   const { data: projectStatuses = [], isLoading: loadingProjectStatuses } = useQuery({
     queryKey: ['project-statuses'],
     queryFn: fetchProjectStatuses,
@@ -560,7 +567,7 @@ export default function Backstage() {
     )
   }
 
-  if (!userIsAdmin) {
+  if (!userIsAdmin && !userIsStaff) {
     return (
       <Container size="sm" py="xl">
         <Card withBorder radius="lg" p="xl">

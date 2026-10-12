@@ -18,6 +18,7 @@ export default function SimilarProjects({
   projectId,
   limit = 5,
   title = 'Projetos similares',
+  mx,
 }) {
   const {
     data: projects = [],
@@ -35,7 +36,7 @@ export default function SimilarProjects({
   }
 
   return (
-    <Stack gap="xs">
+    <Stack gap="xs" mx={mx}>
       <Title order={3} fw={600} size="17px" mb={0}>
         {title}
       </Title>

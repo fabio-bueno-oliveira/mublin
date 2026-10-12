@@ -37,6 +37,9 @@ import {
   IconBriefcase2,
   IconChevronRight,
   IconExternalLink,
+  IconSparkle,
+  IconSparkle2,
+  IconSparkles,
 } from '@tabler/icons-react'
 import AppNavbarMobile from '../components/AppNavbarMobile'
 import SimilarProjects from '../components/explore/SimilarProjects'
@@ -54,7 +57,7 @@ const ADMIN_REQUEST_STATUS = {
 }
 
 export default function Project() {
-  const { user } = useAuth()
+  const { user, profile } = useAuth()
   const { slug } = useParams()
   const isMobile = useMediaQuery(`(max-width: ${em(750)})`)
 
@@ -62,6 +65,7 @@ export default function Project() {
   const validTabs = ['overview', 'about', 'people', 'gigs', 'music']
   const section = searchParams.get('section')
   const activeTab = validTabs.includes(section) ? section : 'overview'
+
   const setActiveTab = (tab) => {
     setSearchParams((prev) => {
       const params = new URLSearchParams(prev)
@@ -106,6 +110,10 @@ export default function Project() {
 
   const userIsAdmin =
     userMembership?.is_admin === true &&
+    userMembership?.status === MEMBER_REQUEST_STATUS.ACCEPTED
+
+  const userIsStaff =
+    userMembership?.is_admin === false &&
     userMembership?.status === MEMBER_REQUEST_STATUS.ACCEPTED
 
   /*
@@ -183,7 +191,8 @@ export default function Project() {
 
   const AVATAR_PATH =
     'https://ik.imagekit.io/mublin/tr:h-200,c-maintain_ratio/users/avatars/'
-
+  const AVATAR_MINI1_PATH =
+    'https://ik.imagekit.io/mublin/tr:h-70,c-maintain_ratio/users/avatars/'
   const AVATAR_MINI2_PATH =
     'https://ik.imagekit.io/mublin/tr:h-22,c-maintain_ratio/users/avatars/'
 
@@ -254,7 +263,7 @@ export default function Project() {
         </Affix>
       )}
 
-      <Container fluid pb="xl" px={0} mt={{ base: 10, sm: 20 }}>
+      <Container fluid px={0} mt={{ base: 10, sm: 20 }}>
         <Grid>
           <Grid.Col span={{ base: 12, sm: 9.5 }}>
             {/*
@@ -318,7 +327,7 @@ export default function Project() {
                  * ─────────────────────────────────────────────
                  */}
 
-                {userIsAdmin && project?.id && (
+                {(userIsAdmin || userIsStaff) && project?.id && (
                   <Button
                     component="a"
                     href={`/backstage/${project.id}`}
@@ -326,14 +335,9 @@ export default function Project() {
                     pos="absolute"
                     top={{ base: 30, sm: 20 }}
                     right={{ base: 20, sm: 20 }}
-                    size="xs"
-                    variant="white"
+                    size="sm"
                     color="dark"
                     rightSection={<IconArrowUpRight size={14} />}
-                    style={{
-                      backdropFilter: 'blur(12px)',
-                      border: '1px solid rgba(255,255,255,.12)',
-                    }}
                   >
                     Backstage
                   </Button>
@@ -559,7 +563,7 @@ export default function Project() {
                           <Button
                             radius="md"
                             fullWidth
-                            size="compact-xs"
+                            size="compact-sm"
                             variant="transparent"
                             color="var(--mantine-color-text)"
                             onClick={() => setActiveTab('about')}
@@ -838,7 +842,7 @@ export default function Project() {
                      * PROJECT SNAPSHOT
                      */}
 
-                    <Card withBorder radius="lg" p="lg">
+                    <Card withBorder radius="lg" px="lg" py="md">
                       <Stack gap="xs">
                         {project?.slug && (
                           <Divider
@@ -907,6 +911,49 @@ export default function Project() {
                         )}
                       </Stack>
                     </Card>
+
+                    {/*
+                     * ADMIN FEATURES
+                     */}
+
+                    {(userIsAdmin || userIsStaff) && (
+                      <Card withBorder radius="lg" px="lg" py="">
+                        <Stack gap={6}>
+                          <Group align="flex-start" gap="lg" wrap="nowrap">
+                            <Text flex={1} fw={500} size="md">
+                              Você tem acesso ao Backstage deste projeto
+                            </Text>
+                            <IconSparkles />
+                          </Group>
+                          <Text size="xs" c="dimmed">
+                            O Backstage é onde você gerencia todos os dados e atualizações
+                          </Text>
+                          <Group gap={6} mt={4} mb={8}>
+                            <Avatar
+                              size={35}
+                              src={`${AVATAR_MINI1_PATH}${profile?.avatar}`}
+                            />
+                            <Stack gap={2}>
+                              <Text size="sm" c="dimmed" lh={1}>
+                                {profile?.full_name}
+                              </Text>
+                              <Text size="xs" lh={1}>
+                                {userIsAdmin ? 'Administrador' : userIsStaff && 'Staff'}
+                              </Text>
+                            </Stack>
+                          </Group>
+                          <Button
+                            component="a"
+                            href={`/backstage/${project.id}`}
+                            size="sm"
+                            color="mublinColor"
+                            rightSection={<IconArrowUpRight size={14} />}
+                          >
+                            Acessar Backstage
+                          </Button>
+                        </Stack>
+                      </Card>
+                    )}
 
                     {/*
                      * SOCIAL
@@ -1214,7 +1261,13 @@ export default function Project() {
             )}
           </Grid.Col>
           <Grid.Col span={{ base: 12, md: 2.5 }}>
-            <SimilarProjects projectId={project?.id} title="Descubra mais" />
+            {((activeTab === 'overview' && isMobile) || !isMobile) && (
+              <SimilarProjects
+                projectId={project?.id}
+                title="Pessoas também viram"
+                mx={{ base: 'md', sm: 0 }}
+              />
+            )}
           </Grid.Col>
         </Grid>
       </Container>

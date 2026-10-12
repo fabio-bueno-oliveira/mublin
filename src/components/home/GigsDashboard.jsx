@@ -7,7 +7,7 @@ import {
   Grid, Stack,
   Group, Center, Table,
   Box, Card, Paper,
-  Text, Title, Anchor, Avatar,
+  Text, Title, Avatar,
   Select, Switch, Slider,
   Button, Badge, Modal,
   Popover, Divider,
@@ -258,7 +258,17 @@ export default function GigsDashboard() {
 
   return (
     <>
-      <Card radius="lg" withBorder p="sm" mb="md" mt={{ base: 2, sm: 8 }}>
+      <Card
+        radius="lg"
+        withBorder
+        p="sm"
+        mb="md"
+        mt={{ base: 2, sm: 8 }}
+        // style={{
+        //   borderTop:
+        //     '3px solid light-dark(var(--mantine-color-mublinColor-7), var(--mantine-color-mublinColor-7))',
+        // }}
+      >
         <Group justify="space-between" mb="xs">
           <Group gap={6}>
             <Avatar
@@ -278,8 +288,8 @@ export default function GigsDashboard() {
           </Group>
           <Button
             size="xs"
-            variant="subtle"
-            color="var(--mantine-color-text)"
+            variant="filled"
+            color="mublinColor"
             leftSection={<IconPlus size={14} />}
             onClick={() => navigate('/new/gig')}
           >
@@ -503,7 +513,7 @@ export default function GigsDashboard() {
               <Text c="dimmed" ta="center" size="sm">
                 Nenhuma gig nesta data.{' '}
               </Text>
-              <Center mt={0}>
+              {/* <Center mt={0}>
                 <Anchor
                   c="var(--mantine-color-text)"
                   underline="hover"
@@ -514,7 +524,7 @@ export default function GigsDashboard() {
                 >
                   + criar nova
                 </Anchor>
-              </Center>
+              </Center> */}
             </Box>
           ) : (
             <Table withRowBorders={false}>
