@@ -10,6 +10,7 @@ import {
   Title,
   Text,
   Stack,
+  Spoiler,
   Skeleton,
   Avatar,
   Center,
@@ -44,14 +45,10 @@ export default function Venue() {
         <meta charSet="utf-8" />
         <title>{venue?.name ? `${venue.name} · Mublin` : 'Mublin'}</title>
         <link rel="canonical" href={`https://mublin.com/venue/${venue?.slug || ''}`} />
-        <meta
-          name="description"
-          content={`Informações de '${venue?.name || ''}' no Mublin`}
-        />
       </Helmet>
 
       <Affix position={{ top: 0, left: 0 }} hiddenFrom="sm">
-        <AppNavbarMobile pageName="Figura mainstream" />
+        <AppNavbarMobile pageName="Detalhes de local ou estabelecimento" />
       </Affix>
 
       <Container size="sm" py="xs" px={{ base: 'md', sm: 0 }} mt={{ base: 62, sm: 0 }}>
@@ -86,13 +83,35 @@ export default function Venue() {
                       <Text size="xs" opacity={0.8}>
                         {venue?.venue_types.name} · Capacidade: {venue?.capacity} pessoas
                       </Text>
-                      <Text mt="md" size="sm" c="dimmed" lineClamp={2}>
-                        {venue?.description}
-                      </Text>
-                      <Text size="sm" mt="lg">
+                      <Spoiler
+                        mt="sm"
+                        maxHeight={70}
+                        showLabel={
+                          <Text size="sm" c="var(--mantine-color-text)">
+                            Ver mais
+                          </Text>
+                        }
+                        hideLabel={
+                          <Text size="sm" c="var(--mantine-color-text)">
+                            Ver menos
+                          </Text>
+                        }
+                        transitionDuration={200}
+                      >
+                        <Text
+                          size="sm"
+                          style={{
+                            whiteSpace: 'pre-wrap',
+                            lineHeight: 1.6,
+                          }}
+                        >
+                          {venue?.description}
+                        </Text>
+                      </Spoiler>
+                      <Text size="sm" mt="lg" c="dimmed">
                         {venue?.address}, {venue?.address_number} - {venue?.neighborhood}
                       </Text>
-                      <Text size="sm">
+                      <Text size="sm" c="dimmed">
                         {venue?.cities.name},{' '}
                         {venue?.regions?.regions?.uf ?? venue?.regions?.regions?.name}
                       </Text>
