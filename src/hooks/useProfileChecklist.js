@@ -79,7 +79,7 @@ export function useProfileChecklist() {
     },
     {
       key: 'bio',
-      label: 'Escreva sua bio',
+      label: 'Escreva uma bio',
       completed: hasBio,
       href: '/settings/profile',
       count: hasBio ? 1 : 0,

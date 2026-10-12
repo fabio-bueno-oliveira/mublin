@@ -13,7 +13,7 @@ const SIZES = {
 
 function getArtistMainRole(artist) {
   const roles = artist.artist_roles ?? []
-  if (!roles.length) {
+  if (!roles?.length) {
     return null
   }
   const main = roles.find((role) => role.is_main_role) ?? roles[0]

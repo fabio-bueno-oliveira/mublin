@@ -37,8 +37,6 @@ import {
   IconBriefcase2,
   IconChevronRight,
   IconExternalLink,
-  IconSparkle,
-  IconSparkle2,
   IconSparkles,
 } from '@tabler/icons-react'
 import AppNavbarMobile from '../components/AppNavbarMobile'
@@ -863,7 +861,7 @@ export default function Project() {
                         )}
 
                         <Group
-                          justify="space-around"
+                          justify="space-between"
                           align="flex-start"
                           wrap="nowrap"
                           gap="md"
@@ -918,7 +916,7 @@ export default function Project() {
 
                     {(userIsAdmin || userIsStaff) && (
                       <Card withBorder radius="lg" px="lg" py="">
-                        <Stack gap={6}>
+                        <Stack gap={5}>
                           <Group align="flex-start" gap="lg" wrap="nowrap">
                             <Text flex={1} fw={500} size="md">
                               Você tem acesso ao Backstage deste projeto

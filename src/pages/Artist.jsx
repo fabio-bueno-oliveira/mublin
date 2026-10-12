@@ -210,7 +210,7 @@ export default function Artist() {
                       <Skeleton width={200} height={16} />
                     ) : (
                       roles &&
-                      roles.length > 0 && (
+                      roles?.length > 0 && (
                         <Group justify="center" gap="xs" mt="xs" wrap="wrap" w="75%">
                           {roles.map((item) => (
                             <Badge

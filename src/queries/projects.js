@@ -66,6 +66,36 @@ export async function fetchProjectDetails(slug) {
   }
 }
 
+export async function fetchProjectPublicDetails(slug) {
+  const { data, error } = await supabase
+    .from('projects')
+    .select(
+      `
+      id,
+      name, slug,
+      picture,
+      description,
+      on_tour,
+      is_public,
+      is_verified,
+      genres ( id, name_ptbr ),
+      type:project_types ( name_ptbr ),
+      activity_status,
+      cities ( name, regions ( name, uf ), countries ( name, name_ptbr ) ),
+      status:project_statuses ( description_ptbr, color )
+    `,
+    )
+    .eq('slug', slug)
+    .eq('is_public', true)
+    .eq('is_active', true)
+    .single()
+
+  if (error) {
+    throw new Error(error.message)
+  }
+  return data
+}
+
 export async function fetchProjectDetailsById(projectId) {
   const { data, error } = await supabase
     .from('projects')
@@ -679,4 +709,51 @@ export async function fetchProjectProfile(projectId) {
     throw new Error(error.message)
   }
   return data?.[0] ?? null
+}
+
+// Projetos relacionados manualmente (tabela project_related), ex.: Bruno Mars -> The Hooligans.
+// Retorna apenas relacionados públicos e ativos, priorizando o is_main e depois
+// display_order (menor = primeiro; nulos vão para o final).
+// Retorna: [{ id, name, slug, picture, genre, type, is_main, display_order }]
+export async function fetchRelatedProjects(projectId) {
+  const { data, error } = await supabase
+    .from('project_related')
+    .select(
+      `
+      is_main,
+      display_order,
+      related:projects!project_related_related_project_id_fkey!inner (
+        id,
+        name,
+        slug,
+        picture,
+        is_public,
+        is_active,
+        genre:genres ( name_ptbr ),
+        type:project_types ( name_ptbr )
+      )
+    `,
+    )
+    .eq('project_id', projectId)
+    .eq('related.is_public', true)
+    .eq('related.is_active', true)
+    .order('is_main', { ascending: false })
+    .order('display_order', { ascending: true, nullsFirst: false })
+    .order('created_at', { ascending: true })
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  // Normaliza para facilitar o consumo no componente
+  return (data ?? []).map((row) => ({
+    id: row.related.id,
+    name: row.related.name,
+    slug: row.related.slug,
+    picture: row.related.picture,
+    genre: row.related.genre?.name_ptbr ?? null,
+    type: row.related.type?.name_ptbr ?? null,
+    is_main: row.is_main,
+    display_order: row.display_order,
+  }))
 }

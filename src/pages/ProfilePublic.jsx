@@ -242,7 +242,7 @@ export default function ProfilePublic() {
             }}
           >
             <SimpleGrid spacing="lg" cols={{ base: 1, sm: 2, lg: 2 }}>
-              <Stack gap="xs">
+              <Stack gap={2}>
                 <Text size="lg">
                   Entre pra ver o perfil completo de <b>{profile.username}</b> no Mublin
                 </Text>

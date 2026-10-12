@@ -71,12 +71,12 @@ export default function SimilarProfiles({ profiles = [], loading }) {
                     {p.title}
                   </Text>
                 )}
-                {p.roles.length > 0 && (
+                {p?.roles?.length > 0 && (
                   <Text size="xs" c="dimmed" lineClamp={1}>
                     {p.roles?.map((role, index) => (
                       <Text span key={role.id}>
                         {role.name_ptbr}
-                        {index < p.roles.length - 1 ? ', ' : ''}
+                        {index < p?.roles?.length - 1 ? ', ' : ''}
                       </Text>
                     ))}
                   </Text>
