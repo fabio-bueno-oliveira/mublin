@@ -17,7 +17,6 @@ import {
   SimpleGrid,
   Skeleton,
   Alert,
-  Badge,
   Modal,
   Center,
 } from '@mantine/core'
@@ -115,7 +114,7 @@ export default function ProfilePublic() {
         size="sm"
         withCloseButton
       >
-        <Stack align="center" gap="md" pt="xs">
+        <Stack align="center" gap="sm" pt="xs">
           <Center>
             <Avatar
               size={88}

@@ -20,7 +20,9 @@ import {
   Button,
   Box,
   UnstyledButton,
+  Scroller,
 } from '@mantine/core'
+// import { useDisclosure } from '@mantine/hooks'
 import {
   IconRoad,
   IconRosetteDiscountCheckFilled,
@@ -32,6 +34,8 @@ import { truncateDescription } from '../utils/formatter'
 export default function Project() {
   const { slug } = useParams()
   const navigate = useNavigate()
+
+  // const [ctaOpened, { close: closeCta }] = useDisclosure(true)
 
   const {
     data: project,
@@ -72,7 +76,8 @@ export default function Project() {
     )
   }
 
-  const PROJECT_AVATAR_PATH = `https://ik.imagekit.io/mublin/projects/${project?.id}/tr:h-200,w-200,c-maintain_ratio/`
+  const PROJECT_AVATAR_PATH = `https://ik.imagekit.io/mublin/projects/${project?.id}/tr:h-180,w-180,c-maintain_ratio/`
+  // const PROJECT_AVATAR_TEASER_PATH = `https://ik.imagekit.io/mublin/projects/${project?.id}/tr:h-176,w-176,c-maintain_ratio/`
 
   const getRelatedAvatarUrl = (related) =>
     related?.picture
@@ -125,14 +130,85 @@ export default function Project() {
           )}
         </Helmet>
       )}
+
+      {/* Modal CTA - abre automaticamente igual Instagram */}
+      {/* <Modal
+        opened={ctaOpened}
+        onClose={closeCta}
+        centered
+        radius="lg"
+        size="sm"
+        withCloseButton
+        overlayProps={{
+          backgroundOpacity: 0.8,
+          blur: 3,
+        }}
+      >
+        <Stack align="center" gap="sm" pt="md">
+          <Center>
+            {isLoading || loadingProjectGenres ? (
+              <Skeleton circle height={88} width={88} />
+            ) : (
+              <Avatar
+                size={88}
+                src={
+                  project?.picture ? PROJECT_AVATAR_TEASER_PATH + project.picture : null
+                }
+              />
+            )}
+          </Center>
+          <Stack gap={4} align="center">
+            <Text ta="center" size="lg" fw={300} lh={1.2}>
+              Veja a página completa de{' '}
+              <Text span fw={600}>
+                {slug}
+              </Text>
+            </Text>
+            {project?.type?.name_ptbr && (
+              <Text ta="center" size="xs" c="dimmed" lineClamp={1}>
+                {project.type.name_ptbr}
+                {validGenreNames.length > 0 && (
+                  <Text span> · {validGenreNames.join(', ')}</Text>
+                )}
+              </Text>
+            )}
+            <Text ta="center" size="sm" c="dimmed" mt={6} maw={300}>
+              Entre para ver pessoas relacionadas, gigs e muito mais no Mublin
+            </Text>
+          </Stack>
+
+          <Stack w="100%" gap="xs" mt={4}>
+            <Button
+              size="sm"
+              radius="xl"
+              fullWidth
+              rightSection={<IconArrowRight size={16} />}
+              onClick={() => navigate('/signup')}
+            >
+              Criar conta grátis
+            </Button>
+            <Button
+              variant="subtle"
+              color="var(--mantine-color-text)"
+              size="sm"
+              radius="xl"
+              fullWidth
+              onClick={() => navigate('/login')}
+            >
+              Entrar
+            </Button>
+          </Stack>
+        </Stack>
+      </Modal> */}
+
       <Container px="lg" size="md" mt={{ base: 22, sm: 30 }}>
-        <Group wrap="nowrap">
+        <Group wrap="nowrap" px="xs">
           {isLoading ? (
-            <Skeleton circle height={100} width={100} />
+            <Skeleton circle height={90} width={90} />
           ) : (
             <Avatar
               src={project?.picture ? PROJECT_AVATAR_PATH + project.picture : null}
-              size={100}
+              size={90}
             />
           )}
 
@@ -200,7 +276,7 @@ export default function Project() {
               </>
             )}
             {projectLocation && (
-              <Group gap={2} mt={2} wrap="nowrap">
+              <Group gap={2} wrap="nowrap">
                 <IconMapPin color="gray" size={12} stroke={2} />
                 <Text size="xs" c="dimmed">
                   {projectLocation}
@@ -218,7 +294,7 @@ export default function Project() {
               <Skeleton height={14} width="75%" />
             </Stack>
           ) : (
-            <Stack gap="xs" px="xs">
+            <Stack gap={6} px="xs">
               <Box hiddenFrom="sm">
                 {validGenreNames && (
                   <Text size="xs" c="dimmed">
@@ -241,39 +317,47 @@ export default function Project() {
             <Text size="xs" fw={500} c="dimmed">
               Projetos relacionados
             </Text>
-            <Group gap="xs" align="flex-start">
-              {loadingRelatedProjects
-                ? [1, 2, 3].map((i) => (
-                    <Stack key={i} gap={6} align="center" w={84}>
-                      <Skeleton circle height={64} width={64} />
-                      <Skeleton height={10} width={56} />
-                    </Stack>
-                  ))
-                : relatedProjects.map((related) => (
-                    <UnstyledButton
-                      key={related.id}
-                      onClick={() => navigate(`/project/${related.slug}`)}
-                      aria-label={`Ver projeto ${related.name}`}
-                      w={84}
-                    >
-                      <Stack gap={3} align="center">
-                        <Avatar src={getRelatedAvatarUrl(related)} size={50} />
-                        <Text size="xs" ta="center" lineClamp={1} title={related.name}>
-                          {related.name}
-                        </Text>
-                        <Text size="10px" c="dimmed">
-                          {related?.type}
-                        </Text>
+            <Scroller>
+              <Group wrap="nowrap" gap="xs" align="flex-start">
+                {loadingRelatedProjects
+                  ? [1, 2, 3].map((i) => (
+                      <Stack key={i} gap={6} align="center" w={84}>
+                        <Skeleton circle height={64} width={64} />
+                        <Skeleton height={10} width={56} />
                       </Stack>
-                    </UnstyledButton>
-                  ))}
-            </Group>
+                    ))
+                  : relatedProjects.map((related) => (
+                      <UnstyledButton
+                        key={related.id}
+                        onClick={() => navigate(`/project/${related.slug}`)}
+                        aria-label={`Ver projeto ${related.name}`}
+                        w={80}
+                      >
+                        <Stack gap={3} align="center">
+                          <Avatar src={getRelatedAvatarUrl(related)} size={50} />
+                          <Text
+                            w={79}
+                            size="xs"
+                            ta="center"
+                            lineClamp={1}
+                            title={related.name}
+                          >
+                            {related.name}
+                          </Text>
+                          <Text size="10px" c="dimmed">
+                            {related?.type}
+                          </Text>
+                        </Stack>
+                      </UnstyledButton>
+                    ))}
+              </Group>
+            </Scroller>
           </Stack>
         )}
 
         {/* CTA */}
-        <Card mt={relatedProjects.length > 0 ? 20 : 36} p="lg">
-          <SimpleGrid spacing="lg" cols={{ base: 1, sm: 2, lg: 2 }}>
+        <Card mt={relatedProjects.length > 0 ? 20 : 36} px="lg" py="md">
+          <SimpleGrid spacing="md" cols={{ base: 1, sm: 2, lg: 2 }}>
             <Stack gap={2}>
               <Text size="lg">
                 Entre pra ver mais sobre <b>{project?.name}</b> no Mublin
