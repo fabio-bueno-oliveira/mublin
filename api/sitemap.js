@@ -43,7 +43,7 @@ export default async function handler(req, res) {
         .from('profiles')
         .select('username, updated_at')
         .eq('is_public', true)
-        .eq('onboarding_complete', true)
+        .eq('onboarding_completed', true)
         .eq('is_fake_profile', false)
         .eq('is_shadow_hidden', false)
         .not('username', 'is', null),
