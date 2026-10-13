@@ -16,7 +16,7 @@ import { fetchOpenProjectOpenings } from '../queries/projectOpenings'
 import {
   Container, Grid, SimpleGrid,
   Flex, Group,
-  Box, Stack,
+  Box, Stack, Spoiler,
   Skeleton, em,
   Modal, Affix,
   Button, UnstyledButton, Badge,
@@ -25,6 +25,7 @@ import {
   Card, Paper,
   Scroller, Tooltip, Popover,
   Tabs, Divider, ThemeIcon,
+  Center,
 } from '@mantine/core'
 import { useMediaQuery, useDisclosure } from '@mantine/hooks'
 import {
@@ -38,12 +39,11 @@ import {
   IconBriefcase2,
   IconChevronRight,
   IconExternalLink,
-  IconSparkles,
 } from '@tabler/icons-react'
 import AppNavbarMobile from '../components/AppNavbarMobile'
 import SimilarProjects from '../components/explore/SimilarProjects'
 import ProjectProfileBadge from '../components/ProjectProfileBadge'
-import { SectionGigs, SectionPeople } from '../components/project'
+import { SectionGigs, SectionPeople, BackstageAccess } from '../components/project'
 import { MEMBER_REQUEST_STATUS } from '../constants/projects'
 import dayjs from 'dayjs'
 import 'dayjs/locale/pt-br'
@@ -160,7 +160,7 @@ export default function Project() {
       queryKey: ['project-people-recent', project?.id],
       queryFn: () =>
         fetchProjectPeople(project?.id, {
-          limit: 2,
+          limit: 1,
           orderBy: 'created_at',
           ascending: false,
         }),
@@ -203,12 +203,12 @@ export default function Project() {
 
   const AVATAR_PATH =
     'https://ik.imagekit.io/mublin/tr:h-200,c-maintain_ratio/users/avatars/'
-  const AVATAR_MINI1_PATH =
-    'https://ik.imagekit.io/mublin/tr:h-70,c-maintain_ratio/users/avatars/'
+
   const AVATAR_MINI2_PATH =
     'https://ik.imagekit.io/mublin/tr:h-22,c-maintain_ratio/users/avatars/'
 
   const PICTURE_AVATAR_SMALL_PATH = `https://ik.imagekit.io/mublin/projects/${project?.id}/tr:h-192,w-192,c-maintain_ratio/`
+  const PICTURE_AVATAR_SMALL2_PATH = `https://ik.imagekit.io/mublin/projects/${project?.id}/tr:h-84,w-84,c-maintain_ratio/`
   const PICTURE_AVATAR_PATH = `https://ik.imagekit.io/mublin/projects/${project?.id}/tr:h-220,w-220,c-maintain_ratio/`
 
   const PICTURE_AVATAR_LARGE_PATH = `https://ik.imagekit.io/mublin/projects/${project?.id}/tr:h-400,w-400,c-maintain_ratio/`
@@ -277,7 +277,7 @@ export default function Project() {
 
       <Container fluid px={0} mt={{ base: 10, sm: 20 }}>
         <Grid>
-          <Grid.Col span={{ base: 12, sm: 9.5 }}>
+          <Grid.Col span={{ base: 12, sm: 9 }}>
             {/*
              * ════════════════════════════════════════════════
              * PROJECT HERO
@@ -294,7 +294,7 @@ export default function Project() {
                 // borderRadius: '0 0 20px 20px',
               }}
             >
-              <Box pos="relative" h={{ base: 200, sm: 200 }}>
+              <Box pos="relative" h={{ base: 160, sm: 200 }}>
                 {isLoading ? (
                   <Skeleton h="100%" w="100%" />
                 ) : (
@@ -339,7 +339,7 @@ export default function Project() {
                  * ─────────────────────────────────────────────
                  */}
 
-                {(userIsAdmin || userIsStaff) && project?.id && (
+                {/* {(userIsAdmin || userIsStaff) && project?.id && (
                   <Button
                     component="a"
                     href={`/backstage/${project.id}`}
@@ -353,7 +353,7 @@ export default function Project() {
                   >
                     Backstage
                   </Button>
-                )}
+                )} */}
 
                 {/*
                  * ─────────────────────────────────────────────
@@ -425,8 +425,8 @@ export default function Project() {
                             <Title
                               order={1}
                               fz={{
-                                base: 24,
-                                sm: 32,
+                                base: 28,
+                                sm: 34,
                               }}
                               fw={650}
                               c="white"
@@ -458,6 +458,12 @@ export default function Project() {
 
                             <ProjectProfileBadge projectId={project?.id} />
                           </Group>
+
+                          {validGenreNames.length > 0 && (
+                            <Text size="xs" c="dimmed" lh={1}>
+                              {validGenreNames.join(', ')}
+                            </Text>
+                          )}
                         </>
                       )}
                     </Stack>
@@ -530,355 +536,413 @@ export default function Project() {
 
             {activeTab === 'overview' && (
               <Container size="lg" px={{ base: 'sm', sm: 'md' }}>
-                <SimpleGrid
-                  cols={{
-                    base: 1,
-                    md: 3,
+                {/*
+                 * ────────────────────────────────────────────
+                 * MAIN COLUMN
+                 * ────────────────────────────────────────────
+                 */}
+
+                <Stack
+                  gap="md"
+                  style={{
+                    gridColumn: isMobile ? undefined : 'span 2',
                   }}
-                  spacing="md"
-                  verticalSpacing="md"
                 >
-                  {/*
-                   * ────────────────────────────────────────────
-                   * MAIN COLUMN
-                   * ────────────────────────────────────────────
-                   */}
+                  <Grid>
+                    <Grid.Col span={{ base: 12, sm: 7 }}>
+                      {/*
+                       * ABOUT
+                       */}
+                      <Card withBorder radius="lg" px="lg" pt="lg" pb="sm" h={184}>
+                        <Title order={3} fw={600} size="17px" mb="xs">
+                          Sobre
+                        </Title>
 
-                  <Stack
-                    gap="md"
-                    style={{
-                      gridColumn: isMobile ? undefined : 'span 2',
-                    }}
-                  >
-                    {/*
-                     * ABOUT
-                     */}
-
-                    <Card withBorder radius="lg" px="lg" pt="lg" pb="sm">
-                      <Title order={3} fw={600} size="17px" mb="xs">
-                        Sobre
-                      </Title>
-
-                      {project?.description ? (
-                        <>
-                          <Text
-                            size="sm"
-                            lh={1.6}
-                            lineClamp={3}
-                            style={{
-                              whiteSpace: 'pre-line',
-                            }}
-                          >
-                            {project.description}
-                          </Text>
-                          <Divider mt="sm" mb="xs" />
-                          <Button
-                            radius="md"
-                            fullWidth
-                            size="compact-sm"
-                            variant="transparent"
-                            color="var(--mantine-color-text)"
-                            onClick={() => setActiveTab('about')}
-                            rightSection={<IconArrowRight size={16} />}
-                          >
-                            Ver tudo
-                          </Button>
-                        </>
-                      ) : (
-                        <Text size="sm" c="dimmed">
-                          Descrição não disponível.
-                        </Text>
-                      )}
-                    </Card>
-
-                    {/*
-                     * OPENINGS
-                     */}
-
-                    {(loadingOpenProjectOpenings || openProjectOpenings.length > 0) && (
-                      <Card withBorder radius="lg" p="lg">
-                        <Group justify="space-between" mb="md">
-                          <Group gap="xs">
-                            <ThemeIcon
-                              variant="light"
-                              color="mublinColor"
-                              radius="md"
-                              size="lg"
+                        {project?.description ? (
+                          <>
+                            <Text
+                              size="sm"
+                              lh={1.6}
+                              lineClamp={3}
+                              style={{
+                                whiteSpace: 'pre-line',
+                              }}
                             >
-                              <IconBriefcase2 size={18} />
-                            </ThemeIcon>
-
-                            <Box>
-                              <Title order={3} fz="lg" fw={600}>
-                                Vagas abertas
-                              </Title>
-
-                              <Text size="xs" c="dimmed">
-                                O projeto está procurando músicos
-                              </Text>
-                            </Box>
-                          </Group>
-                        </Group>
-
-                        {loadingOpenProjectOpenings ? (
-                          <Stack gap="xs">
-                            {[1, 2].map((i) => (
-                              <Skeleton key={i} h={74} radius="md" />
-                            ))}
-                          </Stack>
+                              {project.description}
+                            </Text>
+                            <Divider mt="sm" mb="xs" />
+                            <Button
+                              radius="md"
+                              fullWidth
+                              size="compact-sm"
+                              variant="transparent"
+                              color="var(--mantine-color-text)"
+                              onClick={() => setActiveTab('about')}
+                              rightSection={<IconArrowRight size={16} />}
+                            >
+                              Ver tudo
+                            </Button>
+                          </>
                         ) : (
-                          <Stack gap="xs">
-                            {openProjectOpenings.slice(0, 3).map((opening) => (
-                              <Paper key={opening.id} withBorder radius="md" p="md">
-                                <Flex justify="space-between" align="center" gap="md">
-                                  <Box>
-                                    <Group gap={6} mb={3}>
-                                      <Text fw={600} size="sm">
-                                        {opening.role?.name_ptbr}
-                                      </Text>
-
-                                      {opening.is_remote && (
-                                        <Badge size="xs" variant="light" color="blue">
-                                          Remoto
-                                        </Badge>
-                                      )}
-
-                                      {opening.is_paid && (
-                                        <Badge size="xs" variant="light" color="green">
-                                          Remunerado
-                                        </Badge>
-                                      )}
-                                    </Group>
-
-                                    {opening.engagement_type?.name_ptbr && (
-                                      <Text size="xs" c="dimmed">
-                                        {opening.engagement_type.name_ptbr}
-                                      </Text>
-                                    )}
-
-                                    {opening.description && (
-                                      <Text size="xs" c="dimmed" mt={3} lineClamp={2}>
-                                        {opening.description}
-                                      </Text>
-                                    )}
-                                  </Box>
-
-                                  <IconChevronRight
-                                    size={18}
-                                    opacity={0.45}
-                                    style={{
-                                      flexShrink: 0,
-                                    }}
-                                  />
-                                </Flex>
-                              </Paper>
-                            ))}
-                          </Stack>
+                          <Text size="sm" c="dimmed">
+                            Descrição não disponível.
+                          </Text>
                         )}
                       </Card>
-                    )}
+                    </Grid.Col>
+                    <Grid.Col span={{ base: 12, sm: 5 }}>
+                      {/*
+                       * PEOPLE PREVIEW
+                       */}
 
-                    {/*
-                     * RELATED PROJECTS
-                     */}
-
-                    {(loadingRelatedProjects || relatedProjects.length > 0) && (
-                      <Stack gap="sm" px="xs">
-                        <Text size="xs" fw={500} c="dimmed">
-                          Projetos relacionados
-                        </Text>
-                        <Scroller>
-                          <Group wrap="nowrap" gap="xs" align="flex-start">
-                            {loadingRelatedProjects
-                              ? [1, 2, 3].map((i) => (
-                                  <Stack key={i} gap={6} align="center" w={84}>
-                                    <Skeleton circle height={64} width={64} />
-                                    <Skeleton height={10} width={56} />
-                                  </Stack>
-                                ))
-                              : relatedProjects.map((related) => (
-                                  <UnstyledButton
-                                    key={related.id}
-                                    onClick={() =>
-                                      navigate(
-                                        related.project_type_id === 19
-                                          ? `/person/${related.slug}`
-                                          : `/project/${related.slug}`,
-                                      )
-                                    }
-                                    aria-label={`Ver projeto ${related.name}`}
-                                    w={80}
-                                  >
-                                    <Stack gap={3} align="center">
-                                      <Avatar
-                                        src={getRelatedAvatarUrl(related)}
-                                        size={50}
-                                      />
-                                      <Text
-                                        w={79}
-                                        size="xs"
-                                        ta="center"
-                                        lineClamp={1}
-                                        title={related.name}
-                                      >
-                                        {related.name}
-                                      </Text>
-                                      <Text size="10px" c="dimmed">
-                                        {related?.type}
-                                      </Text>
-                                    </Stack>
-                                  </UnstyledButton>
-                                ))}
-                          </Group>
-                        </Scroller>
-                      </Stack>
-                    )}
-
-                    {/*
-                     * PEOPLE PREVIEW
-                     */}
-
-                    {recentProjectPeople.length > 0 && (
-                      <Card withBorder radius="lg" p="lg">
+                      <Card withBorder radius="lg" p="lg" h={184}>
                         <Title order={3} fw={600} size="17px" mb={6}>
                           Pessoas associadas recentemente
                         </Title>
 
-                        <Stack gap="xs">
-                          {recentProjectPeople.map((person) => (
-                            <Paper key={person.id} radius="md" p="sm">
-                              <Group gap="sm" wrap="nowrap">
-                                <Avatar
+                        {recentProjectPeople.length > 0 ? (
+                          <>
+                            <Stack gap="xs">
+                              {recentProjectPeople.map((person) => (
+                                <Paper key={person.id} radius="md" p="sm">
+                                  <Group gap="sm" wrap="nowrap">
+                                    <Avatar
+                                      component={Link}
+                                      to={`/${person.profile?.username}`}
+                                      size={42}
+                                      src={`${AVATAR_PATH}${person.profile?.avatar}`}
+                                    />
+
+                                    <Box
+                                      style={{
+                                        minWidth: 0,
+                                      }}
+                                    >
+                                      <Text
+                                        component={Link}
+                                        to={`/${person.profile?.username}`}
+                                        size="sm"
+                                        fw={500}
+                                        lineClamp={1}
+                                        style={{
+                                          textDecoration: 'none',
+                                          color: 'inherit',
+                                        }}
+                                      >
+                                        {person.profile?.full_name}
+                                      </Text>
+
+                                      <Text size="xs" c="dimmed" fw={500} lineClamp={1}>
+                                        {person.roles
+                                          ?.map((r) => r.role.name_ptbr)
+                                          .join(', ')}
+                                      </Text>
+
+                                      <Text
+                                        size="11px"
+                                        c="dimmed"
+                                        mt={3}
+                                        fw={300}
+                                        lineClamp={1}
+                                      >
+                                        {person?.notes}
+                                      </Text>
+                                    </Box>
+                                  </Group>
+                                </Paper>
+                              ))}
+                            </Stack>
+
+                            <Stack gap={0} mt={6}>
+                              <Text ta="center" size="xs" c="dimmed">
+                                Já trabalhou com {project?.name}?
+                              </Text>
+                              <Center>
+                                <Anchor
                                   component={Link}
-                                  to={`/${person.profile?.username}`}
-                                  size={42}
-                                  src={`${AVATAR_PATH}${person.profile?.avatar}`}
-                                />
-
-                                <Box
-                                  style={{
-                                    minWidth: 0,
-                                  }}
+                                  to={`/settings/portfolio`}
+                                  size="sm"
                                 >
-                                  <Text
+                                  Adicione este projeto ao seu portfolio
+                                </Anchor>
+                              </Center>
+                            </Stack>
+
+                            {/* {projectPeople.length > 2 && (
+                              <Button
+                                mt="xs"
+                                radius="md"
+                                fullWidth
+                                size="compact-xs"
+                                variant="transparent"
+                                color="var(--mantine-color-text)"
+                                onClick={() => setActiveTab('people')}
+                                rightSection={<IconArrowRight size={16} />}
+                              >
+                                Ver todas as pessoas
+                              </Button>
+                            )} */}
+                          </>
+                        ) : (
+                          <Box>
+                            <Stack gap="xs">
+                              <Center mt={12} mb={2}>
+                                <Group w={192} gap="sm" wrap="nowrap">
+                                  {/* <Skeleton circle h={42} w={42} animate={false} /> */}
+                                  <Avatar
+                                    src={PICTURE_AVATAR_SMALL2_PATH + project?.picture}
+                                    size={42}
+                                  />
+                                  <Box style={{ flex: 1 }} opacity={0.4}>
+                                    <Skeleton
+                                      h={8}
+                                      w="100%"
+                                      radius="xl"
+                                      mb={8}
+                                      animate={false}
+                                    />
+                                    <Skeleton
+                                      h={6}
+                                      w="70%"
+                                      radius="xl"
+                                      animate={false}
+                                      opacity={0.6}
+                                    />
+                                  </Box>
+                                </Group>
+                              </Center>
+
+                              <Stack gap={0} mt={6}>
+                                <Text ta="center" size="xs" c="dimmed">
+                                  Já trabalhou com {project?.name}?
+                                </Text>
+                                <Center>
+                                  <Anchor
                                     component={Link}
-                                    to={`/${person.profile?.username}`}
+                                    to={`/settings/portfolio`}
                                     size="sm"
-                                    fw={500}
-                                    lineClamp={1}
-                                    style={{
-                                      textDecoration: 'none',
-                                      color: 'inherit',
-                                    }}
                                   >
-                                    {person.profile?.full_name}
-                                  </Text>
+                                    Adicione este projeto ao seu portfolio
+                                  </Anchor>
+                                </Center>
+                              </Stack>
+                            </Stack>
+                          </Box>
+                        )}
+                      </Card>
+                    </Grid.Col>
+                  </Grid>
 
-                                  <Text size="xs" c="dimmed" fw={500} lineClamp={1}>
-                                    {person.roles
-                                      ?.map((r) => r.role.name_ptbr)
-                                      .join(', ')}
-                                  </Text>
+                  {/*
+                   * OPENINGS
+                   */}
 
-                                  <Text
-                                    size="11px"
-                                    c="dimmed"
-                                    mt={3}
-                                    fw={300}
-                                    lineClamp={1}
-                                  >
-                                    {person?.notes}
-                                  </Text>
+                  {(loadingOpenProjectOpenings || openProjectOpenings.length > 0) && (
+                    <Card withBorder radius="lg" p="lg">
+                      <Group justify="space-between" mb="md">
+                        <Group gap="xs">
+                          <ThemeIcon
+                            variant="light"
+                            color="mublinColor"
+                            radius="md"
+                            size="lg"
+                          >
+                            <IconBriefcase2 size={18} />
+                          </ThemeIcon>
+
+                          <Box>
+                            <Title order={3} fz="lg" fw={600}>
+                              Vagas abertas
+                            </Title>
+
+                            <Text size="xs" c="dimmed">
+                              O projeto está procurando músicos
+                            </Text>
+                          </Box>
+                        </Group>
+                      </Group>
+
+                      {loadingOpenProjectOpenings ? (
+                        <Stack gap="xs">
+                          {[1, 2].map((i) => (
+                            <Skeleton key={i} h={74} radius="md" />
+                          ))}
+                        </Stack>
+                      ) : (
+                        <Stack gap="xs">
+                          {openProjectOpenings.slice(0, 3).map((opening) => (
+                            <Paper key={opening.id} withBorder radius="md" p="md">
+                              <Flex justify="space-between" align="center" gap="md">
+                                <Box>
+                                  <Group gap={6} mb={3}>
+                                    <Text fw={600} size="sm">
+                                      {opening.role?.name_ptbr}
+                                    </Text>
+
+                                    {opening.is_remote && (
+                                      <Badge size="xs" variant="light" color="blue">
+                                        Remoto
+                                      </Badge>
+                                    )}
+
+                                    {opening.is_paid && (
+                                      <Badge size="xs" variant="light" color="green">
+                                        Remunerado
+                                      </Badge>
+                                    )}
+                                  </Group>
+
+                                  {opening.engagement_type?.name_ptbr && (
+                                    <Text size="xs" c="dimmed">
+                                      {opening.engagement_type.name_ptbr}
+                                    </Text>
+                                  )}
+
+                                  {opening.description && (
+                                    <Text size="xs" c="dimmed" mt={3} lineClamp={2}>
+                                      {opening.description}
+                                    </Text>
+                                  )}
                                 </Box>
-                              </Group>
+
+                                <IconChevronRight
+                                  size={18}
+                                  opacity={0.45}
+                                  style={{
+                                    flexShrink: 0,
+                                  }}
+                                />
+                              </Flex>
                             </Paper>
                           ))}
                         </Stack>
+                      )}
+                    </Card>
+                  )}
 
-                        {projectPeople.length > 2 && (
-                          <Button
-                            mt="xs"
-                            radius="md"
-                            fullWidth
-                            size="compact-xs"
-                            variant="transparent"
-                            color="var(--mantine-color-text)"
-                            onClick={() => setActiveTab('people')}
-                            rightSection={<IconArrowRight size={16} />}
+                  {/*
+                   * INSPIRED
+                   */}
+
+                  {inspirated.length > 0 && (
+                    <Card withBorder radius="lg" p="lg">
+                      <Title order={3} fz="lg" fw={600}>
+                        Inspirando pessoas
+                      </Title>
+
+                      <Text size="xs" c="dimmed" mt={2} mb="md">
+                        {inspirated.length === 1
+                          ? `1 pessoa se inspira no trabalho de ${project?.name}`
+                          : `${inspirated.length} pessoas se inspiram no trabalho de ${project?.name}`}
+                      </Text>
+
+                      <Group wrap="wrap">
+                        {inspirated.slice(0, 12).map((item) => (
+                          <Popover
+                            key={item.id}
+                            width={140}
+                            position="bottom"
+                            withArrow
+                            shadow="md"
+                            opened={profileDetailOpened}
                           >
-                            Ver todas as pessoas
-                          </Button>
-                        )}
-                      </Card>
-                    )}
+                            <Popover.Target>
+                              <Link to={`/${item.profiles?.username}`}>
+                                <Avatar
+                                  size={42}
+                                  onMouseEnter={openProfileDetail}
+                                  onMouseLeave={closeProfileDetail}
+                                  src={
+                                    item.profiles?.avatar
+                                      ? AVATAR_PATH + item.profiles.avatar
+                                      : `https://api.dicebear.com/10.x/initials/svg?seed=${item.profiles?.full_name}`
+                                  }
+                                  title={item.profiles?.full_name}
+                                />
+                              </Link>
+                            </Popover.Target>
 
-                    {/*
-                     * INSPIRED
-                     */}
-
-                    {inspirated.length > 0 && (
-                      <Card withBorder radius="lg" p="lg">
-                        <Title order={3} fz="lg" fw={600}>
-                          Inspirando pessoas
-                        </Title>
-
-                        <Text size="xs" c="dimmed" mt={2} mb="md">
-                          {inspirated.length === 1
-                            ? `1 pessoa se inspira no trabalho de ${project?.name}`
-                            : `${inspirated.length} pessoas se inspiram no trabalho de ${project?.name}`}
-                        </Text>
-
-                        <Group wrap="wrap">
-                          {inspirated.slice(0, 12).map((item) => (
-                            <Popover
-                              key={item.id}
-                              width={140}
-                              position="bottom"
-                              withArrow
-                              shadow="md"
-                              opened={profileDetailOpened}
+                            <Popover.Dropdown
+                              style={{
+                                pointerEvents: 'none',
+                              }}
+                              p={10}
                             >
-                              <Popover.Target>
-                                <Link to={`/${item.profiles?.username}`}>
-                                  <Avatar
-                                    size={42}
-                                    onMouseEnter={openProfileDetail}
-                                    onMouseLeave={closeProfileDetail}
-                                    src={
-                                      item.profiles?.avatar
-                                        ? AVATAR_PATH + item.profiles.avatar
-                                        : `https://api.dicebear.com/10.x/initials/svg?seed=${item.profiles?.full_name}`
-                                    }
-                                    title={item.profiles?.full_name}
-                                  />
-                                </Link>
-                              </Popover.Target>
+                              <Text size="xs" fw={500}>
+                                @{item.profiles?.username}
+                              </Text>
 
-                              <Popover.Dropdown
-                                style={{
-                                  pointerEvents: 'none',
-                                }}
-                                p={10}
-                              >
-                                <Text size="xs" fw={500}>
-                                  @{item.profiles?.username}
-                                </Text>
+                              <Text size="10px" c="dimmed">
+                                {item.profiles?.title}
+                              </Text>
+                            </Popover.Dropdown>
+                          </Popover>
+                        ))}
 
-                                <Text size="10px" c="dimmed">
-                                  {item.profiles?.title}
-                                </Text>
-                              </Popover.Dropdown>
-                            </Popover>
-                          ))}
+                        {inspirated.length > 12 && (
+                          <Avatar size={42}>+{inspirated.length - 12}</Avatar>
+                        )}
+                      </Group>
+                    </Card>
+                  )}
 
-                          {inspirated.length > 12 && (
-                            <Avatar size={42}>+{inspirated.length - 12}</Avatar>
-                          )}
+                  {/*
+                   * RELATED PROJECTS
+                   */}
+
+                  {(loadingRelatedProjects || relatedProjects.length > 0) && (
+                    <Stack gap="sm" px="xs">
+                      <Text size="sm" fw={500} c="dimmed">
+                        Projetos relacionados
+                      </Text>
+                      <Scroller>
+                        <Group wrap="nowrap" gap="xs" align="flex-start">
+                          {loadingRelatedProjects
+                            ? [1, 2, 3].map((i) => (
+                                <Stack key={i} gap={6} align="center" w={84}>
+                                  <Skeleton circle height={64} width={64} />
+                                  <Skeleton height={10} width={56} />
+                                </Stack>
+                              ))
+                            : relatedProjects.map((related) => (
+                                <UnstyledButton
+                                  key={related.id}
+                                  onClick={() =>
+                                    navigate(
+                                      related.project_type_id === 19
+                                        ? `/person/${related.slug}`
+                                        : `/project/${related.slug}`,
+                                    )
+                                  }
+                                  aria-label={`Ver projeto ${related.name}`}
+                                  w={80}
+                                >
+                                  <Stack gap={3} align="center">
+                                    <Avatar
+                                      src={getRelatedAvatarUrl(related)}
+                                      size={50}
+                                    />
+                                    <Text
+                                      w={79}
+                                      size="xs"
+                                      ta="center"
+                                      lineClamp={1}
+                                      title={related.name}
+                                    >
+                                      {related.name}
+                                    </Text>
+                                    <Text size="10px" c="dimmed">
+                                      {related?.type}
+                                    </Text>
+                                  </Stack>
+                                </UnstyledButton>
+                              ))}
                         </Group>
-                      </Card>
-                    )}
+                      </Scroller>
+                    </Stack>
+                  )}
 
-                    {/* {project?.spotify_id && (
+                  {/* {project?.spotify_id && (
                       <Box px={isMobile ? 10 : 0}>
                         <iframe
                           title={`Spotify - ${project?.name}`}
@@ -892,218 +956,7 @@ export default function Project() {
                         />
                       </Box>
                     )} */}
-                  </Stack>
-
-                  {/*
-                   * ────────────────────────────────────────────
-                   * SIDEBAR
-                   * ────────────────────────────────────────────
-                   */}
-
-                  <Stack gap="md">
-                    {/*
-                     * PROJECT SNAPSHOT
-                     */}
-
-                    <Card withBorder radius="lg" px="lg" py="md">
-                      <Stack gap="xs">
-                        {project?.slug && (
-                          <Divider
-                            label={`mublin.com/project/${project.slug}`}
-                            labelPosition="right"
-                            opacity={0.6}
-                          />
-                        )}
-
-                        {project?.project_type && (
-                          <Group justify="space-between" gap="md">
-                            <Text size="xs" c="dimmed">
-                              Tipo
-                            </Text>
-
-                            <Text size="xs">{project.project_type}</Text>
-                          </Group>
-                        )}
-
-                        <Group
-                          justify="space-between"
-                          align="flex-start"
-                          wrap="nowrap"
-                          gap="md"
-                        >
-                          <Text size="xs" c="dimmed">
-                            {validGenreNames.length === 1 ? 'Gênero' : 'Gêneros'}
-                          </Text>
-
-                          <Text size="xs" ta="right">
-                            {loadingProjectGenres
-                              ? 'Carregando gêneros musicais...'
-                              : validGenreNames.join(', ')}
-                          </Text>
-                        </Group>
-
-                        {openProjectOpenings.length > 0 && (
-                          <Group justify="space-between" gap="md">
-                            <Text size="sm" c="dimmed">
-                              Vagas abertas
-                            </Text>
-
-                            <Badge variant="light" color="mublinColor" size="sm">
-                              {openProjectOpenings.length}
-                            </Badge>
-                          </Group>
-                        )}
-
-                        {project?.website && (
-                          <Group justify="space-between" gap="md">
-                            <Text size="sm" c="dimmed">
-                              Site
-                            </Text>
-
-                            <Anchor
-                              href={project?.website}
-                              underline="hover"
-                              fz="xs"
-                              target="_blank"
-                            >
-                              {project?.website
-                                .replace(/^https?:\/\/(www\.)?/, '')
-                                .replace(/\/$/, '')}
-                            </Anchor>
-                          </Group>
-                        )}
-                      </Stack>
-                    </Card>
-
-                    {/*
-                     * ADMIN FEATURES
-                     */}
-
-                    {(userIsAdmin || userIsStaff) && (
-                      <Card withBorder radius="lg" px="lg" py="">
-                        <Stack gap={5}>
-                          <Group align="flex-start" gap="lg" wrap="nowrap">
-                            <Text flex={1} fw={500} size="md">
-                              Você tem acesso ao Backstage deste projeto
-                            </Text>
-                            <IconSparkles />
-                          </Group>
-                          <Text size="xs" c="dimmed">
-                            O Backstage é onde você gerencia todos os dados e atualizações
-                          </Text>
-                          <Group gap={6} mt={4} mb={8}>
-                            <Avatar
-                              size={35}
-                              src={`${AVATAR_MINI1_PATH}${profile?.avatar}`}
-                            />
-                            <Stack gap={2}>
-                              <Text size="sm" c="dimmed" lh={1}>
-                                {profile?.full_name}
-                              </Text>
-                              <Text size="xs" lh={1}>
-                                {userIsAdmin ? 'Administrador' : userIsStaff && 'Staff'}
-                              </Text>
-                            </Stack>
-                          </Group>
-                          <Button
-                            component="a"
-                            href={`/backstage/${project.id}`}
-                            size="sm"
-                            color="mublinColor"
-                            rightSection={<IconArrowUpRight size={14} />}
-                          >
-                            Acessar Backstage
-                          </Button>
-                        </Stack>
-                      </Card>
-                    )}
-
-                    {/*
-                     * SOCIAL
-                     */}
-
-                    {hasSocialLinks && (
-                      <Card withBorder radius="lg" p="lg">
-                        <Stack gap="xs">
-                          {project?.instagram && (
-                            <Group
-                              component="a"
-                              href={`https://instagram.com/${project.instagram}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              justify="space-between"
-                              style={{
-                                textDecoration: 'none',
-                                color: 'inherit',
-                                borderRadius: 'var(--mantine-radius-md)',
-                              }}
-                            >
-                              <Group gap="sm">
-                                <IconBrandInstagram size={22} stroke={1.5} />
-
-                                <Text size="sm" fw={500}>
-                                  Instagram
-                                </Text>
-                              </Group>
-
-                              <IconExternalLink size={14} opacity={0.5} />
-                            </Group>
-                          )}
-
-                          {project?.spotify_id && (
-                            <Group
-                              component="a"
-                              href={`https://open.spotify.com/artist/${project.spotify_id}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              justify="space-between"
-                              style={{
-                                textDecoration: 'none',
-                                color: 'inherit',
-                                borderRadius: 'var(--mantine-radius-md)',
-                              }}
-                            >
-                              <Group gap="sm">
-                                <IconBrandSpotify size={22} stroke={1.5} />
-
-                                <Text size="sm" fw={500}>
-                                  Spotify
-                                </Text>
-                              </Group>
-
-                              <IconExternalLink size={14} opacity={0.5} />
-                            </Group>
-                          )}
-
-                          {project?.soundcloud && (
-                            <Group
-                              component="a"
-                              href={`https://soundcloud.com/${project.soundcloud}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              justify="space-between"
-                              style={{
-                                textDecoration: 'none',
-                                color: 'inherit',
-                                borderRadius: 'var(--mantine-radius-md)',
-                              }}
-                            >
-                              <Group gap="sm">
-                                <IconBrandSoundcloud size={22} stroke={1.5} />
-
-                                <Text size="sm" fw={500}>
-                                  SoundCloud
-                                </Text>
-                              </Group>
-
-                              <IconExternalLink size={14} opacity={0.5} />
-                            </Group>
-                          )}
-                        </Stack>
-                      </Card>
-                    )}
-                  </Stack>
-                </SimpleGrid>
+                </Stack>
               </Container>
             )}
 
@@ -1120,59 +973,68 @@ export default function Project() {
                     Sobre
                   </Title>
 
-                  {project?.description ? (
-                    <Text
-                      size="sm"
-                      lh={1.6}
-                      style={{
-                        whiteSpace: 'pre-line',
-                      }}
-                    >
-                      {project.description}
-                    </Text>
-                  ) : (
-                    <Text size="sm" c="dimmed">
-                      Descrição não disponível.
-                    </Text>
-                  )}
-
-                  {project?.purpose && (
-                    <>
-                      <Divider my="lg" />
-
-                      <Text
-                        size="xs"
-                        c="dimmed"
-                        fw={600}
-                        tt="uppercase"
-                        lts=".04em"
-                        mb={5}
+                  <Stack>
+                    {project?.description ? (
+                      <Spoiler
+                        mb={30}
+                        maxHeight={85}
+                        showLabel={
+                          <Text size="sm" c="var(--mantine-color-text)">
+                            Ver mais
+                          </Text>
+                        }
+                        hideLabel={
+                          <Text size="sm" c="var(--mantine-color-text)">
+                            Ver menos
+                          </Text>
+                        }
                       >
-                        Objetivo do projeto
+                        <Text size="sm" style={{ whiteSpace: 'pre-line' }}>
+                          {project.description}
+                        </Text>
+                      </Spoiler>
+                    ) : (
+                      <Text size="sm" c="dimmed">
+                        Descrição não disponível.
                       </Text>
+                    )}
 
-                      <Text size="sm" lh={1.6}>
-                        {project.purpose}
+                    {project?.purpose && (
+                      <>
+                        <Divider my="lg" />
+
+                        <Text
+                          size="xs"
+                          c="dimmed"
+                          fw={600}
+                          tt="uppercase"
+                          lts=".04em"
+                          mb={5}
+                        >
+                          Objetivo do projeto
+                        </Text>
+
+                        <Text size="sm" lh={1.6}>
+                          {project.purpose}
+                        </Text>
+                      </>
+                    )}
+
+                    {project?.foundation_year && (
+                      <Text size="xs" lh={1}>
+                        <Text span c="dimmed">
+                          Ano de fundação:
+                        </Text>{' '}
+                        {project.foundation_year}
                       </Text>
-                    </>
-                  )}
+                    )}
 
-                  {project?.foundation_year && (
-                    <Text size="xs" lh={1} mt="sm">
-                      <Text span c="dimmed">
-                        Ano de fundação:
-                      </Text>{' '}
-                      {project.foundation_year}
-                    </Text>
-                  )}
-
-                  {project?.is_verified && (
-                    <>
-                      <Divider mt="md" mb="sm" />
+                    {project?.is_verified && (
                       <Group gap="sm" align="flex-start" wrap="nowrap">
                         <IconRosetteDiscountCheckFilled
                           size={22}
-                          color="var(--mantine-color-mublinColor-filled)"
+                          // color="var(--mantine-color-mublinColor-filled)"
+                          color="var(--mantine-color-mublinSecondary-2)"
                           style={{ flexShrink: 0, marginTop: 1 }}
                         />
 
@@ -1199,15 +1061,124 @@ export default function Project() {
                           )}
                         </Box>
                       </Group>
-                    </>
-                  )}
+                    )}
 
-                  {project?.created_at && (
-                    <>
-                      <Divider mt="md" mb="sm" />
+                    {project?.website && (
+                      <Group justify="flex-start" gap="md">
+                        <Text size="sm" c="dimmed">
+                          Site:
+                        </Text>
+
+                        <Anchor
+                          href={project?.website}
+                          underline="hover"
+                          fz="sm"
+                          target="_blank"
+                        >
+                          {project?.website
+                            .replace(/^https?:\/\/(www\.)?/, '')
+                            .replace(/\/$/, '')}
+                        </Anchor>
+                      </Group>
+                    )}
+
+                    {/*
+                     * SOCIAL
+                     */}
+
+                    {hasSocialLinks && (
+                      <Stack w={150} gap="xs">
+                        {project?.instagram && (
+                          <Group
+                            component="a"
+                            href={`https://instagram.com/${project.instagram}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            justify="space-between"
+                            style={{
+                              textDecoration: 'none',
+                              color: 'inherit',
+                              borderRadius: 'var(--mantine-radius-md)',
+                            }}
+                          >
+                            <Group gap="sm">
+                              <IconBrandInstagram size={22} stroke={1.5} />
+
+                              <Text size="xs" fw={500}>
+                                Instagram
+                              </Text>
+                            </Group>
+
+                            <IconExternalLink size={14} opacity={0.5} />
+                          </Group>
+                        )}
+
+                        {project?.spotify_id && (
+                          <Group
+                            component="a"
+                            href={`https://open.spotify.com/artist/${project.spotify_id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            justify="space-between"
+                            style={{
+                              textDecoration: 'none',
+                              color: 'inherit',
+                              borderRadius: 'var(--mantine-radius-md)',
+                            }}
+                          >
+                            <Group gap="sm">
+                              <IconBrandSpotify size={22} stroke={1.5} />
+
+                              <Text size="xs" fw={500}>
+                                Spotify
+                              </Text>
+                            </Group>
+
+                            <IconExternalLink size={14} opacity={0.5} />
+                          </Group>
+                        )}
+
+                        {project?.soundcloud && (
+                          <Group
+                            component="a"
+                            href={`https://soundcloud.com/${project.soundcloud}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            justify="space-between"
+                            style={{
+                              textDecoration: 'none',
+                              color: 'inherit',
+                              borderRadius: 'var(--mantine-radius-md)',
+                            }}
+                          >
+                            <Group gap="sm">
+                              <IconBrandSoundcloud size={22} stroke={1.5} />
+
+                              <Text size="xs" fw={500}>
+                                SoundCloud
+                              </Text>
+                            </Group>
+
+                            <IconExternalLink size={14} opacity={0.5} />
+                          </Group>
+                        )}
+                      </Stack>
+                    )}
+
+                    <Divider />
+
+                    <Stack gap={6}>
+                      {project?.project_type && (
+                        <Text size="xs">
+                          Tipo do projeto:{' '}
+                          <Text span c="dimmed">
+                            {project.project_type}
+                          </Text>
+                        </Text>
+                      )}
                       <Group gap={4}>
                         <Text size="xs" c="dimmed">
-                          Cadastrado em {dayjs(project.created_at).format('DD/MM/YYYY')}
+                          Cadastrado em {dayjs(project?.created_at).format('DD/MM/YYYY')}
                         </Text>
                         {project?.creator?.username && (
                           <>
@@ -1227,8 +1198,8 @@ export default function Project() {
                           </>
                         )}
                       </Group>
-                    </>
-                  )}
+                    </Stack>
+                  </Stack>
                 </Card>
               </Container>
             )}
@@ -1283,7 +1254,7 @@ export default function Project() {
                   {hasSocialLinks && (
                     <Card withBorder radius="lg" p="lg">
                       <Title order={3} fz="lg" fw={600} mb="md">
-                        Ouça também
+                        Ouça também em
                       </Title>
 
                       <Stack gap="xs">
@@ -1323,7 +1294,20 @@ export default function Project() {
               </Container>
             )}
           </Grid.Col>
-          <Grid.Col span={{ base: 12, md: 2.5 }}>
+          <Grid.Col span={{ base: 12, md: 3 }}>
+            {/*
+             * ADMIN FEATURES
+             */}
+
+            {(userIsAdmin || userIsStaff) && activeTab === 'overview' && (
+              <BackstageAccess
+                profile={profile}
+                projectId={project?.id}
+                userIsAdmin={userIsAdmin}
+                userIsStaff={userIsStaff}
+              />
+            )}
+
             {((activeTab === 'overview' && isMobile) || !isMobile) && (
               <SimilarProjects
                 projectId={project?.id}
