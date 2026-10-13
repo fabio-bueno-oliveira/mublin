@@ -7,7 +7,6 @@
 import { createClient } from '@supabase/supabase-js'
 
 const SITE_URL = 'https://mublin.com'
-const PROJECT_PATH = '/project'
 
 const escapeXml = (value) =>
   String(value)
@@ -51,6 +50,9 @@ export default async function handler(req, res) {
         .select('slug, updated_at')
         .eq('is_public', true)
         .eq('is_active', true)
+        .eq('onboarding_complete', true)
+        .eq('is_fake_profile', false)
+        .eq('is_shadow_hidden', false)
         .not('slug', 'is', null),
     ])
 
