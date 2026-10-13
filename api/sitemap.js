@@ -43,6 +43,9 @@ export default async function handler(req, res) {
         .from('profiles')
         .select('username, updated_at')
         .eq('is_public', true)
+        .eq('onboarding_complete', true)
+        .eq('is_fake_profile', false)
+        .eq('is_shadow_hidden', false)
         .not('username', 'is', null),
 
       supabase
@@ -50,9 +53,6 @@ export default async function handler(req, res) {
         .select('slug, updated_at')
         .eq('is_public', true)
         .eq('is_active', true)
-        .eq('onboarding_complete', true)
-        .eq('is_fake_profile', false)
-        .eq('is_shadow_hidden', false)
         .not('slug', 'is', null),
     ])
 
