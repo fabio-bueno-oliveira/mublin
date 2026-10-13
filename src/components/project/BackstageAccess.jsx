@@ -11,7 +11,7 @@ export default function BackstageAccess({
   userIsStaff,
 }) {
   return (
-    <Card withBorder radius="lg" mb="md" px="lg" mx={{ base: 'md', sm: 0 }}>
+    <Card withBorder radius="lg" px="lg" mx={{ base: 'md', sm: 0 }}>
       <Stack gap={8}>
         <Group align="flex-start" gap="lg" wrap="nowrap">
           <Text flex={1} fw={500} size="md" lh={1.3}>

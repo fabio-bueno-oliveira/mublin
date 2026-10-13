@@ -21,6 +21,7 @@ export async function fetchProjectDetails(slug) {
       activity_status,
       status:project_statuses ( description_ptbr, color ),
       creator:profiles!created_by_profile_id ( id, full_name, username, avatar ),
+      city:cities ( name, regions ( name, uf ), countries ( name, name_ptbr ) ),
       project_members (
         id,
         is_founder,
@@ -47,7 +48,7 @@ export async function fetchProjectDetails(slug) {
   return {
     ...data,
     genre: data.genres?.name_ptbr ?? null,
-    project_type: data.project_types?.name_ptbr ?? null,
+    type: data.project_types?.name_ptbr ?? null,
     members: (data.project_members ?? []).map((m) => ({
       id: m.id,
       is_founder: m.is_founder,

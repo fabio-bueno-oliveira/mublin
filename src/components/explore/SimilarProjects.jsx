@@ -16,7 +16,7 @@ const SKELETON_COUNT = 3
  */
 export default function SimilarProjects({
   projectId,
-  limit = 5,
+  limit = 4,
   title = 'Projetos similares',
   mx,
 }) {
@@ -37,7 +37,7 @@ export default function SimilarProjects({
 
   return (
     <Stack gap="xs" mx={mx}>
-      <Title order={3} fw={600} size="17px" mb={0}>
+      <Title order={3} fw={600} size="15px" mb={0}>
         {title}
       </Title>
 

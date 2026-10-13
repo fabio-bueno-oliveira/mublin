@@ -92,7 +92,7 @@ export default function SetlistManager({ projectId, value, onChange }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [setlists])
 
-  const { data: projectBasicDetails, isLoading: loadingProjectDetails } = useQuery({
+  const { data: projectBasicDetails } = useQuery({
     queryKey: ['project-basic-details', projectId],
     queryFn: () => fetchProjectDetailsById(projectId),
     enabled: !!projectId,
