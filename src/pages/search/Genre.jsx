@@ -16,6 +16,7 @@ import {
   Loader,
   SimpleGrid,
   Stack,
+  ScrollArea,
   Text,
   Title,
 } from '@mantine/core'
@@ -228,6 +229,49 @@ function Shelf({ title, onSeeAll, children }) {
 
 // ---------- página ----------
 
+// ---------- chips de subgênero com scroll horizontal ----------
+
+function SubgenreChips({ genres, activeId, onChange }) {
+  return (
+    <Box mt="md" {...BLEED_PROPS}>
+      <ScrollArea
+        pb="xs"
+        scrollbars="x"
+        type="hover"
+        scrollbarSize={14}
+        scrollHideDelay={300}
+      >
+        <Chip.Group multiple={false} value={activeId} onChange={onChange}>
+          <Group gap="xs" wrap="nowrap" pb={{ base: 0, sm: 'sm' }}>
+            <Chip
+              value="all"
+              variant="filled"
+              size="sm"
+              wrapperProps={{ style: { flexShrink: 0 } }}
+            >
+              Todos
+            </Chip>
+            {genres.map((g) => (
+              <Chip
+                key={g.id}
+                value={String(g.id)}
+                variant="filled"
+                size="sm"
+                wrapperProps={{ style: { flexShrink: 0 } }}
+              >
+                {g.name_ptbr}{' '}
+                <Text span fz="xs" inherit style={{ opacity: 0.6 }}>
+                  {g.artists.length}
+                </Text>
+              </Chip>
+            ))}
+          </Group>
+        </Chip.Group>
+      </ScrollArea>
+    </Box>
+  )
+}
+
 export default function SearchGenre() {
   const { genreId } = useParams()
   const categoryId = Number(genreId)
@@ -363,38 +407,11 @@ export default function SearchGenre() {
 
         {/* chips de subgênero */}
         {chipGenres.length > 0 && (
-          <Box mt="md" {...BLEED_PROPS} style={HIDDEN_SCROLLBAR}>
-            <Chip.Group
-              multiple={false}
-              value={activeSub ? String(activeSub.id) : 'all'}
-              onChange={handleSelectSub}
-            >
-              <Group gap="xs" wrap="nowrap">
-                <Chip
-                  value="all"
-                  variant="filled"
-                  size="sm"
-                  wrapperProps={{ style: { flexShrink: 0 } }}
-                >
-                  Todos
-                </Chip>
-                {chipGenres.map((g) => (
-                  <Chip
-                    key={g.id}
-                    value={String(g.id)}
-                    variant="filled"
-                    size="sm"
-                    wrapperProps={{ style: { flexShrink: 0 } }}
-                  >
-                    {g.name_ptbr}{' '}
-                    <Text span fz="xs" inherit style={{ opacity: 0.6 }}>
-                      {g.artists.length}
-                    </Text>
-                  </Chip>
-                ))}
-              </Group>
-            </Chip.Group>
-          </Box>
+          <SubgenreChips
+            genres={chipGenres}
+            activeId={activeSub ? String(activeSub.id) : 'all'}
+            onChange={handleSelectSub}
+          />
         )}
 
         {loadingArtists && <Loader size="sm" variant="dots" color="gray" mt="xl" />}

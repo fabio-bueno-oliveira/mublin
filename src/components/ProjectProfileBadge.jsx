@@ -28,7 +28,15 @@ export default function ProjectProfileBadge({ projectId }) {
   }
 
   return (
-    <Tooltip label={`Ver perfil de ${profile.full_name} no Mublin`} withArrow>
+    <Tooltip
+      label={`Ver perfil pessoal de ${profile.full_name} no Mublin`}
+      multiline
+      w={230}
+      withArrow
+      position="bottom"
+      color="dark"
+      offset={12}
+    >
       <Badge
         component={Link}
         radius="xl"

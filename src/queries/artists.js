@@ -146,6 +146,7 @@ export async function fetchArtistsByGenreCategory(categoryId) {
       slug,
       picture,
       is_verified,
+      project_type_id,
       popularity_tier_id,
       project_type:project_types ( name_ptbr, slug ),
       project_genres ( genre:genres ( id, name_ptbr, id_category, id_category_secondary ) ),

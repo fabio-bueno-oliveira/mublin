@@ -1519,9 +1519,9 @@ export default function NewGig() {
                                     projectId={selectedProject.id}
                                     roleId={gr.role_id}
                                     onSelect={(profile) => {
-                                      console.log(gr.tempId, {
-                                        assigned: profile,
-                                      })
+                                      // console.log(gr.tempId, {
+                                      //   assigned: profile,
+                                      // })
                                       updateRole(gr.tempId, {
                                         assigned: profile,
                                       })

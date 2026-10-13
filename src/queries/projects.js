@@ -729,6 +729,7 @@ export async function fetchRelatedProjects(projectId) {
         picture,
         is_public,
         is_active,
+        project_type_id,
         genre:genres ( name_ptbr ),
         type:project_types ( name_ptbr )
       )

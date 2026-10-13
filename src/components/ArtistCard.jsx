@@ -7,8 +7,8 @@ const PROJECTS_PATH =
 // md: usado no grid e nas prateleiras de subgênero
 // lg: usado na prateleira "Em destaque"
 const SIZES = {
-  md: { avatar: 56, width: 96, name: 'xs', role: '11px', genre: '10px' },
-  lg: { avatar: 76, width: 112, name: 'sm', role: 'xs', genre: '11px' },
+  md: { avatar: 56, width: 96, name: 'xs', role: 'xs', genre: '10px' },
+  lg: { avatar: 90, width: 112, name: 'sm', role: 'xs', genre: '11px' },
 }
 
 function getArtistMainRole(artist) {
@@ -17,15 +17,15 @@ function getArtistMainRole(artist) {
     return null
   }
   const main = roles.find((role) => role.is_main_role) ?? roles[0]
-  return main?.roles?.name_ptbr ?? null
+  return main?.roles?.description_ptbr ?? null
 }
 
-function getArtistGenreNames(artist) {
-  return (artist.project_genres ?? [])
-    .map((pg) => pg.genre?.name_ptbr)
-    .filter(Boolean)
-    .join(', ')
-}
+// function getArtistGenreNames(artist) {
+//   return (artist.project_genres ?? [])
+//     .map((pg) => pg.genre?.name_ptbr)
+//     .filter(Boolean)
+//     .join(', ')
+// }
 
 /**
  * @param {object}  props.artist       registro de projects (com artist_roles e project_genres)
@@ -36,7 +36,7 @@ function getArtistGenreNames(artist) {
 export default function ArtistCard({ artist, size = 'md', fixedWidth = false }) {
   const s = SIZES[size] ?? SIZES.md
   const role = getArtistMainRole(artist)
-  const genres = getArtistGenreNames(artist)
+  // const genres = getArtistGenreNames(artist)
 
   return (
     <Flex
@@ -44,7 +44,12 @@ export default function ArtistCard({ artist, size = 'md', fixedWidth = false }) 
       align="center"
       direction="column"
       component={Link}
-      to={`/artist/${artist.slug}`}
+      // to={`/project/${artist.slug}`}
+      to={
+        artist?.project_type_id === 19
+          ? `/person/${artist.slug}`
+          : `/project/${artist.slug}`
+      }
       w={fixedWidth ? s.width : '100%'}
       style={{
         textDecoration: 'none',
@@ -77,11 +82,11 @@ export default function ArtistCard({ artist, size = 'md', fixedWidth = false }) 
             {role}
           </Text>
         )}
-        {genres && (
+        {/* {genres && (
           <Text size={s.genre} c="dimmed" ta="center" truncate="end" w="100%">
             {genres}
           </Text>
-        )}
+        )} */}
       </Flex>
     </Flex>
   )

@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { Helmet } from 'react-helmet-async'
-import { Link, useParams, useSearchParams } from 'react-router-dom'
+import { Link, useParams, useSearchParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useQuery } from '@tanstack/react-query'
 import {
@@ -8,6 +8,7 @@ import {
   fetchprojectsInspirated,
   fetchProjectPeople,
   fetchProjectGenres,
+  fetchRelatedProjects,
   fetchMyProjectAdminRequest,
 } from '../queries/projects'
 import { fetchOpenProjectOpenings } from '../queries/projectOpenings'
@@ -18,7 +19,7 @@ import {
   Box, Stack,
   Skeleton, em,
   Modal, Affix,
-  Button, Badge,
+  Button, UnstyledButton, Badge,
   Avatar, Image,
   Anchor, Title, Text,
   Card, Paper,
@@ -54,9 +55,15 @@ const ADMIN_REQUEST_STATUS = {
   DECLINED: 3,
 }
 
+const getRelatedAvatarUrl = (related) =>
+  related?.picture
+    ? `https://ik.imagekit.io/mublin/projects/${related.id}/tr:h-200,w-200,c-maintain_ratio/${related.picture}`
+    : null
+
 export default function Project() {
   const { user, profile } = useAuth()
   const { slug } = useParams()
+  const navigate = useNavigate()
   const isMobile = useMediaQuery(`(max-width: ${em(750)})`)
 
   const [searchParams, setSearchParams] = useSearchParams()
@@ -130,6 +137,13 @@ export default function Project() {
   const { data: projectGenres = [], isLoading: loadingProjectGenres } = useQuery({
     queryKey: ['project-genres', project?.id],
     queryFn: () => fetchProjectGenres(project?.id),
+    enabled: !!project?.id,
+    staleTime: 1000 * 60 * 5,
+  })
+
+  const { data: relatedProjects = [], isLoading: loadingRelatedProjects } = useQuery({
+    queryKey: ['project-related', project?.id],
+    queryFn: () => fetchRelatedProjects(project?.id),
     enabled: !!project?.id,
     staleTime: 1000 * 60 * 5,
   })
@@ -665,6 +679,62 @@ export default function Project() {
                     )}
 
                     {/*
+                     * RELATED PROJECTS
+                     */}
+
+                    {(loadingRelatedProjects || relatedProjects.length > 0) && (
+                      <Stack gap="sm" px="xs">
+                        <Text size="xs" fw={500} c="dimmed">
+                          Projetos relacionados
+                        </Text>
+                        <Scroller>
+                          <Group wrap="nowrap" gap="xs" align="flex-start">
+                            {loadingRelatedProjects
+                              ? [1, 2, 3].map((i) => (
+                                  <Stack key={i} gap={6} align="center" w={84}>
+                                    <Skeleton circle height={64} width={64} />
+                                    <Skeleton height={10} width={56} />
+                                  </Stack>
+                                ))
+                              : relatedProjects.map((related) => (
+                                  <UnstyledButton
+                                    key={related.id}
+                                    onClick={() =>
+                                      navigate(
+                                        related.project_type_id === 19
+                                          ? `/person/${related.slug}`
+                                          : `/project/${related.slug}`,
+                                      )
+                                    }
+                                    aria-label={`Ver projeto ${related.name}`}
+                                    w={80}
+                                  >
+                                    <Stack gap={3} align="center">
+                                      <Avatar
+                                        src={getRelatedAvatarUrl(related)}
+                                        size={50}
+                                      />
+                                      <Text
+                                        w={79}
+                                        size="xs"
+                                        ta="center"
+                                        lineClamp={1}
+                                        title={related.name}
+                                      >
+                                        {related.name}
+                                      </Text>
+                                      <Text size="10px" c="dimmed">
+                                        {related?.type}
+                                      </Text>
+                                    </Stack>
+                                  </UnstyledButton>
+                                ))}
+                          </Group>
+                        </Scroller>
+                      </Stack>
+                    )}
+
+                    {/*
                      * PEOPLE PREVIEW
                      */}
 
@@ -695,7 +765,6 @@ export default function Project() {
                                     to={`/${person.profile?.username}`}
                                     size="sm"
                                     fw={500}
-                                    lh={1.2}
                                     lineClamp={1}
                                     style={{
                                       textDecoration: 'none',
@@ -703,25 +772,21 @@ export default function Project() {
                                     }}
                                   >
                                     {person.profile?.full_name}
-                                    {person.roles?.length > 0 && (
-                                      <Text size="sm" span c="dimmed">
-                                        {' '}
-                                        (
-                                        {person.roles
-                                          ?.map((r) => r.role.name_ptbr)
-                                          .join(', ')}
-                                        )
-                                      </Text>
-                                    )}
                                   </Text>
 
-                                  {/* <Text size="xs" c="dimmed" fw={500} lineClamp={1}>
+                                  <Text size="xs" c="dimmed" fw={500} lineClamp={1}>
                                     {person.roles
                                       ?.map((r) => r.role.name_ptbr)
                                       .join(', ')}
-                                  </Text> */}
+                                  </Text>
 
-                                  <Text size="xs" c="dimmed" fw={300} lineClamp={1}>
+                                  <Text
+                                    size="11px"
+                                    c="dimmed"
+                                    mt={3}
+                                    fw={300}
+                                    lineClamp={1}
+                                  >
                                     {person?.notes}
                                   </Text>
                                 </Box>
