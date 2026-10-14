@@ -622,22 +622,28 @@ export default function Project() {
                                 src={PICTURE_AVATAR_SMALL2_PATH + project?.picture}
                                 size={50}
                               />
-                              <IconMusicPlus size={18} color="gray" />
+                              <IconMusicPlus size={19} color="gray" />
                               <Stack gap={6} style={{ flex: 1 }}>
-                                <Skeleton h={8} w="100%" radius="xl" animate={false} />
                                 <Skeleton
-                                  h={6}
-                                  w="70%"
+                                  h={8}
+                                  w="96%"
                                   radius="xl"
                                   animate={false}
-                                  opacity={0.8}
+                                  opacity={0.9}
+                                />
+                                <Skeleton
+                                  h={6}
+                                  w="66%"
+                                  radius="xl"
+                                  animate={false}
+                                  opacity={0.65}
                                 />
                                 <Skeleton
                                   h={6}
                                   w="80%"
                                   radius="xl"
                                   animate={false}
-                                  opacity={0.5}
+                                  opacity={0.4}
                                 />
                               </Stack>
                             </Group>
@@ -654,7 +660,7 @@ export default function Project() {
                               c="dimmed"
                               ta="center"
                             >
-                              Adicione este projeto ao seu portfolio
+                              Adicione ao seu portfolio
                             </Anchor>
                           </Stack>
                         </Stack>

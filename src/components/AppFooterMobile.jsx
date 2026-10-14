@@ -1,22 +1,19 @@
 import { useState } from 'react'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
-import { Drawer, Button, Avatar, Stack, UnstyledButton, Text, Box } from '@mantine/core'
+import { Drawer, Button, Avatar, Stack, UnstyledButton, Text } from '@mantine/core'
 import {
   IconBulb,
-  IconCubePlus,
+  IconPlaylist,
   IconHome,
   IconSearch,
   IconPlus,
   IconRss,
-  IconPencilPlus,
-  IconCalendar,
   IconMicrophone2,
   IconMusic,
-  IconMovie,
   IconBell,
 } from '@tabler/icons-react'
-import { motion } from 'motion/react'
+// import { motion } from 'motion/react'
 import './AppFooterMobile.css'
 
 // function ScenesAnimatedIcon({ isActive }) {
@@ -196,14 +193,14 @@ export default function AppFooterMobile() {
       <Drawer
         offset={8}
         radius="md"
-        size="md"
+        size="xs"
         opened={drawerOpen}
+        title="Criar"
         onClose={() => setDrawerOpen(false)}
-        title="O que deseja criar?"
         position="bottom"
       >
         <Stack mb={60} mt={8} direction="column" gap={7}>
-          <Button
+          {/* <Button
             component={Link}
             to="/new/post"
             variant="transparent"
@@ -214,8 +211,8 @@ export default function AppFooterMobile() {
             onClick={() => setDrawerOpen(false)}
           >
             Novo post
-          </Button>
-          <Button
+          </Button> */}
+          {/* <Button
             component={Link}
             to="/new/scene"
             variant="transparent"
@@ -226,7 +223,7 @@ export default function AppFooterMobile() {
             onClick={() => setDrawerOpen(false)}
           >
             Nova Scene
-          </Button>
+          </Button> */}
           <Button
             component={Link}
             to="/new/gig"
@@ -253,6 +250,18 @@ export default function AppFooterMobile() {
           </Button>
           <Button
             component={Link}
+            to="/setlists"
+            variant="transparent"
+            size="md"
+            radius="md"
+            leftSection={<IconPlaylist size={19} />}
+            fullWidth
+            onClick={() => setDrawerOpen(false)}
+          >
+            Nova Setlist
+          </Button>
+          {/* <Button
+            component={Link}
             to="/new/event"
             variant="transparent"
             size="md"
@@ -262,8 +271,8 @@ export default function AppFooterMobile() {
             onClick={() => setDrawerOpen(false)}
           >
             Novo evento
-          </Button>
-          <Button
+          </Button> */}
+          {/* <Button
             component={Link}
             to="/new/gear"
             variant="transparent"
@@ -274,7 +283,7 @@ export default function AppFooterMobile() {
             onClick={() => setDrawerOpen(false)}
           >
             Novo equipamento
-          </Button>
+          </Button> */}
         </Stack>
       </Drawer>
     </>
