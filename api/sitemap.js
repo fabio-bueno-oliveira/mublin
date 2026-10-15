@@ -53,6 +53,7 @@ export default async function handler(req, res) {
         .select('slug, updated_at')
         .eq('is_public', true)
         .eq('is_active', true)
+        .not('project_type_id', 19)
         .not('slug', 'is', null),
     ])
 

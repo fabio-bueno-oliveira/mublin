@@ -11,26 +11,33 @@ export const getAvatarUrl = (filename, openToWork = false, size = 200) => {
   return `${AVATAR_PATH}${base}${openToWork ? `:${badge}` : ''}/${filename}`
 }
 
-export const formatPortfolioPeriod = (yearStart, yearEnd) => {
+export const formatPortfolioPeriod = (yearStart, yearEnd, showTotalYears = false) => {
   if (!yearStart && !yearEnd) {
     return null
   }
+
+  const formatTotal = (total) =>
+    showTotalYears ? ` (${total} ${total === 1 ? 'ano' : 'anos'})` : ''
+
   if (yearStart && !yearEnd) {
     const currentYear = new Date().getFullYear()
     const totalYears = currentYear - yearStart
     if (totalYears <= 0) {
       return `${yearStart} › Atualmente`
     }
-    return `${yearStart} › Atualmente (${totalYears} ${totalYears === 1 ? 'ano' : 'anos'})`
+    return `${yearStart} › Atualmente${formatTotal(totalYears)}`
   }
+
   if (!yearStart && yearEnd) {
     return `${yearEnd}`
   }
+
   if (yearStart === yearEnd) {
     return `${yearStart}`
   }
+
   const totalYears = yearEnd - yearStart
-  return `${yearStart} › ${yearEnd} (${totalYears} ${totalYears === 1 ? 'ano' : 'anos'})`
+  return `${yearStart} › ${yearEnd}${formatTotal(totalYears)}`
 }
 
 export const formatMemberSince = (createdAt) => {

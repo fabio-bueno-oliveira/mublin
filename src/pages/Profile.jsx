@@ -39,12 +39,17 @@ import {
   Transition, ScrollArea,
   Affix, Divider,
   Avatar, Image,
-  Title, Text,
+  Title, Text, Tabs,
   Flex, Group,
   Button, ActionIcon, ThemeIcon, 
   Alert, Tooltip, Anchor,
   Spoiler,
 } from '@mantine/core'
+import { BarsList } from '@mantine/charts'
+import {
+  getPortfolioGenreStats,
+  getPortfolioSubgenreStats,
+} from '../utils/portfolioGenres'
 // prettier-ignore
 import { useMediaQuery, useDisclosure, useWindowScroll, useScroller } from '@mantine/hooks'
 // prettier-ignore
@@ -102,9 +107,9 @@ const COMPANY_PATH =
 const EVENTS_PATH =
   'https://ik.imagekit.io/mublin/events/tr:h-140,w-140,c-maintain_ratio/'
 
-function SectionTitle({ text, mb, mt = 0, ...props }) {
+function SectionTitle({ text, mb, mt = 0, size = '18px', ...props }) {
   return (
-    <Text fw={600} size="18px" mb={mb} mt={mt} {...props}>
+    <Text fw={600} size={size} mb={mb} mt={mt} {...props}>
       {text}
     </Text>
   )
@@ -458,6 +463,16 @@ export default function Profile() {
     enabled: !!profile?.id,
     staleTime: 1000 * 60 * 10,
   })
+
+  const portfolioGenreStats = useMemo(
+    () => getPortfolioGenreStats(portfolio, 6),
+    [portfolio],
+  )
+
+  const portfolioSubgenreStats = useMemo(
+    () => getPortfolioSubgenreStats(portfolio, 8),
+    [portfolio],
+  )
 
   const { data: portfolioUpvotes = [] } = useQuery({
     queryKey: ['portfolio-upvotes', profile?.id, user?.id],
@@ -1513,7 +1528,15 @@ export default function Profile() {
                             item.roles?.map((r) => r.role?.name_ptbr).filter(Boolean) ??
                             []
                           const typeName = entity.type?.name_ptbr
-                          const genre = entity.genre?.name_ptbr
+                          const projectGenreNames =
+                            entity.genres
+                              ?.map((g) => g?.genre?.name_ptbr)
+                              .filter(Boolean) ?? []
+                          // Fallback para o campo legado (projects.genre_id)
+                          const genreNames =
+                            projectGenreNames.length > 0
+                              ? projectGenreNames
+                              : [entity.genre?.name_ptbr].filter(Boolean)
                           const engagementNames =
                             item.engagement_types
                               ?.map((e) => e.engagement_type?.name_ptbr)
@@ -1557,8 +1580,9 @@ export default function Profile() {
                                 <Stack gap={2} style={{ flex: 1, minWidth: 0 }}>
                                   {roleNames.length > 0 && (
                                     <Text
-                                      size="15px"
+                                      size="md"
                                       fw={600}
+                                      lh={1}
                                       component={Link}
                                       to={url}
                                       w="fit-content"
@@ -1573,6 +1597,7 @@ export default function Profile() {
                                   )}
                                   <Group
                                     gap={6}
+                                    mt={2}
                                     align="center"
                                     wrap="wrap"
                                     component={Link}
@@ -1584,33 +1609,37 @@ export default function Profile() {
                                       color: 'inherit',
                                     }}
                                   >
-                                    <Text size="sm">
+                                    <Text size="xs">
                                       <Text span>{entity.name}</Text>{' '}
                                       <Text span>
                                         ({typeName}
-                                        {genre && ` · ${genre}`})
+                                        {genreNames.length > 0 &&
+                                          ` · ${genreNames.join(', ')}`}
+                                        )
                                       </Text>
                                     </Text>
                                   </Group>
-                                  {engagementNames.length > 0 && (
-                                    <Text size="xs" c="dimmed" mt={2} mb={2} lh={1}>
-                                      {/* {engagementNames.length === 1
-                                        ? 'Vínculo:'
-                                        : 'Vínculos:'}{' '} */}
-                                      {engagementNames.join(', ')}
-                                    </Text>
-                                  )}
-                                  {item.is_sporadic ? (
-                                    <Text size="xs" c="dimmed">
-                                      Colaboração esporádica
-                                    </Text>
-                                  ) : (
-                                    period && (
+                                  <Group gap={3} mt={1} mb={1}>
+                                    {engagementNames.length > 0 && (
                                       <Text size="xs" c="dimmed">
-                                        {period}
+                                        {/* {engagementNames.length === 1
+                                          ? 'Vínculo:'
+                                          : 'Vínculos:'}{' '} */}
+                                        {engagementNames.join(', ')}
                                       </Text>
-                                    )
-                                  )}
+                                    )}
+                                    {item.is_sporadic ? (
+                                      <Text size="xs" c="dimmed">
+                                        · Colaboração esporádica
+                                      </Text>
+                                    ) : (
+                                      period && (
+                                        <Text size="xs" c="dimmed">
+                                          · {period}
+                                        </Text>
+                                      )
+                                    )}
+                                  </Group>
                                   {item.is_mublin_facilitated && (
                                     <Flex gap={4} align="center" mt={4} mb={4}>
                                       <Image
@@ -2130,6 +2159,61 @@ export default function Profile() {
                   isOwnProfile={isOwnProfile}
                 />
               )}
+
+              <SectionPanel id="graph">
+                <SectionTitle size="14px" text="Estilos musicais do portfólio" mb="md" />
+
+                {loadingPortfolio ? (
+                  <Skeleton height={280} radius="md" />
+                ) : (
+                  <Tabs defaultValue="categories" variant="outline" radius="md">
+                    <Tabs.List mb="md" grow>
+                      <Tabs.Tab value="categories">Categorias</Tabs.Tab>
+                      <Tabs.Tab value="subgenres">Subgêneros</Tabs.Tab>
+                    </Tabs.List>
+
+                    {/* CATEGORIAS */}
+                    <Tabs.Panel value="categories" px={4}>
+                      {portfolioGenreStats.length > 0 ? (
+                        <BarsList
+                          barsLabel="Gênero"
+                          valueLabel="Projetos"
+                          data={portfolioGenreStats.map((item) => ({
+                            name: item.genre,
+                            value: item.projects,
+                          }))}
+                          color="teal"
+                          barHeight={28}
+                          minBarSize={140}
+                        />
+                      ) : (
+                        <Text size="sm" c="dimmed">
+                          Ainda não há categorias musicais registradas no portfólio.
+                        </Text>
+                      )}
+                    </Tabs.Panel>
+
+                    {/* SUBGÊNEROS */}
+                    <Tabs.Panel value="subgenres" px={4}>
+                      {portfolioSubgenreStats.length > 0 ? (
+                        <BarsList
+                          data={portfolioSubgenreStats.map((item) => ({
+                            name: item.genre,
+                            value: item.projects,
+                          }))}
+                          color="teal"
+                          barHeight={28}
+                          minBarSize={140}
+                        />
+                      ) : (
+                        <Text size="sm" c="dimmed">
+                          Ainda não há subgêneros musicais registrados no portfólio.
+                        </Text>
+                      )}
+                    </Tabs.Panel>
+                  </Tabs>
+                )}
+              </SectionPanel>
 
               <SectionPanel id="recognitions">
                 <SectionTitle text="Reconhecimentos" mb="sm" />

@@ -692,7 +692,7 @@ export default function Portfolio() {
           />
 
           <Text size="sm" fw={500}>
-            Onde você atuou?
+            Projeto/artista que atuou?
           </Text>
 
           {selectedProject ? (

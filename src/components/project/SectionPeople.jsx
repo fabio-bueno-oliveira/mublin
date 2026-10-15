@@ -25,9 +25,11 @@ import {
   Loader,
   Badge,
   ActionIcon,
+  Tooltip,
 } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
+import { formatPortfolioPeriod } from '../../utils/profile'
 import { IconPencil, IconInfoCircle } from '@tabler/icons-react'
 
 const AVATAR_PATH =
@@ -168,47 +170,10 @@ export default function SectionPeople({
       <Container size="lg" px={{ base: 'sm', sm: 'md' }}>
         <Stack gap="xl">
           <Box>
-            <Title order={3} fz="lg" fw={600} mb="xs">
+            <Title mt="xs" order={3} fz="lg" fw={600} lh={1}>
               Administradores
             </Title>
-
-            {loadingProjectAdmins ? (
-              <Skeleton h={60} radius="md" />
-            ) : projectAdmins.length > 0 ? (
-              <Group gap="sm">
-                {projectAdmins.map((person) => (
-                  <Paper key={person.id} withBorder radius="md" p="sm">
-                    <Group gap="sm">
-                      <Avatar
-                        component={Link}
-                        to={`/${person?.profile?.username}`}
-                        size={38}
-                        src={`${AVATAR_MINI_PATH}${person?.profile?.avatar}`}
-                      />
-
-                      <Box>
-                        <Text size="sm" fw={500}>
-                          {person?.profile?.full_name}
-                        </Text>
-
-                        <Text size="xs" c="dimmed">
-                          @{person?.profile?.username}
-                        </Text>
-                      </Box>
-                    </Group>
-                  </Paper>
-                ))}
-              </Group>
-            ) : userIsAdmin ? null : myAdminRequestIsPending ? (
-              <Text c="dimmed" size="sm">
-                Nenhum administrador neste projeto. Sua solicitação está sendo processada
-              </Text>
-            ) : (
-              <Text c="dimmed" size="sm">
-                Nenhum administrador neste projeto
-              </Text>
-            )}
-            <Text mt="xs" c="dimmed" size="xs">
+            <Text mt="xs" mb="xs" c="dimmed" size="xs">
               É fundador ou faz parte do staff?{' '}
               <Text
                 span
@@ -222,6 +187,31 @@ export default function SectionPeople({
                 Quero ser administrador
               </Text>
             </Text>
+
+            {loadingProjectAdmins ? (
+              <Skeleton h={60} radius="md" />
+            ) : projectAdmins.length > 0 ? (
+              <Group gap="sm">
+                {projectAdmins.map((person) => (
+                  <Tooltip key={person.id} label={person?.profile?.full_name}>
+                    <Avatar
+                      component={Link}
+                      to={`/${person?.profile?.username}`}
+                      size={35}
+                      src={`${AVATAR_MINI_PATH}${person?.profile?.avatar}`}
+                    />
+                  </Tooltip>
+                ))}
+              </Group>
+            ) : userIsAdmin ? null : myAdminRequestIsPending ? (
+              <Text c="dimmed" size="sm">
+                Nenhum administrador neste projeto. Sua solicitação está sendo processada
+              </Text>
+            ) : (
+              <Text c="dimmed" size="sm">
+                Nenhum administrador neste projeto
+              </Text>
+            )}
           </Box>
 
           <Box>
@@ -291,7 +281,12 @@ export default function SectionPeople({
                       </Text>
 
                       {person.engagement_types?.length > 0 && (
-                        <Badge size="xs" fw={400} variant="light">
+                        <Badge
+                          size="xs"
+                          fw={400}
+                          color="var(--mantine-color-text)"
+                          variant="light"
+                        >
                           {person.engagement_types
                             .map((e) => e.engagement_type.name_ptbr)
                             .join(', ')}
@@ -303,8 +298,7 @@ export default function SectionPeople({
                       </Text>
 
                       <Text fz="11px" ta="center" opacity={0.7}>
-                        {person.year_start}
-                        {person.year_end && ` › ${person.year_end}`}
+                        {formatPortfolioPeriod(person.year_start, person.year_end)}
                       </Text>
                     </Stack>
                   </Paper>

@@ -25,6 +25,7 @@ import 'dayjs/locale/pt-br'
 import '@mantine/core/styles.css'
 import '@mantine/notifications/styles.css'
 import '@mantine/dates/styles.css'
+import '@mantine/charts/styles.css'
 // charts e schedule serão importadas via lazy imports apenas nas páginas que usam
 import './styles.scss'
 

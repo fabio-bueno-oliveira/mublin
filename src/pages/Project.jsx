@@ -41,6 +41,7 @@ import {
   IconExternalLink,
   IconWorld,
   IconMusicPlus,
+  IconBrandYoutube,
 } from '@tabler/icons-react'
 import AppNavbarMobile from '../components/AppNavbarMobile'
 import SimilarProjects from '../components/explore/SimilarProjects'
@@ -247,7 +248,11 @@ export default function Project() {
   const myAdminRequestIsPending = myAdminRequestStatus === ADMIN_REQUEST_STATUS.PENDING
 
   const hasSocialLinks =
-    project?.instagram || project?.spotify_id || project?.soundcloud || project?.website
+    project?.instagram ||
+    project?.spotify_id ||
+    project?.soundcloud ||
+    project?.website ||
+    project?.youtube_handle
 
   const validGenreNames =
     projectGenres?.map((g) => g?.genre?.name_ptbr || g?.name_ptbr).filter(Boolean) ?? []
@@ -540,7 +545,7 @@ export default function Project() {
                     Pessoas {projectPeople?.length > 0 && `(${projectPeople.length})`}
                   </Tabs.Tab>
 
-                  <Tabs.Tab value="gigs">Gigs</Tabs.Tab>
+                  {project?.end_year > 0 && <Tabs.Tab value="gigs">Gigs</Tabs.Tab>}
 
                   <Tabs.Tab value="music">Música</Tabs.Tab>
                 </Scroller>
@@ -1051,6 +1056,25 @@ export default function Project() {
                                 <IconBrandSpotify size={20} style={{ flexShrink: 0 }} />
                                 <Text size="sm" lh={1}>
                                   {project?.name} no Spotify
+                                </Text>
+                              </Group>
+                            </Anchor>
+                          )}
+
+                          {project?.youtube_handle && (
+                            <Anchor
+                              href={`https://www.youtube.com/${project.youtube_handle}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              underline="never"
+                              c="dimmed"
+                              aria-label={`Abrir Soundcloud de ${project?.name}`}
+                              style={{ width: 'fit-content' }}
+                            >
+                              <Group gap={6} wrap="nowrap" className="social-link">
+                                <IconBrandYoutube size={20} style={{ flexShrink: 0 }} />
+                                <Text size="sm" lh={1}>
+                                  {project?.name} no Youtube
                                 </Text>
                               </Group>
                             </Anchor>

@@ -487,7 +487,22 @@ export async function fetchProfilePortfolio(profileId) {
       project:projects (
         id, name, slug, picture, description,
         type:project_types ( name_ptbr ),
-        genre:genres ( name_ptbr )
+        genre:genres ( name_ptbr ),
+        genres:project_genres (
+          id,
+          genre:genres (
+            id,
+            name,
+            name_ptbr,
+            id_category,
+            category:genre_categories!genres_id_category_fkey (
+              id,
+              name,
+              name_ptbr,
+              color_hex
+            )
+          )
+        )
       ),
       roles:portfolio_roles (
         role:roles ( id, name_ptbr )

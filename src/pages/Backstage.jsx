@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Helmet } from 'react-helmet-async'
-import { useParams, useSearchParams } from 'react-router-dom'
+import { useParams, useSearchParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabaseClient'
@@ -10,6 +10,7 @@ import {
   fetchProjectStatuses,
   fetchProjectAdminRequests,
   respondProjectAdminRequest,
+  leaveProject,
 } from '../queries/projects'
 import {
   fetchProjectOpenings,
@@ -36,6 +37,7 @@ import {
   Select, Checkbox,
   Tooltip, ActionIcon,
   Modal, Skeleton,
+  Alert,
 } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
@@ -97,6 +99,7 @@ export default function Backstage() {
   const { projectId } = useParams()
   const { user } = useAuth()
   const queryClient = useQueryClient()
+  const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const activeSection = searchParams.get('section') || 'info'
 
@@ -142,6 +145,15 @@ export default function Backstage() {
       !m.is_admin &&
       m.status === MEMBER_REQUEST_STATUS.ACCEPTED,
   )
+
+  // Se o usuário é o único admin, sair deixa o projeto sem administradores
+  // (ele passa a poder ser reivindicado via claim). Não bloqueia a saída,
+  // só muda o texto de aviso.
+  const acceptedAdminsCount =
+    project?.members?.filter(
+      (m) => m.is_admin && m.status === MEMBER_REQUEST_STATUS.ACCEPTED,
+    ).length ?? 0
+  const isLastAdmin = !!userIsAdmin && acceptedAdminsCount <= 1
 
   const { data: projectStatuses = [], isLoading: loadingProjectStatuses } = useQuery({
     queryKey: ['project-statuses'],
@@ -318,6 +330,42 @@ export default function Backstage() {
     onError: (error) => {
       notifications.show({
         title: 'Erro ao responder solicitação',
+        message: error?.message || 'Tente novamente em instantes.',
+        color: 'red',
+        position: 'top-center',
+      })
+    },
+  })
+
+  const leaveProjectMutation = useMutation({
+    mutationFn: () => leaveProject(project.id, user.id),
+    onSuccess: () => {
+      notifications.show({
+        title: 'Você saiu do projeto',
+        message: `Você não faz mais parte da equipe de ${project.name}.`,
+        color: 'green',
+        position: 'top-center',
+      })
+      // Sai do Backstage primeiro: sem acesso, a tela viraria "Acesso restrito"
+      navigate(`/project/${project.slug}`, { replace: true })
+      // refetchType: 'none' só marca como stale (sem refetch imediato enquanto
+      // este componente ainda está montado); a próxima montagem busca de novo.
+      queryClient.invalidateQueries({
+        queryKey: ['project-backstage-info', projectId],
+        refetchType: 'none',
+      })
+      queryClient.invalidateQueries({
+        queryKey: ['project-admin-requests', projectId],
+        refetchType: 'none',
+      })
+      queryClient.invalidateQueries({ queryKey: ['project', project.slug] })
+      queryClient.invalidateQueries({
+        queryKey: ['project-admin-request', project.id, user.id],
+      })
+    },
+    onError: (error) => {
+      notifications.show({
+        title: 'Erro ao sair do projeto',
         message: error?.message || 'Tente novamente em instantes.',
         color: 'red',
         position: 'top-center',
@@ -529,6 +577,33 @@ export default function Backstage() {
     })
   }
 
+  const handleLeaveProject = () => {
+    modals.openConfirmModal({
+      title: 'Sair do projeto',
+      centered: true,
+      children: (
+        <Stack gap="xs">
+          <Text size="sm">
+            Tem certeza que deseja sair de <b>{project.name}</b>?
+          </Text>
+          <Text size="sm">
+            Você será removido da equipe do projeto e perderá acesso a este backstage.
+            Para voltar, será preciso solicitar acesso novamente.
+          </Text>
+          {isLastAdmin && (
+            <Alert p="xs" color="gray">
+              Identificamos que você é o único administrador. Ao sair, o projeto ficará
+              sem administradores e poderá ser reivindicado por outra pessoa.
+            </Alert>
+          )}
+        </Stack>
+      ),
+      labels: { confirm: 'Sair do projeto', cancel: 'Cancelar' },
+      confirmProps: { color: 'red' },
+      onConfirm: () => leaveProjectMutation.mutate(),
+    })
+  }
+
   const handleDeleteOpening = (opening) => {
     modals.openConfirmModal({
       title: 'Remover vaga',
@@ -654,7 +729,7 @@ export default function Backstage() {
                   placeholder="Ex: Gravar EP, fazer turnê no Sudeste..."
                   value={editForm.purpose}
                   onChange={handleEditFormChange('purpose')}
-                  rows={3}
+                  maxRows={3}
                   autosize
                 />
 
@@ -722,20 +797,30 @@ export default function Backstage() {
                 Zona de perigo
               </Title>
               <Text size="xs" c="dimmed" mb="md">
-                Ações irreversíveis para sua participação como admin
+                Ações irreversíveis para sua participação neste projeto
               </Text>
               <Stack gap="xs">
                 <Group justify="space-between" wrap="nowrap">
-                  <Box>
+                  <Stack gap={1}>
                     <Text size="sm" fw={500}>
-                      Deixar administração
+                      Sair do projeto
                     </Text>
-                    <Text size="xs" c="dimmed">
-                      Você perderá acesso às configurações
+                    <Text size="xs" c="dimmed" flex={1}>
+                      {/* {isLastAdmin
+                        ? 'Você é o único admin: o projeto ficará sem administradores'
+                        : 'Você perderá acesso ao backstage deste projeto'} */}
+                      Você perderá acesso ao backstage deste projeto
                     </Text>
-                  </Box>
-                  <Button variant="filled" color="red" size="xs" w={142}>
-                    Sair do admin
+                  </Stack>
+                  <Button
+                    variant="filled"
+                    color="red"
+                    size="xs"
+                    w={142}
+                    loading={leaveProjectMutation.isPending}
+                    onClick={handleLeaveProject}
+                  >
+                    Sair do projeto
                   </Button>
                 </Group>
               </Stack>

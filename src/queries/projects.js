@@ -8,10 +8,10 @@ export async function fetchProjectDetails(slug) {
       created_at,
       id,
       name, slug,
-      foundation_year,
+      foundation_year, end_year,
       picture, cover_picture, logo,
       description, purpose,
-      instagram, spotify_id, soundcloud, website,
+      instagram, spotify_id, soundcloud, website, youtube_handle, 
       on_tour,
       is_verified,
       verified_at,
@@ -371,6 +371,31 @@ export async function cancelParticipationRequest(projectId, profileId) {
 
   if (error) {
     throw new Error(error.message)
+  }
+  return true
+}
+
+// Remove a participação do próprio usuário no projeto (project_members).
+// Usado pelo botão "Sair do projeto" no Backstage (admin ou staff).
+// Se for o único admin, o projeto fica sem administradores e passa a ser
+// elegível ao fluxo de claim (project_admin_requests).
+// O .select() no final é intencional: com RLS, um DELETE bloqueado não
+// retorna erro, apenas 0 linhas afetadas. Sem isso, a UI mostraria sucesso
+// mesmo sem ter removido nada.
+export async function leaveProject(projectId, profileId) {
+  const { data, error } = await supabase
+    .from('project_members')
+    .delete()
+    .eq('project_id', projectId)
+    .eq('profile_id', profileId)
+    .eq('status', 2) // apenas participação já aceita (pendentes usam cancelParticipationRequest)
+    .select('id')
+
+  if (error) {
+    throw new Error(error.message)
+  }
+  if (!data || data.length === 0) {
+    throw new Error('Não foi possível remover sua participação neste projeto.')
   }
   return true
 }
