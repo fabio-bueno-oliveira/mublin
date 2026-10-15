@@ -11,8 +11,7 @@ export async function fetchProjectDetails(slug) {
       foundation_year, end_year,
       picture, cover_picture, logo,
       description, purpose,
-      instagram, spotify_id, soundcloud, website, youtube_handle, 
-      on_tour,
+      instagram, spotify_id, soundcloud, website, youtube_handle,
       is_verified,
       verified_at,
       verified_method:project_verification_methods ( method_name, method_name_pt ),
@@ -77,7 +76,6 @@ export async function fetchProjectPublicDetails(slug) {
       slug,
       picture,
       description,
-      on_tour,
       end_year,
       is_public,
       is_verified,
@@ -458,7 +456,6 @@ export async function fetchProjectBackstageInfo(projectId) {
       purpose,
       picture,
       cover_picture,
-      on_tour,
       activity_status,
       type:project_types ( id, name_ptbr ),
       genres ( id, name_ptbr ),
@@ -501,7 +498,6 @@ export async function fetchProjectDashboardInfo(projectSlug) {
       purpose,
       picture,
       cover_picture,
-      on_tour,
       genres ( id, name_ptbr ),
       project_types ( name_ptbr ),
       cities (
@@ -553,7 +549,6 @@ export async function fetchProjectForDashbar(slug) {
       slug,
       picture,
       logo,
-      on_tour,
       genres ( id, name_ptbr ),
       project_types ( id, name_ptbr ),
       project_members (
@@ -785,4 +780,153 @@ export async function fetchRelatedProjects(projectId) {
     is_main: row.is_main,
     display_order: row.display_order,
   }))
+}
+
+// ──────────────────────────────────────────────
+// TOUR LOGIC - substitui projects.on_tour (deprecado)
+// ──────────────────────────────────────────────
+
+export async function fetchProjectTours(projectId) {
+  if (!projectId) return []
+  const { data, error } = await supabase
+    .from('tour_projects')
+    .select(
+      `
+      id, is_headliner, order_show,
+      tour:tours!inner ( id, title, slug, description, picture, is_active, is_public, date_start, date_end )
+    `,
+    )
+    .eq('project_id', projectId)
+    .eq('tour.is_public', true)
+    .order('order_show', { ascending: true })
+  if (error) throw new Error(error.message)
+  return (data ?? []).map((row) => ({
+    tour_project_id: row.id,
+    is_headliner: row.is_headliner,
+    order_show: row.order_show,
+    ...row.tour,
+  }))
+}
+
+/**
+ * Lógica principal: Em turnê + Turnê em breve (6 meses)
+ * - Em turnê: is_active && (hoje em tour_dates OU hoje entre date_start/date_end)
+ * - Em breve: is_active && próxima data futura <= hoje+6meses
+ */
+export async function fetchProjectTourStatus(projectId) {
+  if (!projectId)
+    return {
+      isOnTour: false,
+      isUpcomingSoon: false,
+      activeTours: [],
+      upcomingTours: [],
+      nextDate: null,
+    }
+
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const todayStr = today.toISOString().slice(0, 10)
+  const sixMonthsLater = new Date(today)
+  sixMonthsLater.setMonth(sixMonthsLater.getMonth() + 6)
+  const sixMonthsStr = sixMonthsLater.toISOString().slice(0, 10)
+
+  const { data: tourProjects, error: tpError } = await supabase
+    .from('tour_projects')
+    .select(
+      `is_headliner, tour:tours!inner ( id, title, slug, picture, is_active, is_public, date_start, date_end )`,
+    )
+    .eq('project_id', projectId)
+    .eq('tour.is_active', true)
+
+  if (tpError) throw new Error(tpError.message)
+  if (!tourProjects?.length)
+    return {
+      isOnTour: false,
+      isUpcomingSoon: false,
+      activeTours: [],
+      upcomingTours: [],
+      nextDate: null,
+    }
+
+  const tourIds = tourProjects.map((tp) => tp.tour.id)
+
+  const { data: tourDates, error: tdError } = await supabase
+    .from('tour_dates')
+    .select('tour_id, date')
+    .in('tour_id', tourIds)
+    .order('date', { ascending: true })
+
+  if (tdError) throw new Error(tdError.message)
+
+  const datesByTour = {}
+  for (const d of tourDates ?? []) {
+    if (!datesByTour[d.tour_id]) datesByTour[d.tour_id] = []
+    datesByTour[d.tour_id].push(d.date)
+  }
+
+  const activeTours = []
+  const upcomingTours = []
+  let nearestFutureDate = null
+
+  for (const tp of tourProjects) {
+    const t = tp.tour
+    const tourDateList = datesByTour[t.id] ?? []
+
+    const hasTodayInDates = tourDateList.includes(todayStr)
+    const hasTodayInRange =
+      t.date_start && t.date_end
+        ? todayStr >= t.date_start && todayStr <= t.date_end
+        : t.date_start
+          ? todayStr >= t.date_start
+          : false
+
+    if (hasTodayInDates || hasTodayInRange) {
+      activeTours.push({
+        ...t,
+        is_headliner: tp.is_headliner,
+        tour_dates: tourDateList,
+        matched_today: hasTodayInDates,
+        matched_range: hasTodayInRange,
+      })
+      continue
+    }
+
+    const futureDates = tourDateList.filter((d) => d >= todayStr)
+    if (t.date_start && t.date_start >= todayStr) futureDates.push(t.date_start)
+    futureDates.sort()
+
+    const nextDateForThisTour = futureDates[0]
+    if (!nextDateForThisTour || nextDateForThisTour > sixMonthsStr) continue
+
+    const daysUntil = Math.ceil(
+      (new Date(nextDateForThisTour) - today) / (1000 * 60 * 60 * 24),
+    )
+    upcomingTours.push({
+      ...t,
+      is_headliner: tp.is_headliner,
+      next_date: nextDateForThisTour,
+      days_until: daysUntil,
+      tour_dates: tourDateList,
+    })
+    if (!nearestFutureDate || nextDateForThisTour < nearestFutureDate)
+      nearestFutureDate = nextDateForThisTour
+  }
+
+  return {
+    isOnTour: activeTours.length > 0,
+    isUpcomingSoon: upcomingTours.length > 0,
+    activeTours,
+    upcomingTours: upcomingTours.sort((a, b) => a.next_date.localeCompare(b.next_date)),
+    nextDate: nearestFutureDate,
+  }
+}
+
+// Wrappers para retrocompatibilidade (pode remover se quiser usar só fetchProjectTourStatus)
+export async function fetchProjectActiveTours(projectId) {
+  const status = await fetchProjectTourStatus(projectId)
+  return status.activeTours
+}
+export async function isProjectOnTour(projectId) {
+  const status = await fetchProjectTourStatus(projectId)
+  return status.isOnTour
 }

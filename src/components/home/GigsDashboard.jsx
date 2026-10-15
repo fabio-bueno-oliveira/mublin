@@ -418,7 +418,7 @@ export default function GigsDashboard() {
                     )}
                     <Text size="11px" c="dimmed">
                       {noGoal || !goal
-                        ? 'Definir meta'
+                        ? 'Definir meta mensal'
                         : `Meta: ${goal} ${goal > 1 ? 'gigs' : 'gig'}/mês`}
                     </Text>
                   </Card>

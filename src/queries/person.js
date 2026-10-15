@@ -43,7 +43,6 @@ export async function fetchPersonDetails(slug) {
       logo,
       description,
       purpose,
-      on_tour,
       instagram,
       website,
       is_verified,

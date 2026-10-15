@@ -75,3 +75,58 @@ export async function fetchVenueDetails(slug) {
   }
   return data
 }
+
+// ── Novas funções usadas por tours ──
+
+export async function fetchCountries() {
+  const { data, error } = await supabase
+    .from('countries')
+    .select('id, name, name_ptbr')
+    .order('name_ptbr')
+  if (error) {
+    throw new Error(error.message)
+  }
+  return data
+}
+
+export async function fetchRegionsByCountry(countryId) {
+  const { data, error } = await supabase
+    .from('regions')
+    .select('id, name, uf, country_id')
+    .eq('country_id', countryId)
+    .order('name')
+  if (error) {
+    throw new Error(error.message)
+  }
+  return data
+}
+
+export async function fetchCitiesByRegion(regionId) {
+  const { data, error } = await supabase
+    .from('cities')
+    .select('id, name, region_id, country_id')
+    .eq('region_id', regionId)
+    .order('name')
+    .limit(200)
+  if (error) {
+    throw new Error(error.message)
+  }
+  return data
+}
+
+// Busca genérica de cidades por nome sem depender de region (para tour_dates)
+export async function searchCitiesGlobal(query) {
+  if (!query || query.length < 2) return []
+  const { data, error } = await supabase
+    .from('cities')
+    .select(
+      'id, name, regions ( name, uf ), countries:countries!cities_country_id_fkey ( name_ptbr )',
+    )
+    .ilike('name', `%${query}%`)
+    .order('name')
+    .limit(20)
+  if (error) {
+    throw new Error(error.message)
+  }
+  return data
+}

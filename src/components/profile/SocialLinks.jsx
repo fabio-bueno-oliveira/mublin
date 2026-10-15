@@ -22,15 +22,14 @@ export default function SocialLinks({ profile, loading }) {
                 return (
                   <Group
                     key={link?.platform}
-                    gap="xs"
+                    gap={6}
                     component="a"
                     href={href}
                     target="_blank"
                     rel="noopener noreferrer"
                     style={{ textDecoration: 'none', color: 'inherit' }}
-                    pl={6}
                   >
-                    <Icon color="var(--mantine-color-text)" stroke={1.5} size={25} />
+                    <Icon color="var(--mantine-color-text)" stroke={1.8} size={20} />
                     <Stack pl={6} gap={2} w={180}>
                       <Text size="sm" fw={600} tt="capitalize">
                         {link?.platform}

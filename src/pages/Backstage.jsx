@@ -112,7 +112,6 @@ export default function Backstage() {
     name: '',
     description: '',
     purpose: '',
-    on_tour: false,
     activity_status: null,
   })
   const [pictureFile, setPictureFile] = useState(null)
@@ -244,7 +243,6 @@ export default function Backstage() {
       name: project.name || '',
       description: project.description || '',
       purpose: project.purpose || '',
-      on_tour: !!project.on_tour,
       activity_status:
         project.activity_status != null ? String(project.activity_status) : null,
     })
@@ -264,7 +262,6 @@ export default function Backstage() {
         name: editForm.name.trim(),
         description: editForm.description.trim() || null,
         purpose: editForm.purpose.trim() || null,
-        on_tour: editForm.on_tour,
         activity_status: editForm.activity_status
           ? Number(editForm.activity_status)
           : null,
@@ -437,11 +434,6 @@ export default function Backstage() {
   const handleEditFormChange = (field) => (event) => {
     const { value } = event.currentTarget
     setEditForm((prev) => ({ ...prev, [field]: value }))
-  }
-
-  const handleOnTourChange = (event) => {
-    const { checked } = event.currentTarget
-    setEditForm((prev) => ({ ...prev, on_tour: checked }))
   }
 
   const handleActivityStatusChange = (value) => {
@@ -744,12 +736,6 @@ export default function Backstage() {
                   searchable
                 />
 
-                <Checkbox
-                  label="Em turnê atualmente"
-                  checked={editForm.on_tour}
-                  onChange={handleOnTourChange}
-                />
-
                 <Group justify="space-between" mt="sm">
                   <Button
                     variant="default"
@@ -759,7 +745,6 @@ export default function Backstage() {
                         name: project.name || '',
                         description: project.description || '',
                         purpose: project.purpose || '',
-                        on_tour: !!project.on_tour,
                         activity_status:
                           project.activity_status != null
                             ? String(project.activity_status)

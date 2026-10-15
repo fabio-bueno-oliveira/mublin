@@ -5,6 +5,7 @@ import {
   fetchProjectPublicDetails,
   fetchProjectGenres,
   fetchRelatedProjects,
+  fetchProjectTourStatus,
 } from '../queries/projects'
 import {
   Container,
@@ -18,7 +19,6 @@ import {
   Stack,
   SimpleGrid,
   Button,
-  Box,
   UnstyledButton,
   Scroller,
 } from '@mantine/core'
@@ -29,6 +29,7 @@ import {
   IconArrowRight,
   IconMapPin,
   IconMusic,
+  IconCalendar,
 } from '@tabler/icons-react'
 import { truncateDescription } from '../utils/formatter'
 
@@ -62,6 +63,13 @@ export default function Project() {
     queryFn: () => fetchRelatedProjects(project?.id),
     enabled: !!project?.id,
     staleTime: 1000 * 60 * 5,
+  })
+
+  const { data: tourStatus } = useQuery({
+    queryKey: ['project-tour-status', project?.id],
+    queryFn: () => fetchProjectTourStatus(project.id),
+    enabled: !!project?.id,
+    staleTime: 1000 * 60 * 2,
   })
 
   const validGenreNames =
@@ -210,6 +218,7 @@ export default function Project() {
             <Avatar
               src={project?.picture ? PROJECT_AVATAR_PATH + project.picture : null}
               size={90}
+              alt={`Foto ${project?.type?.name_ptbr} ${project?.name}`}
             />
           )}
 
@@ -221,15 +230,26 @@ export default function Project() {
               </>
             ) : (
               <>
-                {project?.on_tour && (
+                {/* TOUR BADGES - nova lógica */}
+                {tourStatus?.isOnTour && (
+                  <Badge mb={4} color="green" leftSection={<IconRoad size={14} />}>
+                    Em turnê • {tourStatus.activeTours[0].title}
+                  </Badge>
+                )}
+                {!tourStatus?.isOnTour && tourStatus?.isUpcomingSoon && (
                   <Badge
-                    size="xs"
-                    mb={4}
+                    color="yellow"
                     variant="light"
-                    color="gray"
-                    leftSection={<IconRoad size={14} />}
+                    leftSection={<IconCalendar size={14} />}
+                    px={5}
+                    mb={4}
                   >
-                    Em turnê
+                    Turnê em breve •{' '}
+                    {/* {tourStatus.nextDate &&
+                      new Date(tourStatus.nextDate).toLocaleDateString(
+                        'pt-BR',
+                      )}{' '} */}
+                    {tourStatus.upcomingTours[0].days_until} dias
                   </Badge>
                 )}
                 <Group gap={7} wrap="nowrap">
@@ -341,7 +361,11 @@ export default function Project() {
                         w={80}
                       >
                         <Stack gap={3} align="center">
-                          <Avatar src={getRelatedAvatarUrl(related)} size={50} />
+                          <Avatar
+                            src={getRelatedAvatarUrl(related)}
+                            size={50}
+                            alt={`Foto de perfil do projeto/artista ${related.name}`}
+                          />
                           <Text
                             w={79}
                             size="xs"

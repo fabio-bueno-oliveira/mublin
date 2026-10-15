@@ -1348,7 +1348,7 @@ export default function Profile() {
                     {genres && genres.length > 0 && (
                       <>
                         <Title mt="xs" mb={2} order={3} fz="sm" fw={300} c="dimmed">
-                          Gêneros musicais de atuação
+                          Gêneros musicais com maior domínio
                         </Title>
                         {genres && genres.length > 0 ? (
                           <Text size="sm" fw={500}>
@@ -1963,182 +1963,150 @@ export default function Profile() {
 
                   {isProfilePro && (
                     <SectionPanel id="gear">
-                      {loadingGear ? (
-                        <Box>
-                          <SectionTitle text="Equipamento" mb="md" />
-                          <Group gap="xs" wrap="nowrap">
-                            {[1, 2].map((i) => (
-                              <Skeleton key={i} width="100%" height={90} />
-                            ))}
-                          </Group>
-                        </Box>
-                      ) : (
-                        <>
-                          {gear.length > 0 ? (
-                            <>
-                              <Group
-                                justify="space-between"
-                                align="center"
-                                gap="xs"
-                                mb="md"
+                      <Group justify="space-between" align="center" gap="xs" mb="md">
+                        <SectionTitle text="Equipamento" />
+
+                        {!loadingGear && gear.length > 0 && (
+                          <Group gap={4}>
+                            {isOwnProfile && (
+                              <ActionIcon
+                                variant="subtle"
+                                color="var(--mantine-color-text)"
+                                radius="xl"
+                                size="md"
+                                aria-label="Gerenciar meu equipamento"
+                                title="Gerenciar meu equipamento"
+                                component={Link}
+                                to="/settings/gear"
+                                mr="sm"
                               >
-                                <SectionTitle text="Equipamento" />
-                                <Group gap={4}>
-                                  {isOwnProfile && (
-                                    <ActionIcon
-                                      variant="subtle"
-                                      color="var(--mantine-color-text)"
-                                      radius="xl"
-                                      size="md"
-                                      aria-label="Gerenciar meu equipamento"
-                                      title="Gerenciar meu equipamento"
-                                      component={Link}
-                                      to="/settings/gear"
-                                      mr="sm"
-                                    >
-                                      <IconPencil size={20} />
-                                    </ActionIcon>
-                                  )}
-                                  <ScrollerArrows
-                                    scroller={gearScroller}
-                                    sizePreset="md"
-                                  />
-                                </Group>
-                              </Group>
-                              <Box h="100%">
-                                <div
-                                  ref={gearScroller.ref}
-                                  {...gearScroller.dragHandlers}
-                                  className="scrollerHidden"
-                                  style={{
-                                    overflow: 'auto',
-                                    cursor: gearScroller.isDragging
-                                      ? 'grabbing'
-                                      : 'default',
-                                  }}
+                                <IconPencil size={20} />
+                              </ActionIcon>
+                            )}
+
+                            <ScrollerArrows scroller={gearScroller} sizePreset="md" />
+                          </Group>
+                        )}
+                      </Group>
+
+                      {loadingGear ? (
+                        <Group gap="xs" wrap="nowrap">
+                          {[1, 2].map((i) => (
+                            <Skeleton key={i} width="100%" height={90} />
+                          ))}
+                        </Group>
+                      ) : gear.length === 0 ? (
+                        <Text size="sm" c="dimmed">
+                          Nenhum equipamento adicionado
+                        </Text>
+                      ) : (
+                        <Box h="100%">
+                          <div
+                            ref={gearScroller.ref}
+                            {...gearScroller.dragHandlers}
+                            className="scrollerHidden"
+                            style={{
+                              overflow: 'auto',
+                              cursor: gearScroller.isDragging ? 'grabbing' : 'default',
+                            }}
+                          >
+                            <Group mx={{ base: 'xs', md: 0 }} gap="xs" wrap="nowrap">
+                              {gear.map((item) => (
+                                <Flex
+                                  key={item.id_product}
+                                  direction="column"
+                                  justify="flex-start"
+                                  align="center"
+                                  w={140}
+                                  style={{ flexShrink: 0 }}
                                 >
-                                  <Group
-                                    mx={{ base: 'xs', md: 0 }}
-                                    gap="xs"
-                                    wrap="nowrap"
+                                  <Link to={`/${username}/gear/${item.id}`}>
+                                    <Image
+                                      src={`https://ik.imagekit.io/mublin/products/tr:w-240,h-240,cm-pad_resize,bg-FFFFFF,fo-x/${item.products?.picture}`}
+                                      h={120}
+                                      mah={120}
+                                      w="auto"
+                                      fit="contain"
+                                      mb={10}
+                                      radius="md"
+                                    />
+                                  </Link>
+
+                                  <Text size="xs" c="dimmed" fw={500} lineClamp={1}>
+                                    {item.products?.brands?.name}
+                                  </Text>
+
+                                  <Text
+                                    size="xs"
+                                    fw={500}
+                                    ta="center"
+                                    lineClamp={1}
+                                    style={{ whiteSpace: 'pre-wrap' }}
                                   >
-                                    {gear.map((item) => (
-                                      <Flex
-                                        key={item.id_product}
-                                        direction="column"
-                                        justify="flex-start"
-                                        align="center"
-                                        w={140}
-                                      >
-                                        <Link to={`/${username}/gear/${item.id}`}>
-                                          <Image
-                                            src={`https://ik.imagekit.io/mublin/products/tr:w-240,h-240,cm-pad_resize,bg-FFFFFF,fo-x/${item.products?.picture}`}
-                                            h={120}
-                                            mah={120}
-                                            w="auto"
-                                            fit="contain"
-                                            mb={10}
-                                            radius="md"
-                                          />
-                                        </Link>
-                                        <Text size="xs" c="dimmed" fw={500} lineClamp={1}>
-                                          {item.products?.brands?.name}
-                                        </Text>
-                                        <Text
-                                          size="xs"
-                                          fw={500}
-                                          ta="center"
-                                          lineClamp={1}
-                                          style={{ whiteSpace: 'pre-wrap' }}
-                                        >
-                                          {item.products?.name}
-                                        </Text>
-                                      </Flex>
-                                    ))}
-                                  </Group>
-                                </div>
-                                <Group
-                                  justify="center"
-                                  mt="md"
-                                  mx={{ base: 'xs', md: 0 }}
-                                >
-                                  <Button
-                                    w="100%"
-                                    size="md"
-                                    variant="subtle"
-                                    color="var(--mantine-color-text)"
-                                    // rightSection={
-                                    //   <Badge circle size="md" variant="default">
-                                    //     {gear.length}
-                                    //   </Badge>
-                                    // }
-                                    rightSection={<IconArrowRight size={16} />}
-                                    component={Link}
-                                    to={`/${username}/gear`}
-                                  >
-                                    Ver todos
-                                  </Button>
-                                </Group>
-                                <Box ml={{ base: 'sm', md: 0 }} mt="sm">
-                                  <Group gap={6}>
-                                    <IconRoute size={14} />
-                                    <Text fw={600} size="sm">
-                                      Setups de {profile.full_name}{' '}
-                                      {!!gearSetups.length && `(${gearSetups.length})`}
-                                    </Text>
-                                  </Group>
-                                  {gearSetups.length > 0 ? (
-                                    <Flex gap={12} mt={18}>
-                                      {gearSetups.map((setup) => (
-                                        <Box key={setup.id}>
-                                          <Flex
-                                            w={80}
-                                            direction="column"
-                                            justify="center"
-                                          >
-                                            {/* <Link to={`/setup/${setup.id}`}> */}
-                                            <Link to={`/${username}/gear`}>
-                                              <Image
-                                                src={`https://ik.imagekit.io/mublin/users/gear-setups/tr:w-140,h-140/${setup.image}`}
-                                                h={70}
-                                                w={70}
-                                                fit="contain"
-                                                radius="md"
-                                                mb={4}
-                                              />
-                                            </Link>
-                                            <Text
-                                              ta="center"
-                                              fw={550}
-                                              size="xs"
-                                              truncate="end"
-                                            >
-                                              {setup.name}
-                                            </Text>
-                                            <Text ta="center" size="xs">
-                                              {setup.total_items ?? 0} itens
-                                            </Text>
-                                          </Flex>
-                                        </Box>
-                                      ))}
-                                    </Flex>
-                                  ) : (
-                                    <Text c="dimmed" size="sm" mt={4}>
-                                      Nenhum setup criado até o momento
-                                    </Text>
-                                  )}
-                                </Box>
-                              </Box>
-                            </>
-                          ) : (
-                            <>
-                              <SectionTitle text="Equipamento" mb="sm" />
-                              <Text size="sm" c="dimmed">
-                                Nenhum equipamento adicionado
+                                    {item.products?.name}
+                                  </Text>
+                                </Flex>
+                              ))}
+                            </Group>
+                          </div>
+
+                          <Group justify="center" mt="md" mx={{ base: 'xs', md: 0 }}>
+                            <Button
+                              w="100%"
+                              size="md"
+                              variant="subtle"
+                              color="var(--mantine-color-text)"
+                              rightSection={<IconArrowRight size={16} />}
+                              component={Link}
+                              to={`/${username}/gear`}
+                            >
+                              Ver todos
+                            </Button>
+                          </Group>
+
+                          <Box ml={{ base: 'sm', md: 0 }} mt="sm">
+                            <Group gap={6}>
+                              <IconRoute size={14} />
+                              <Text fw={600} size="sm">
+                                Setups de {profile.full_name}{' '}
+                                {gearSetups.length > 0 && `(${gearSetups.length})`}
                               </Text>
-                            </>
-                          )}
-                        </>
+                            </Group>
+
+                            {gearSetups.length > 0 ? (
+                              <Flex gap={12} mt={18}>
+                                {gearSetups.map((setup) => (
+                                  <Box key={setup.id}>
+                                    <Flex w={80} direction="column" justify="center">
+                                      <Link to={`/${username}/gear`}>
+                                        <Image
+                                          src={`https://ik.imagekit.io/mublin/users/gear-setups/tr:w-140,h-140/${setup.image}`}
+                                          h={70}
+                                          w={70}
+                                          fit="contain"
+                                          radius="md"
+                                          mb={4}
+                                        />
+                                      </Link>
+
+                                      <Text ta="center" fw={550} size="xs" truncate="end">
+                                        {setup.name}
+                                      </Text>
+
+                                      <Text ta="center" size="xs">
+                                        {setup.total_items ?? 0} itens
+                                      </Text>
+                                    </Flex>
+                                  </Box>
+                                ))}
+                              </Flex>
+                            ) : (
+                              <Text c="dimmed" size="sm" mt={4}>
+                                Nenhum setup criado até o momento
+                              </Text>
+                            )}
+                          </Box>
+                        </Box>
                       )}
                     </SectionPanel>
                   )}
@@ -2161,57 +2129,66 @@ export default function Profile() {
               )}
 
               <SectionPanel id="graph">
-                <SectionTitle size="14px" text="Estilos musicais do portfólio" mb="md" />
+                <SectionTitle mb={4} text="Estilos do portfólio" />
+                <Text size="xs" c="dimmed" mb="md">
+                  Gêneros musicais de artistas e projetos que {profile?.full_name} já
+                  acompanhou
+                </Text>
 
                 {loadingPortfolio ? (
                   <Skeleton height={280} radius="md" />
                 ) : (
-                  <Tabs defaultValue="categories" variant="outline" radius="md">
-                    <Tabs.List mb="md" grow>
-                      <Tabs.Tab value="categories">Categorias</Tabs.Tab>
-                      <Tabs.Tab value="subgenres">Subgêneros</Tabs.Tab>
-                    </Tabs.List>
+                  <>
+                    {portfolioGenreStats.length > 0 &&
+                      portfolioSubgenreStats.length > 0 && (
+                        <Tabs defaultValue="categories" variant="outline" radius="md">
+                          <Tabs.List mb="md" grow>
+                            <Tabs.Tab style={{ fontSize: '12px' }} value="categories">
+                              Categorias
+                            </Tabs.Tab>
+                            <Tabs.Tab style={{ fontSize: '12px' }} value="subgenres">
+                              Subgêneros
+                            </Tabs.Tab>
+                          </Tabs.List>
 
-                    {/* CATEGORIAS */}
-                    <Tabs.Panel value="categories" px={4}>
-                      {portfolioGenreStats.length > 0 ? (
-                        <BarsList
-                          barsLabel="Gênero"
-                          valueLabel="Projetos"
-                          data={portfolioGenreStats.map((item) => ({
-                            name: item.genre,
-                            value: item.projects,
-                          }))}
-                          color="teal"
-                          barHeight={28}
-                          minBarSize={140}
-                        />
-                      ) : (
-                        <Text size="sm" c="dimmed">
-                          Ainda não há categorias musicais registradas no portfólio.
-                        </Text>
-                      )}
-                    </Tabs.Panel>
+                          {/* CATEGORIAS */}
+                          <Tabs.Panel value="categories" px={4}>
+                            {portfolioGenreStats.length > 0 ? (
+                              <BarsList
+                                data={portfolioGenreStats.map((item) => ({
+                                  name: item.genre,
+                                  value: item.projects,
+                                }))}
+                                barHeight={28}
+                                minBarSize={140}
+                              />
+                            ) : (
+                              <Text size="sm" c="dimmed">
+                                Ainda não há categorias musicais registradas no portfólio.
+                              </Text>
+                            )}
+                          </Tabs.Panel>
 
-                    {/* SUBGÊNEROS */}
-                    <Tabs.Panel value="subgenres" px={4}>
-                      {portfolioSubgenreStats.length > 0 ? (
-                        <BarsList
-                          data={portfolioSubgenreStats.map((item) => ({
-                            name: item.genre,
-                            value: item.projects,
-                          }))}
-                          color="teal"
-                          barHeight={28}
-                          minBarSize={140}
-                        />
-                      ) : (
-                        <Text size="sm" c="dimmed">
-                          Ainda não há subgêneros musicais registrados no portfólio.
-                        </Text>
+                          {/* SUBGÊNEROS */}
+                          <Tabs.Panel value="subgenres" px={4}>
+                            {portfolioSubgenreStats.length > 0 ? (
+                              <BarsList
+                                data={portfolioSubgenreStats.map((item) => ({
+                                  name: item.genre,
+                                  value: item.projects,
+                                }))}
+                                barHeight={28}
+                                minBarSize={140}
+                              />
+                            ) : (
+                              <Text size="sm" c="dimmed">
+                                Ainda não há subgêneros musicais registrados no portfólio.
+                              </Text>
+                            )}
+                          </Tabs.Panel>
+                        </Tabs>
                       )}
-                    </Tabs.Panel>
-                  </Tabs>
+                  </>
                 )}
               </SectionPanel>
 

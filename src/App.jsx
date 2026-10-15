@@ -78,7 +78,7 @@ const theme = createTheme({
   defaultRadius: 'md',
   components: {
     Title: Title.extend({ defaultProps: { lts: '-0.02em', fw: '600' } }),
-    Badge: Badge.extend({ defaultProps: { fw: '500', radius: 'sm' } }),
+    Badge: Badge.extend({ defaultProps: { fw: '300', radius: 'sm' } }),
     Button: Button.extend({ defaultProps: { size: 'md', radius: 'xl' } }),
     Card: Card.extend({
       styles: {

@@ -41,3 +41,9 @@ export async function fetchGenreCategoryDetails(genreId) {
   }
   return data
 }
+
+// ── Alias para uso em tours / forms simples ──
+// Reutiliza fetchAllGenres mas já no formato esperado pelos NativeSelects
+export async function fetchGenresForSelect() {
+  return fetchAllGenres()
+}

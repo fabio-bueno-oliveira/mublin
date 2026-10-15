@@ -71,6 +71,11 @@ const Event = lazy(() => import('./pages/Event'))
 const NewVenue = lazy(() => import('./pages/venues/NewVenue'))
 const Venue = lazy(() => import('./pages/venues/Venue'))
 
+// -- Tour pages
+const NewTour = lazy(() => import('./pages/tours/NewTour'))
+const Tour = lazy(() => import('./pages/tours/Tour'))
+const EditTour = lazy(() => import('./pages/tours/EditTour'))
+
 // -- School pages
 const Institution = lazy(() => import('./pages/Institution'))
 
@@ -164,6 +169,9 @@ export const router = createBrowserRouter([
       // { path: 'artist/:slug', element: <Artist /> },
       { path: 'new/event', element: <NewEvent /> },
       { path: 'event/:slug', element: <Event /> },
+      { path: 'new/tour', element: <NewTour /> },
+      { path: 'tour/:slug', element: <Tour /> },
+      { path: 'tour/:slug/edit', element: <EditTour /> },
       { path: 'new/venue', element: <NewVenue /> },
       { path: 'venue/:slug', element: <Venue /> },
       { path: 'school/:slug', element: <Institution /> },

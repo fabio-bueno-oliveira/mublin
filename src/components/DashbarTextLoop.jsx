@@ -18,16 +18,6 @@ export default function DashbarTextLoop({ project }) {
 
   const notificationsRaw = [
     {
-      label: 'Em turnê!',
-      showLabel: true,
-      content: (
-        <Text size="14px" truncate="end">
-          {project?.name} está em turnê!
-        </Text>
-      ),
-      active: project?.on_tour,
-    },
-    {
       label: 'Evento 1',
       showLabel: true,
       content: (

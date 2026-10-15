@@ -10,6 +10,7 @@ import {
   fetchProjectGenres,
   fetchRelatedProjects,
   fetchMyProjectAdminRequest,
+  fetchProjectTourStatus,
 } from '../queries/projects'
 import { fetchOpenProjectOpenings } from '../queries/projectOpenings'
 // prettier-ignore
@@ -42,6 +43,7 @@ import {
   IconWorld,
   IconMusicPlus,
   IconBrandYoutube,
+  IconCalendar,
 } from '@tabler/icons-react'
 import AppNavbarMobile from '../components/AppNavbarMobile'
 import SimilarProjects from '../components/explore/SimilarProjects'
@@ -142,6 +144,13 @@ export default function Project() {
     queryFn: () => fetchProjectGenres(project?.id),
     enabled: !!project?.id,
     staleTime: 1000 * 60 * 5,
+  })
+
+  const { data: tourStatus } = useQuery({
+    queryKey: ['project-tour-status', project?.id],
+    queryFn: () => fetchProjectTourStatus(project.id),
+    enabled: !!project?.id,
+    staleTime: 1000 * 60 * 2,
   })
 
   const { data: relatedProjects = [], isLoading: loadingRelatedProjects } = useQuery({
@@ -434,15 +443,25 @@ export default function Project() {
                         </>
                       ) : (
                         <>
-                          {project?.on_tour && (
+                          {/* TOUR BADGES - nova lógica */}
+                          {tourStatus?.isOnTour && (
+                            <Badge color="green" leftSection={<IconRoad size={14} />}>
+                              Em turnê • {tourStatus.activeTours[0].title}
+                            </Badge>
+                          )}
+                          {!tourStatus?.isOnTour && tourStatus?.isUpcomingSoon && (
                             <Badge
-                              size="xs"
+                              color="yellow"
                               variant="light"
-                              color="rgba(255,255,255,.76)"
-                              mb={4}
-                              leftSection={<IconRoad size={14} />}
+                              leftSection={<IconCalendar size={14} />}
+                              px={5}
                             >
-                              Em turnê
+                              Turnê em breve •{' '}
+                              {/* {tourStatus.nextDate &&
+                                new Date(tourStatus.nextDate).toLocaleDateString(
+                                  'pt-BR',
+                                )}{' '} */}
+                              {tourStatus.upcomingTours[0].days_until} dias
                             </Badge>
                           )}
                           <Group gap={7} wrap="nowrap">
@@ -716,16 +735,16 @@ export default function Project() {
                                 <Box>
                                   <Group gap={6} mb={3}>
                                     <Text fw={600} size="sm">
-                                      {opening.role?.name_ptbr}
+                                      {opening?.role?.name_ptbr}
                                     </Text>
 
-                                    {opening.is_remote && (
+                                    {opening?.is_remote && (
                                       <Badge size="xs" variant="light" color="blue">
                                         Remoto
                                       </Badge>
                                     )}
 
-                                    {opening.is_paid && (
+                                    {opening?.is_paid && (
                                       <Badge size="xs" variant="light" color="green">
                                         Remunerado
                                       </Badge>
@@ -734,7 +753,7 @@ export default function Project() {
 
                                   {opening.engagement_type?.name_ptbr && (
                                     <Text size="xs" c="dimmed">
-                                      {opening.engagement_type.name_ptbr}
+                                      {opening.engagement_type?.name_ptbr}
                                     </Text>
                                   )}
 
@@ -1306,7 +1325,7 @@ export default function Project() {
 
                                     <Text size="xs" c="dimmed" fw={500} lineClamp={1}>
                                       {person.roles
-                                        ?.map((r) => r.role.name_ptbr)
+                                        ?.map((r) => r.role?.name_ptbr)
                                         .join(', ')}
                                     </Text>
 

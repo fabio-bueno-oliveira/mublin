@@ -454,7 +454,6 @@ export default function NewProject({ onSuccess, isModal = false }) {
         description: values.description || null,
         project_type_id: Number(values.project_type_id),
         kind: Number(values.kind),
-        on_tour: false,
         city_id: selectedCity?.id || null,
         country_id: Number(values.country_id),
         foundation_year: values.foundation_year ? Number(values.foundation_year) : null,
