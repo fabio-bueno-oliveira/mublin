@@ -4,7 +4,9 @@ import { upload } from '@imagekit/react'
 import { useAuth } from '../../hooks/useAuth'
 import { supabase } from '../../lib/supabaseClient'
 import { useQuery } from '@tanstack/react-query'
+import AppNavbarMobile from '../../components/AppNavbarMobile'
 import {
+  Affix,
   Container,
   Title,
   Stack,
@@ -371,314 +373,316 @@ export default function NewVenue() {
   }
 
   return (
-    <Container size="sm" py="md" px={{ base: 'md', sm: 'lg' }}>
-      <Title order={1} fz="h3" ta="left" fw={600} mb={24}>
-        Cadastrar novo estabelecimento ou local
-      </Title>
+    <>
+      <Affix position={{ top: 0, left: 0 }} hiddenFrom="sm">
+        <AppNavbarMobile pageName="Cadastrar novo local" />
+      </Affix>
+      <Container size="sm" pb="md" mt={{ base: 70, sm: 'md' }}>
+        <Title order={3} mb="md" visibleFrom="sm">
+          Cadastrar novo local ou estabelecimento
+        </Title>
 
-      <Stack gap="md">
-        {/* Imagem */}
-        <Box>
-          <Text size="xs" c="dimmed" fw={500} mb={6}>
-            <IconPhoto
-              size={16}
-              stroke={1.4}
-              style={{ marginRight: 4, verticalAlign: 'middle' }}
-            />
-            Foto do estabelecimento
-          </Text>
-          {pictureFileName ? (
-            <Box style={{ position: 'relative', display: 'inline-block' }}>
-              <Image
-                src={`${VENUE_PICTURE_PATH}${pictureFileName}`}
-                radius="md"
-                maw={200}
-                mah={180}
-                fit="cover"
+        <Stack gap="md" mt="md">
+          {/* Imagem */}
+          <Box>
+            <Text size="xs" c="dimmed" fw={500} mb={6}>
+              <IconPhoto
+                size={16}
+                stroke={1.4}
+                style={{ marginRight: 4, verticalAlign: 'middle' }}
               />
-              <ActionIcon
-                color="red"
-                variant="filled"
-                size="sm"
-                radius="xl"
-                style={{ position: 'absolute', top: 6, right: 6 }}
-                onClick={handleRemoveImage}
-                title="Remover imagem"
-              >
-                <IconX size={12} />
-              </ActionIcon>
-            </Box>
-          ) : (
-            <Button
-              variant="default"
-              size="sm"
-              leftSection={
-                isUploadingImage ? <Loader size={13} /> : <IconPhoto size={14} />
-              }
-              component="label"
-              htmlFor="venue-image-input"
-              disabled={isUploadingImage}
-            >
-              {isUploadingImage ? 'Enviando...' : 'Adicionar foto'}
-            </Button>
-          )}
-          <input
-            ref={imageInputRef}
-            id="venue-image-input"
-            type="file"
-            accept="image/png,image/jpeg,image/webp"
-            style={{ display: 'none' }}
-            onChange={(e) => {
-              if (e.target.files?.[0]) {
-                handleImageUpload(e.target.files[0])
-              }
-            }}
-          />
-        </Box>
-
-        <Divider />
-
-        {/* Informações básicas */}
-        <TextInput
-          label="Nome"
-          placeholder="Ex: Teatro Municipal, Clube do Choro..."
-          required
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-        />
-
-        <NativeSelect
-          label="Tipo de estabelecimento"
-          value={venueTypeId}
-          onChange={(e) => setVenueTypeId(e.target.value)}
-          disabled={loadingVenueTypes}
-        >
-          <option value="">Selecione (opcional)</option>
-          {venueTypes.map((t) => (
-            <option key={t.id} value={String(t.id)}>
-              {t.name}
-            </option>
-          ))}
-        </NativeSelect>
-
-        <Textarea
-          label="Descrição"
-          placeholder="Fale sobre o espaço, história, diferenciais..."
-          minRows={3}
-          autosize
-          maxRows={8}
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-        />
-
-        <Divider label="Localização" labelPosition="left" />
-
-        <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
-          <NativeSelect
-            label="País"
-            value={selectedCountryId}
-            disabled={loadingCountries}
-            onChange={(e) => {
-              setSelectedCountryId(e.target.value)
-              setSelectedRegionId('')
-              setSelectedCity(null)
-            }}
-          >
-            <option value="">Selecione</option>
-            {countries.map((c) => (
-              <option key={c.id} value={String(c.id)}>
-                {c.name_ptbr !== 'NULL' ? c.name_ptbr : c.name}
-              </option>
-            ))}
-          </NativeSelect>
-
-          <NativeSelect
-            label="Estado / Região"
-            value={selectedRegionId}
-            disabled={!selectedCountryId || loadingRegions}
-            onChange={(e) => {
-              setSelectedRegionId(e.target.value)
-              setSelectedCity(null)
-            }}
-          >
-            <option value="">Selecione</option>
-            {regions.map((r) => (
-              <option key={r.id} value={String(r.id)}>
-                {r.uf ? `${r.name} (${r.uf})` : r.name}
-              </option>
-            ))}
-          </NativeSelect>
-        </SimpleGrid>
-
-        <Input.Wrapper label="Cidade">
-          <Input
-            pointer
-            readOnly
-            placeholder={
-              selectedRegionId ? 'Selecionar...' : 'Selecione o Estado primeiro'
-            }
-            disabled={!selectedRegionId}
-            value={selectedCity?.name ?? ''}
-            leftSection={<IconMapPin size={14} />}
-            rightSection={selectedRegionId ? <IconSearch size={15} /> : undefined}
-            onClick={() => {
-              if (selectedRegionId) {
-                openCityModal()
-              }
-            }}
-          />
-        </Input.Wrapper>
-
-        <Divider label="Endereço" labelPosition="left" />
-
-        <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="sm">
-          <TextInput
-            label="Logradouro"
-            placeholder="Rua, Av., Travessa..."
-            style={{ gridColumn: 'span 2' }}
-            value={address}
-            onChange={(e) => setAddress(e.target.value)}
-          />
-          <TextInput
-            label="Número"
-            placeholder="123"
-            value={addressNumber}
-            onChange={(e) => setAddressNumber(e.target.value)}
-          />
-        </SimpleGrid>
-
-        <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
-          <TextInput
-            label="Bairro"
-            placeholder="Centro, Vila Madalena..."
-            value={neighborhood}
-            onChange={(e) => setNeighborhood(e.target.value)}
-          />
-          <TextInput
-            label="CEP"
-            placeholder="00000-000"
-            value={zipCode}
-            onChange={(e) => setZipCode(e.target.value)}
-          />
-        </SimpleGrid>
-
-        <Divider label="Contato" labelPosition="left" />
-
-        <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
-          <TextInput
-            label="Telefone"
-            placeholder="(11) 99999-9999"
-            leftSection={<IconPhone size={14} />}
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-          />
-          <TextInput
-            label="Instagram"
-            placeholder="@nome_do_local"
-            leftSection={<IconBrandInstagram size={14} />}
-            value={instagramHandle}
-            onChange={(e) => setInstagramHandle(e.target.value)}
-          />
-        </SimpleGrid>
-
-        <TextInput
-          label="Website"
-          placeholder="https://..."
-          leftSection={<IconWorld size={14} />}
-          value={websiteUrl}
-          onChange={(e) => setWebsiteUrl(e.target.value)}
-        />
-
-        <Divider label="Estrutura" labelPosition="left" />
-
-        <NumberInput
-          label="Capacidade (pessoas)"
-          placeholder="Ex: 500"
-          min={1}
-          leftSection={<IconUsers size={14} />}
-          value={capacity}
-          onChange={setCapacity}
-        />
-
-        <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
-          <Switch
-            label="Possui sistema de som"
-            checked={hasSoundSystem}
-            onChange={(e) => setHasSoundSystem(e.currentTarget.checked)}
-          />
-          <Switch
-            label="Possui backline"
-            checked={hasBackline}
-            onChange={(e) => setHasBackline(e.currentTarget.checked)}
-          />
-        </SimpleGrid>
-
-        <Divider />
-
-        <Group justify="flex-end">
-          <Button variant="default" onClick={() => navigate(-1)} disabled={submitting}>
-            Cancelar
-          </Button>
-          <Button loading={submitting} onClick={handleSubmit}>
-            Cadastrar estabelecimento
-          </Button>
-        </Group>
-      </Stack>
-
-      {/* Modal de seleção de cidade */}
-      <Modal
-        title="Selecionar cidade"
-        opened={modalCityOpened}
-        onClose={closeCityModal}
-        size="sm"
-        radius="md"
-      >
-        <Stack gap="sm">
-          <TextInput
-            placeholder="Digite o nome da cidade..."
-            data-autofocus
-            value={citySearchQuery}
-            rightSection={
-              citySearchLoading ? <Loader size={16} /> : <IconSearch size={16} />
-            }
-            onChange={(e) => {
-              setCitySearchQuery(e.target.value)
-              handleCitySearch(e.target.value)
-            }}
-          />
-          {noCityResults && (
-            <Text size="xs" c="dimmed">
-              Nenhuma cidade encontrada nesta região.
+              Foto do estabelecimento
             </Text>
-          )}
-          {cityResults.length > 0 && (
-            <ScrollArea h={200} type="auto">
-              <Stack gap={0}>
-                {cityResults.map((city) => (
-                  <Box key={city.id}>
-                    <Anchor
-                      size="sm"
-                      py={8}
-                      display="block"
-                      underline="never"
-                      c="inherit"
-                      onClick={() => {
-                        setSelectedCity({ id: city.id, name: city.name })
-                        closeCityModal()
-                        setCitySearchQuery('')
-                        setCityResults([])
-                      }}
-                    >
-                      {city.name}
-                    </Anchor>
-                    <Divider />
-                  </Box>
-                ))}
-              </Stack>
-            </ScrollArea>
-          )}
+            {pictureFileName ? (
+              <Box style={{ position: 'relative', display: 'inline-block' }}>
+                <Image
+                  src={`${VENUE_PICTURE_PATH}${pictureFileName}`}
+                  radius="md"
+                  maw={200}
+                  mah={180}
+                  fit="cover"
+                />
+                <ActionIcon
+                  color="red"
+                  variant="filled"
+                  size="sm"
+                  radius="xl"
+                  style={{ position: 'absolute', top: 6, right: 6 }}
+                  onClick={handleRemoveImage}
+                  title="Remover imagem"
+                >
+                  <IconX size={12} />
+                </ActionIcon>
+              </Box>
+            ) : (
+              <Button
+                variant="default"
+                size="sm"
+                leftSection={
+                  isUploadingImage ? <Loader size={13} /> : <IconPhoto size={14} />
+                }
+                component="label"
+                htmlFor="venue-image-input"
+                disabled={isUploadingImage}
+              >
+                {isUploadingImage ? 'Enviando...' : 'Adicionar foto'}
+              </Button>
+            )}
+            <input
+              ref={imageInputRef}
+              id="venue-image-input"
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              style={{ display: 'none' }}
+              onChange={(e) => {
+                if (e.target.files?.[0]) {
+                  handleImageUpload(e.target.files[0])
+                }
+              }}
+            />
+          </Box>
+
+          <Divider />
+
+          {/* Informações básicas */}
+          <TextInput
+            label="Nome"
+            placeholder="Ex: Teatro Municipal, Clube do Choro..."
+            required
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
+
+          <NativeSelect
+            label="Tipo de estabelecimento"
+            value={venueTypeId}
+            onChange={(e) => setVenueTypeId(e.target.value)}
+            disabled={loadingVenueTypes}
+          >
+            <option value="">Selecione (opcional)</option>
+            {venueTypes.map((t) => (
+              <option key={t.id} value={String(t.id)}>
+                {t.name}
+              </option>
+            ))}
+          </NativeSelect>
+
+          <Textarea
+            label="Descrição"
+            placeholder="Fale sobre o espaço, história, diferenciais..."
+            minRows={3}
+            autosize
+            maxRows={8}
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+          />
+
+          <Divider label="Localização" labelPosition="left" />
+
+          <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
+            <NativeSelect
+              label="País"
+              value={selectedCountryId}
+              disabled={loadingCountries}
+              onChange={(e) => {
+                setSelectedCountryId(e.target.value)
+                setSelectedRegionId('')
+                setSelectedCity(null)
+              }}
+            >
+              <option value="">Selecione</option>
+              {countries.map((c) => (
+                <option key={c.id} value={String(c.id)}>
+                  {c.name_ptbr !== 'NULL' ? c.name_ptbr : c.name}
+                </option>
+              ))}
+            </NativeSelect>
+
+            <NativeSelect
+              label="Estado / Região"
+              value={selectedRegionId}
+              disabled={!selectedCountryId || loadingRegions}
+              onChange={(e) => {
+                setSelectedRegionId(e.target.value)
+                setSelectedCity(null)
+              }}
+            >
+              <option value="">Selecione</option>
+              {regions.map((r) => (
+                <option key={r.id} value={String(r.id)}>
+                  {r.uf ? `${r.name} (${r.uf})` : r.name}
+                </option>
+              ))}
+            </NativeSelect>
+          </SimpleGrid>
+
+          <Input.Wrapper label="Cidade">
+            <Input
+              pointer
+              readOnly
+              placeholder={
+                selectedRegionId ? 'Selecionar...' : 'Selecione o Estado primeiro'
+              }
+              disabled={!selectedRegionId}
+              value={selectedCity?.name ?? ''}
+              leftSection={<IconMapPin size={14} />}
+              rightSection={selectedRegionId ? <IconSearch size={15} /> : undefined}
+              onClick={() => {
+                if (selectedRegionId) {
+                  openCityModal()
+                }
+              }}
+            />
+          </Input.Wrapper>
+
+          <Divider label="Endereço" labelPosition="left" />
+
+          <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="sm">
+            <TextInput
+              label="Logradouro"
+              placeholder="Rua, Av., Travessa..."
+              style={{ gridColumn: 'span 2' }}
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+            />
+            <TextInput
+              label="Número"
+              placeholder="123"
+              value={addressNumber}
+              onChange={(e) => setAddressNumber(e.target.value)}
+            />
+          </SimpleGrid>
+
+          <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
+            <TextInput
+              label="Bairro"
+              placeholder="Centro, Vila Madalena..."
+              value={neighborhood}
+              onChange={(e) => setNeighborhood(e.target.value)}
+            />
+            <TextInput
+              label="CEP"
+              placeholder="00000-000"
+              value={zipCode}
+              onChange={(e) => setZipCode(e.target.value)}
+            />
+          </SimpleGrid>
+
+          <Divider label="Contato" labelPosition="left" />
+
+          <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
+            <TextInput
+              label="Telefone"
+              placeholder="(11) 99999-9999"
+              leftSection={<IconPhone size={14} />}
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+            />
+            <TextInput
+              label="Instagram"
+              placeholder="@nome_do_local"
+              leftSection={<IconBrandInstagram size={14} />}
+              value={instagramHandle}
+              onChange={(e) => setInstagramHandle(e.target.value)}
+            />
+          </SimpleGrid>
+
+          <TextInput
+            label="Website"
+            placeholder="https://..."
+            leftSection={<IconWorld size={14} />}
+            value={websiteUrl}
+            onChange={(e) => setWebsiteUrl(e.target.value)}
+          />
+
+          <Divider label="Estrutura" labelPosition="left" />
+
+          <NumberInput
+            label="Capacidade (pessoas)"
+            placeholder="Ex: 500"
+            min={1}
+            leftSection={<IconUsers size={14} />}
+            value={capacity}
+            onChange={setCapacity}
+          />
+
+          <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
+            <Switch
+              label="Possui sistema de som"
+              checked={hasSoundSystem}
+              onChange={(e) => setHasSoundSystem(e.currentTarget.checked)}
+            />
+            <Switch
+              label="Possui backline"
+              checked={hasBackline}
+              onChange={(e) => setHasBackline(e.currentTarget.checked)}
+            />
+          </SimpleGrid>
+
+          <Divider />
+
+          <Group justify="flex-end">
+            <Button loading={submitting} onClick={handleSubmit}>
+              Cadastrar estabelecimento
+            </Button>
+          </Group>
         </Stack>
-      </Modal>
-    </Container>
+
+        {/* Modal de seleção de cidade */}
+        <Modal
+          title="Selecionar cidade"
+          opened={modalCityOpened}
+          onClose={closeCityModal}
+          size="sm"
+          radius="md"
+        >
+          <Stack gap="sm">
+            <TextInput
+              placeholder="Digite o nome da cidade..."
+              data-autofocus
+              value={citySearchQuery}
+              rightSection={
+                citySearchLoading ? <Loader size={16} /> : <IconSearch size={16} />
+              }
+              onChange={(e) => {
+                setCitySearchQuery(e.target.value)
+                handleCitySearch(e.target.value)
+              }}
+            />
+            {noCityResults && (
+              <Text size="xs" c="dimmed">
+                Nenhuma cidade encontrada nesta região.
+              </Text>
+            )}
+            {cityResults.length > 0 && (
+              <ScrollArea h={200} type="auto">
+                <Stack gap={0}>
+                  {cityResults.map((city) => (
+                    <Box key={city.id}>
+                      <Anchor
+                        size="sm"
+                        py={8}
+                        display="block"
+                        underline="never"
+                        c="inherit"
+                        onClick={() => {
+                          setSelectedCity({ id: city.id, name: city.name })
+                          closeCityModal()
+                          setCitySearchQuery('')
+                          setCityResults([])
+                        }}
+                      >
+                        {city.name}
+                      </Anchor>
+                      <Divider />
+                    </Box>
+                  ))}
+                </Stack>
+              </ScrollArea>
+            )}
+          </Stack>
+        </Modal>
+      </Container>
+    </>
   )
 }

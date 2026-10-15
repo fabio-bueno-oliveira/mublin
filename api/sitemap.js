@@ -46,15 +46,17 @@ export default async function handler(req, res) {
         .eq('onboarding_completed', true)
         .eq('is_fake_profile', false)
         .eq('is_shadow_hidden', false)
-        .not('username', 'is', null),
+        .not('username', 'is', null)
+        .order('username', { ascending: true }),
 
       supabase
         .from('projects')
         .select('slug, updated_at')
         .eq('is_public', true)
         .eq('is_active', true)
-        .not('project_type_id', 19)
-        .not('slug', 'is', null),
+        .neq('project_type_id', 19)
+        .not('slug', 'is', null)
+        .order('slug', { ascending: true }),
     ])
 
     if (profilesResult.error) {

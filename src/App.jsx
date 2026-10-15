@@ -26,7 +26,6 @@ import '@mantine/core/styles.css'
 import '@mantine/notifications/styles.css'
 import '@mantine/dates/styles.css'
 import '@mantine/charts/styles.css'
-// charts e schedule serão importadas via lazy imports apenas nas páginas que usam
 import './styles.scss'
 
 const theme = createTheme({
@@ -78,7 +77,7 @@ const theme = createTheme({
   },
   defaultRadius: 'md',
   components: {
-    Title: Title.extend({ defaultProps: { lts: '-0.02em' } }),
+    Title: Title.extend({ defaultProps: { lts: '-0.02em', fw: '600' } }),
     Badge: Badge.extend({ defaultProps: { fw: '500', radius: 'sm' } }),
     Button: Button.extend({ defaultProps: { size: 'md', radius: 'xl' } }),
     Card: Card.extend({
