@@ -2,8 +2,8 @@ import { useEffect } from 'react'
 import { Helmet } from 'react-helmet-async'
 import { useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { fetchVenueDetails } from '../queries/locations'
-import AppNavbarMobile from '../components/AppNavbarMobile'
+import { fetchVenueDetails } from '../../queries/locations'
+import AppNavbarMobile from '../../components/AppNavbarMobile'
 import {
   Container,
   Anchor,

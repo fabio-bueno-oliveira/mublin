@@ -1,8 +1,8 @@
 import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { upload } from '@imagekit/react'
-import { useAuth } from '../hooks/useAuth'
-import { supabase } from '../lib/supabaseClient'
+import { useAuth } from '../../hooks/useAuth'
+import { supabase } from '../../lib/supabaseClient'
 import { useQuery } from '@tanstack/react-query'
 import {
   Container,

@@ -68,8 +68,8 @@ const NewGear = lazy(() => import('./pages/NewGear'))
 // -- Events pages
 const NewEvent = lazy(() => import('./pages/NewEvent'))
 const Event = lazy(() => import('./pages/Event'))
-const NewVenue = lazy(() => import('./pages/NewVenue'))
-const Venue = lazy(() => import('./pages/Venue'))
+const NewVenue = lazy(() => import('./pages/venues/NewVenue'))
+const Venue = lazy(() => import('./pages/venues/Venue'))
 
 // -- School pages
 const Institution = lazy(() => import('./pages/Institution'))
