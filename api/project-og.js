@@ -70,7 +70,7 @@ export default async function handler(req, res) {
     const description = shortDescription(project.description || fallback)
 
     const image = project.picture
-      ? `https://ik.imagekit.io/mublin/projects/${project.id}/tr:w-600,h-600,c-maintain_ratio/${encodeURIComponent(project.picture)}`
+      ? `https://ik.imagekit.io/mublin/projects/tr:w-600,h-600,c-maintain_ratio/${project.id}/${encodeURIComponent(project.picture)}`
       : DEFAULT_IMAGE
 
     const structuredData = {

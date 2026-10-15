@@ -28,6 +28,7 @@ import {
   IconRosetteDiscountCheckFilled,
   IconArrowRight,
   IconMapPin,
+  IconMusic,
 } from '@tabler/icons-react'
 import { truncateDescription } from '../utils/formatter'
 
@@ -295,18 +296,24 @@ export default function Project() {
             </Stack>
           ) : (
             <Stack gap={6} px="xs">
-              <Box hiddenFrom="sm">
-                {validGenreNames && (
+              {validGenreNames && (
+                <Group gap={4} hiddenFrom="sm">
+                  <IconMusic color="gray" size={12} />
                   <Text size="xs" c="dimmed">
                     {validGenreNames.join(', ')}
                   </Text>
-                )}
-              </Box>
+                </Group>
+              )}
               {project?.description && (
-                <Text size="sm" lineClamp={2}>
+                <Text size="sm" lineClamp={3}>
                   {project.description}
                 </Text>
               )}
+              {/* {project?.end_year && (
+                <Text c="dimmed" size="11px" mt={4} mb={2}>
+                  {project?.name} encerrou as atividades no ano de {project?.end_year}
+                </Text>
+              )} */}
             </Stack>
           )}
         </Stack>

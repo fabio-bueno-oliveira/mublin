@@ -11,6 +11,7 @@ const RESERVED_PATHS = new Set([
   'messages',
   'sitemap.xml',
   'robots.txt',
+  'project',
 ])
 
 const BOT_UA_REGEX =
@@ -28,23 +29,34 @@ export default async function middleware(request) {
   }
 
   const url = new URL(request.url)
-  const segment = url.pathname.replace(/^\/+/, '')
+  const segments = url.pathname.split('/').filter(Boolean)
 
-  if (!segment || RESERVED_PATHS.has(segment) || segment.includes('/')) {
+  let ogUrl = null
+
+  // /project/:slug -> project-og
+  if (segments.length === 2 && segments[0] === 'project') {
+    ogUrl = new URL('/api/project-og', request.url)
+    ogUrl.searchParams.set('slug', decodeURIComponent(segments[1]))
+  }
+  // /:username -> profile-og
+  else if (segments.length === 1 && !RESERVED_PATHS.has(segments[0])) {
+    ogUrl = new URL('/api/profile-og', request.url)
+    ogUrl.searchParams.set('username', decodeURIComponent(segments[0]))
+  }
+
+  if (!ogUrl) {
     return next()
   }
 
-  const ogUrl = new URL('/api/profile-og', request.url)
-  ogUrl.searchParams.set('username', segment)
-
   const ogResponse = await fetch(ogUrl)
 
-  if (ogResponse.status === 404) {
+  // Qualquer falha (404, 500...) cai no SPA em vez de mostrar erro ao bot
+  if (!ogResponse.ok) {
     return next()
   }
 
   return new Response(await ogResponse.text(), {
-    status: ogResponse.status,
+    status: 200,
     headers: { 'content-type': 'text/html; charset=utf-8' },
   })
 }

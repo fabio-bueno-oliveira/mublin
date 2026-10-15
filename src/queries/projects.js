@@ -73,10 +73,12 @@ export async function fetchProjectPublicDetails(slug) {
     .select(
       `
       id,
-      name, slug,
+      name,
+      slug,
       picture,
       description,
       on_tour,
+      end_year,
       is_public,
       is_verified,
       genres ( id, name_ptbr ),
