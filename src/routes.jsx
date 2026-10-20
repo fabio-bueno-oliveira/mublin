@@ -30,6 +30,7 @@ const Home = lazy(() => import('./pages/Home'))
 const Feed = lazy(() => import('./pages/Feed'))
 const MySavedFavorites = lazy(() => import('./pages/Saved'))
 const SetlistEditor = lazy(() => import('./pages/SetlistEditor'))
+const CreateNew = lazy(() => import('./pages/New'))
 
 // -- Search pages
 const Search = lazy(() => import('./pages/Search'))
@@ -156,6 +157,7 @@ export const router = createBrowserRouter([
       { path: 'gig-invitation/:id', element: <GigInvitation /> },
       { path: 'new/gig', element: <NewGig /> },
       { path: 'projects', element: <Projects /> },
+      { path: 'new', element: <CreateNew /> },
       { path: 'new/project', element: <NewProject /> },
       { path: 'brand/:slug', element: <Brand /> },
       { path: 'post/:id', element: <Post /> },

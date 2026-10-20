@@ -22,7 +22,7 @@ import {
 } from '../../queries/user'
 import { fetchReceivedInvitations } from '../../queries/gigs'
 import { formatShortDate } from '../../utils/dates'
-import BannerGigs from '../banners/BannerGigs'
+// import BannerGigs from '../banners/BannerGigs'
 import GigAssessmentForm from '../gigs/GigAssessmentForm'
 // import OtherGigsScroller from '../gigs/OtherGigsScroller'
 import {
@@ -270,13 +270,13 @@ export default function GigsDashboard() {
         // }}
       >
         <Group justify="space-between" mb="xs">
-          <Group gap={6}>
+          <Group gap={6} ml={8}>
             <Avatar
-              size={25}
+              size={35}
               radius="xl"
               src={
                 profile?.avatar
-                  ? `https://ik.imagekit.io/mublin/tr:h-50,c-maintain_ratio/users/avatars/${profile?.avatar}`
+                  ? `https://ik.imagekit.io/mublin/tr:h-70,w-70,c-maintain_ratio/users/avatars/${profile?.avatar}`
                   : `https://api.dicebear.com/10.x/initials/svg?seed=${profile?.full_name}`
               }
               component={Link}
@@ -286,10 +286,10 @@ export default function GigsDashboard() {
               Olá, {profile?.full_name?.split(' ')[0]}
             </Title>
           </Group>
+
           <Button
             size="xs"
-            variant="filled"
-            color="mublinColor"
+            color="mColor2"
             leftSection={<IconPlus size={14} />}
             onClick={() => navigate('/new/gig')}
           >
@@ -362,9 +362,7 @@ export default function GigsDashboard() {
                       )}
                     </>
                   ) : (
-                    <Text size="sm" fw={600}>
-                      Nenhum evento futuro
-                    </Text>
+                    <Text size="sm">Nenhum evento futuro</Text>
                   )}
                 </Stack>
               </Paper>
@@ -483,6 +481,7 @@ export default function GigsDashboard() {
             numberOfDays={5}
             size="md"
             locale="pt-br"
+            color="teal"
             getDayProps={(date) => {
               const iso = dayjs(date).format('YYYY-MM-DD')
               const isToday = iso === todayIso
@@ -842,9 +841,9 @@ export default function GigsDashboard() {
           outros projetos pra uma query real. Ver OtherGigsScroller.jsx. */}
       {/* <OtherGigsScroller title="Gigs de outros projetos" /> */}
 
-      <Box mt="lg" mb="md">
+      {/* <Box mt="lg" mb="md">
         <BannerGigs />
-      </Box>
+      </Box> */}
     </>
   )
 }

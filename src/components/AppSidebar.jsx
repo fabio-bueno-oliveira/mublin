@@ -1,9 +1,10 @@
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { supabase } from '../lib/supabaseClient'
 import { useQuery } from '@tanstack/react-query'
 import {
   useComputedColorScheme,
+  UnstyledButton,
   Skeleton,
   Group,
   Stack,
@@ -18,6 +19,10 @@ import {
   IconBookmark,
   IconRocket,
   IconRosetteDiscountCheckFilled,
+  IconHome,
+  IconFolder,
+  IconUser,
+  IconPlus,
 } from '@tabler/icons-react'
 import { getAvatarUrl } from '../utils/profile'
 
@@ -25,6 +30,8 @@ export default function AppSidebar() {
   const { user, profile, loading } = useAuth()
   const computedColorScheme = useComputedColorScheme('light')
   const isDark = computedColorScheme === 'dark'
+  const { pathname } = useLocation()
+  const isActive = (path) => pathname === path
 
   const { data: profileViewCount, isLoading: loadingProfileViews } = useQuery({
     queryKey: ['profile-unique-visitor-count', profile?.id],
@@ -41,6 +48,13 @@ export default function AppSidebar() {
     staleTime: 1000 * 60,
   })
 
+  const MENU_ITEMS = [
+    { label: 'Home', icon: IconHome, path: '/home' },
+    { label: 'Meu Perfil', icon: IconUser, path: `/${profile?.username}` },
+    { label: 'Meus Projetos', icon: IconFolder, path: '/projects' },
+    { label: 'Criar', icon: IconPlus, path: '/new' },
+  ]
+
   return (
     <Box px="sm" py="md" h="100%" component="aside">
       {loading ? (
@@ -55,78 +69,104 @@ export default function AppSidebar() {
           <Card
             withBorder={false}
             shadow="xs"
-            radius="md"
+            radius="lg"
             p={0}
             style={{ overflow: 'hidden' }}
             pos="relative"
           >
-            {/* Cover */}
-            <Card.Section
-              h={52}
-              withBorder
-              style={{
-                border: isDark
-                  ? '1px solid var(--mantine-color-dark-9)'
-                  : '1px solid var(--mantine-color-gray-2)',
-                background: isDark
-                  ? 'var(--mantine-color-dark-9)'
-                  : 'var(--mantine-color-gray-0)',
-              }}
-            />
-
-            {/* Avatar sobre a cover */}
-            <Box px="sm" pb="sm">
-              <Box mt={-24} mb={5}>
-                <Avatar
-                  size={70}
-                  radius="xl"
-                  src={
-                    profile?.avatar
-                      ? getAvatarUrl(profile?.avatar, profile?.is_open_to_work, 70)
-                      : `https://api.dicebear.com/10.x/initials/svg?seed=${profile?.full_name}`
-                  }
-                  component={Link}
-                  to={`/${profile?.username}`}
+            {pathname === '/home' && (
+              <Box>
+                {/* Cover */}
+                <Card.Section
+                  h={52}
+                  withBorder
                   style={{
-                    border: '2px solid var(--mantine-color-body)',
+                    border: isDark
+                      ? '1px solid var(--mantine-color-dark-9)'
+                      : '1px solid var(--mantine-color-gray-2)',
+                    background: isDark
+                      ? 'var(--mantine-color-dark-9)'
+                      : 'var(--mantine-color-gray-0)',
                   }}
                 />
-              </Box>
-              <Stack gap={2}>
-                <Group gap={4} align="center">
-                  <Anchor
-                    component={Link}
-                    to={`/${profile?.username}`}
-                    underline="never"
-                    c="var(--mantine-color-text)"
-                    fw={600}
-                    size="lg"
-                    maw={180}
-                    lineClamp={1}
-                    truncate="end"
-                  >
-                    {profile?.full_name}
-                  </Anchor>
-                  {!!profile?.is_verified && (
-                    <IconRosetteDiscountCheckFilled
-                      className="iconVerified"
-                      title="Perfil verificado"
+
+                {/* Avatar sobre a cover */}
+                <Box px="sm" pb="sm">
+                  <Box mt={-24} mb={5}>
+                    <Avatar
+                      size={70}
+                      radius="xl"
+                      src={
+                        profile?.avatar
+                          ? getAvatarUrl(profile?.avatar, profile?.is_open_to_work, 70)
+                          : `https://api.dicebear.com/10.x/initials/svg?seed=${profile?.full_name}`
+                      }
+                      component={Link}
+                      to={`/${profile?.username}`}
+                      style={{
+                        border: '2px solid var(--mantine-color-body)',
+                      }}
                     />
-                  )}
-                </Group>
-                <Group gap={4} align="center">
-                  <Text size="xs" opacity={0.7} fw={400} lineClamp={1} lh={1}>
-                    @{profile?.username}
-                  </Text>
-                  {/* {profile?.plan === 'Pro' && <ProPlanBadge small />} */}
-                </Group>
-                {profile?.title && (
-                  <Text size="12px" lh={1.3} mt={4} c="dimmed" lineClamp={3}>
-                    {profile.title}
-                  </Text>
-                )}
-              </Stack>
-            </Box>
+                  </Box>
+                  <Stack gap={2}>
+                    <Group gap={4} align="center">
+                      <Anchor
+                        component={Link}
+                        to={`/${profile?.username}`}
+                        underline="never"
+                        c="var(--mantine-color-text)"
+                        fw={600}
+                        size="lg"
+                        maw={180}
+                        lineClamp={1}
+                        truncate="end"
+                      >
+                        {profile?.full_name}
+                      </Anchor>
+                      {!!profile?.is_verified && (
+                        <IconRosetteDiscountCheckFilled
+                          className="iconVerified"
+                          title="Perfil verificado"
+                        />
+                      )}
+                    </Group>
+                    <Group gap={4} align="center">
+                      <Text size="xs" opacity={0.7} fw={400} lineClamp={1} lh={1}>
+                        @{profile?.username}
+                      </Text>
+                      {/* {profile?.plan === 'Pro' && <ProPlanBadge small />} */}
+                    </Group>
+                    {profile?.title && (
+                      <Text size="12px" lh={1.3} mt={4} c="dimmed" lineClamp={3}>
+                        {profile.title}
+                      </Text>
+                    )}
+                  </Stack>
+                </Box>
+              </Box>
+            )}
+
+            <Stack gap={6} px="xs" mt="xs" mb="sm">
+              {MENU_ITEMS.map((item) => {
+                const Icon = item.icon
+                return (
+                  <UnstyledButton
+                    gap={6}
+                    align="center"
+                    component={Link}
+                    to={item.path}
+                    className={
+                      isActive(item.path) ? 'menu-sidebar active' : 'menu-sidebar'
+                    }
+                  >
+                    <Icon size={18} />
+                    <Text size="sm" lh={1}>
+                      {item.label}
+                    </Text>
+                  </UnstyledButton>
+                )
+              })}
+            </Stack>
           </Card>
 
           <Card withBorder={false} shadow="xs" radius="md" p="xs">

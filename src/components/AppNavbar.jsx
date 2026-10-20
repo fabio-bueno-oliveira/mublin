@@ -13,15 +13,11 @@ import MublinLogoBlack from '../assets/svg/mublin-logo-black.svg'
 import MublinLogoWhite from '../assets/svg/mublin-logo-white.svg'
 import { IconExplore } from '../components/icons/IconExplore'
 import Notifications from './Notifications'
-import { useDisclosure } from '@mantine/hooks'
 import {
   useMantineColorScheme,
   useComputedColorScheme,
   ScrollArea,
-  Stack,
-  Flex,
   Group,
-  Modal,
   Box,
   Menu,
   Badge,
@@ -29,7 +25,7 @@ import {
   TextInput,
   ActionIcon,
   Avatar,
-  Button,
+  UnstyledButton,
   Container,
   Combobox,
   useCombobox,
@@ -39,7 +35,6 @@ import {
 import {
   IconSearch,
   IconArrowRight,
-  IconPlus,
   IconBell,
   IconChevronDown,
   IconClock,
@@ -47,31 +42,29 @@ import {
   IconSettings2,
   IconBookmark,
   IconKey,
+  IconArrowLeft,
 } from '@tabler/icons-react'
-import { NAV_ITEMS, QUICK_ACTIONS } from '../constants/navItems'
 import { truncateString } from '../utils/formatter'
+import { useHover } from '@mantine/hooks'
 
 const AVATAR_PATH =
   'https://ik.imagekit.io/mublin/tr:h-64,c-maintain_ratio/users/avatars/'
 
-const NAV_LINK_STYLE = { textDecoration: 'none', color: 'inherit' }
-
 export default function AppNavbar({ children }) {
   const navigate = useNavigate()
   const { pathname } = useLocation()
-  const isActive = (path) => pathname === path
   const { colorScheme } = useMantineColorScheme()
   const { profile, user, signOut } = useAuth()
   const { setColorScheme } = useMantineColorScheme()
   const computedColorScheme = useComputedColorScheme('light')
   const isDark = computedColorScheme === 'dark'
   const toggleColorScheme = () => setColorScheme(isDark ? 'light' : 'dark')
-  const [actionsMenuOpened, { open: openActionsMenu, close: closeActionsMenu }] =
-    useDisclosure(false)
+  const { hovered, ref: discoverRef } = useHover()
 
   const [searchParams] = useSearchParams()
-  const [searchFocused, setSearchFocused] = useState(false)
 
+  const isDiscoverActive = pathname === '/search' && !searchParams.has('q')
+  const [searchFocused, setSearchFocused] = useState(false)
   const currentQ = searchParams.get('q') ?? ''
   const [inputValue, setInputValue] = useState(null)
   const searchQuery = inputValue !== null ? inputValue : currentQ
@@ -198,7 +191,7 @@ export default function AppNavbar({ children }) {
                   />
                 </Link>
                 <Badge
-                  color="dark"
+                  color="mColor2"
                   size="sm"
                   mt={4}
                   px={6}
@@ -212,142 +205,122 @@ export default function AppNavbar({ children }) {
                   Beta
                 </Badge>
               </Group>
-              {/* Nav items — apenas desktop */}
-              <Group gap="sm" ml="lg" align="center" visibleFrom="sm">
-                {NAV_ITEMS.map((item) => {
-                  const Icon = item.icon
-                  return (
-                    <Flex
-                      key={item.path}
-                      direction="column"
-                      align="center"
-                      gap={1}
-                      component={Link}
-                      to={item.path}
-                      opacity={isActive(item.path) ? 1 : 0.8}
-                      style={NAV_LINK_STYLE}
-                    >
-                      <Icon size={20} stroke={1.7} />
-                      <Text size="xs">{item.label}</Text>
-                    </Flex>
-                  )
-                })}
-                {/* Quick Actions — apenas desktop */}
-                <Flex
-                  direction="column"
-                  align="center"
-                  gap={1}
-                  opacity={isActive('/create') ? 1 : 0.8}
-                  onClick={openActionsMenu}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      openActionsMenu()
-                    }
-                  }}
-                  style={{ ...NAV_LINK_STYLE, cursor: 'pointer' }}
-                >
-                  <IconPlus size={20} stroke={1.7} />
-                  <Text size="xs">Criar</Text>
-                </Flex>
-              </Group>
+
+              {pathname.includes('backstage') && (
+                <>
+                  <UnstyledButton
+                    align="center"
+                    component={Link}
+                    to="/home"
+                    style={{ display: 'flex', gap: '6px', alignItems: 'center' }}
+                  >
+                    <IconArrowLeft size={18} />
+                    <Text size="sm" lh={1}>
+                      Voltar ao app
+                    </Text>
+                  </UnstyledButton>
+                </>
+              )}
             </Group>
 
             {/* Busca Desktop */}
-            <Combobox
-              store={combobox}
-              onOptionSubmit={(val) => {
-                setInputValue(val)
-                doSearch(val)
-              }}
-              visibleFrom="sm"
-              flex={2}
-              maw="40%"
-            >
-              <Combobox.Target>
-                <TextInput
-                  placeholder={
-                    searchFocused
-                      ? searchPhrase
-                        ? `ex: ${searchPhrase}`
-                        : 'PRS Silversky'
-                      : 'Pessoas, projetos, gigs, equipamentos...'
-                  }
-                  leftSection={<IconSearch size={15} />}
-                  rightSection={
-                    <ActionIcon
-                      variant="subtle"
-                      color="gray"
-                      radius="xl"
-                      size="md"
-                      aria-label="Buscar"
-                      onClick={() => doSearch(searchQuery)}
-                    >
-                      <IconArrowRight size={16} />
-                    </ActionIcon>
-                  }
-                  radius="xl"
-                  size="md"
-                  variant="default"
-                  color="var(--mantine-color-text)"
-                  value={searchQuery}
-                  onChange={(e) => {
-                    setInputValue(e.target.value)
-                    combobox.openDropdown()
-                  }}
-                  onFocus={() => {
-                    setSearchFocused(true)
-                    suggestions.length > 0 && combobox.openDropdown()
-                  }}
-                  onBlur={() => {
-                    setSearchFocused(false)
-                    combobox.closeDropdown()
-                  }}
-                  onKeyDown={(e) => e.key === 'Enter' && handleSearch(e)}
-                />
-              </Combobox.Target>
-              {suggestions.length > 0 && (
-                <Combobox.Dropdown>
-                  <Combobox.Group label="Buscas recentes">
-                    {suggestions.map((s) => (
-                      <Combobox.Option key={s.id} value={s.query}>
-                        <Group gap="xs">
-                          <IconClock size={13} opacity={0.4} />
-                          <Text size="sm">{s.query}</Text>
-                        </Group>
-                      </Combobox.Option>
-                    ))}
-                  </Combobox.Group>
-                  <Combobox.Footer>
-                    <Text
-                      size="xs"
-                      c="dimmed"
-                      ta="center"
-                      style={{ cursor: 'pointer' }}
-                      onClick={() => clearHistory()}
-                    >
-                      Limpar buscas recentes
-                    </Text>
-                  </Combobox.Footer>
-                </Combobox.Dropdown>
-              )}
-            </Combobox>
+            <Group flex={1} visibleFrom="sm" mx={90}>
+              <Combobox
+                store={combobox}
+                onOptionSubmit={(val) => {
+                  setInputValue(val)
+                  doSearch(val)
+                }}
+                flex={1}
+              >
+                <Combobox.Target>
+                  <TextInput
+                    placeholder={
+                      searchFocused
+                        ? searchPhrase
+                          ? `ex: ${searchPhrase}`
+                          : 'PRS Silversky'
+                        : 'Pessoas, projetos, gigs, equipamentos...'
+                    }
+                    leftSection={<IconSearch size={15} />}
+                    rightSection={
+                      searchQuery ? (
+                        <ActionIcon
+                          variant="subtle"
+                          color="gray"
+                          radius="xl"
+                          size="md"
+                          aria-label="Buscar"
+                          onClick={() => doSearch(searchQuery)}
+                        >
+                          <IconArrowRight size={16} />
+                        </ActionIcon>
+                      ) : undefined
+                    }
+                    radius="xl"
+                    size="md"
+                    variant="default"
+                    color="var(--mantine-color-text)"
+                    value={searchQuery}
+                    onChange={(e) => {
+                      setInputValue(e.target.value)
+                      combobox.openDropdown()
+                    }}
+                    onFocus={() => {
+                      setSearchFocused(true)
+                      suggestions.length > 0 && combobox.openDropdown()
+                    }}
+                    onBlur={() => {
+                      setSearchFocused(false)
+                      combobox.closeDropdown()
+                    }}
+                    onKeyDown={(e) => e.key === 'Enter' && handleSearch(e)}
+                  />
+                </Combobox.Target>
+                {suggestions.length > 0 && (
+                  <Combobox.Dropdown>
+                    <Combobox.Group label="Buscas recentes">
+                      {suggestions.map((s) => (
+                        <Combobox.Option key={s.id} value={s.query}>
+                          <Group gap="xs">
+                            <IconClock size={13} opacity={0.4} />
+                            <Text size="sm">{s.query}</Text>
+                          </Group>
+                        </Combobox.Option>
+                      ))}
+                    </Combobox.Group>
+                    <Combobox.Footer>
+                      <Text
+                        size="xs"
+                        c="dimmed"
+                        ta="center"
+                        style={{ cursor: 'pointer' }}
+                        onClick={() => clearHistory()}
+                      >
+                        Limpar buscas recentes
+                      </Text>
+                    </Combobox.Footer>
+                  </Combobox.Dropdown>
+                )}
+              </Combobox>
 
-            <Flex
-              direction="column"
-              align="center"
-              gap={1}
-              component={Link}
-              to="/search"
-              opacity={
-                location.pathname === '/search' && !searchParams.has('q') ? 1 : 0.8
-              }
-              style={NAV_LINK_STYLE}
-            >
-              <IconExplore size={24} />
-              <Text size="xs">Descobrir</Text>
-            </Flex>
+              <UnstyledButton
+                ref={discoverRef}
+                component={Link}
+                to="/search"
+                opacity={isDiscoverActive || hovered ? 1 : 0.8}
+                display="flex"
+                style={{
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: 1,
+                  // transition: 'opacity 150ms ease',
+                }}
+              >
+                <IconExplore size={24} />
+                <Text size="xs">Descobrir</Text>
+              </UnstyledButton>
+            </Group>
 
             {/* Direita: Notificações + Perfil */}
             <Group gap="sm">
@@ -466,37 +439,6 @@ export default function AppNavbar({ children }) {
           </Group>
         </Container>
       </Box>
-      <Modal
-        centered
-        opened={actionsMenuOpened}
-        onClose={closeActionsMenu}
-        title="Criar"
-        overlayProps={{
-          backgroundOpacity: 0.55,
-          blur: 3,
-        }}
-      >
-        <Stack mt="lg">
-          {QUICK_ACTIONS.map((item) => {
-            const Icon = item.icon
-            return (
-              <Button
-                key={item.path}
-                component={Link}
-                to={item.path}
-                onClick={closeActionsMenu}
-                leftSection={<Icon size={20} />}
-                variant="subtle"
-                justify="flex-start"
-                color="gray"
-                size="sm"
-              >
-                {item.label}
-              </Button>
-            )
-          })}
-        </Stack>
-      </Modal>
     </>
   )
 }

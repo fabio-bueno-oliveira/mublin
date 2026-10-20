@@ -27,6 +27,7 @@ import {
   Scroller, Tooltip, Popover,
   Tabs, Divider, ThemeIcon,
   Center,
+  ActionIcon,
 } from '@mantine/core'
 import { useMediaQuery, useDisclosure } from '@mantine/hooks'
 import {
@@ -34,7 +35,7 @@ import {
   IconBrandSpotify,
   IconBrandSoundcloud,
   IconRoad,
-  IconRosetteDiscountCheckFilled,
+  IconShieldCheckFilled,
   IconMapPin,
   IconArrowRight,
   IconBriefcase2,
@@ -44,12 +45,14 @@ import {
   IconMusicPlus,
   IconBrandYoutube,
   IconCalendar,
+  IconBrandApple,
 } from '@tabler/icons-react'
 import AppNavbarMobile from '../components/AppNavbarMobile'
 import SimilarProjects from '../components/explore/SimilarProjects'
 import ProjectProfileBadge from '../components/ProjectProfileBadge'
 import { SectionGigs, SectionPeople, BackstageAccess } from '../components/project'
 import { MEMBER_REQUEST_STATUS } from '../constants/projects'
+import { IconBrandMuso } from '../components/icons/IconBrandMuso'
 import dayjs from 'dayjs'
 import 'dayjs/locale/pt-br'
 dayjs.locale('pt-br')
@@ -221,7 +224,9 @@ export default function Project() {
 
   const PICTURE_AVATAR_SMALL_PATH = `https://ik.imagekit.io/mublin/projects/${project?.id}/tr:h-192,w-192,c-maintain_ratio/`
   const PICTURE_AVATAR_SMALL2_PATH = `https://ik.imagekit.io/mublin/projects/${project?.id}/tr:h-100,w-100,c-maintain_ratio/`
-  const PICTURE_AVATAR_PATH = `https://ik.imagekit.io/mublin/projects/${project?.id}/tr:h-220,w-220,c-maintain_ratio/`
+  const PICTURE_AVATAR_PATH = `https://ik.imagekit.io/mublin/projects/${project?.id}/tr:h-240,w-240,c-maintain_ratio/`
+
+  const PICTURE_AVATAR_AS_COVER_PATH = `https://ik.imagekit.io/mublin/projects/${project?.id}/tr:h-750,w-1200,fo-top,bl-14,fo-auto/`
 
   const PICTURE_AVATAR_LARGE_PATH = `https://ik.imagekit.io/mublin/projects/${project?.id}/tr:h-400,w-400,c-maintain_ratio/`
 
@@ -308,52 +313,52 @@ export default function Project() {
         </Affix>
       )}
 
-      <Container fluid px={0} mt={{ base: 10, sm: 20 }}>
-        <Grid gap="xs">
-          <Grid.Col span={{ base: 12, sm: 9 }}>
+      <Container fluid px={0} mt={{ base: 10, sm: 10 }}>
+        {/*
+         * ════════════════════════════════════════════════
+         * PROJECT HERO
+         * ════════════════════════════════════════════════
+         */}
+
+        <Card
+          mx={{ base: 0, sm: 'md' }}
+          mb={0}
+          p={0}
+          radius={isMobile ? 0 : 'lg'}
+          style={{
+            overflow: 'hidden',
+            // borderRadius: '0 0 20px 20px',
+          }}
+          bg="black"
+        >
+          <Box pos="relative" h={{ base: 160, sm: 170 }}>
+            {isLoading ? (
+              <Skeleton h="100%" w="100%" />
+            ) : (
+              <Image
+                opacity={0.15}
+                src={
+                  project?.cover_picture
+                    ? PICTURE_COVER_PATH + project.cover_picture
+                    : PICTURE_AVATAR_AS_COVER_PATH + project?.picture
+                }
+                fallbackSrc="https://placehold.co/1400x500?text=."
+                h="100%"
+                w="100%"
+                fit="inherit"
+                alt={`Capa de ${project?.name}`}
+              />
+            )}
+
             {/*
-             * ════════════════════════════════════════════════
-             * PROJECT HERO
-             * ════════════════════════════════════════════════
+             * Overlay
              */}
 
-            <Card
-              mx={{ base: 0, sm: 'md' }}
-              mb={0}
-              p={0}
-              radius={isMobile ? 0 : 'lg'}
+            <Box
+              pos="absolute"
+              inset={0}
               style={{
-                overflow: 'hidden',
-                // borderRadius: '0 0 20px 20px',
-              }}
-            >
-              <Box pos="relative" h={{ base: 160, sm: 200 }}>
-                {isLoading ? (
-                  <Skeleton h="100%" w="100%" />
-                ) : (
-                  <Image
-                    src={
-                      project?.cover_picture
-                        ? PICTURE_COVER_PATH + project.cover_picture
-                        : DEFAULT_COVER_PICTURE
-                    }
-                    fallbackSrc="https://placehold.co/1400x500?text=."
-                    h="100%"
-                    w="100%"
-                    fit="cover"
-                    alt={`Capa de ${project?.name}`}
-                  />
-                )}
-
-                {/*
-                 * Overlay
-                 */}
-
-                <Box
-                  pos="absolute"
-                  inset={0}
-                  style={{
-                    background: `
+                background: `
                   linear-gradient(
                     to bottom,
                     rgba(0,0,0,0.08) 0%,
@@ -362,17 +367,17 @@ export default function Project() {
                     rgba(0,0,0,0.92) 100%
                   )
                 `,
-                    pointerEvents: 'none',
-                  }}
-                />
+                pointerEvents: 'none',
+              }}
+            />
 
-                {/*
-                 * ─────────────────────────────────────────────
-                 * BACKSTAGE
-                 * ─────────────────────────────────────────────
-                 */}
+            {/*
+             * ─────────────────────────────────────────────
+             * BACKSTAGE
+             * ─────────────────────────────────────────────
+             */}
 
-                {/* {(userIsAdmin || userIsStaff) && project?.id && (
+            {/* {(userIsAdmin || userIsStaff) && project?.id && (
                   <Button
                     component="a"
                     href={`/backstage/${project.id}`}
@@ -388,520 +393,702 @@ export default function Project() {
                   </Button>
                 )} */}
 
-                {/*
-                 * ─────────────────────────────────────────────
-                 * PROJECT IDENTITY
-                 * ─────────────────────────────────────────────
-                 */}
+            {/*
+             * ─────────────────────────────────────────────
+             * PROJECT IDENTITY
+             * ─────────────────────────────────────────────
+             */}
 
-                <Box
-                  pos="absolute"
-                  bottom={0}
-                  left={0}
-                  right={0}
-                  px={{ base: 'md', sm: 'xl' }}
-                  pb={{ base: 'md', sm: 'xl' }}
+            <Box
+              pos="absolute"
+              bottom={0}
+              // bg="black"
+              left={0}
+              right={0}
+              px={{ base: 'md', sm: 'md' }}
+              pb={{ base: 'md', sm: 'lg' }}
+            >
+              <Flex gap={{ base: 'md', sm: 'lg' }} align="center">
+                {isLoading ? (
+                  <Skeleton
+                    w={{ base: 76, sm: 96 }}
+                    h={{ base: 76, sm: 96 }}
+                    radius="lg"
+                  />
+                ) : (
+                  <Avatar
+                    src={
+                      isMobile
+                        ? PICTURE_AVATAR_PATH + project?.picture
+                        : PICTURE_AVATAR_SMALL_PATH + project?.picture
+                    }
+                    size={isMobile ? 76 : 120}
+                    onClick={openModal}
+                    style={{
+                      flexShrink: 0,
+                      cursor: 'pointer',
+                      // border: '2px solid rgba(255,255,255,.18)',
+                      // border: '2px solid rgba(255,255,255,.4)',
+                      // boxShadow: '0 8px 30px rgba(0,0,0,.6)',
+                    }}
+                  />
+                )}
+
+                <Stack
+                  gap={5}
+                  style={{
+                    minWidth: 0,
+                  }}
                 >
-                  <Flex gap={{ base: 'sm', sm: 'md' }} align="flex-end">
-                    {isLoading ? (
-                      <Skeleton
-                        w={{ base: 76, sm: 96 }}
-                        h={{ base: 76, sm: 96 }}
-                        radius="lg"
-                      />
-                    ) : (
-                      <Avatar
-                        src={
-                          isMobile
-                            ? PICTURE_AVATAR_PATH + project?.picture
-                            : PICTURE_AVATAR_SMALL_PATH + project?.picture
-                        }
-                        size={isMobile ? 76 : 96}
-                        radius="lg"
-                        onClick={openModal}
-                        style={{
-                          flexShrink: 0,
-                          cursor: 'pointer',
-                          // border: '2px solid rgba(255,255,255,.18)',
-                          // border: '2px solid rgba(255,255,255,.4)',
-                          boxShadow: '0 8px 30px rgba(0,0,0,.6)',
-                        }}
-                      />
-                    )}
-
-                    <Stack
-                      gap={5}
-                      pb={2}
-                      style={{
-                        minWidth: 0,
-                      }}
-                    >
-                      {isLoading ? (
-                        <>
-                          <Skeleton h={26} w={200} />
-                          <Skeleton h={14} w={130} />
-                        </>
-                      ) : (
-                        <>
-                          {/* TOUR BADGES - nova lógica */}
-                          {tourStatus?.isOnTour && (
-                            <Badge color="green" leftSection={<IconRoad size={14} />}>
-                              Em turnê • {tourStatus.activeTours[0].title}
-                            </Badge>
-                          )}
-                          {!tourStatus?.isOnTour && tourStatus?.isUpcomingSoon && (
-                            <Badge
-                              color="yellow"
-                              variant="light"
-                              leftSection={<IconCalendar size={14} />}
-                              px={5}
-                            >
-                              Turnê em breve •{' '}
-                              {/* {tourStatus.nextDate &&
+                  {isLoading ? (
+                    <>
+                      <Skeleton h={26} w={200} />
+                      <Skeleton h={14} w={130} />
+                    </>
+                  ) : (
+                    <>
+                      {/* TOUR BADGES - nova lógica */}
+                      {tourStatus?.isOnTour && (
+                        <Badge color="green" leftSection={<IconRoad size={14} />}>
+                          Em turnê • {tourStatus.activeTours[0].title}
+                        </Badge>
+                      )}
+                      {!tourStatus?.isOnTour && tourStatus?.isUpcomingSoon && (
+                        <Badge
+                          color="yellow"
+                          variant="light"
+                          leftSection={<IconCalendar size={14} />}
+                          px={5}
+                        >
+                          Turnê em breve •{' '}
+                          {/* {tourStatus.nextDate &&
                                 new Date(tourStatus.nextDate).toLocaleDateString(
                                   'pt-BR',
                                 )}{' '} */}
-                              {tourStatus.upcomingTours[0].days_until} dias
-                            </Badge>
-                          )}
-                          <Group gap={7} wrap="nowrap">
-                            <Title
-                              order={1}
-                              fz={{
-                                base: 28,
-                                sm: 34,
-                              }}
-                              fw={650}
-                              c="white"
-                              lts="-0.025em"
-                              lineClamp={1}
-                              lh={1}
-                            >
-                              {project?.name}
-                            </Title>
-
-                            {project?.is_verified && (
-                              <IconRosetteDiscountCheckFilled
-                                size={isMobile ? 21 : 25}
-                                color="var(--mantine-color-mublinSecondary-2)"
-                                title="Projeto verificado"
-                                style={{
-                                  flexShrink: 0,
-                                }}
-                              />
-                            )}
-                          </Group>
-
-                          <Group gap={7} wrap="wrap">
-                            {project?.type && (
-                              <Text size="sm" c="rgba(255,255,255,.76)">
-                                {project.type}
-                              </Text>
-                            )}
-
-                            <ProjectProfileBadge projectId={project?.id} />
-                          </Group>
-
-                          {validGenreNames.length > 0 && (
-                            <Text size="xs" c="dimmed" lh={1}>
-                              {validGenreNames.join(', ')}
-                            </Text>
-                          )}
-                        </>
+                          {tourStatus.upcomingTours[0].days_until} dias
+                        </Badge>
                       )}
-                    </Stack>
-                  </Flex>
-                </Box>
-              </Box>
-            </Card>
-
-            {!isLoading && projectPeople.length > 1 && (
-              <Box px={{ base: 'md', sm: 'xl' }} py="md">
-                <Avatar.Group>
-                  {projectPeople.slice(0, 5).map((person) => (
-                    <Tooltip
-                      key={person.id}
-                      label={person.profile?.full_name || person.profile?.username}
-                      withArrow
-                    >
-                      <Avatar
-                        component={Link}
-                        to={`/${person.profile?.username}`}
-                        size={34}
-                        src={`${AVATAR_PATH}${person.profile?.avatar}`}
-                      />
-                    </Tooltip>
-                  ))}
-
-                  {projectPeople.length > 5 && (
-                    <Avatar size={34}>+{projectPeople.length - 5}</Avatar>
-                  )}
-                </Avatar.Group>
-              </Box>
-            )}
-
-            {/*
-             * ════════════════════════════════════════════════
-             * NAVIGATION
-             * ════════════════════════════════════════════════
-             */}
-
-            <Tabs
-              mx={{ base: 0, sm: 'md' }}
-              value={activeTab}
-              onChange={setActiveTab}
-              mt="xs"
-              mb="md"
-              variant="default"
-            >
-              <Tabs.List>
-                <Scroller>
-                  <Tabs.Tab value="overview">Visão geral</Tabs.Tab>
-
-                  <Tabs.Tab value="about">Sobre</Tabs.Tab>
-
-                  <Tabs.Tab value="people">
-                    Pessoas {projectPeople?.length > 0 && `(${projectPeople.length})`}
-                  </Tabs.Tab>
-
-                  {project?.end_year > 0 && <Tabs.Tab value="gigs">Gigs</Tabs.Tab>}
-
-                  <Tabs.Tab value="music">Música</Tabs.Tab>
-                </Scroller>
-              </Tabs.List>
-            </Tabs>
-
-            {/*
-             * ════════════════════════════════════════════════
-             * OVERVIEW
-             * ════════════════════════════════════════════════
-             */}
-
-            {activeTab === 'overview' && (
-              <Container size="lg" px={{ base: 'sm', sm: 'md' }}>
-                {/*
-                 * ────────────────────────────────────────────
-                 * MAIN COLUMN
-                 * ────────────────────────────────────────────
-                 */}
-
-                <Stack
-                  gap="md"
-                  style={{
-                    gridColumn: isMobile ? undefined : 'span 2',
-                  }}
-                >
-                  <Grid>
-                    <Grid.Col span={{ base: 12, sm: 7 }}>
-                      {/*
-                       * ABOUT
-                       */}
-                      <Card withBorder radius="lg" px="lg" pt="lg" pb="sm" h={162}>
-                        <Title order={3} fw={600} size="17px" mb="xs">
-                          Sobre
+                      <Group gap={7} wrap="nowrap">
+                        <Title
+                          order={1}
+                          fz={{
+                            base: 28,
+                            sm: 34,
+                          }}
+                          fw={650}
+                          c="white"
+                          lts="-0.025em"
+                          lineClamp={1}
+                          lh={1}
+                        >
+                          {project?.name}
                         </Title>
 
-                        {project?.description ? (
-                          <>
-                            <Text
-                              size="sm"
-                              lh={1.6}
-                              lineClamp={2}
-                              mih={48}
-                              style={{
-                                whiteSpace: 'pre-line',
-                              }}
-                            >
-                              {project.description}
-                            </Text>
-                            <Divider mt="sm" mb="xs" />
-                            <Button
-                              radius="xl"
-                              fullWidth
-                              size="compact-sm"
-                              variant="transparent"
-                              color="var(--mantine-color-text)"
-                              onClick={() => setActiveTab('about')}
-                              rightSection={<IconArrowRight size={16} />}
-                            >
-                              Ver tudo
-                            </Button>
-                          </>
-                        ) : (
-                          <Text size="sm" c="dimmed">
-                            Descrição não disponível.
+                        {project?.is_verified && (
+                          <IconShieldCheckFilled
+                            size={isMobile ? 21 : 22}
+                            color="var(--mantine-color-text)"
+                            title="Projeto verificado"
+                            style={{
+                              flexShrink: 0,
+                            }}
+                          />
+                        )}
+                      </Group>
+
+                      <Group gap={7} wrap="wrap">
+                        {project?.type && (
+                          <Text size="sm" c="rgba(255,255,255,.76)">
+                            {project.type}
                           </Text>
                         )}
-                      </Card>
-                    </Grid.Col>
-                    <Grid.Col span={{ base: 12, sm: 5 }}>
-                      {/*
-                       * PEOPLE PREVIEW
-                       */}
-                      <Card withBorder radius="lg" p="lg" h={162}>
-                        <Stack gap="xs" mt={4}>
-                          <Center mb={2}>
-                            <Group w={240} gap="xs" wrap="nowrap">
-                              <Avatar
-                                src={PICTURE_AVATAR_SMALL2_PATH + project?.picture}
-                                size={50}
-                              />
-                              <IconMusicPlus size={19} color="gray" />
-                              <Stack gap={6} style={{ flex: 1 }}>
-                                <Skeleton
-                                  h={8}
-                                  w="96%"
-                                  radius="xl"
-                                  animate={false}
-                                  opacity={0.9}
-                                />
-                                <Skeleton
-                                  h={6}
-                                  w="66%"
-                                  radius="xl"
-                                  animate={false}
-                                  opacity={0.65}
-                                />
-                                <Skeleton
-                                  h={6}
-                                  w="80%"
-                                  radius="xl"
-                                  animate={false}
-                                  opacity={0.4}
-                                />
-                              </Stack>
-                            </Group>
-                          </Center>
-
-                          <Stack gap={4} mt={6}>
-                            <Text ta="center" size="sm" fw={500}>
-                              Já trabalhou com {project?.name}?
-                            </Text>
-                            <Anchor
-                              component={Link}
-                              to={`/settings/portfolio`}
-                              size="sm"
-                              c="dimmed"
-                              ta="center"
-                            >
-                              Adicione ao seu portfolio
-                            </Anchor>
-                          </Stack>
-                        </Stack>
-                      </Card>
-                    </Grid.Col>
-                  </Grid>
-
-                  {/*
-                   * OPENINGS
-                   */}
-
-                  {(loadingOpenProjectOpenings || openProjectOpenings.length > 0) && (
-                    <Card withBorder radius="lg" p="lg">
-                      <Group justify="space-between" mb="md">
-                        <Group gap="xs">
-                          <ThemeIcon
-                            variant="light"
-                            color="mublinColor"
-                            radius="md"
-                            size="lg"
-                          >
-                            <IconBriefcase2 size={18} />
-                          </ThemeIcon>
-
-                          <Box>
-                            <Title order={3} fz="lg" fw={600}>
-                              Vagas abertas
-                            </Title>
-
-                            <Text size="xs" c="dimmed">
-                              O projeto está procurando músicos
-                            </Text>
-                          </Box>
-                        </Group>
                       </Group>
 
-                      {loadingOpenProjectOpenings ? (
-                        <Stack gap="xs">
-                          {[1, 2].map((i) => (
-                            <Skeleton key={i} h={74} radius="md" />
-                          ))}
-                        </Stack>
+                      {validGenreNames.length > 0 && (
+                        <Text size="sm" c="dimmed" lineClamp={2} lh={1}>
+                          {validGenreNames.join(', ')}
+                        </Text>
+                      )}
+                    </>
+                  )}
+                </Stack>
+              </Flex>
+            </Box>
+          </Box>
+        </Card>
+
+        {!isLoading && projectPeople.length > 1 && (
+          <Box px={{ base: 'md', sm: 'xl' }} py="md">
+            <Avatar.Group>
+              {projectPeople.slice(0, 5).map((person) => (
+                <Tooltip
+                  key={person.id}
+                  label={person.profile?.full_name || person.profile?.username}
+                  withArrow
+                >
+                  <Avatar
+                    component={Link}
+                    to={`/${person.profile?.username}`}
+                    size={34}
+                    src={`${AVATAR_PATH}${person.profile?.avatar}`}
+                  />
+                </Tooltip>
+              ))}
+
+              {projectPeople.length > 5 && (
+                <Avatar size={34}>+{projectPeople.length - 5}</Avatar>
+              )}
+            </Avatar.Group>
+          </Box>
+        )}
+
+        {/*
+         * ════════════════════════════════════════════════
+         * NAVIGATION
+         * ════════════════════════════════════════════════
+         */}
+
+        <Group justify="space-between" mt="xs" mb="md">
+          <Tabs
+            mx={{ base: 0, sm: 'md' }}
+            value={activeTab}
+            onChange={setActiveTab}
+            variant="default"
+          >
+            <Tabs.List>
+              <Scroller>
+                <Tabs.Tab value="overview">Visão geral</Tabs.Tab>
+
+                <Tabs.Tab value="about">Sobre</Tabs.Tab>
+
+                <Tabs.Tab value="people">
+                  Pessoas {projectPeople?.length > 0 && `(${projectPeople.length})`}
+                </Tabs.Tab>
+
+                {project?.end_year > 0 && <Tabs.Tab value="gigs">Gigs</Tabs.Tab>}
+
+                <Tabs.Tab value="music">Música</Tabs.Tab>
+              </Scroller>
+            </Tabs.List>
+          </Tabs>
+          <Group gap={6} mr="lg">
+            {project?.muso_ai_app_url && (
+              <Tooltip label={`${project.name} no Muso.ai`} withArrow>
+                <ActionIcon
+                  component="a"
+                  href={project.muso_ai_app_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  size="lg"
+                  variant="subtle"
+                  color="gray"
+                  aria-label={`${project.name} no Muso.ai (abre em nova aba)`}
+                >
+                  <IconBrandMuso
+                    color="#6BE7C8"
+                    style={{ width: '70%', height: '70%' }}
+                  />
+                </ActionIcon>
+              </Tooltip>
+            )}
+            {project?.apple_music_id && (
+              <Tooltip label={`${project.name} na Apple Music`} withArrow>
+                <ActionIcon
+                  component="a"
+                  href={`https://music.apple.com/br/artist/${project?.apple_music_id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  size="lg"
+                  variant="subtle"
+                  color="gray"
+                  aria-label={`${project.name} no Apple Music (abre em nova aba)`}
+                >
+                  <IconBrandApple
+                    color="#a8a8a8"
+                    style={{ width: '70%', height: '70%' }}
+                  />
+                </ActionIcon>
+              </Tooltip>
+            )}
+            {project?.spotify_id && (
+              <Tooltip label={`${project.name} no Spotify`} withArrow>
+                <ActionIcon
+                  component="a"
+                  href={`https://open.spotify.com/intl-pt/artist/${project?.spotify_id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  size="lg"
+                  variant="subtle"
+                  color="gray"
+                  aria-label={`${project.name} no Spotify (abre em nova aba)`}
+                >
+                  <IconBrandSpotify
+                    color="#1ED760"
+                    style={{ width: '70%', height: '70%' }}
+                  />
+                </ActionIcon>
+              </Tooltip>
+            )}
+            {project?.instagram && (
+              <Tooltip label={`${project.name} no Instagram`} withArrow>
+                <ActionIcon
+                  component="a"
+                  href={`https://instagram.com/${project?.instagram}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  size="lg"
+                  variant="subtle"
+                  color="gray"
+                  aria-label={`${project.name} no Instagram (abre em nova aba)`}
+                >
+                  <IconBrandInstagram
+                    color="#C13584"
+                    style={{ width: '70%', height: '70%' }}
+                  />
+                </ActionIcon>
+              </Tooltip>
+            )}
+          </Group>
+        </Group>
+
+        {/*
+         * ════════════════════════════════════════════════
+         * OVERVIEW
+         * ════════════════════════════════════════════════
+         */}
+
+        {activeTab === 'overview' && (
+          <Container size="lg" px={{ base: 'sm', sm: 'md' }}>
+            {/*
+             * ────────────────────────────────────────────
+             * MAIN COLUMN
+             * ────────────────────────────────────────────
+             */}
+
+            <Stack
+              gap="md"
+              style={{
+                gridColumn: isMobile ? undefined : 'span 2',
+              }}
+            >
+              <Grid>
+                <Grid.Col span={{ base: 12, sm: 7 }}>
+                  <Stack>
+                    <Card withBorder radius="lg" px="lg" pt="md" pb={8} h={160}>
+                      <Title order={3} fw={600} size="17px" mb="xs">
+                        Visão geral
+                      </Title>
+
+                      {project?.description ? (
+                        <>
+                          <Text
+                            size="sm"
+                            lh={1.6}
+                            lineClamp={2}
+                            mih={48}
+                            style={{
+                              whiteSpace: 'pre-line',
+                            }}
+                          >
+                            {project.description}
+                          </Text>
+                          <Divider mt="xs" mb="xs" />
+                          <Button
+                            radius="xl"
+                            fullWidth
+                            size="compact-sm"
+                            variant="transparent"
+                            color="var(--mantine-color-text)"
+                            onClick={() => setActiveTab('about')}
+                            rightSection={<IconArrowRight size={16} />}
+                          >
+                            Ver tudo
+                          </Button>
+                        </>
                       ) : (
-                        <Stack gap="xs">
-                          {openProjectOpenings.slice(0, 3).map((opening) => (
-                            <Paper key={opening.id} withBorder radius="md" p="md">
-                              <Flex justify="space-between" align="center" gap="md">
-                                <Box>
-                                  <Group gap={6} mb={3}>
-                                    <Text fw={600} size="sm">
-                                      {opening?.role?.name_ptbr}
-                                    </Text>
-
-                                    {opening?.is_remote && (
-                                      <Badge size="xs" variant="light" color="blue">
-                                        Remoto
-                                      </Badge>
-                                    )}
-
-                                    {opening?.is_paid && (
-                                      <Badge size="xs" variant="light" color="green">
-                                        Remunerado
-                                      </Badge>
-                                    )}
-                                  </Group>
-
-                                  {opening.engagement_type?.name_ptbr && (
-                                    <Text size="xs" c="dimmed">
-                                      {opening.engagement_type?.name_ptbr}
-                                    </Text>
-                                  )}
-
-                                  {opening.description && (
-                                    <Text size="xs" c="dimmed" mt={3} lineClamp={2}>
-                                      {opening.description}
-                                    </Text>
-                                  )}
-                                </Box>
-
-                                <IconChevronRight
-                                  size={18}
-                                  opacity={0.45}
-                                  style={{
-                                    flexShrink: 0,
-                                  }}
-                                />
-                              </Flex>
-                            </Paper>
-                          ))}
-                        </Stack>
+                        <Text size="sm" c="dimmed">
+                          Descrição não disponível.
+                        </Text>
                       )}
                     </Card>
-                  )}
 
-                  {/*
-                   * INSPIRED
-                   */}
+                    {project?.profile_id && (
+                      <Card withBorder radius="lg" px="lg" py="lg">
+                        <Title order={3} fw={600} size="17px">
+                          Perfil pessoal no Mublin
+                        </Title>
+                        <Text size="sm" c="dimmed" mb="xs">
+                          Este artista possui perfil pessoal no Mublin
+                        </Text>
+                        <ProjectProfileBadge projectId={project?.id} />
+                      </Card>
+                    )}
 
-                  {inspirated.length > 0 && (
-                    <Card withBorder radius="lg" p="lg">
-                      <Title order={3} fz="lg" fw={600}>
-                        Inspirando pessoas
-                      </Title>
+                    {/*
+                     * PEOPLE PREVIEW
+                     */}
 
-                      <Text size="xs" c="dimmed" mt={2} mb="md">
-                        {inspirated.length === 1
-                          ? `1 pessoa se inspira no trabalho de ${project?.name}`
-                          : `${inspirated.length} pessoas se inspiram no trabalho de ${project?.name}`}
-                      </Text>
+                    {((activeTab === 'overview' && isMobile) || !isMobile) && (
+                      <>
+                        {recentProjectPeople.length > 0 && (
+                          <Card withBorder radius="lg" px="lg" pt="md" pb={8}>
+                            <>
+                              <Title order={3} fw={600} size="17px" mb="xs">
+                                Pessoas associadas recentemente
+                              </Title>
+                              <Stack gap="xs">
+                                {recentProjectPeople.map((person) => (
+                                  <Box key={person.id}>
+                                    <Group gap="sm" wrap="nowrap">
+                                      <Avatar
+                                        component={Link}
+                                        to={`/${person.profile?.username}`}
+                                        size={42}
+                                        src={`${AVATAR_PATH}${person.profile?.avatar}`}
+                                      />
 
-                      <Group wrap="wrap">
-                        {inspirated.slice(0, 12).map((item) => (
-                          <Popover
-                            key={item.id}
-                            width={140}
-                            position="bottom"
-                            withArrow
-                            shadow="md"
-                            opened={profileDetailOpened}
-                          >
-                            <Popover.Target>
-                              <Link to={`/${item.profiles?.username}`}>
-                                <Avatar
-                                  size={42}
-                                  onMouseEnter={openProfileDetail}
-                                  onMouseLeave={closeProfileDetail}
-                                  src={
-                                    item.profiles?.avatar
-                                      ? AVATAR_PATH + item.profiles.avatar
-                                      : `https://api.dicebear.com/10.x/initials/svg?seed=${item.profiles?.full_name}`
-                                  }
-                                  title={item.profiles?.full_name}
-                                />
-                              </Link>
-                            </Popover.Target>
+                                      <Box
+                                        style={{
+                                          minWidth: 0,
+                                        }}
+                                      >
+                                        <Text
+                                          component={Link}
+                                          to={`/${person.profile?.username}`}
+                                          size="sm"
+                                          fw={500}
+                                          lineClamp={1}
+                                          style={{
+                                            textDecoration: 'none',
+                                            color: 'inherit',
+                                          }}
+                                        >
+                                          {person.profile?.full_name}
+                                        </Text>
 
-                            <Popover.Dropdown
-                              style={{
-                                pointerEvents: 'none',
-                              }}
-                              p={10}
-                            >
-                              <Text size="xs" fw={500}>
-                                @{item.profiles?.username}
-                              </Text>
+                                        <Text size="xs" c="dimmed" fw={500} lineClamp={1}>
+                                          {person.roles
+                                            ?.map((r) => r.role?.name_ptbr)
+                                            .join(', ')}
+                                        </Text>
 
-                              <Text size="10px" c="dimmed">
-                                {item.profiles?.title}
-                              </Text>
-                            </Popover.Dropdown>
-                          </Popover>
-                        ))}
-
-                        {inspirated.length > 12 && (
-                          <Avatar size={42}>+{inspirated.length - 12}</Avatar>
-                        )}
-                      </Group>
-                    </Card>
-                  )}
-
-                  {/*
-                   * RELATED PROJECTS
-                   */}
-
-                  {(loadingRelatedProjects || relatedProjects.length > 0) && (
-                    <Stack gap="sm" px="xs" mb="sm">
-                      <Title order={3} fw={600} size="15px" mb={6}>
-                        Projetos relacionados a {project?.name}
-                      </Title>
-                      <Scroller>
-                        <Group wrap="nowrap" gap="xs" align="flex-start">
-                          {loadingRelatedProjects
-                            ? [1, 2, 3].map((i) => (
-                                <Stack key={i} gap={6} align="center" w={84}>
-                                  <Skeleton circle height={64} width={64} />
-                                  <Skeleton height={10} width={56} />
-                                </Stack>
-                              ))
-                            : relatedProjects.map((related) => (
-                                <UnstyledButton
-                                  key={related.id}
-                                  onClick={() =>
-                                    navigate(
-                                      related.project_type_id === 19
-                                        ? `/person/${related.slug}`
-                                        : `/project/${related.slug}`,
-                                    )
-                                  }
-                                  aria-label={`Ver projeto ${related.name}`}
-                                  w={80}
+                                        <Text
+                                          size="11px"
+                                          c="dimmed"
+                                          mt={3}
+                                          fw={300}
+                                          lineClamp={1}
+                                        >
+                                          {person?.notes}
+                                        </Text>
+                                      </Box>
+                                    </Group>
+                                  </Box>
+                                ))}
+                              </Stack>
+                              <Divider mt="md" mb={4} />
+                              {projectPeople.length > 0 && (
+                                <Button
+                                  radius="md"
+                                  fullWidth
+                                  size="sm"
+                                  variant="transparent"
+                                  color="var(--mantine-color-text)"
+                                  onClick={() => setActiveTab('people')}
                                 >
-                                  <Stack gap={3} align="center">
-                                    <Avatar
-                                      src={getRelatedAvatarUrl(related)}
-                                      size={50}
-                                    />
-                                    <Text
-                                      w={79}
-                                      size="xs"
-                                      ta="center"
-                                      lineClamp={1}
-                                      title={related.name}
-                                    >
-                                      {related.name}
-                                    </Text>
-                                    <Text size="10px" c="dimmed">
-                                      {related?.type}
-                                    </Text>
+                                  Ver todas as pessoas associadas
+                                </Button>
+                              )}
+                            </>
+                          </Card>
+                        )}
+                      </>
+                    )}
+
+                    {/*
+                     * RELATED PROJECTS
+                     */}
+
+                    {(loadingRelatedProjects || relatedProjects.length > 0) && (
+                      <Stack gap="sm" px="xs" mb="sm">
+                        <Title order={3} fw={600} size="15px" mb={6}>
+                          Projetos relacionados a {project?.name}
+                        </Title>
+                        <Scroller>
+                          <Group wrap="nowrap" gap="xs" align="flex-start">
+                            {loadingRelatedProjects
+                              ? [1, 2, 3].map((i) => (
+                                  <Stack key={i} gap={6} align="center" w={84}>
+                                    <Skeleton circle height={64} width={64} />
+                                    <Skeleton height={10} width={56} />
                                   </Stack>
-                                </UnstyledButton>
-                              ))}
-                        </Group>
-                      </Scroller>
+                                ))
+                              : relatedProjects.map((related) => (
+                                  <UnstyledButton
+                                    key={related.id}
+                                    onClick={() =>
+                                      navigate(
+                                        related.project_type_id === 19
+                                          ? `/person/${related.slug}`
+                                          : `/project/${related.slug}`,
+                                      )
+                                    }
+                                    aria-label={`Ver projeto ${related.name}`}
+                                    w={80}
+                                  >
+                                    <Stack gap={3} align="center">
+                                      <Avatar
+                                        src={getRelatedAvatarUrl(related)}
+                                        size={50}
+                                      />
+                                      <Text
+                                        w={79}
+                                        size="xs"
+                                        ta="center"
+                                        lineClamp={1}
+                                        title={related.name}
+                                      >
+                                        {related.name}
+                                      </Text>
+                                      <Text size="10px" c="dimmed">
+                                        {related?.type}
+                                      </Text>
+                                    </Stack>
+                                  </UnstyledButton>
+                                ))}
+                          </Group>
+                        </Scroller>
+                      </Stack>
+                    )}
+                  </Stack>
+                </Grid.Col>
+                <Grid.Col span={{ base: 12, sm: 5 }}>
+                  <Stack>
+                    {/*
+                     * ADD TO PORTFOLIO
+                     */}
+                    <Card withBorder radius="lg" p="lg" h={162}>
+                      <Stack gap="xs" mt={4}>
+                        <Center mb={2}>
+                          <Group w={240} gap="xs" wrap="nowrap">
+                            <Avatar
+                              src={PICTURE_AVATAR_SMALL2_PATH + project?.picture}
+                              size={50}
+                            />
+                            <IconMusicPlus size={19} color="gray" />
+                            <Stack gap={6} style={{ flex: 1 }}>
+                              <Skeleton
+                                h={8}
+                                w="96%"
+                                radius="xl"
+                                animate={false}
+                                opacity={0.9}
+                              />
+                              <Skeleton
+                                h={6}
+                                w="66%"
+                                radius="xl"
+                                animate={false}
+                                opacity={0.65}
+                              />
+                              <Skeleton
+                                h={6}
+                                w="80%"
+                                radius="xl"
+                                animate={false}
+                                opacity={0.4}
+                              />
+                            </Stack>
+                          </Group>
+                        </Center>
+
+                        <Stack gap={4} mt={6}>
+                          <Text ta="center" size="sm" fw={500}>
+                            Já trabalhou com {project?.name}?
+                          </Text>
+                          <Anchor
+                            component={Link}
+                            to={`/settings/portfolio`}
+                            size="sm"
+                            c="dimmed"
+                            ta="center"
+                          >
+                            Adicione ao seu portfolio
+                          </Anchor>
+                        </Stack>
+                      </Stack>
+                    </Card>
+
+                    {/*
+                     * ADMIN FEATURES
+                     */}
+
+                    {(userIsAdmin || userIsStaff) && activeTab === 'overview' && (
+                      <BackstageAccess
+                        profile={profile}
+                        projectId={project?.id}
+                        userIsAdmin={userIsAdmin}
+                        userIsStaff={userIsStaff}
+                      />
+                    )}
+                  </Stack>
+                </Grid.Col>
+              </Grid>
+
+              {/*
+               * OPENINGS
+               */}
+
+              {(loadingOpenProjectOpenings || openProjectOpenings.length > 0) && (
+                <Card withBorder radius="lg" p="lg">
+                  <Group justify="space-between" mb="md">
+                    <Group gap="xs">
+                      <ThemeIcon
+                        variant="light"
+                        color="mublinColor"
+                        radius="md"
+                        size="lg"
+                      >
+                        <IconBriefcase2 size={18} />
+                      </ThemeIcon>
+
+                      <Box>
+                        <Title order={3} fz="lg" fw={600}>
+                          Vagas abertas
+                        </Title>
+
+                        <Text size="xs" c="dimmed">
+                          O projeto está procurando músicos
+                        </Text>
+                      </Box>
+                    </Group>
+                  </Group>
+
+                  {loadingOpenProjectOpenings ? (
+                    <Stack gap="xs">
+                      {[1, 2].map((i) => (
+                        <Skeleton key={i} h={74} radius="md" />
+                      ))}
+                    </Stack>
+                  ) : (
+                    <Stack gap="xs">
+                      {openProjectOpenings.slice(0, 3).map((opening) => (
+                        <Paper key={opening.id} withBorder radius="md" p="md">
+                          <Flex justify="space-between" align="center" gap="md">
+                            <Box>
+                              <Group gap={6} mb={3}>
+                                <Text fw={600} size="sm">
+                                  {opening?.role?.name_ptbr}
+                                </Text>
+
+                                {opening?.is_remote && (
+                                  <Badge size="xs" variant="light" color="blue">
+                                    Remoto
+                                  </Badge>
+                                )}
+
+                                {opening?.is_paid && (
+                                  <Badge size="xs" variant="light" color="green">
+                                    Remunerado
+                                  </Badge>
+                                )}
+                              </Group>
+
+                              {opening.engagement_type?.name_ptbr && (
+                                <Text size="xs" c="dimmed">
+                                  {opening.engagement_type?.name_ptbr}
+                                </Text>
+                              )}
+
+                              {opening.description && (
+                                <Text size="xs" c="dimmed" mt={3} lineClamp={2}>
+                                  {opening.description}
+                                </Text>
+                              )}
+                            </Box>
+
+                            <IconChevronRight
+                              size={18}
+                              opacity={0.45}
+                              style={{
+                                flexShrink: 0,
+                              }}
+                            />
+                          </Flex>
+                        </Paper>
+                      ))}
                     </Stack>
                   )}
+                </Card>
+              )}
 
-                  {/* {project?.spotify_id && (
+              {/*
+               * INSPIRED
+               */}
+
+              {inspirated.length > 0 && (
+                <Card withBorder radius="lg" p="lg">
+                  <Title order={3} fz="lg" fw={600}>
+                    Inspirando pessoas
+                  </Title>
+
+                  <Text size="xs" c="dimmed" mt={2} mb="md">
+                    {inspirated.length === 1
+                      ? `1 pessoa se inspira no trabalho de ${project?.name}`
+                      : `${inspirated.length} pessoas se inspiram no trabalho de ${project?.name}`}
+                  </Text>
+
+                  <Group wrap="wrap">
+                    {inspirated.slice(0, 12).map((item) => (
+                      <Popover
+                        key={item.id}
+                        width={140}
+                        position="bottom"
+                        withArrow
+                        shadow="md"
+                        opened={profileDetailOpened}
+                      >
+                        <Popover.Target>
+                          <Link to={`/${item.profiles?.username}`}>
+                            <Avatar
+                              size={42}
+                              onMouseEnter={openProfileDetail}
+                              onMouseLeave={closeProfileDetail}
+                              src={
+                                item.profiles?.avatar
+                                  ? AVATAR_PATH + item.profiles.avatar
+                                  : `https://api.dicebear.com/10.x/initials/svg?seed=${item.profiles?.full_name}`
+                              }
+                              title={item.profiles?.full_name}
+                            />
+                          </Link>
+                        </Popover.Target>
+
+                        <Popover.Dropdown
+                          style={{
+                            pointerEvents: 'none',
+                          }}
+                          p={10}
+                        >
+                          <Text size="xs" fw={500}>
+                            @{item.profiles?.username}
+                          </Text>
+
+                          <Text size="10px" c="dimmed">
+                            {item.profiles?.title}
+                          </Text>
+                        </Popover.Dropdown>
+                      </Popover>
+                    ))}
+
+                    {inspirated.length > 12 && (
+                      <Avatar size={42}>+{inspirated.length - 12}</Avatar>
+                    )}
+                  </Group>
+                </Card>
+              )}
+
+              {/* {project?.spotify_id && (
                       <Box px={isMobile ? 10 : 0}>
                         <iframe
                           title={`Spotify - ${project?.name}`}
@@ -915,466 +1102,344 @@ export default function Project() {
                         />
                       </Box>
                     )} */}
+            </Stack>
+          </Container>
+        )}
+
+        {/*
+         * ════════════════════════════════════════════════
+         * ABOUT
+         * ════════════════════════════════════════════════
+         */}
+
+        {activeTab === 'about' && (
+          <Container size="lg" px={{ base: 'sm', sm: 'md' }}>
+            <Card withBorder radius="lg" p="lg">
+              <Title order={3} fz="lg" fw={600} mb="xs">
+                Sobre
+              </Title>
+
+              <Stack gap="xs">
+                {project?.description ? (
+                  <Spoiler
+                    mb={30}
+                    maxHeight={85}
+                    showLabel={
+                      <Text size="sm" fw={600} c="var(--mantine-color-text)">
+                        Ver mais
+                      </Text>
+                    }
+                    hideLabel={
+                      <Text size="sm" fw={600} c="var(--mantine-color-text)">
+                        Ver menos
+                      </Text>
+                    }
+                  >
+                    <Text size="sm" style={{ whiteSpace: 'pre-line' }}>
+                      {project.description}
+                    </Text>
+                  </Spoiler>
+                ) : (
+                  <Text size="sm" c="dimmed">
+                    Descrição não disponível.
+                  </Text>
+                )}
+
+                {project?.purpose && (
+                  <>
+                    <Divider my="lg" />
+
+                    <Text size="xs" c="dimmed" fw={600} tt="uppercase" lts=".04em" mb={5}>
+                      Objetivo do projeto
+                    </Text>
+
+                    <Text size="sm" lh={1.6}>
+                      {project.purpose}
+                    </Text>
+                  </>
+                )}
+
+                {project?.is_verified && (
+                  <Group gap="sm" align="flex-start" wrap="nowrap">
+                    <IconShieldCheckFilled
+                      size={22}
+                      color="var(--mantine-color-text)"
+                      style={{ flexShrink: 0, marginTop: 1 }}
+                    />
+
+                    <Box>
+                      <Text size="sm" fw={600} mb={4}>
+                        Projeto verificado
+                      </Text>
+                      <Text size="xs" c="dimmed" lh={1}>
+                        A equipe do Mublin confirmou que este projeto é representado por
+                        pessoas reais ligadas a ele.
+                      </Text>
+
+                      {(project?.verified_at ||
+                        project?.verified_method?.method_name_pt) && (
+                        <Text size="xs" c="dimmed" mt={4}>
+                          {[
+                            project?.verified_at &&
+                              `Verificado em ${dayjs(project.verified_at).format('DD/MM/YYYY')}`,
+                            project?.verified_method?.method_name_pt,
+                          ]
+                            .filter(Boolean)
+                            .join(' · ')}
+                        </Text>
+                      )}
+                    </Box>
+                  </Group>
+                )}
+
+                {/*
+                 * SOCIAL
+                 */}
+
+                {hasSocialLinks && (
+                  <>
+                    <Divider />
+                    <Stack w={240} gap="xs">
+                      {project?.website && (
+                        <Anchor
+                          href={project?.website}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          underline="never"
+                          c="dimmed"
+                          aria-label={`Abrir website de ${project?.name}`}
+                          style={{ width: 'fit-content' }}
+                        >
+                          <Group gap={6} wrap="nowrap" className="social-link">
+                            <IconWorld size={20} style={{ flexShrink: 0 }} />
+                            <Text size="sm" lh={1}>
+                              {project?.website
+                                .replace(/^https?:\/\/(www\.)?/, '')
+                                .replace(/\/$/, '')}
+                            </Text>
+                          </Group>
+                        </Anchor>
+                      )}
+
+                      {project?.instagram && (
+                        <Anchor
+                          href={`https://instagram.com/${instagramHandle}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          underline="never"
+                          c="dimmed"
+                          aria-label={`Abrir Instagram de ${project?.name || instagramHandle}`}
+                          style={{ width: 'fit-content' }}
+                        >
+                          <Group gap={6} wrap="nowrap" className="social-link">
+                            <IconBrandInstagram size={20} style={{ flexShrink: 0 }} />
+                            <Text size="sm" lh={1}>
+                              instagram.com/{instagramHandle}
+                            </Text>
+                          </Group>
+                        </Anchor>
+                      )}
+
+                      {project?.spotify_id && (
+                        <Anchor
+                          href={`https://open.spotify.com/artist/${project.spotify_id}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          underline="never"
+                          c="dimmed"
+                          aria-label={`Abrir Spotify de ${project?.name}`}
+                          style={{ width: 'fit-content' }}
+                        >
+                          <Group gap={6} wrap="nowrap" className="social-link">
+                            <IconBrandSpotify size={20} style={{ flexShrink: 0 }} />
+                            <Text size="sm" lh={1}>
+                              {project?.name} no Spotify
+                            </Text>
+                          </Group>
+                        </Anchor>
+                      )}
+
+                      {project?.youtube_handle && (
+                        <Anchor
+                          href={`https://www.youtube.com/${project.youtube_handle}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          underline="never"
+                          c="dimmed"
+                          aria-label={`Abrir Soundcloud de ${project?.name}`}
+                          style={{ width: 'fit-content' }}
+                        >
+                          <Group gap={6} wrap="nowrap" className="social-link">
+                            <IconBrandYoutube size={20} style={{ flexShrink: 0 }} />
+                            <Text size="sm" lh={1}>
+                              {project?.name} no Youtube
+                            </Text>
+                          </Group>
+                        </Anchor>
+                      )}
+
+                      {project?.soundcloud && (
+                        <Anchor
+                          href={`https://soundcloud.com/${project.soundcloud}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          underline="never"
+                          c="dimmed"
+                          aria-label={`Abrir Soundcloud de ${project?.name}`}
+                          style={{ width: 'fit-content' }}
+                        >
+                          <Group gap={6} wrap="nowrap" className="social-link">
+                            <IconBrandSoundcloud size={20} style={{ flexShrink: 0 }} />
+                            <Text size="sm" lh={1}>
+                              {project?.name} no Soundcloud
+                            </Text>
+                          </Group>
+                        </Anchor>
+                      )}
+                    </Stack>
+                  </>
+                )}
+
+                <Divider />
+
+                <Stack gap={4}>
+                  {project?.type && (
+                    <Text size="xs" c="dimmed">
+                      Tipo do projeto: {project.type}
+                    </Text>
+                  )}
+                  <Group>
+                    {project?.foundation_year && (
+                      <Text size="xs" c="dimmed">
+                        Ano de fundação: {project.foundation_year}
+                      </Text>
+                    )}
+                    {projectLocation && (
+                      <Group gap={2} wrap="nowrap">
+                        <IconMapPin color="gray" size={12} stroke={2} />
+                        <Text size="xs" c="dimmed">
+                          {projectLocation}
+                        </Text>
+                      </Group>
+                    )}
+                  </Group>
+                  <Group gap={4} mt={4}>
+                    <Text size="xs">
+                      Cadastrado em {dayjs(project?.created_at).format('DD/MM/YYYY')}
+                    </Text>
+                    {project?.creator?.username && (
+                      <>
+                        <Avatar
+                          src={AVATAR_MINI2_PATH + project?.creator?.avatar}
+                          size={22}
+                          component={Link}
+                          to={`/${project?.creator?.username}`}
+                          title={project?.creator?.full_name}
+                        />
+                        <Text size="xs">
+                          por{' '}
+                          <Text span fw={600}>
+                            {project?.creator?.username}
+                          </Text>
+                        </Text>
+                      </>
+                    )}
+                  </Group>
                 </Stack>
-              </Container>
-            )}
+              </Stack>
+            </Card>
+          </Container>
+        )}
 
-            {/*
-             * ════════════════════════════════════════════════
-             * ABOUT
-             * ════════════════════════════════════════════════
-             */}
+        {/*
+         * ════════════════════════════════════════════════
+         * PEOPLE
+         * ════════════════════════════════════════════════
+         */}
 
-            {activeTab === 'about' && (
-              <Container size="lg" px={{ base: 'sm', sm: 'md' }}>
+        {activeTab === 'people' && (
+          <SectionPeople
+            projectId={project?.id}
+            userIsAdmin={userIsAdmin}
+            myAdminRequestIsPending={myAdminRequestIsPending}
+          />
+        )}
+
+        {/*
+         * ════════════════════════════════════════════════
+         * GIGS
+         * ════════════════════════════════════════════════
+         */}
+
+        {activeTab === 'gigs' && <SectionGigs projectId={project?.id} />}
+
+        {/*
+         * ════════════════════════════════════════════════
+         * MUSIC
+         * ════════════════════════════════════════════════
+         */}
+
+        {activeTab === 'music' && (
+          <Container size="lg" px={{ base: 'sm', sm: 'md' }}>
+            <SimpleGrid
+              cols={{
+                base: 1,
+                md: 2,
+              }}
+              spacing="md"
+            >
+              <Card withBorder radius="lg" p="lg">
+                <Title order={3} fz="lg" fw={600} mb="xs">
+                  Discografia
+                </Title>
+
+                <Text c="dimmed" size="sm">
+                  Nenhum álbum cadastrado para este projeto no momento.
+                </Text>
+              </Card>
+
+              {hasSocialLinks && (
                 <Card withBorder radius="lg" p="lg">
-                  <Title order={3} fz="lg" fw={600} mb="xs">
-                    Sobre
+                  <Title order={3} fz="lg" fw={600} mb="md">
+                    Ouça também em
                   </Title>
 
                   <Stack gap="xs">
-                    {project?.description ? (
-                      <Spoiler
-                        mb={30}
-                        maxHeight={85}
-                        showLabel={
-                          <Text size="sm" fw={600} c="var(--mantine-color-text)">
-                            Ver mais
-                          </Text>
-                        }
-                        hideLabel={
-                          <Text size="sm" fw={600} c="var(--mantine-color-text)">
-                            Ver menos
-                          </Text>
-                        }
+                    {project?.spotify_id && (
+                      <Button
+                        component="a"
+                        href={`https://open.spotify.com/artist/${project.spotify_id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        variant="default"
+                        justify="space-between"
+                        leftSection={<IconBrandSpotify size={20} />}
+                        rightSection={<IconExternalLink size={14} />}
                       >
-                        <Text size="sm" style={{ whiteSpace: 'pre-line' }}>
-                          {project.description}
-                        </Text>
-                      </Spoiler>
-                    ) : (
-                      <Text size="sm" c="dimmed">
-                        Descrição não disponível.
-                      </Text>
+                        Spotify
+                      </Button>
                     )}
 
-                    {project?.purpose && (
-                      <>
-                        <Divider my="lg" />
-
-                        <Text
-                          size="xs"
-                          c="dimmed"
-                          fw={600}
-                          tt="uppercase"
-                          lts=".04em"
-                          mb={5}
-                        >
-                          Objetivo do projeto
-                        </Text>
-
-                        <Text size="sm" lh={1.6}>
-                          {project.purpose}
-                        </Text>
-                      </>
+                    {project?.soundcloud && (
+                      <Button
+                        component="a"
+                        href={`https://soundcloud.com/${project.soundcloud}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        variant="default"
+                        justify="space-between"
+                        leftSection={<IconBrandSoundcloud size={20} />}
+                        rightSection={<IconExternalLink size={14} />}
+                      >
+                        SoundCloud
+                      </Button>
                     )}
-
-                    {project?.is_verified && (
-                      <Group gap="sm" align="flex-start" wrap="nowrap">
-                        <IconRosetteDiscountCheckFilled
-                          size={22}
-                          // color="var(--mantine-color-mublinColor-filled)"
-                          color="var(--mantine-color-mublinSecondary-2)"
-                          style={{ flexShrink: 0, marginTop: 1 }}
-                        />
-
-                        <Box>
-                          <Text size="sm" fw={600} mb={4}>
-                            Projeto verificado
-                          </Text>
-                          <Text size="xs" c="dimmed" lh={1}>
-                            A equipe do Mublin confirmou que este projeto é representado
-                            por pessoas reais ligadas a ele.
-                          </Text>
-
-                          {(project?.verified_at ||
-                            project?.verified_method?.method_name_pt) && (
-                            <Text size="xs" c="dimmed" mt={4}>
-                              {[
-                                project?.verified_at &&
-                                  `Verificado em ${dayjs(project.verified_at).format('DD/MM/YYYY')}`,
-                                project?.verified_method?.method_name_pt,
-                              ]
-                                .filter(Boolean)
-                                .join(' · ')}
-                            </Text>
-                          )}
-                        </Box>
-                      </Group>
-                    )}
-
-                    {/*
-                     * SOCIAL
-                     */}
-
-                    {hasSocialLinks && (
-                      <>
-                        <Divider />
-                        <Stack w={240} gap="xs">
-                          {project?.website && (
-                            <Anchor
-                              href={project?.website}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              underline="never"
-                              c="dimmed"
-                              aria-label={`Abrir website de ${project?.name}`}
-                              style={{ width: 'fit-content' }}
-                            >
-                              <Group gap={6} wrap="nowrap" className="social-link">
-                                <IconWorld size={20} style={{ flexShrink: 0 }} />
-                                <Text size="sm" lh={1}>
-                                  {project?.website
-                                    .replace(/^https?:\/\/(www\.)?/, '')
-                                    .replace(/\/$/, '')}
-                                </Text>
-                              </Group>
-                            </Anchor>
-                          )}
-
-                          {project?.instagram && (
-                            <Anchor
-                              href={`https://instagram.com/${instagramHandle}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              underline="never"
-                              c="dimmed"
-                              aria-label={`Abrir Instagram de ${project?.name || instagramHandle}`}
-                              style={{ width: 'fit-content' }}
-                            >
-                              <Group gap={6} wrap="nowrap" className="social-link">
-                                <IconBrandInstagram size={20} style={{ flexShrink: 0 }} />
-                                <Text size="sm" lh={1}>
-                                  instagram.com/{instagramHandle}
-                                </Text>
-                              </Group>
-                            </Anchor>
-                          )}
-
-                          {project?.spotify_id && (
-                            <Anchor
-                              href={`https://open.spotify.com/artist/${project.spotify_id}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              underline="never"
-                              c="dimmed"
-                              aria-label={`Abrir Spotify de ${project?.name}`}
-                              style={{ width: 'fit-content' }}
-                            >
-                              <Group gap={6} wrap="nowrap" className="social-link">
-                                <IconBrandSpotify size={20} style={{ flexShrink: 0 }} />
-                                <Text size="sm" lh={1}>
-                                  {project?.name} no Spotify
-                                </Text>
-                              </Group>
-                            </Anchor>
-                          )}
-
-                          {project?.youtube_handle && (
-                            <Anchor
-                              href={`https://www.youtube.com/${project.youtube_handle}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              underline="never"
-                              c="dimmed"
-                              aria-label={`Abrir Soundcloud de ${project?.name}`}
-                              style={{ width: 'fit-content' }}
-                            >
-                              <Group gap={6} wrap="nowrap" className="social-link">
-                                <IconBrandYoutube size={20} style={{ flexShrink: 0 }} />
-                                <Text size="sm" lh={1}>
-                                  {project?.name} no Youtube
-                                </Text>
-                              </Group>
-                            </Anchor>
-                          )}
-
-                          {project?.soundcloud && (
-                            <Anchor
-                              href={`https://soundcloud.com/${project.soundcloud}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              underline="never"
-                              c="dimmed"
-                              aria-label={`Abrir Soundcloud de ${project?.name}`}
-                              style={{ width: 'fit-content' }}
-                            >
-                              <Group gap={6} wrap="nowrap" className="social-link">
-                                <IconBrandSoundcloud
-                                  size={20}
-                                  style={{ flexShrink: 0 }}
-                                />
-                                <Text size="sm" lh={1}>
-                                  {project?.name} no Soundcloud
-                                </Text>
-                              </Group>
-                            </Anchor>
-                          )}
-                        </Stack>
-                      </>
-                    )}
-
-                    <Divider />
-
-                    <Stack gap={4}>
-                      {project?.type && (
-                        <Text size="xs" c="dimmed">
-                          Tipo do projeto: {project.type}
-                        </Text>
-                      )}
-                      <Group>
-                        {project?.foundation_year && (
-                          <Text size="xs" c="dimmed">
-                            Ano de fundação: {project.foundation_year}
-                          </Text>
-                        )}
-                        {projectLocation && (
-                          <Group gap={2} wrap="nowrap">
-                            <IconMapPin color="gray" size={12} stroke={2} />
-                            <Text size="xs" c="dimmed">
-                              {projectLocation}
-                            </Text>
-                          </Group>
-                        )}
-                      </Group>
-                      <Group gap={4} mt={4}>
-                        <Text size="xs">
-                          Cadastrado em {dayjs(project?.created_at).format('DD/MM/YYYY')}
-                        </Text>
-                        {project?.creator?.username && (
-                          <>
-                            <Avatar
-                              src={AVATAR_MINI2_PATH + project?.creator?.avatar}
-                              size={22}
-                              component={Link}
-                              to={`/${project?.creator?.username}`}
-                              title={project?.creator?.full_name}
-                            />
-                            <Text size="xs">
-                              por{' '}
-                              <Text span fw={600}>
-                                {project?.creator?.username}
-                              </Text>
-                            </Text>
-                          </>
-                        )}
-                      </Group>
-                    </Stack>
                   </Stack>
                 </Card>
-              </Container>
-            )}
-
-            {/*
-             * ════════════════════════════════════════════════
-             * PEOPLE
-             * ════════════════════════════════════════════════
-             */}
-
-            {activeTab === 'people' && (
-              <SectionPeople
-                projectId={project?.id}
-                userIsAdmin={userIsAdmin}
-                myAdminRequestIsPending={myAdminRequestIsPending}
-              />
-            )}
-
-            {/*
-             * ════════════════════════════════════════════════
-             * GIGS
-             * ════════════════════════════════════════════════
-             */}
-
-            {activeTab === 'gigs' && <SectionGigs projectId={project?.id} />}
-
-            {/*
-             * ════════════════════════════════════════════════
-             * MUSIC
-             * ════════════════════════════════════════════════
-             */}
-
-            {activeTab === 'music' && (
-              <Container size="lg" px={{ base: 'sm', sm: 'md' }}>
-                <SimpleGrid
-                  cols={{
-                    base: 1,
-                    md: 2,
-                  }}
-                  spacing="md"
-                >
-                  <Card withBorder radius="lg" p="lg">
-                    <Title order={3} fz="lg" fw={600} mb="xs">
-                      Discografia
-                    </Title>
-
-                    <Text c="dimmed" size="sm">
-                      Nenhum álbum cadastrado para este projeto no momento.
-                    </Text>
-                  </Card>
-
-                  {hasSocialLinks && (
-                    <Card withBorder radius="lg" p="lg">
-                      <Title order={3} fz="lg" fw={600} mb="md">
-                        Ouça também em
-                      </Title>
-
-                      <Stack gap="xs">
-                        {project?.spotify_id && (
-                          <Button
-                            component="a"
-                            href={`https://open.spotify.com/artist/${project.spotify_id}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            variant="default"
-                            justify="space-between"
-                            leftSection={<IconBrandSpotify size={20} />}
-                            rightSection={<IconExternalLink size={14} />}
-                          >
-                            Spotify
-                          </Button>
-                        )}
-
-                        {project?.soundcloud && (
-                          <Button
-                            component="a"
-                            href={`https://soundcloud.com/${project.soundcloud}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            variant="default"
-                            justify="space-between"
-                            leftSection={<IconBrandSoundcloud size={20} />}
-                            rightSection={<IconExternalLink size={14} />}
-                          >
-                            SoundCloud
-                          </Button>
-                        )}
-                      </Stack>
-                    </Card>
-                  )}
-                </SimpleGrid>
-              </Container>
-            )}
-          </Grid.Col>
-          <Grid.Col span={{ base: 12, sm: 3 }}>
-            <Stack gap="md">
-              {/*
-               * ADMIN FEATURES
-               */}
-
-              {(userIsAdmin || userIsStaff) && activeTab === 'overview' && (
-                <BackstageAccess
-                  profile={profile}
-                  projectId={project?.id}
-                  userIsAdmin={userIsAdmin}
-                  userIsStaff={userIsStaff}
-                />
               )}
-
-              {/*
-               * PEOPLE PREVIEW
-               */}
-
-              {((activeTab === 'overview' && isMobile) || !isMobile) && (
-                <>
-                  {recentProjectPeople.length > 0 && (
-                    <Box mx={{ base: 'md', sm: 0 }}>
-                      <Title order={3} fw={600} size="15px" mb={6}>
-                        Pessoas associadas recentemente
-                      </Title>
-                      <Card withBorder radius="lg" px="sm" py="xs">
-                        <>
-                          <Stack gap="xs">
-                            {recentProjectPeople.map((person) => (
-                              <Box key={person.id}>
-                                <Group gap="sm" wrap="nowrap">
-                                  <Avatar
-                                    component={Link}
-                                    to={`/${person.profile?.username}`}
-                                    size={42}
-                                    src={`${AVATAR_PATH}${person.profile?.avatar}`}
-                                  />
-
-                                  <Box
-                                    style={{
-                                      minWidth: 0,
-                                    }}
-                                  >
-                                    <Text
-                                      component={Link}
-                                      to={`/${person.profile?.username}`}
-                                      size="sm"
-                                      fw={500}
-                                      lineClamp={1}
-                                      style={{
-                                        textDecoration: 'none',
-                                        color: 'inherit',
-                                      }}
-                                    >
-                                      {person.profile?.full_name}
-                                    </Text>
-
-                                    <Text size="xs" c="dimmed" fw={500} lineClamp={1}>
-                                      {person.roles
-                                        ?.map((r) => r.role?.name_ptbr)
-                                        .join(', ')}
-                                    </Text>
-
-                                    <Text
-                                      size="11px"
-                                      c="dimmed"
-                                      mt={3}
-                                      fw={300}
-                                      lineClamp={1}
-                                    >
-                                      {person?.notes}
-                                    </Text>
-                                  </Box>
-                                </Group>
-                              </Box>
-                            ))}
-                          </Stack>
-
-                          {projectPeople.length > 0 && (
-                            <Button
-                              mt={6}
-                              radius="md"
-                              fullWidth
-                              size="xs"
-                              variant="transparent"
-                              color="var(--mantine-color-text)"
-                              onClick={() => setActiveTab('people')}
-                              // rightSection={<IconArrowRight size={16} />}
-                            >
-                              Ver todas as pessoas associadas
-                            </Button>
-                          )}
-                        </>
-                      </Card>
-                    </Box>
-                  )}
-                </>
-              )}
-
-              {!isMobile && (
-                <SimilarProjects
-                  projectId={project?.id}
-                  title="As pessoas também viram"
-                  mx={{ base: 'md', sm: 0 }}
-                />
-              )}
-            </Stack>
-          </Grid.Col>
-        </Grid>
+            </SimpleGrid>
+          </Container>
+        )}
       </Container>
 
       {/*

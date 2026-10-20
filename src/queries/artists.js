@@ -102,42 +102,15 @@ export async function fetchArtistRoles(artistId) {
   return data
 }
 
-// Retorna os projects (catálogo mainstream ou não) cujo gênero, principal ou
-// adicional, pertence a uma categoria de gênero (genres.id_category), via
-// junção many-to-many em project_genres.
+// project_types que não devem aparecer nas buscas por gênero (a lista pode crescer)
+const EXCLUDED_PROJECT_TYPE_IDS = [19]
+
+// Retorna os projects (catálogo mainstream ou não) que têm ao menos um gênero
+// pertencente à categoria informada (genres.id_category), via junção
+// many-to-many em project_genres. O embed de project_genres já vem restrito
+// aos gêneros da categoria, que é tudo que a página precisa.
 export async function fetchArtistsByGenreCategory(categoryId) {
-  // 1. quais genres pertencem a essa categoria
-  const { data: genres, error: genresError } = await supabase
-    .from('genres')
-    .select('id')
-    .eq('id_category', categoryId)
-
-  if (genresError) {
-    throw new Error(genresError.message)
-  }
-
-  const genreIds = genres?.map((genre) => genre.id) ?? []
-  if (genreIds.length === 0) {
-    return []
-  }
-
-  // 2. quais projects têm vínculo com algum desses genres
-  const { data: links, error: linksError } = await supabase
-    .from('project_genres')
-    .select('project_id')
-    .in('genre_id', genreIds)
-
-  if (linksError) {
-    throw new Error(linksError.message)
-  }
-
-  const projectIds = [...new Set((links ?? []).map((l) => l.project_id))]
-  if (projectIds.length === 0) {
-    return []
-  }
-
-  // 3. busca os projects encontrados, já com roles e a lista completa de gêneros
-  const { data, error } = await supabase
+  let query = supabase
     .from('projects')
     .select(
       `
@@ -149,7 +122,9 @@ export async function fetchArtistsByGenreCategory(categoryId) {
       project_type_id,
       popularity_tier_id,
       project_type:project_types ( name_ptbr, slug ),
-      project_genres ( genre:genres ( id, name_ptbr, id_category, id_category_secondary ) ),
+      project_genres!inner (
+        genre:genres!inner ( id, name_ptbr, id_category, id_category_secondary )
+      ),
       artist_roles (
         id,
         is_main_role,
@@ -158,14 +133,17 @@ export async function fetchArtistsByGenreCategory(categoryId) {
       )
     `,
     )
-    .in('id', projectIds)
-    .order('name', { ascending: true })
-    .order('is_main_role', { foreignTable: 'artist_roles', ascending: false })
-    .order('order_show', { foreignTable: 'artist_roles', ascending: true })
+    .eq('project_genres.genre.id_category', categoryId)
 
-  if (error) {
-    throw new Error(error.message)
+  if (EXCLUDED_PROJECT_TYPE_IDS.length > 0) {
+    query = query.not('project_type_id', 'in', `(${EXCLUDED_PROJECT_TYPE_IDS.join(',')})`)
   }
+
+  const { data, error } = await query
+    .order('is_main_role', { referencedTable: 'artist_roles', ascending: false })
+    .order('order_show', { referencedTable: 'artist_roles', ascending: true })
+
+  if (error) throw new Error(error.message)
   return data
 }
 

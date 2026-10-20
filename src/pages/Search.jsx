@@ -62,6 +62,7 @@ import {
   IconUser,
   IconBriefcase,
   IconRosetteDiscountCheckFilled,
+  IconShieldCheckFilled,
 } from '@tabler/icons-react'
 
 const PATH_USER_AVATAR =
@@ -430,7 +431,7 @@ export default function Search() {
                                           {profile.full_name}
                                         </Text>
                                         {!!profile.is_verified && (
-                                          <IconRosetteDiscountCheck
+                                          <IconRosetteDiscountCheckFilled
                                             className="iconVerified small"
                                             title="Usuário verificado"
                                           />
@@ -476,7 +477,7 @@ export default function Search() {
 
                   <Box id="projects">
                     <Title order={4} fw={600}>
-                      Projetos e artistas
+                      Projetos, artistas e personalidades
                     </Title>
 
                     {loadingProjects ? (
@@ -509,9 +510,18 @@ export default function Search() {
                             radius="md"
                           />
                           <Flex direction="column" justify="center">
-                            <Text size="md" fw={600} lh={1.2}>
-                              {project.name}
-                            </Text>
+                            <Group gap={4} align="center">
+                              <Text size="md" fw={600} lh={1.2}>
+                                {project.name}
+                              </Text>
+                              {project?.is_verified && (
+                                <IconShieldCheckFilled
+                                  size={16}
+                                  color="var(--mantine-color-text)"
+                                  title="Projeto verificado"
+                                />
+                              )}
+                            </Group>
                             <Text size="xs" opacity={0.8}>
                               {project.project_type_name}
                               {project.project_type_name &&

@@ -25,11 +25,11 @@ import {
 // import { useDisclosure } from '@mantine/hooks'
 import {
   IconRoad,
-  IconRosetteDiscountCheckFilled,
   IconArrowRight,
   IconMapPin,
   IconMusic,
   IconCalendar,
+  IconShieldCheckFilled,
 } from '@tabler/icons-react'
 import { truncateDescription } from '../utils/formatter'
 
@@ -266,9 +266,9 @@ export default function Project() {
                     {project?.name}
                   </Title>
                   {project?.is_verified && (
-                    <IconRosetteDiscountCheckFilled
+                    <IconShieldCheckFilled
                       size={22}
-                      color="var(--mantine-color-mublinSecondary-2)"
+                      color="var(--mantine-color-text)"
                       title="Projeto verificado"
                       style={{
                         flexShrink: 0,
@@ -300,7 +300,8 @@ export default function Project() {
               <Group gap={2} wrap="nowrap">
                 <IconMapPin color="gray" size={12} stroke={2} />
                 <Text size="xs" c="dimmed">
-                  {projectLocation}
+                  {projectLocation}{' '}
+                  {project?.cities?.countries?.name === 'Brazil' && '🇧🇷'}
                 </Text>
               </Group>
             )}

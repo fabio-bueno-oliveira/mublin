@@ -5,7 +5,7 @@ import { Avatar, Badge, Tooltip } from '@mantine/core'
 import { fetchProjectProfile } from '../queries/projects'
 
 const AVATAR_PATH =
-  'https://ik.imagekit.io/mublin/tr:h-48,c-maintain_ratio/users/avatars/'
+  'https://ik.imagekit.io/mublin/tr:h-40,c-maintain_ratio/users/avatars/'
 
 /**
  * Badge com o avatar do perfil pessoal ligado ao projeto (projects.profile_id).

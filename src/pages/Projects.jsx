@@ -17,7 +17,7 @@ import {
   TextInput,
   Avatar,
 } from '@mantine/core'
-import { IconMusic, IconDisc, IconSearch } from '@tabler/icons-react'
+import { IconDisc, IconSearch } from '@tabler/icons-react'
 
 const PROJECT_AVATAR_PATH = 'https://ik.imagekit.io/mublin/projects'
 const ARTISTS_PATH =
@@ -88,12 +88,9 @@ export default function MyProjects() {
       </Affix>
 
       <Container size="xl" pt="xs" px={{ base: 'md', sm: 0 }} mt={{ base: 44, sm: 0 }}>
-        <Group gap="xs" mb="xs" visibleFrom="sm">
-          <IconMusic size={32} />
-          <Title order={1} fz="h3" ta="left" fw={600}>
-            Meus projetos
-          </Title>
-        </Group>
+        <Title order={3} mb="xs" visibleFrom="sm">
+          Meus projetos
+        </Title>
         {loadingProjects || loadingPortfolio ? (
           <Text c="dimmed" ta="center" size="md" mt="lg">
             Carregando seus projetos...

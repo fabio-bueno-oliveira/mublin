@@ -1,4 +1,5 @@
 import { useAuth } from '../hooks/useAuth'
+import AppLayout from '../components/layouts/AppLayout'
 import AppProjectLayout from '../components/layouts/AppProjectLayout'
 import PublicLayout from '../components/layouts/PublicLayout'
 import Project from '../pages/Project'
@@ -11,9 +12,9 @@ export default function ProjectRouter() {
 
   if (user) {
     return (
-      <AppProjectLayout>
+      <AppLayout>
         <Project />
-      </AppProjectLayout>
+      </AppLayout>
     )
   }
 

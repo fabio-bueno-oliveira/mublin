@@ -25,10 +25,10 @@ export default function BackstageAccess({
         <Group gap={6} mt={4} mb={8}>
           <Avatar size={35} src={`${AVATAR_PATH}${profile?.avatar}`} />
           <Stack gap={2}>
-            <Text size="sm" c="dimmed" lh={1}>
+            <Text size="sm" lh={1}>
               {profile?.full_name}
             </Text>
-            <Text size="xs" lh={1}>
+            <Text size="xs" c="dimmed" lh={1}>
               {userIsAdmin ? 'Administrador' : userIsStaff && 'Staff'}
             </Text>
           </Stack>
