@@ -60,15 +60,15 @@ export default function GearItemPublic() {
 
   const metaDescription = product
     ? truncateDescription(
-        product.description ||
-          `Confira ${product.name} no Mublin. Pessoas que utilizam, gigs e muito mais!`,
+        product?.description ||
+          `Confira ${product?.name} no Mublin. Pessoas que utilizam, gigs e muito mais!`,
       )
     : ''
 
   const PATH_PRODUCT_OG_IMG =
     'https://ik.imagekit.io/mublin/products/tr:w-600,h-600,cm-pad_resize,bg-FFFFFF,fo-x/'
 
-  const brandAndName = `${product?.brands?.name} ${product.name}`
+  const brandAndName = `${product?.brands?.name} ${product?.name}`
 
   const pageTitle = product ? [brandAndName, 'Mublin'].filter(Boolean).join(' | ') : ''
 
