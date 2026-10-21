@@ -15,7 +15,7 @@ import {
 import { fetchOpenProjectOpenings } from '../queries/projectOpenings'
 // prettier-ignore
 import {
-  Container, Grid, SimpleGrid,
+  Container, Grid,
   Flex, Group,
   Box, Stack, Spoiler,
   Skeleton, em,
@@ -40,7 +40,7 @@ import {
   IconArrowRight,
   IconBriefcase2,
   IconChevronRight,
-  IconExternalLink,
+  IconSquareRoundedCheck,
   IconWorld,
   IconMusicPlus,
   IconBrandYoutube,
@@ -55,6 +55,7 @@ import { MEMBER_REQUEST_STATUS } from '../constants/projects'
 import { IconBrandMuso } from '../components/icons/IconBrandMuso'
 import dayjs from 'dayjs'
 import 'dayjs/locale/pt-br'
+import SocialLinks from '../components/profile/SocialLinks'
 dayjs.locale('pt-br')
 
 const ADMIN_REQUEST_STATUS = {
@@ -232,9 +233,6 @@ export default function Project() {
 
   const PICTURE_COVER_PATH = `https://ik.imagekit.io/mublin/projects/${project?.id}/tr:h-500,w-1400,fo-top,c-maintain_ratio/`
 
-  const DEFAULT_COVER_PICTURE =
-    'https://ik.imagekit.io/mublin/bg/default-project-cover.png'
-
   /*
    * ─────────────────────────────────────────────
    * ERROR
@@ -266,7 +264,9 @@ export default function Project() {
     project?.spotify_id ||
     project?.soundcloud ||
     project?.website ||
-    project?.youtube_handle
+    project?.youtube_handle ||
+    project?.apple_music_id ||
+    project?.muso_ai_app_url
 
   const validGenreNames =
     projectGenres?.map((g) => g?.genre?.name_ptbr || g?.name_ptbr).filter(Boolean) ?? []
@@ -485,7 +485,7 @@ export default function Project() {
                         </Title>
 
                         {project?.is_verified && (
-                          <IconShieldCheckFilled
+                          <IconSquareRoundedCheck
                             size={isMobile ? 21 : 22}
                             color="var(--mantine-color-text)"
                             title="Projeto verificado"
@@ -496,18 +496,29 @@ export default function Project() {
                         )}
                       </Group>
 
-                      <Group gap={7} wrap="wrap">
+                      <Group gap={3} wrap="wrap">
                         {project?.type && (
                           <Text size="sm" c="rgba(255,255,255,.76)">
                             {project.type}
                           </Text>
                         )}
+                        {project?.city?.countries?.name && (
+                          <Text size="sm" c="rgba(255,255,255,.76)">
+                            ·{' '}
+                            {project?.city?.countries?.name_ptbr ??
+                              project?.city?.countries?.name}
+                          </Text>
+                        )}
                       </Group>
 
-                      {validGenreNames.length > 0 && (
-                        <Text size="sm" c="dimmed" lineClamp={2} lh={1}>
-                          {validGenreNames.join(', ')}
-                        </Text>
+                      {loadingProjectGenres ? (
+                        <Skeleton width={170} height={16} />
+                      ) : (
+                        validGenreNames.length > 0 && (
+                          <Text size="sm" c="dimmed" lineClamp={2} lh={1}>
+                            {validGenreNames.join(', ')}
+                          </Text>
+                        )
                       )}
                     </>
                   )}
@@ -562,16 +573,17 @@ export default function Project() {
                 <Tabs.Tab value="about">Sobre</Tabs.Tab>
 
                 <Tabs.Tab value="people">
-                  Pessoas {projectPeople?.length > 0 && `(${projectPeople.length})`}
+                  Pessoas associadas{' '}
+                  {projectPeople?.length > 0 && `(${projectPeople.length})`}
                 </Tabs.Tab>
 
                 {project?.end_year > 0 && <Tabs.Tab value="gigs">Gigs</Tabs.Tab>}
 
-                <Tabs.Tab value="music">Música</Tabs.Tab>
+                {/* <Tabs.Tab value="music">Música</Tabs.Tab> */}
               </Scroller>
             </Tabs.List>
           </Tabs>
-          <Group gap={6} mr="lg">
+          <Group gap={6} mr="lg" visibleFrom="sm">
             {project?.muso_ai_app_url && (
               <Tooltip label={`${project.name} no Muso.ai`} withArrow>
                 <ActionIcon
@@ -585,6 +597,7 @@ export default function Project() {
                   aria-label={`${project.name} no Muso.ai (abre em nova aba)`}
                 >
                   <IconBrandMuso
+                    stroke={1.6}
                     color="#6BE7C8"
                     style={{ width: '70%', height: '70%' }}
                   />
@@ -604,6 +617,7 @@ export default function Project() {
                   aria-label={`${project.name} no Apple Music (abre em nova aba)`}
                 >
                   <IconBrandApple
+                    stroke={1.6}
                     color="#a8a8a8"
                     style={{ width: '70%', height: '70%' }}
                   />
@@ -623,6 +637,7 @@ export default function Project() {
                   aria-label={`${project.name} no Spotify (abre em nova aba)`}
                 >
                   <IconBrandSpotify
+                    stroke={1.6}
                     color="#1ED760"
                     style={{ width: '70%', height: '70%' }}
                   />
@@ -642,6 +657,7 @@ export default function Project() {
                   aria-label={`${project.name} no Instagram (abre em nova aba)`}
                 >
                   <IconBrandInstagram
+                    stroke={1.6}
                     color="#C13584"
                     style={{ width: '70%', height: '70%' }}
                   />
@@ -804,62 +820,6 @@ export default function Project() {
                         )}
                       </>
                     )}
-
-                    {/*
-                     * RELATED PROJECTS
-                     */}
-
-                    {(loadingRelatedProjects || relatedProjects.length > 0) && (
-                      <Stack gap="sm" px="xs" mb="sm">
-                        <Title order={3} fw={600} size="15px" mb={6}>
-                          Projetos relacionados a {project?.name}
-                        </Title>
-                        <Scroller>
-                          <Group wrap="nowrap" gap="xs" align="flex-start">
-                            {loadingRelatedProjects
-                              ? [1, 2, 3].map((i) => (
-                                  <Stack key={i} gap={6} align="center" w={84}>
-                                    <Skeleton circle height={64} width={64} />
-                                    <Skeleton height={10} width={56} />
-                                  </Stack>
-                                ))
-                              : relatedProjects.map((related) => (
-                                  <UnstyledButton
-                                    key={related.id}
-                                    onClick={() =>
-                                      navigate(
-                                        related.project_type_id === 19
-                                          ? `/person/${related.slug}`
-                                          : `/project/${related.slug}`,
-                                      )
-                                    }
-                                    aria-label={`Ver projeto ${related.name}`}
-                                    w={80}
-                                  >
-                                    <Stack gap={3} align="center">
-                                      <Avatar
-                                        src={getRelatedAvatarUrl(related)}
-                                        size={50}
-                                      />
-                                      <Text
-                                        w={79}
-                                        size="xs"
-                                        ta="center"
-                                        lineClamp={1}
-                                        title={related.name}
-                                      >
-                                        {related.name}
-                                      </Text>
-                                      <Text size="10px" c="dimmed">
-                                        {related?.type}
-                                      </Text>
-                                    </Stack>
-                                  </UnstyledButton>
-                                ))}
-                          </Group>
-                        </Scroller>
-                      </Stack>
-                    )}
                   </Stack>
                 </Grid.Col>
                 <Grid.Col span={{ base: 12, sm: 5 }}>
@@ -930,6 +890,62 @@ export default function Project() {
                         userIsAdmin={userIsAdmin}
                         userIsStaff={userIsStaff}
                       />
+                    )}
+
+                    {/*
+                     * RELATED PROJECTS
+                     */}
+
+                    {(loadingRelatedProjects || relatedProjects.length > 0) && (
+                      <Stack gap="sm" px="xs" mb="sm">
+                        <Title order={3} fw={600} size="15px" mb={6}>
+                          Projetos relacionados a {project?.name}
+                        </Title>
+                        <Scroller>
+                          <Group wrap="nowrap" gap="xs" align="flex-start">
+                            {loadingRelatedProjects
+                              ? [1, 2, 3].map((i) => (
+                                  <Stack key={i} gap={6} align="center" w={84}>
+                                    <Skeleton circle height={64} width={64} />
+                                    <Skeleton height={10} width={56} />
+                                  </Stack>
+                                ))
+                              : relatedProjects.map((related) => (
+                                  <UnstyledButton
+                                    key={related.id}
+                                    onClick={() =>
+                                      navigate(
+                                        related.project_type_id === 19
+                                          ? `/person/${related.slug}`
+                                          : `/project/${related.slug}`,
+                                      )
+                                    }
+                                    aria-label={`Ver projeto ${related.name}`}
+                                    w={80}
+                                  >
+                                    <Stack gap={3} align="center">
+                                      <Avatar
+                                        src={getRelatedAvatarUrl(related)}
+                                        size={50}
+                                      />
+                                      <Text
+                                        w={79}
+                                        size="xs"
+                                        ta="center"
+                                        lineClamp={1}
+                                        title={related.name}
+                                      >
+                                        {related.name}
+                                      </Text>
+                                      <Text size="10px" c="dimmed">
+                                        {related?.type}
+                                      </Text>
+                                    </Stack>
+                                  </UnstyledButton>
+                                ))}
+                          </Group>
+                        </Scroller>
+                      </Stack>
                     )}
                   </Stack>
                 </Grid.Col>
@@ -1196,109 +1212,103 @@ export default function Project() {
                  * SOCIAL
                  */}
 
-                {hasSocialLinks && (
-                  <>
-                    <Divider />
-                    <Stack w={240} gap="xs">
-                      {project?.website && (
-                        <Anchor
-                          href={project?.website}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          underline="never"
-                          c="dimmed"
-                          aria-label={`Abrir website de ${project?.name}`}
-                          style={{ width: 'fit-content' }}
-                        >
-                          <Group gap={6} wrap="nowrap" className="social-link">
-                            <IconWorld size={20} style={{ flexShrink: 0 }} />
-                            <Text size="sm" lh={1}>
-                              {project?.website
-                                .replace(/^https?:\/\/(www\.)?/, '')
-                                .replace(/\/$/, '')}
-                            </Text>
-                          </Group>
-                        </Anchor>
-                      )}
+                {hasSocialLinks && isMobile && <Divider />}
 
-                      {project?.instagram && (
-                        <Anchor
-                          href={`https://instagram.com/${instagramHandle}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          underline="never"
-                          c="dimmed"
-                          aria-label={`Abrir Instagram de ${project?.name || instagramHandle}`}
-                          style={{ width: 'fit-content' }}
-                        >
-                          <Group gap={6} wrap="nowrap" className="social-link">
-                            <IconBrandInstagram size={20} style={{ flexShrink: 0 }} />
-                            <Text size="sm" lh={1}>
-                              instagram.com/{instagramHandle}
-                            </Text>
-                          </Group>
-                        </Anchor>
-                      )}
-
-                      {project?.spotify_id && (
-                        <Anchor
-                          href={`https://open.spotify.com/artist/${project.spotify_id}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          underline="never"
-                          c="dimmed"
-                          aria-label={`Abrir Spotify de ${project?.name}`}
-                          style={{ width: 'fit-content' }}
-                        >
-                          <Group gap={6} wrap="nowrap" className="social-link">
-                            <IconBrandSpotify size={20} style={{ flexShrink: 0 }} />
-                            <Text size="sm" lh={1}>
-                              {project?.name} no Spotify
-                            </Text>
-                          </Group>
-                        </Anchor>
-                      )}
-
-                      {project?.youtube_handle && (
-                        <Anchor
-                          href={`https://www.youtube.com/${project.youtube_handle}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          underline="never"
-                          c="dimmed"
-                          aria-label={`Abrir Soundcloud de ${project?.name}`}
-                          style={{ width: 'fit-content' }}
-                        >
-                          <Group gap={6} wrap="nowrap" className="social-link">
-                            <IconBrandYoutube size={20} style={{ flexShrink: 0 }} />
-                            <Text size="sm" lh={1}>
-                              {project?.name} no Youtube
-                            </Text>
-                          </Group>
-                        </Anchor>
-                      )}
-
-                      {project?.soundcloud && (
-                        <Anchor
-                          href={`https://soundcloud.com/${project.soundcloud}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          underline="never"
-                          c="dimmed"
-                          aria-label={`Abrir Soundcloud de ${project?.name}`}
-                          style={{ width: 'fit-content' }}
-                        >
-                          <Group gap={6} wrap="nowrap" className="social-link">
-                            <IconBrandSoundcloud size={20} style={{ flexShrink: 0 }} />
-                            <Text size="sm" lh={1}>
-                              {project?.name} no Soundcloud
-                            </Text>
-                          </Group>
-                        </Anchor>
-                      )}
-                    </Stack>
-                  </>
+                {project?.website && (
+                  <Anchor
+                    href={project?.website}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    underline="never"
+                    c="dimmed"
+                    aria-label={`Abrir website de ${project?.name}`}
+                    style={{ width: 'fit-content' }}
+                  >
+                    <Group gap={6} wrap="nowrap" className="social-link">
+                      <IconWorld size={20} style={{ flexShrink: 0 }} />
+                      <Text size="sm" lh={1}>
+                        {project?.website
+                          .replace(/^https?:\/\/(www\.)?/, '')
+                          .replace(/\/$/, '')}
+                      </Text>
+                    </Group>
+                  </Anchor>
                 )}
+
+                <Group gap={6} mr="lg" hiddenFrom="sm">
+                  {project?.muso_ai_app_url && (
+                    <ActionIcon
+                      component="a"
+                      href={project.muso_ai_app_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      size="lg"
+                      variant="subtle"
+                      color="gray"
+                      aria-label={`${project.name} no Muso.ai (abre em nova aba)`}
+                    >
+                      <IconBrandMuso
+                        stroke={1.6}
+                        color="#6BE7C8"
+                        style={{ width: '70%', height: '70%' }}
+                      />
+                    </ActionIcon>
+                  )}
+                  {project?.apple_music_id && (
+                    <ActionIcon
+                      component="a"
+                      href={`https://music.apple.com/br/artist/${project?.apple_music_id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      size="lg"
+                      variant="subtle"
+                      color="gray"
+                      aria-label={`${project.name} no Apple Music (abre em nova aba)`}
+                    >
+                      <IconBrandApple
+                        stroke={1.6}
+                        color="#a8a8a8"
+                        style={{ width: '70%', height: '70%' }}
+                      />
+                    </ActionIcon>
+                  )}
+                  {project?.spotify_id && (
+                    <ActionIcon
+                      component="a"
+                      href={`https://open.spotify.com/intl-pt/artist/${project?.spotify_id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      size="lg"
+                      variant="subtle"
+                      color="gray"
+                      aria-label={`${project.name} no Spotify (abre em nova aba)`}
+                    >
+                      <IconBrandSpotify
+                        stroke={1.6}
+                        color="#1ED760"
+                        style={{ width: '70%', height: '70%' }}
+                      />
+                    </ActionIcon>
+                  )}
+                  {project?.instagram && (
+                    <ActionIcon
+                      component="a"
+                      href={`https://instagram.com/${project?.instagram}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      size="lg"
+                      variant="subtle"
+                      color="gray"
+                      aria-label={`${project.name} no Instagram (abre em nova aba)`}
+                    >
+                      <IconBrandInstagram
+                        stroke={1.6}
+                        color="#C13584"
+                        style={{ width: '70%', height: '70%' }}
+                      />
+                    </ActionIcon>
+                  )}
+                </Group>
 
                 <Divider />
 
@@ -1379,67 +1389,18 @@ export default function Project() {
          * ════════════════════════════════════════════════
          */}
 
-        {activeTab === 'music' && (
+        {/* {activeTab === 'music' && (
           <Container size="lg" px={{ base: 'sm', sm: 'md' }}>
-            <SimpleGrid
-              cols={{
-                base: 1,
-                md: 2,
-              }}
-              spacing="md"
-            >
-              <Card withBorder radius="lg" p="lg">
-                <Title order={3} fz="lg" fw={600} mb="xs">
-                  Discografia
-                </Title>
-
-                <Text c="dimmed" size="sm">
-                  Nenhum álbum cadastrado para este projeto no momento.
-                </Text>
-              </Card>
-
-              {hasSocialLinks && (
-                <Card withBorder radius="lg" p="lg">
-                  <Title order={3} fz="lg" fw={600} mb="md">
-                    Ouça também em
-                  </Title>
-
-                  <Stack gap="xs">
-                    {project?.spotify_id && (
-                      <Button
-                        component="a"
-                        href={`https://open.spotify.com/artist/${project.spotify_id}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        variant="default"
-                        justify="space-between"
-                        leftSection={<IconBrandSpotify size={20} />}
-                        rightSection={<IconExternalLink size={14} />}
-                      >
-                        Spotify
-                      </Button>
-                    )}
-
-                    {project?.soundcloud && (
-                      <Button
-                        component="a"
-                        href={`https://soundcloud.com/${project.soundcloud}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        variant="default"
-                        justify="space-between"
-                        leftSection={<IconBrandSoundcloud size={20} />}
-                        rightSection={<IconExternalLink size={14} />}
-                      >
-                        SoundCloud
-                      </Button>
-                    )}
-                  </Stack>
-                </Card>
-              )}
-            </SimpleGrid>
+            <Card withBorder radius="lg" p="lg">
+              <Title order={3} fz="lg" fw={600} mb="xs">
+                Discografia
+              </Title>
+              <Text c="dimmed" size="sm">
+                Nenhum álbum cadastrado para este projeto no momento.
+              </Text>
+            </Card>
           </Container>
-        )}
+        )} */}
       </Container>
 
       {/*

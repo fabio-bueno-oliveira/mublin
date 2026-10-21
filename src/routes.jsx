@@ -95,6 +95,7 @@ const Pro = lazy(() => import('./pages/Pro'))
 const SettingsLayout = lazy(() => import('./pages/settings'))
 const EditMyProfile = lazy(() => import('./pages/settings/EditMyProfile'))
 const Plan = lazy(() => import('./pages/settings/Plan'))
+const Skills = lazy(() => import('./pages/settings/Skills'))
 const MusicalPreferences = lazy(() => import('./pages/settings/MusicalPreferences'))
 const Password = lazy(() => import('./pages/settings/Password'))
 const Endorsements = lazy(() => import('./pages/settings/Endorsements'))
@@ -217,6 +218,7 @@ export const router = createBrowserRouter([
           { index: true, element: <Navigate to="settings/profile" replace /> },
           { path: 'profile', element: <EditMyProfile /> },
           { path: 'plan', element: <Plan /> },
+          { path: 'skills', element: <Skills /> },
           { path: 'musical-preferences', element: <MusicalPreferences /> },
           { path: 'password', element: <Password /> },
           { path: 'endorsements', element: <Endorsements /> },

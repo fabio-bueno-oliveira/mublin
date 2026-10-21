@@ -12,6 +12,7 @@ import {
   IconListCheckFilled,
   IconSchool,
   IconCalendarCheck,
+  IconSparkles,
 } from '@tabler/icons-react'
 import classes from './settings.module.css'
 
@@ -45,6 +46,12 @@ const SETTINGS_TABS = [
     label: 'Senha',
     icon: IconLock,
     path: '/settings/password',
+  },
+  {
+    value: 'skills',
+    label: 'Habilidades',
+    icon: IconSparkles,
+    path: '/settings/skills',
   },
   {
     value: 'musical-preferences',

@@ -25,6 +25,7 @@ import {
   IconCamera,
   IconMicrophone2,
   IconDisc,
+  IconSofa,
 } from '@tabler/icons-react'
 import { MEMBER_REQUEST_STATUS } from '../../constants/projects'
 
@@ -83,14 +84,15 @@ export default function BackstageSidebar({ onNavigate }) {
 
   return (
     <Box p="md" h="100%" pt="xl">
-      <Box mb="lg">
-        <Title fz="h4" tt="uppercase">
+      <Group gap={6} mb="lg">
+        <Title fz="h4" lh={1} tt="uppercase">
           <Text fz="h4" fw={300} span>
             Mublin
           </Text>{' '}
           Backstage
         </Title>
-      </Box>
+        <IconSofa size={22} />
+      </Group>
       {isLoading ? (
         <Group gap="sm" mb="lg" wrap="nowrap">
           <Skeleton height={40} circle />

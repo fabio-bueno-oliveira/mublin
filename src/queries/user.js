@@ -23,7 +23,9 @@ export async function fetchUserProfile(userId) {
 export async function fetchUserRoles(userId) {
   const { data, error } = await supabase
     .from('profile_roles')
-    .select('id, id_role, main_activity, roles(id, name_ptbr, description_ptbr)')
+    .select(
+      'id, id_role, main_activity, roles(id, name_ptbr, description_ptbr, category_id)',
+    )
     .eq('id_profile', userId)
   if (error) {
     throw new Error(error.message)
