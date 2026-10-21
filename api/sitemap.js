@@ -3,6 +3,7 @@
 // Requer as env vars SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY configuradas no projeto Vercel
 // (a service role key NUNCA deve ser exposta no client — aqui ela roda só no servidor).
 // Update em 2026-10-12: adicionando "projects"
+// Update em 2026-10-21: adicionando "products" (gear)
 
 import { createClient } from '@supabase/supabase-js'
 
@@ -37,8 +38,8 @@ export default async function handler(req, res) {
       },
     )
 
-    // Busca perfis e projetos simultaneamente
-    const [profilesResult, projectsResult] = await Promise.all([
+    // Busca perfis, projetos e produtos simultaneamente
+    const [profilesResult, projectsResult, productsResult] = await Promise.all([
       supabase
         .from('profiles')
         .select('username, updated_at')
@@ -57,6 +58,12 @@ export default async function handler(req, res) {
         .neq('project_type_id', 19)
         .not('slug', 'is', null)
         .order('slug', { ascending: true }),
+
+      supabase
+        .from('products')
+        .select('slug, updated_at')
+        .not('slug', 'is', null)
+        .order('slug', { ascending: true }),
     ])
 
     if (profilesResult.error) {
@@ -67,8 +74,13 @@ export default async function handler(req, res) {
       throw projectsResult.error
     }
 
+    if (productsResult.error) {
+      throw productsResult.error
+    }
+
     const profiles = profilesResult.data || []
     const projects = projectsResult.data || []
+    const products = productsResult.data || []
 
     const staticUrls = [
       {
@@ -96,7 +108,16 @@ export default async function handler(req, res) {
         priority: '0.8',
       }))
 
-    const urls = [...staticUrls, ...profileUrls, ...projectUrls]
+    const productUrls = products
+      .filter((p) => p.slug?.trim())
+      .map((p) => ({
+        loc: `${SITE_URL}/gear/${encodeURIComponent(p.slug)}`,
+        lastmod: formatDate(p.updated_at),
+        changefreq: 'monthly',
+        priority: '0.6',
+      }))
+
+    const urls = [...staticUrls, ...profileUrls, ...projectUrls, ...productUrls]
 
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">

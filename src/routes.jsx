@@ -9,6 +9,7 @@ import AppSettingsLayout from './components/layouts/AppSettingsLayout'
 // Route guards / shells (mantidos eager)
 import ProfileRouter from './components/ProfileRouter'
 import ProjectRouter from './components/ProjectRouter'
+import GearRouter from './components/GearRouter'
 import AdminRoute from './pages/admin/AdminRoute'
 import AdminLayout from './pages/admin/AdminLayout'
 
@@ -138,6 +139,10 @@ export const router = createBrowserRouter([
     path: 'artist/:slug',
     element: <ProjectRouter />,
   },
+  {
+    path: 'gear/:slug',
+    element: <GearRouter />,
+  },
   // ── Onboarding ──────────────────────────────────
   { path: 'onboarding', element: <Onboarding /> },
   // ── Rotas autenticadas ──────────────────────────
@@ -164,7 +169,7 @@ export const router = createBrowserRouter([
       { path: 'post/:id', element: <Post /> },
       { path: 'new/post', element: <NewPost /> },
       { path: 'gear', element: <Gear /> },
-      { path: 'gear/:slug', element: <GearItem /> },
+      // { path: 'gear/:slug', element: <GearItem /> },
       { path: 'gear/:slug/zoom', element: <GearItemZoom /> },
       { path: 'gear/category/:slug', element: <GearCategory /> },
       { path: 'new/gear', element: <NewGear /> },
