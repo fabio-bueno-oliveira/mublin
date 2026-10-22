@@ -77,11 +77,11 @@ export default function ArtistCard({ artist, size = 'md', fixedWidth = false }) 
         >
           {artist.name}
         </Text>
-        {role && (
+        {/* {role && (
           <Text size={s.role} c="dimmed" ta="center" truncate="end" w="100%">
             {role}
           </Text>
-        )}
+        )} */}
         {/* {genres && (
           <Text size={s.genre} c="dimmed" ta="center" truncate="end" w="100%">
             {genres}

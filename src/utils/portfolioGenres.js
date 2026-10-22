@@ -16,9 +16,12 @@ export function getPortfolioGenreStats(portfolio = [], limit = 6) {
 
       countedCategories.add(category.id)
 
+      const label = category.name_ptbr || category.name
+
       const current = categories.get(category.id) ?? {
         id: category.id,
-        genre: category.name_ptbr || category.name,
+        genre: label,
+        fullName: label,
         projects: 0,
         color: category.color_hex,
       }
@@ -44,17 +47,16 @@ export function getPortfolioSubgenreStats(portfolio = [], limit = 8) {
 
       countedGenres.add(genre.id)
 
+      const label = genre.name_ptbr || genre.name
+
       const current = subgenres.get(genre.id) ?? {
         id: genre.id,
-        genre: genre.name_ptbr
-          ? genre.name_ptbr.length > 16
-            ? genre.name_ptbr.slice(0, 16) + '...'
-            : genre.name_ptbr
-          : genre.name.length > 16
-            ? genre.name.slice(0, 16) + '...'
-            : genre.name,
-        // genre: genre.name_ptbr || genre.name,
+        // O corte visual agora é feito no componente (truncate + tooltip).
+        genre: label,
+        fullName: label,
         projects: 0,
+        // Subgênero herda a cor da categoria pai.
+        color: genre.category?.color_hex,
       }
 
       current.projects += 1

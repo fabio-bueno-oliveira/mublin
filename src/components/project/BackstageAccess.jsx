@@ -1,5 +1,6 @@
 import { Group, Stack, Card, Text, Avatar, Button } from '@mantine/core'
-import { IconArrowUpRight, IconSofa } from '@tabler/icons-react'
+import { IconArrowUpRight } from '@tabler/icons-react'
+import { IconBackstageMirrorFilled } from '../icons/IconBackstageMirror'
 
 const AVATAR_PATH =
   'https://ik.imagekit.io/mublin/tr:h-50,c-maintain_ratio/users/avatars/'
@@ -19,7 +20,7 @@ export default function BackstageAccess({
           </Text>
           <Group gap={6}>
             <Avatar size={25} src={`${AVATAR_PATH}${profile?.avatar}`} />
-            <IconSofa />
+            <IconBackstageMirrorFilled size={30} />
           </Group>
         </Group>
         <Text size="xs" c="dimmed">

@@ -27,6 +27,7 @@ import {
   IconDisc,
   IconSofa,
 } from '@tabler/icons-react'
+import { IconBackstageMirrorFilled } from '../icons/IconBackstageMirror'
 import { MEMBER_REQUEST_STATUS } from '../../constants/projects'
 
 const PICTURE_AVATAR_PATH = 'https://ik.imagekit.io/mublin/projects'
@@ -84,15 +85,13 @@ export default function BackstageSidebar({ onNavigate }) {
 
   return (
     <Box p="md" h="100%" pt="xl">
-      <Group gap={6} mb="lg">
-        <Title fz="h4" lh={1} tt="uppercase">
-          <Text fz="h4" fw={300} span>
-            Mublin
-          </Text>{' '}
-          Backstage
-        </Title>
-        <IconSofa size={22} />
-      </Group>
+      <IconBackstageMirrorFilled size={38} />
+      <Title fz="h4" lh={1} tt="uppercase" mb="lg">
+        <Text fz="h4" fw={300} span>
+          Mublin
+        </Text>{' '}
+        Backstage
+      </Title>
       {isLoading ? (
         <Group gap="sm" mb="lg" wrap="nowrap">
           <Skeleton height={40} circle />

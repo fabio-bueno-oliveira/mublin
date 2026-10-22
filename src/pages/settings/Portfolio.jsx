@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { useState, useCallback } from 'react'
 import { Helmet } from 'react-helmet-async'
 import { useAuth } from '../../hooks/useAuth'
@@ -5,9 +6,11 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabaseClient'
 import { fetchAllRoles } from '../../queries/roles'
 import { fetchUserPortfolio } from '../../queries/user'
+import { FREE_PORTFOLIO_LIMIT } from '../../utils/plan'
 import {
   Stack,
   Group,
+  Alert,
   Text,
   Button,
   Modal,
@@ -33,6 +36,7 @@ import {
   IconDisc,
   IconSparkles,
   IconPencil,
+  IconArrowRight,
 } from '@tabler/icons-react'
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd'
 
@@ -71,7 +75,7 @@ async function searchProjects(keyword) {
 // ── Componente principal ──────────────────────────────────
 
 export default function Portfolio() {
-  const { user } = useAuth()
+  const { user, profile, loading: loadingAuth } = useAuth()
   const queryClient = useQueryClient()
 
   // ── Estados: formulário do modal ──────────────────────
@@ -137,6 +141,14 @@ export default function Portfolio() {
     label: t.name_ptbr,
   }))
 
+  // ── Limite do plano Free ────────────────────────────────
+  const isPro = profile?.plan === 'Pro'
+  // Só aplica o limite depois que o perfil carregou, pra não piscar aviso falso
+  const limitActive = !loadingAuth && !isPro
+  const portfolioCount = userPortfolio.length
+  const hasReachedLimit = limitActive && portfolioCount >= FREE_PORTFOLIO_LIMIT
+  const isOverLimit = limitActive && portfolioCount > FREE_PORTFOLIO_LIMIT
+
   // ── Handlers: busca de projeto ─────────────────────────
 
   const executeProjectSearch = useCallback(async (keyword) => {
@@ -186,6 +198,9 @@ export default function Portfolio() {
   // ── Handler: abrir modal em modo edição ────────────────
 
   function handleOpenEditModal(item) {
+    if (isOverLimit) {
+      return
+    }
     setEditingItemId(item.id)
     setSelectedRoleIds(item.portfolio_roles?.map((pr) => String(pr.role_id)) ?? [])
     setSelectedEngagementTypeIds(
@@ -203,6 +218,14 @@ export default function Portfolio() {
   // ── Handler: adicionar item ao portfólio ───────────────
 
   async function handleAddPortfolioItem() {
+    if (hasReachedLimit) {
+      notifications.show({
+        color: 'yellow',
+        position: 'top-center',
+        message: `O plano Free permite até ${FREE_PORTFOLIO_LIMIT} itens no portfólio.`,
+      })
+      return
+    }
     if (selectedRoleIds.length === 0) {
       notifications.show({
         color: 'red',
@@ -293,6 +316,9 @@ export default function Portfolio() {
   // ── Handler: atualizar item existente do portfólio ─────
 
   async function handleUpdatePortfolioItem() {
+    if (isOverLimit) {
+      return
+    }
     if (selectedRoleIds.length === 0) {
       notifications.show({
         color: 'red',
@@ -479,15 +505,53 @@ export default function Portfolio() {
         </div>
 
         <Box>
-          <Button
-            size="sm"
-            variant="filled"
-            leftSection={<IconPlus size={14} />}
-            onClick={openModal}
-          >
-            Adicionar novo item ao portfólio
-          </Button>
+          <Group gap="sm">
+            <Button
+              size="sm"
+              variant="filled"
+              leftSection={<IconPlus size={14} />}
+              onClick={openModal}
+              disabled={loadingAuth || loadingPortfolio || hasReachedLimit}
+            >
+              Adicionar novo item ao portfólio
+            </Button>
+            {limitActive && !loadingPortfolio && (
+              <Text size="xs" c="dimmed">
+                {portfolioCount}/{FREE_PORTFOLIO_LIMIT} itens no plano Free
+              </Text>
+            )}
+          </Group>
         </Box>
+
+        {hasReachedLimit && !loadingPortfolio && (
+          <Alert
+            variant="light"
+            color="orange"
+            radius="md"
+            title={
+              isOverLimit
+                ? 'Seu portfólio excede o limite do plano Free'
+                : 'Você atingiu o limite do plano Free'
+            }
+          >
+            <Stack gap="xs" align="flex-start">
+              <Text size="sm">
+                {isOverLimit
+                  ? `Você tem ${portfolioCount} itens, mas o plano Free comporta ${FREE_PORTFOLIO_LIMIT}. Nada foi perdido: só os ${FREE_PORTFOLIO_LIMIT} primeiros aparecem no seu perfil. Enquanto estiver acima do limite, só é possível remover ou reordenar itens.`
+                  : `O plano Free permite até ${FREE_PORTFOLIO_LIMIT} itens no portfólio. Remova algum item ou assine o Pro para adicionar mais.`}
+              </Text>
+              <Button
+                component={Link}
+                to="/pro"
+                size="xs"
+                color="orange"
+                rightSection={<IconArrowRight size={14} />}
+              >
+                Conhecer o Mublin Pro
+              </Button>
+            </Stack>
+          </Alert>
+        )}
 
         {loadingPortfolio || isDeletingItem ? (
           <Stack gap="xs">
@@ -501,6 +565,7 @@ export default function Portfolio() {
               {(provided) => (
                 <Stack gap="xs" ref={provided.innerRef} {...provided.droppableProps}>
                   {userPortfolio.map((item, index) => {
+                    const hiddenOnProfile = limitActive && index >= FREE_PORTFOLIO_LIMIT
                     const entity = item.projects
                     const picture = entity?.picture
                       ? `${PROJECTS_PATH}${item.project_id}/${entity.picture}`
@@ -574,6 +639,11 @@ export default function Portfolio() {
                                       Via Mublin
                                     </Badge>
                                   )}
+                                  {hiddenOnProfile && (
+                                    <Badge size="xs" variant="light" color="gray">
+                                      Oculto no perfil
+                                    </Badge>
+                                  )}
                                 </Group>
                                 <Text size="xs">
                                   {item.portfolio_roles
@@ -622,7 +692,12 @@ export default function Portfolio() {
                                 size="md"
                                 variant="subtle"
                                 onClick={() => handleOpenEditModal(item)}
-                                title="Editar item"
+                                disabled={isOverLimit}
+                                title={
+                                  isOverLimit
+                                    ? 'Edição indisponível: portfólio acima do limite do plano Free'
+                                    : 'Editar item'
+                                }
                               >
                                 <IconPencil size={18} />
                               </ActionIcon>

@@ -29,6 +29,7 @@ import {
   fetchProfileUpcomingEvents,
   fetchProfileScenes,
 } from '../queries/profiles'
+import { fetchUserSkills } from '../queries/skills'
 // prettier-ignore
 import {
   useMantineColorScheme,
@@ -39,13 +40,12 @@ import {
   Transition, ScrollArea,
   Affix, Divider,
   Avatar, Image,
-  Title, Text, Tabs,
+  Title, Text,
   Flex, Group,
   Button, ActionIcon, ThemeIcon, 
   Alert, Tooltip, Anchor,
   Spoiler,
 } from '@mantine/core'
-import { BarsList } from '@mantine/charts'
 import {
   getPortfolioGenreStats,
   getPortfolioSubgenreStats,
@@ -58,7 +58,7 @@ import {
   IconShieldCheckFilled, IconPlus,
   IconCircleArrowLeftFilled,
   IconCircleArrowRightFilled,
-  IconBrandWhatsapp,
+  IconBrandWhatsapp, IconPhone,
   IconDotsVerticalFilled, IconBrain,
   IconTrophy, IconGuitarPick,
   IconSend, IconEye, IconLink,
@@ -75,22 +75,27 @@ import LinkedItem from '../components/feed/LinkedItem'
 import VideoPlayerYoutube from '../components/feed/VideoPlayerYoutube'
 import SectionPanel from '../components/SectionPanel'
 import InviteToGigModal from '../components/gigs/InviteToGigModal'
-import LoadingSkeleton from '../components/profile/LoadingSkeleton'
-import RecognitionBadge from '../components/profile/RecognitionBadge'
-import PortfolioUpvote from '../components/profile/PortfolioUpvote'
-import AvailabilityPanel from '../components/profile/AvailabilityPanel'
+import {
+  LoadingSkeleton,
+  ProfileHeaderMobile,
+  ProfileSkills,
+  PortfolioGenresCard,
+  AvailabilityPanel,
+  PortfolioUpvote,
+  RecognitionBadge,
+  ScrollerArrows,
+  SocialLinks,
+} from '../components/profile'
 import ScenesScroller from '../components/scenes/ScenesScroller'
 import { truncateString } from '../utils/formatter'
-import ProfileHeaderMobile from '../components/profile/ProfileHeaderMobile'
 import AppNavbarMobile from '../components/AppNavbarMobile'
 import ProPlanBadge from '../components/ProPlanBadge'
 import SimilarProfiles from '../components/SimilarProfiles'
-import { ScrollerArrows } from '../components/profile/ScrollerArrows'
-import SocialLinks from '../components/profile/SocialLinks'
 import { formatPortfolioPeriod, getAvatarUrl, formatMemberSince } from '../utils/profile'
 import { openImagePreviewModal } from '../utils/openImagePreviewModal'
 import { isProfileLive } from '../utils/live'
 import { isMublinOG } from '../utils/badges'
+import { FREE_PORTFOLIO_LIMIT } from '../utils/plan'
 import { isEventHappeningNow, formatEventDateRange } from '../utils/dates'
 import MublinMLogo from '../assets/svg/mublin-m-logo-silver.svg'
 import relativeTime from 'dayjs/plugin/relativeTime'
@@ -172,6 +177,13 @@ export default function Profile() {
     enabled: !!profile?.id,
     staleTime: 1000 * 60 * 1,
     refetchInterval: 1000 * 60 * 5,
+  })
+
+  const { data: profileSkills = [], isLoading: loadingProfileSkills } = useQuery({
+    queryKey: ['user-skills', profile?.id],
+    queryFn: () => fetchUserSkills(profile.id),
+    enabled: !!profile?.id,
+    staleTime: 1000 * 60 * 5,
   })
 
   const { data: profileViewCount } = useQuery({
@@ -464,14 +476,21 @@ export default function Profile() {
     staleTime: 1000 * 60 * 10,
   })
 
+  // Plano Free exibe só os N primeiros (já vêm ordenados por order_number)
+  const visiblePortfolio = useMemo(
+    () => (isProfilePro ? portfolio : portfolio.slice(0, FREE_PORTFOLIO_LIMIT)),
+    [portfolio, isProfilePro],
+  )
+  const hiddenPortfolioCount = portfolio.length - visiblePortfolio.length
+
   const portfolioGenreStats = useMemo(
-    () => getPortfolioGenreStats(portfolio, 6),
-    [portfolio],
+    () => getPortfolioGenreStats(visiblePortfolio, 6),
+    [visiblePortfolio],
   )
 
   const portfolioSubgenreStats = useMemo(
-    () => getPortfolioSubgenreStats(portfolio, 8),
-    [portfolio],
+    () => getPortfolioSubgenreStats(visiblePortfolio, 8),
+    [visiblePortfolio],
   )
 
   const { data: portfolioUpvotes = [] } = useQuery({
@@ -1380,6 +1399,12 @@ export default function Profile() {
                       </>
                     )}
 
+                    <ProfileSkills
+                      skills={profileSkills}
+                      loading={loadingProfileSkills}
+                      isOwnProfile={isOwnProfile}
+                    />
+
                     {!loadingUpcomingEvents && upcomingEvents.length > 0 && (
                       <>
                         <Group justify="space-between" align="center" mt="md" mb="xs">
@@ -1516,172 +1541,205 @@ export default function Profile() {
                     </Group>
                     {loadingPortfolio ? (
                       <Text mt="md">Carregando...</Text>
-                    ) : portfolio.length > 0 ? (
-                      <Stack mt="md" gap="md">
-                        {portfolio.map((item, index) => {
-                          const entity = item.project
-                          if (!entity) {
-                            return null
-                          }
-                          const url = `/project/${entity.slug}`
-                          const roleNames =
-                            item.roles?.map((r) => r.role?.name_ptbr).filter(Boolean) ??
-                            []
-                          const typeName = entity.type?.name_ptbr
-                          const projectGenreNames =
-                            entity.genres
-                              ?.map((g) => g?.genre?.name_ptbr)
-                              .filter(Boolean) ?? []
-                          // Fallback para o campo legado (projects.genre_id)
-                          const genreNames =
-                            projectGenreNames.length > 0
-                              ? projectGenreNames
-                              : [entity.genre?.name_ptbr].filter(Boolean)
-                          const engagementNames =
-                            item.engagement_types
-                              ?.map((e) => e.engagement_type?.name_ptbr)
-                              .filter(Boolean) ?? []
-                          const period = formatPortfolioPeriod(
-                            item.year_start,
-                            item.year_end,
-                          )
-                          const upvoteInfo = upvotesByPortfolioId[item.id]
-                          const upvoteCount = upvoteInfo?.upvote_count ?? 0
-                          const hasUpvoted = upvoteInfo?.has_upvoted ?? false
-                          const isOwnPortfolio = user?.id === profile.id
-                          return (
-                            <Box key={item.id}>
-                              <Group gap="xs" align="flex-start" wrap="nowrap">
-                                <Flex direction="column">
-                                  <Link to={url}>
-                                    <Avatar
-                                      radius="md"
-                                      size={60}
-                                      src={
-                                        entity.picture
-                                          ? `https://ik.imagekit.io/mublin/projects/${entity.id}/tr:h-120,w-120,c-maintain_ratio/${entity.picture}`
-                                          : undefined
+                    ) : visiblePortfolio.length > 0 ? (
+                      <>
+                        <Stack mt="md" gap="md">
+                          {visiblePortfolio.map((item, index) => {
+                            const entity = item.project
+                            if (!entity) {
+                              return null
+                            }
+                            const url = `/project/${entity.slug}`
+                            const roleNames =
+                              item.roles?.map((r) => r.role?.name_ptbr).filter(Boolean) ??
+                              []
+                            const typeName = entity.type?.name_ptbr
+                            const projectGenreNames =
+                              entity.genres
+                                ?.map((g) => g?.genre?.name_ptbr)
+                                .filter(Boolean) ?? []
+                            // Fallback para o campo legado (projects.genre_id)
+                            const genreNames =
+                              projectGenreNames.length > 0
+                                ? projectGenreNames
+                                : [entity.genre?.name_ptbr].filter(Boolean)
+                            const engagementNames =
+                              item.engagement_types
+                                ?.map((e) => e.engagement_type?.name_ptbr)
+                                .filter(Boolean) ?? []
+                            const period = formatPortfolioPeriod(
+                              item.year_start,
+                              item.year_end,
+                            )
+                            const upvoteInfo = upvotesByPortfolioId[item.id]
+                            const upvoteCount = upvoteInfo?.upvote_count ?? 0
+                            const hasUpvoted = upvoteInfo?.has_upvoted ?? false
+                            const isOwnPortfolio = user?.id === profile.id
+                            return (
+                              <Box key={item.id}>
+                                <Group gap="xs" align="flex-start" wrap="nowrap">
+                                  <Flex direction="column">
+                                    <Link to={url}>
+                                      <Avatar
+                                        radius="md"
+                                        size={60}
+                                        src={
+                                          entity.picture
+                                            ? `https://ik.imagekit.io/mublin/projects/${entity.id}/tr:h-120,w-120,c-maintain_ratio/${entity.picture}`
+                                            : undefined
+                                        }
+                                      />
+                                    </Link>
+                                    <PortfolioUpvote
+                                      count={upvoteCount}
+                                      hasUpvoted={hasUpvoted}
+                                      isOwnPortfolio={isOwnPortfolio}
+                                      disabled={!user?.id}
+                                      onToggle={() =>
+                                        handleToggleUpvote({
+                                          portfolioId: item.id,
+                                          currentlyUpvoted: hasUpvoted,
+                                        })
                                       }
                                     />
-                                  </Link>
-                                  <PortfolioUpvote
-                                    count={upvoteCount}
-                                    hasUpvoted={hasUpvoted}
-                                    isOwnPortfolio={isOwnPortfolio}
-                                    disabled={!user?.id}
-                                    onToggle={() =>
-                                      handleToggleUpvote({
-                                        portfolioId: item.id,
-                                        currentlyUpvoted: hasUpvoted,
-                                      })
-                                    }
-                                  />
-                                </Flex>
-                                <Stack gap={2} style={{ flex: 1, minWidth: 0 }}>
-                                  {roleNames.length > 0 && (
-                                    <Text
-                                      size="md"
-                                      fw={600}
-                                      lh={1}
+                                  </Flex>
+                                  <Stack gap={2} style={{ flex: 1, minWidth: 0 }}>
+                                    {roleNames.length > 0 && (
+                                      <Text
+                                        size="md"
+                                        fw={600}
+                                        lh={1}
+                                        component={Link}
+                                        to={url}
+                                        w="fit-content"
+                                        style={{
+                                          display: 'inline',
+                                          textDecoration: 'none',
+                                          color: 'inherit',
+                                        }}
+                                      >
+                                        {roleNames.join(', ')}
+                                      </Text>
+                                    )}
+                                    <Group
+                                      gap={6}
+                                      mt={2}
+                                      align="center"
+                                      wrap="wrap"
                                       component={Link}
-                                      to={url}
                                       w="fit-content"
+                                      to={url}
                                       style={{
                                         display: 'inline',
                                         textDecoration: 'none',
                                         color: 'inherit',
                                       }}
                                     >
-                                      {roleNames.join(', ')}
-                                    </Text>
-                                  )}
-                                  <Group
-                                    gap={6}
-                                    mt={2}
-                                    align="center"
-                                    wrap="wrap"
-                                    component={Link}
-                                    w="fit-content"
-                                    to={url}
-                                    style={{
-                                      display: 'inline',
-                                      textDecoration: 'none',
-                                      color: 'inherit',
-                                    }}
-                                  >
-                                    <Text size="xs">
-                                      <Text span>{entity.name}</Text>{' '}
-                                      <Text span>
-                                        ({typeName}
-                                        {genreNames.length > 0 &&
-                                          ` · ${genreNames.join(', ')}`}
-                                        )
+                                      <Text size="xs">
+                                        <Text span>{entity.name}</Text>{' '}
+                                        <Text span>
+                                          ({typeName}
+                                          {genreNames.length > 0 &&
+                                            ` · ${genreNames.join(', ')}`}
+                                          )
+                                        </Text>
                                       </Text>
-                                    </Text>
-                                  </Group>
-                                  <Group gap={3} mt={1} mb={1}>
-                                    {engagementNames.length > 0 && (
-                                      <Text size="xs" c="dimmed">
-                                        {/* {engagementNames.length === 1
+                                    </Group>
+                                    <Group gap={3} mt={1} mb={1}>
+                                      {engagementNames.length > 0 && (
+                                        <Text size="xs" c="dimmed">
+                                          {/* {engagementNames.length === 1
                                           ? 'Vínculo:'
                                           : 'Vínculos:'}{' '} */}
-                                        {engagementNames.join(', ')}
-                                      </Text>
-                                    )}
-                                    {item.is_sporadic ? (
-                                      <Text size="xs" c="dimmed">
-                                        · Colaboração esporádica
-                                      </Text>
-                                    ) : (
-                                      period && (
+                                          {engagementNames.join(', ')}
+                                        </Text>
+                                      )}
+                                      {item.is_sporadic ? (
                                         <Text size="xs" c="dimmed">
-                                          · {period}
+                                          · Colaboração esporádica
                                         </Text>
-                                      )
+                                      ) : (
+                                        period && (
+                                          <Text size="xs" c="dimmed">
+                                            · {period}
+                                          </Text>
+                                        )
+                                      )}
+                                    </Group>
+                                    {item.is_mublin_facilitated && (
+                                      <Flex gap={4} align="center" mt={4} mb={4}>
+                                        <Image
+                                          src={MublinMLogo}
+                                          h={14}
+                                          w="auto"
+                                          fit="contain"
+                                          mb={2}
+                                        />
+                                        <Text size="xs" lh={1}>
+                                          Mublin ajudou a conseguir esta gig
+                                        </Text>
+                                      </Flex>
                                     )}
-                                  </Group>
-                                  {item.is_mublin_facilitated && (
-                                    <Flex gap={4} align="center" mt={4} mb={4}>
-                                      <Image
-                                        src={MublinMLogo}
-                                        h={14}
-                                        w="auto"
-                                        fit="contain"
-                                        mb={2}
-                                      />
-                                      <Text size="xs" lh={1}>
-                                        Mublin ajudou a conseguir esta gig
-                                      </Text>
-                                    </Flex>
-                                  )}
-                                  {item.notes && (
-                                    <Spoiler
-                                      maxHeight={42}
-                                      showLabel={
-                                        <Text size="sm" c="var(--mantine-color-text)">
-                                          Ver mais
+                                    {item.notes && (
+                                      <Spoiler
+                                        maxHeight={42}
+                                        showLabel={
+                                          <Text size="sm" c="var(--mantine-color-text)">
+                                            Ver mais
+                                          </Text>
+                                        }
+                                        hideLabel={
+                                          <Text size="sm" c="var(--mantine-color-text)">
+                                            Ver menos
+                                          </Text>
+                                        }
+                                      >
+                                        <Text
+                                          size="sm"
+                                          style={{ whiteSpace: 'pre-line' }}
+                                        >
+                                          {item.notes}
                                         </Text>
-                                      }
-                                      hideLabel={
-                                        <Text size="sm" c="var(--mantine-color-text)">
-                                          Ver menos
-                                        </Text>
-                                      }
-                                    >
-                                      <Text size="sm" style={{ whiteSpace: 'pre-line' }}>
-                                        {item.notes}
-                                      </Text>
-                                    </Spoiler>
-                                  )}
-                                </Stack>
-                              </Group>
-                              {index + 1 < portfolio.length && (
-                                <Divider mt="sm" opacity={0.4} />
-                              )}
-                            </Box>
-                          )
-                        })}
-                      </Stack>
+                                      </Spoiler>
+                                    )}
+                                  </Stack>
+                                </Group>
+                                {index + 1 < visiblePortfolio.length && (
+                                  <Divider mt="sm" opacity={0.4} />
+                                )}
+                              </Box>
+                            )
+                          })}
+                        </Stack>
+                        {isOwnProfile && hiddenPortfolioCount > 0 && (
+                          <Alert
+                            variant="light"
+                            color="yellow"
+                            p="xs"
+                            radius="md"
+                            mt="md"
+                          >
+                            <Group justify="space-between" wrap="nowrap" gap="sm">
+                              <Text size="sm">
+                                {hiddenPortfolioCount === 1
+                                  ? '1 item do seu portfólio está oculto'
+                                  : `${hiddenPortfolioCount} itens do seu portfólio estão ocultos`}{' '}
+                                porque o plano Free exibe até {FREE_PORTFOLIO_LIMIT}.
+                              </Text>
+                              <Button
+                                component={Link}
+                                to="/pro"
+                                size="xs"
+                                color="orange"
+                                rightSection={<IconArrowRight size={14} />}
+                                style={{ flexShrink: 0 }}
+                              >
+                                Ver Pro
+                              </Button>
+                            </Group>
+                          </Alert>
+                        )}
+                      </>
                     ) : (
                       <Text size="sm" c="dimmed" mt="sm">
                         Nenhum item informado até o momento
@@ -2121,76 +2179,20 @@ export default function Profile() {
                   id="availability"
                   profile={profile}
                   workAvailability={workAvailability}
-                  workAvailabilityLoading={loadingWorkAvailability}
+                  loadingWorkAvailability={loadingWorkAvailability}
                   workFocuses={workFocus}
                   travelPreference={travelPreference}
                   isOwnProfile={isOwnProfile}
                 />
               )}
 
-              <SectionPanel id="graph">
-                <SectionTitle mb={4} text="Estilos do portfólio" />
-                <Text size="xs" c="dimmed" mb="md">
-                  Gêneros musicais de artistas e projetos que {profile?.full_name} já
-                  acompanhou
-                </Text>
-
-                {loadingPortfolio ? (
-                  <Skeleton height={280} radius="md" />
-                ) : (
-                  <>
-                    {portfolioGenreStats.length > 0 &&
-                      portfolioSubgenreStats.length > 0 && (
-                        <Tabs defaultValue="categories" variant="outline" radius="md">
-                          <Tabs.List mb="md" grow>
-                            <Tabs.Tab style={{ fontSize: '12px' }} value="categories">
-                              Categorias
-                            </Tabs.Tab>
-                            <Tabs.Tab style={{ fontSize: '12px' }} value="subgenres">
-                              Subgêneros
-                            </Tabs.Tab>
-                          </Tabs.List>
-
-                          {/* CATEGORIAS */}
-                          <Tabs.Panel value="categories" px={4}>
-                            {portfolioGenreStats.length > 0 ? (
-                              <BarsList
-                                data={portfolioGenreStats.map((item) => ({
-                                  name: item.genre,
-                                  value: item.projects,
-                                }))}
-                                barHeight={28}
-                                minBarSize={140}
-                              />
-                            ) : (
-                              <Text size="sm" c="dimmed">
-                                Ainda não há categorias musicais registradas no portfólio.
-                              </Text>
-                            )}
-                          </Tabs.Panel>
-
-                          {/* SUBGÊNEROS */}
-                          <Tabs.Panel value="subgenres" px={4}>
-                            {portfolioSubgenreStats.length > 0 ? (
-                              <BarsList
-                                data={portfolioSubgenreStats.map((item) => ({
-                                  name: item.genre,
-                                  value: item.projects,
-                                }))}
-                                barHeight={28}
-                                minBarSize={140}
-                              />
-                            ) : (
-                              <Text size="sm" c="dimmed">
-                                Ainda não há subgêneros musicais registrados no portfólio.
-                              </Text>
-                            )}
-                          </Tabs.Panel>
-                        </Tabs>
-                      )}
-                  </>
-                )}
-              </SectionPanel>
+              <PortfolioGenresCard
+                name={profile?.full_name}
+                loading={loadingPortfolio}
+                categories={portfolioGenreStats}
+                subgenres={portfolioSubgenreStats}
+                totalExperiences={visiblePortfolio.length}
+              />
 
               <SectionPanel id="recognitions">
                 <SectionTitle text="Reconhecimentos" mb="sm" />

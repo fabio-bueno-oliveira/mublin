@@ -644,6 +644,26 @@ export default function Project() {
                 </ActionIcon>
               </Tooltip>
             )}
+            {project?.soundcloud && (
+              <Tooltip label={`${project.name} no Soundcloud`} withArrow>
+                <ActionIcon
+                  component="a"
+                  href={`https://soundcloud.com/${project?.soundcloud}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  size="lg"
+                  variant="subtle"
+                  color="gray"
+                  aria-label={`${project.name} no Soundcloud (abre em nova aba)`}
+                >
+                  <IconBrandSoundcloud
+                    stroke={1.6}
+                    color="orange"
+                    style={{ width: '70%', height: '70%' }}
+                  />
+                </ActionIcon>
+              </Tooltip>
+            )}
             {project?.instagram && (
               <Tooltip label={`${project.name} no Instagram`} withArrow>
                 <ActionIcon

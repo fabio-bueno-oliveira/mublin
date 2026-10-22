@@ -98,18 +98,6 @@ const theme = createTheme({
       '#0713bc',
       '#000ea6',
     ],
-    mColor3: [
-      '#ffe8fb',
-      '#ffd0ee',
-      '#fc9fd8',
-      '#f96bc1',
-      '#f63fae',
-      '#f52ba6',
-      '#f50f9d',
-      '#da0088',
-      '#c4007a',
-      '#ac006a',
-    ],
   },
   fontFamily: 'Google Sans Flex, Helvetica, Arial, sans-serif',
   headings: {
@@ -134,7 +122,7 @@ const theme = createTheme({
       styles: {
         root: {
           backgroundColor: 'light-dark(#ffffff, #1c1c1c)',
-          borderColor: 'light-dark(#dde1e7, #1f1f1f)',
+          borderColor: 'light-dark(#dde1e7, #111111)',
         },
       },
     }),

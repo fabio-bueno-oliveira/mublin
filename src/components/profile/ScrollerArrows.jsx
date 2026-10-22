@@ -8,7 +8,7 @@ const SIZE_MAP = {
   lg: { size: 28, stroke: 1.4, gap: 4 },
 }
 
-function ScrollerArrowsBase({
+export default function ScrollerArrowsBase({
   scroller,
   sizePreset = 'md',
   ariaLabels = { prev: 'Voltar', next: 'Avançar' },

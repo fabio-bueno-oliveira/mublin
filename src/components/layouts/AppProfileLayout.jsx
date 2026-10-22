@@ -5,7 +5,6 @@ import { useAuth } from '../../hooks/useAuth'
 import { useUI } from '../../contexts/UIContext'
 import AppNavbar from '../AppNavbar'
 import AppFooterMobile from '../AppFooterMobile'
-// import Dashbar from '../Dashbar'
 
 export default function AppProfileLayout({ children }) {
   const { session, loading } = useAuth()
@@ -44,7 +43,6 @@ export default function AppProfileLayout({ children }) {
         </Container>
       </AppShell.Main>
 
-      {/* <Dashbar /> */}
       {!hideFooter && <AppFooterMobile />}
     </AppShell>
   )

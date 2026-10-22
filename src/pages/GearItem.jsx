@@ -562,10 +562,10 @@ export default function GearItem() {
                           <Avatar
                             src={
                               owner.profiles?.avatar
-                                ? `https://ik.imagekit.io/mublin/users/avatars/tr:w-80,h-80,fo-face/${owner.profiles.avatar}`
+                                ? `https://ik.imagekit.io/mublin/users/avatars/tr:w-84,h-84/${owner.profiles.avatar}`
                                 : undefined
                             }
-                            size={44}
+                            size={42}
                             radius="xl"
                           />
                         </Anchor>
@@ -587,7 +587,7 @@ export default function GearItem() {
                             <Text size="xs" c="dimmed" lh={1.3}>
                               {[owner.profiles.cities.name, owner.profiles.regions.uf]
                                 .filter(Boolean)
-                                .join(' / ')}
+                                .join('/')}
                             </Text>
                           )}
 

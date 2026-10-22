@@ -30,7 +30,6 @@ const SKILL_TYPES = [
   { value: 'technique', label: 'Técnicas' },
   { value: 'gear', label: 'Equipamentos' },
   { value: 'software', label: 'Software e DAWs' },
-  { value: 'style', label: 'Estilos' },
   { value: 'knowledge', label: 'Conhecimentos' },
 ]
 

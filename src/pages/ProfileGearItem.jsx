@@ -8,26 +8,25 @@ import {
 import { useAuth } from '../hooks/useAuth'
 import {
   Container,
+  Loader,
   Affix,
   Grid,
+  Flex,
+  Group,
   DataList,
   Button,
   Avatar,
+  Title,
   Text,
-  Group,
-  Flex,
   Stack,
   Box,
+  Paper,
   Alert,
   Badge,
   Image,
   Center,
-  Paper,
   Anchor,
-  Tooltip,
-  Loader,
   em,
-  Title,
 } from '@mantine/core'
 import { useMediaQuery } from '@mantine/hooks'
 import { motion } from 'motion/react'
@@ -244,17 +243,10 @@ export default function ProfileGearItem() {
             <>
               <Paper withBorder radius="md" p="md">
                 <Stack gap={4} mb="lg" justify="flex-start" align="flex-start">
-                  <Group gap={4}>
-                    <Text size="sm" fw={200} c="dimmed">
-                      Item do equipamento de
-                    </Text>
-                    <Anchor component={Link} to={`/${username}`} size="xs" fw={500}>
-                      @{profile.username}
-                    </Anchor>
-                  </Group>
                   <Title order={1} fz="h3" fw={600}>
                     {selectedItem.products?.brands?.name} {selectedItem.products?.name}
                   </Title>
+                  <Text size="sm">de @{profile.username}</Text>
                 </Stack>
 
                 <Grid mt={10}>
@@ -291,22 +283,16 @@ export default function ProfileGearItem() {
                             ease: 'easeInOut',
                           }}
                         >
-                          <Tooltip
-                            label={`Equipamento de @${profile.username}`}
-                            position="left"
-                            withArrow
-                          >
-                            <Anchor component={Link} to={`/${username}`}>
-                              <Avatar
-                                size={60}
-                                src={`https://ik.imagekit.io/mublin/users/avatars/${profile.avatar}`}
-                                style={{
-                                  // border: '3px solid var(--mantine-color-body)',
-                                  boxShadow: '0 6px 14px rgba(0, 0, 0, 0.2)',
-                                }}
-                              />
-                            </Anchor>
-                          </Tooltip>
+                          <Anchor component={Link} to={`/${username}`}>
+                            <Avatar
+                              size={60}
+                              src={`https://ik.imagekit.io/mublin/users/avatars/${profile.avatar}`}
+                              style={{
+                                // border: '3px solid var(--mantine-color-body)',
+                                boxShadow: '0 6px 14px rgba(0, 0, 0, 0.2)',
+                              }}
+                            />
+                          </Anchor>
                         </motion.div>
                       </Box>
                     </Center>
