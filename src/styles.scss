@@ -146,6 +146,13 @@
   box-shadow: inset 0 0 0 1.5px light-dark(rgba(0, 0, 0, 0.25), rgba(255, 255, 255, 0.35));
 } */
 
+.desktop-search {
+  .mantine-Input-input,
+  .mantine-TextInput-input {
+    // background-color: transparent;
+  }
+}
+
 /* --- Layout --- */
 .paperWrapper,
 .feedPostWrapper {

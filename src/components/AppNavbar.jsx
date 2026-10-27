@@ -31,6 +31,7 @@ import {
   useCombobox,
   Image,
   Indicator,
+  Loader,
 } from '@mantine/core'
 import {
   IconSearch,
@@ -46,9 +47,14 @@ import {
 } from '@tabler/icons-react'
 import { truncateString } from '../utils/formatter'
 import { useHover } from '@mantine/hooks'
+import { useSearchPreview } from '../hooks/useSearchPreview'
+import { getAvatarUrl } from '../utils/profile'
 
-const AVATAR_PATH =
-  'https://ik.imagekit.io/mublin/tr:h-64,c-maintain_ratio/users/avatars/'
+const MUBLIN_IMG_PATH = 'https://ik.imagekit.io/mublin'
+const PATH_PROJECT_AVATAR = MUBLIN_IMG_PATH + '/projects/'
+const AVATAR_PATH = MUBLIN_IMG_PATH + '/tr:h-64,c-maintain_ratio/users/avatars/'
+const PATH_PRODUCT_THUMB =
+  MUBLIN_IMG_PATH + '/products/tr:w-64,h-64,cm-pad_resize,bg-FFFFFF,fo-x/'
 
 export default function AppNavbar({ children }) {
   const navigate = useNavigate()
@@ -68,6 +74,11 @@ export default function AppNavbar({ children }) {
   const currentQ = searchParams.get('q') ?? ''
   const [inputValue, setInputValue] = useState(null)
   const searchQuery = inputValue !== null ? inputValue : currentQ
+  const trimmedQuery = searchQuery.trim()
+
+  // Precisa vir DEPOIS de searchQuery e searchFocused
+  const { people, projects, gear, isPreviewMode, isLoading, hasResults } =
+    useSearchPreview(searchQuery, { enabled: searchFocused })
 
   const combobox = useCombobox({
     onDropdownClose: () => combobox.resetSelectedOption(),
@@ -169,6 +180,31 @@ export default function AppNavbar({ children }) {
     [recentSearches, searchQuery],
   )
 
+  const showDropdown = isPreviewMode || suggestions.length > 0
+
+  // Valores das opções têm prefixo de tipo: user:, project:, gear:, search:, recent:
+  function handleOptionSubmit(val) {
+    const [type, ...rest] = val.split(':')
+    const payload = rest.join(':') // preserva ":" caso exista no termo
+
+    const routes = {
+      user: `/${payload}`,
+      project: `/project/${payload}`,
+      gear: `/gear/${payload}`,
+    }
+
+    if (routes[type]) {
+      setInputValue(null)
+      combobox.closeDropdown()
+      navigate(routes[type])
+      return
+    }
+
+    // 'search' ou 'recent'
+    setInputValue(payload)
+    doSearch(payload)
+  }
+
   return (
     <>
       <Box
@@ -224,15 +260,8 @@ export default function AppNavbar({ children }) {
             </Group>
 
             {/* Busca Desktop */}
-            <Group flex={1} visibleFrom="sm" mx={90}>
-              <Combobox
-                store={combobox}
-                onOptionSubmit={(val) => {
-                  setInputValue(val)
-                  doSearch(val)
-                }}
-                flex={1}
-              >
+            <Group flex={1} visibleFrom="sm" mx={90} className="desktop-search">
+              <Combobox store={combobox} onOptionSubmit={handleOptionSubmit} flex={1}>
                 <Combobox.Target>
                   <TextInput
                     placeholder={
@@ -268,38 +297,161 @@ export default function AppNavbar({ children }) {
                     }}
                     onFocus={() => {
                       setSearchFocused(true)
-                      suggestions.length > 0 && combobox.openDropdown()
+                      showDropdown && combobox.openDropdown()
                     }}
                     onBlur={() => {
                       setSearchFocused(false)
                       combobox.closeDropdown()
                     }}
-                    onKeyDown={(e) => e.key === 'Enter' && handleSearch(e)}
+                    onKeyDown={(e) => {
+                      // Só faz a busca genérica se nenhuma opção estiver selecionada
+                      // pelas setas; senão o Combobox dispara onOptionSubmit
+                      if (e.key === 'Enter' && combobox.getSelectedOptionIndex() === -1) {
+                        handleSearch(e)
+                      }
+                    }}
                   />
                 </Combobox.Target>
-                {suggestions.length > 0 && (
+
+                {showDropdown && (
                   <Combobox.Dropdown>
-                    <Combobox.Group label="Buscas recentes">
-                      {suggestions.map((s) => (
-                        <Combobox.Option key={s.id} value={s.query}>
-                          <Group gap="xs">
-                            <IconClock size={13} opacity={0.4} />
-                            <Text size="sm">{s.query}</Text>
-                          </Group>
-                        </Combobox.Option>
-                      ))}
-                    </Combobox.Group>
-                    <Combobox.Footer>
-                      <Text
-                        size="xs"
-                        c="dimmed"
-                        ta="center"
-                        style={{ cursor: 'pointer' }}
-                        onClick={() => clearHistory()}
-                      >
-                        Limpar buscas recentes
-                      </Text>
-                    </Combobox.Footer>
+                    <Combobox.Options>
+                      {isPreviewMode ? (
+                        <>
+                          {isLoading && !hasResults && (
+                            <Combobox.Empty>
+                              <Loader size="xs" />
+                            </Combobox.Empty>
+                          )}
+
+                          {!isLoading && !hasResults && (
+                            <Combobox.Empty>
+                              Nenhum resultado rápido encontrado
+                            </Combobox.Empty>
+                          )}
+
+                          {people.length > 0 && (
+                            <Combobox.Group label="Pessoas">
+                              {people.map((p) => (
+                                <Combobox.Option key={p.id} value={`user:${p.username}`}>
+                                  <Group gap="xs" wrap="nowrap">
+                                    <Avatar
+                                      size={28}
+                                      radius="xl"
+                                      src={
+                                        p.avatar
+                                          ? getAvatarUrl(p.avatar, p.is_open_to_work, 28)
+                                          : undefined
+                                      }
+                                    />
+                                    <Box>
+                                      <Text size="sm" lh={1.2} fw={500}>
+                                        {p.full_name}
+                                      </Text>
+                                      <Text size="xs" c="dimmed" lh={1.2}>
+                                        @{p.username}
+                                      </Text>
+                                    </Box>
+                                  </Group>
+                                </Combobox.Option>
+                              ))}
+                            </Combobox.Group>
+                          )}
+
+                          {projects.length > 0 && (
+                            <Combobox.Group label="Projetos">
+                              {projects.map((pr) => (
+                                <Combobox.Option key={pr.id} value={`project:${pr.slug}`}>
+                                  <Group gap="xs" wrap="nowrap">
+                                    <Avatar
+                                      size={28}
+                                      radius="sm"
+                                      src={
+                                        pr.picture
+                                          ? `${PATH_PROJECT_AVATAR}${pr.id}/tr:h-64,w-64,c-maintain_ratio/${pr.picture}`
+                                          : undefined
+                                      }
+                                    />
+                                    <Box>
+                                      <Text size="sm" lh={1.2} fw={500}>
+                                        {pr.name}
+                                      </Text>
+                                      {pr.project_type_name && (
+                                        <Text size="xs" c="dimmed" lh={1.2}>
+                                          {pr.project_type_name}
+                                        </Text>
+                                      )}
+                                    </Box>
+                                  </Group>
+                                </Combobox.Option>
+                              ))}
+                            </Combobox.Group>
+                          )}
+
+                          {gear.length > 0 && (
+                            <Combobox.Group label="Equipamentos">
+                              {gear.map((g) => (
+                                <Combobox.Option key={g.id} value={`gear:${g.slug}`}>
+                                  <Group gap="xs" wrap="nowrap">
+                                    <Avatar
+                                      size={28}
+                                      radius="sm"
+                                      src={
+                                        g.picture
+                                          ? PATH_PRODUCT_THUMB + g.picture
+                                          : undefined
+                                      }
+                                    />
+                                    <Box>
+                                      {g.brand_name && (
+                                        <Text size="xs" c="dimmed" lh={1.2}>
+                                          {g.brand_name}
+                                        </Text>
+                                      )}
+                                      <Text size="sm" lh={1.2} fw={500}>
+                                        {g.name}
+                                      </Text>
+                                    </Box>
+                                  </Group>
+                                </Combobox.Option>
+                              ))}
+                            </Combobox.Group>
+                          )}
+
+                          <Combobox.Option value={`search:${trimmedQuery}`}>
+                            <Group gap="xs">
+                              <IconSearch size={14} opacity={0.5} />
+                              <Text size="sm">Buscar por “{trimmedQuery}”</Text>
+                            </Group>
+                          </Combobox.Option>
+                        </>
+                      ) : (
+                        <Combobox.Group label="Buscas recentes">
+                          {suggestions.map((s) => (
+                            <Combobox.Option key={s.id} value={`recent:${s.query}`}>
+                              <Group gap="xs">
+                                <IconClock size={13} opacity={0.4} />
+                                <Text size="sm">{s.query}</Text>
+                              </Group>
+                            </Combobox.Option>
+                          ))}
+                        </Combobox.Group>
+                      )}
+                    </Combobox.Options>
+
+                    {!isPreviewMode && (
+                      <Combobox.Footer>
+                        <Text
+                          size="xs"
+                          c="dimmed"
+                          ta="center"
+                          style={{ cursor: 'pointer' }}
+                          onClick={() => clearHistory()}
+                        >
+                          Limpar buscas recentes
+                        </Text>
+                      </Combobox.Footer>
+                    )}
                   </Combobox.Dropdown>
                 )}
               </Combobox>

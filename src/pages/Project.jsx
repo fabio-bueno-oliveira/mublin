@@ -1,8 +1,8 @@
 import { useEffect } from 'react'
-import { Helmet } from 'react-helmet-async'
 import { Link, useParams, useSearchParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useQuery } from '@tanstack/react-query'
+import PageMeta from '../components/PageMeta'
 import {
   fetchProjectDetails,
   fetchprojectsInspirated,
@@ -35,16 +35,13 @@ import {
   IconBrandSpotify,
   IconBrandSoundcloud,
   IconRoad,
-  IconShieldCheckFilled,
+  IconRosetteDiscountCheck,
   IconMapPin,
   IconArrowRight,
   IconBriefcase2,
   IconChevronRight,
-  IconSquareRoundedCheck,
   IconWorld,
   IconMusicPlus,
-  IconBrandYoutube,
-  IconCalendar,
   IconBrandApple,
 } from '@tabler/icons-react'
 import AppNavbarMobile from '../components/AppNavbarMobile'
@@ -99,7 +96,7 @@ export default function Project() {
     useDisclosure(false)
 
   useEffect(() => {
-    scrollTo({ y: 0 })
+    window.scrollTo({ top: 0 })
   }, [])
 
   /*
@@ -241,11 +238,14 @@ export default function Project() {
 
   if (isError) {
     return (
-      <Container size="md" py="xl">
-        <Text c="dimmed" ta="center">
-          Projeto não encontrado.
-        </Text>
-      </Container>
+      <>
+        <PageMeta title="Projeto não encontrado | Mublin" noindex />
+        <Container size="md" py="xl">
+          <Text c="dimmed" ta="center">
+            Projeto não encontrado.
+          </Text>
+        </Container>
+      </>
     )
   }
 
@@ -289,23 +289,20 @@ export default function Project() {
 
   return (
     <>
-      <Helmet>
-        <meta charSet="utf-8" />
-        <title>{`${project?.name} | Página de projeto | Mublin`}</title>
-        <link rel="canonical" href={`https://mublin.com/project/${project?.name}`} />
-        <meta
-          name="description"
-          content={`${project?.name} (${project?.type}) no Mublin`}
-        />
-        <meta
-          property="og:image"
-          content={
-            project?.cover_picture
-              ? PICTURE_COVER_PATH + project?.cover_picture
-              : undefined
+      {project && (
+        <PageMeta
+          title={`${project.name} | Mublin`}
+          description={
+            project.type
+              ? `${project.name} (${project.type}) no Mublin`
+              : `${project.name} no Mublin`
+          }
+          canonical={`https://mublin.com/project/${slug}`}
+          image={
+            project.picture ? PICTURE_AVATAR_LARGE_PATH + project.picture : undefined
           }
         />
-      </Helmet>
+      )}
 
       {isMobile && (
         <Affix position={{ top: 0, left: 0 }} w="100%" style={{ zIndex: 100 }}>
@@ -485,7 +482,7 @@ export default function Project() {
                         </Title>
 
                         {project?.is_verified && (
-                          <IconSquareRoundedCheck
+                          <IconRosetteDiscountCheck
                             size={isMobile ? 21 : 22}
                             color="var(--mantine-color-text)"
                             title="Projeto verificado"
@@ -1197,7 +1194,7 @@ export default function Project() {
 
                 {project?.is_verified && (
                   <Group gap="sm" align="flex-start" wrap="nowrap">
-                    <IconShieldCheckFilled
+                    <IconRosetteDiscountCheck
                       size={22}
                       color="var(--mantine-color-text)"
                       style={{ flexShrink: 0, marginTop: 1 }}

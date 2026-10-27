@@ -1,11 +1,12 @@
 import { useState } from 'react'
-import { Helmet } from 'react-helmet-async'
 import { Link, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '../hooks/useAuth'
 import { supabase } from '../lib/supabaseClient'
+import { notifications } from '@mantine/notifications'
+import PageMeta from '../components/PageMeta'
+import MublinMGold from '../assets/svg/m-pro-gold.svg'
 import {
-  useMantineColorScheme,
   Center,
   Stack,
   Group,
@@ -22,7 +23,6 @@ import {
   Divider,
   Skeleton,
 } from '@mantine/core'
-import { notifications } from '@mantine/notifications'
 import {
   IconCrown,
   IconCheck,
@@ -37,9 +37,6 @@ import {
   IconMovie,
   IconIdBadge,
 } from '@tabler/icons-react'
-import MublinMGold from '../assets/svg/m-pro-gold.svg'
-import MublinLogoBlack from '../assets/svg/mublin-m-logo-black.svg'
-import MublinLogoWhite from '../assets/svg/mublin-m-logo-white-squared.svg'
 
 const BENEFITS = [
   {
@@ -105,7 +102,6 @@ async function fetchWaitlistCount() {
 
 export default function Pro() {
   const navigate = useNavigate()
-  const { colorScheme } = useMantineColorScheme()
   const { profile, user, loading } = useAuth()
   const [joining, setJoining] = useState(false)
   const [justJoined, setJustJoined] = useState(false)
@@ -176,14 +172,11 @@ export default function Pro() {
 
   return (
     <>
-      <Helmet>
-        <meta charSet="utf-8" />
-        <title>Mublin Pro | Mublin</title>
-        <meta
-          name="description"
-          content="Conheça o Mublin Pro: selo verificado, prioridade nas buscas, Scenes e mais recursos para músicos e staff."
-        />
-      </Helmet>
+      <PageMeta
+        title="Mublin Pro | Mublin"
+        description="Conheça o Mublin Pro: selo verificado, prioridade nas buscas, Scenes e mais recursos para músicos e staff."
+        canonical="https://mublin.com/pro"
+      />
 
       <Center mt="md">
         <Link to="/home">
@@ -221,13 +214,7 @@ export default function Pro() {
             </Text>
 
             {isPro ? (
-              <Button
-                mt="xs"
-                radius="xl"
-                component={Link}
-                to="/settings/plan"
-                leftSection={<IconCrown size={16} />}
-              >
+              <Button mt="xs" radius="xl" component={Link} to="/settings/plan">
                 Ver detalhes do meu plano
               </Button>
             ) : null}
