@@ -28,7 +28,11 @@ export default function WorkAvailabilityItem({ item }) {
         <Text size="sm" fw={600} lh={1.2}>
           {work_types?.name_ptbr}
         </Text>
-        <Text size="xs" c="dimmed" mt={2}>
+        <Text
+          size="xs"
+          c="color-mix(in srgb, var(--mantine-color-text) 60%, transparent)"
+          mt={2}
+        >
           {hasRate
             ? `${formattedRate} ${rate_types?.name_ptbr?.toLowerCase() || '/ evento'}`
             : 'Valor a combinar'}

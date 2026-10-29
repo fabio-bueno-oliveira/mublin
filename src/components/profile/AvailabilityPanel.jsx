@@ -89,7 +89,12 @@ export default function AvailabilityPanel({
           )}
         </Text>
         <Divider variant="dashed" opacity={0.6} />
-        <Title order={3} fz="sm" fw={300} opacity={0.8}>
+        <Title
+          order={3}
+          fz="sm"
+          fw={300}
+          c="color-mix(in srgb, var(--mantine-color-text) 85%, transparent)"
+        >
           Tipos de trabalho:
         </Title>
         <Stack gap={4}>

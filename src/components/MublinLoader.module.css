@@ -1,95 +1,93 @@
 .fullscreen {
   width: 100%;
-  min-height: 100vh;
-}
-
-.beat {
-  position: relative;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  animation: beat 1.4s ease-in-out infinite;
+  min-height: 100dvh;
 }
 
 .logo {
-  position: relative;
-  z-index: 2;
-
   display: block;
+  overflow: visible;
 
-  color: var(--mantine-color-black-filled);
+  /* Segue o tema (claro/escuro) do Mantine, ou a prop `color` do componente */
+  color: var(--mublin-loader-color, var(--mantine-color-text));
 }
 
-.glow {
-  position: absolute;
-
-  width: 100%;
-  height: 100%;
-
-  border-radius: 50%;
-
-  background: var(--mantine-color-black-filled);
-
-  opacity: 0.12;
-
-  filter: blur(25px);
-
-  animation: glow 1.4s ease-in-out infinite;
+/* Duração do ciclo completo. Contorno e preenchimento compartilham o mesmo
+   valor para ficarem sempre sincronizados. */
+.outline,
+.fill {
+  --loader-duration: 1.6s;
 }
 
-@keyframes beat {
+.outline {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.5;
+  stroke-linejoin: round;
+
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+
+  animation: draw var(--loader-duration) ease-in-out infinite;
+}
+
+.fill {
+  fill: currentColor;
+  opacity: 0;
+
+  animation: fill var(--loader-duration) ease-in-out infinite;
+}
+
+/* 0–50%   contorno é desenhado
+   50–88%  contorno completo (o preenchimento entra por cima)
+   88–100% tudo some suavemente e o ciclo recomeça */
+@keyframes draw {
   0% {
-    transform: scale(1);
-  }
-
-  20% {
-    transform: scale(1.08);
-  }
-
-  35% {
-    transform: scale(1);
+    stroke-dashoffset: 1;
+    opacity: 1;
   }
 
   50% {
-    transform: scale(1.04);
+    stroke-dashoffset: 0;
+    opacity: 1;
   }
 
-  70% {
-    transform: scale(1);
-  }
-
-  100% {
-    transform: scale(1);
-  }
-}
-
-@keyframes glow {
-  0% {
-    transform: scale(0.8);
-    opacity: 0.05;
-  }
-
-  20% {
-    transform: scale(1.4);
-    opacity: 0.18;
-  }
-
-  50% {
-    transform: scale(1);
-    opacity: 0.08;
+  88% {
+    stroke-dashoffset: 0;
+    opacity: 1;
   }
 
   100% {
-    transform: scale(0.8);
-    opacity: 0.05;
+    stroke-dashoffset: 0;
+    opacity: 0;
   }
 }
 
+@keyframes fill {
+  0%,
+  42% {
+    opacity: 0;
+  }
+
+  68%,
+  88% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+/* Sem movimento: mostra o logo preenchido e estático */
 @media (prefers-reduced-motion: reduce) {
-  .beat,
-  .glow {
+  .outline {
     animation: none;
+    stroke-dashoffset: 0;
+    opacity: 0;
+  }
+
+  .fill {
+    animation: none;
+    opacity: 1;
   }
 }

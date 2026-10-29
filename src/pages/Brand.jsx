@@ -343,7 +343,7 @@ export default function Brand() {
                         </Text>
                       </Flex>
                     </Flex>
-                    <Flex justify="flex-end" mt={6}>
+                    <Flex justify="flex-start" mt={6}>
                       <Avatar.Group>
                         {owners
                           ?.filter((x) => x.products.id === item.id)
@@ -353,10 +353,10 @@ export default function Brand() {
                               to={{ pathname: `/${profile?.profiles?.username}` }}
                             >
                               <Avatar
-                                size={35}
+                                size={25}
                                 src={
                                   profile?.profiles?.avatar
-                                    ? `https://ik.imagekit.io/mublin/tr:h-70,w-70,c-maintain_ratio/users/avatars/${profile?.profiles?.avatar}`
+                                    ? `https://ik.imagekit.io/mublin/tr:h-50,w-50,c-maintain_ratio/users/avatars/${profile?.profiles?.avatar}`
                                     : undefined
                                 }
                                 title={`${profile?.profiles?.full_name}`}

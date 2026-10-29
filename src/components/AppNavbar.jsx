@@ -13,37 +13,34 @@ import MublinLogoBlack from '../assets/svg/mublin-logo-black.svg'
 import MublinLogoWhite from '../assets/svg/mublin-logo-white.svg'
 import { IconExplore } from '../components/icons/IconExplore'
 import Notifications from './Notifications'
+// prettier-ignore
 import {
   useMantineColorScheme,
   useComputedColorScheme,
+  useCombobox,
+  Container,
   ScrollArea,
-  Group,
-  Box,
-  Menu,
+  Combobox,
+  Avatar, Image,
+  Group, Box,
   Badge,
-  Text,
+  Menu,
+  Text, 
   TextInput,
   ActionIcon,
-  Avatar,
+  Tooltip,
   UnstyledButton,
-  Container,
-  Combobox,
-  useCombobox,
-  Image,
   Indicator,
   Loader,
 } from '@mantine/core'
+// prettier-ignore
 import {
-  IconSearch,
-  IconArrowRight,
-  IconBell,
-  IconChevronDown,
-  IconClock,
-  IconUser,
-  IconSettings2,
-  IconBookmark,
-  IconKey,
-  IconArrowLeft,
+  IconSearch, IconKey,
+  IconArrowLeft, IconArrowRight,
+  IconChevronDown, IconBell,
+  IconClock, IconUser,
+  IconSettings2, IconBookmark,
+  IconPlus,
 } from '@tabler/icons-react'
 import { truncateString } from '../utils/formatter'
 import { useHover } from '@mantine/hooks'
@@ -182,6 +179,28 @@ export default function AppNavbar({ children }) {
 
   const showDropdown = isPreviewMode || suggestions.length > 0
 
+  // Salva o termo digitado no histórico sem bloquear a navegação.
+  // Ignora se for igual à busca mais recente (evita duplicata consecutiva).
+  function saveToHistory(term) {
+    const clean = term.trim()
+    if (!clean || !user?.id) {
+      return
+    }
+
+    const lastSaved = recentSearches[0]?.query
+    if (lastSaved && lastSaved.toLowerCase() === clean.toLowerCase()) {
+      return
+    }
+
+    saveSearchQuery(user.id, clean)
+      .then(() =>
+        queryClient.invalidateQueries({ queryKey: ['recent-searches', user.id] }),
+      )
+      .catch(() => {
+        // o histórico é secundário: uma falha aqui não deve atrapalhar o usuário
+      })
+  }
+
   // Valores das opções têm prefixo de tipo: user:, project:, gear:, search:, recent:
   function handleOptionSubmit(val) {
     const [type, ...rest] = val.split(':')
@@ -194,6 +213,7 @@ export default function AppNavbar({ children }) {
     }
 
     if (routes[type]) {
+      saveToHistory(trimmedQuery)
       setInputValue(null)
       combobox.closeDropdown()
       navigate(routes[type])
@@ -213,7 +233,7 @@ export default function AppNavbar({ children }) {
         bg="var(--mantine-color-default)"
       >
         <Container size="lg" h="100%">
-          <Group justify="space-between" align="center" h="100%" gap="md">
+          <Group justify="space-evenly" align="center" h="100%" gap="md">
             {/* Logo + Nav items */}
             <Group gap="md">
               {children}
@@ -241,26 +261,39 @@ export default function AppNavbar({ children }) {
                   Beta
                 </Badge>
               </Group>
-
-              {pathname.includes('backstage') && (
-                <>
-                  <UnstyledButton
-                    align="center"
-                    component={Link}
-                    to="/home"
-                    style={{ display: 'flex', gap: '6px', alignItems: 'center' }}
-                  >
-                    <IconArrowLeft size={18} />
-                    <Text size="sm" lh={1}>
-                      Voltar ao app
-                    </Text>
-                  </UnstyledButton>
-                </>
-              )}
             </Group>
 
+            {pathname.includes('backstage') ? (
+              <UnstyledButton
+                align="center"
+                component={Link}
+                to="/home"
+                style={{ display: 'flex', gap: '6px', alignItems: 'center' }}
+              >
+                <IconArrowLeft size={18} />
+                <Text size="sm" lh={1}>
+                  Voltar ao app
+                </Text>
+              </UnstyledButton>
+            ) : (
+              <Tooltip label="Criar" offset={6} withArrow arrowSize={6}>
+                <ActionIcon
+                  variant="light"
+                  color="var(--mantine-color-text)"
+                  radius="xl"
+                  size="lg"
+                  ml="sm"
+                  mr="xs"
+                  aria-label="Criar novo item no Mublin"
+                  onClick={() => navigate('/new')}
+                >
+                  <IconPlus size={16} />
+                </ActionIcon>
+              </Tooltip>
+            )}
+
             {/* Busca Desktop */}
-            <Group flex={1} visibleFrom="sm" mx={90} className="desktop-search">
+            <Group flex={1} visibleFrom="sm">
               <Combobox store={combobox} onOptionSubmit={handleOptionSubmit} flex={1}>
                 <Combobox.Target>
                   <TextInput
@@ -460,6 +493,7 @@ export default function AppNavbar({ children }) {
                 ref={discoverRef}
                 component={Link}
                 to="/search"
+                mx="xs"
                 opacity={isDiscoverActive || hovered ? 1 : 0.8}
                 display="flex"
                 style={{

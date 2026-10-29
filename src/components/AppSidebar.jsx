@@ -22,7 +22,6 @@ import {
   IconHome,
   IconFolder,
   IconUser,
-  IconPlus,
 } from '@tabler/icons-react'
 import { getAvatarUrl } from '../utils/profile'
 
@@ -52,7 +51,7 @@ export default function AppSidebar() {
     { label: 'Home', icon: IconHome, path: '/home' },
     { label: 'Meu Perfil', icon: IconUser, path: `/${profile?.username}` },
     { label: 'Meus Projetos', icon: IconFolder, path: '/projects' },
-    { label: 'Criar', icon: IconPlus, path: '/new' },
+    // { label: 'Criar', icon: IconPlus, path: '/new' },
   ]
 
   return (
@@ -78,7 +77,7 @@ export default function AppSidebar() {
               <Box>
                 {/* Cover */}
                 <Card.Section
-                  h={52}
+                  h={40}
                   withBorder
                   style={{
                     border: isDark

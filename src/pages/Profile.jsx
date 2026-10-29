@@ -605,7 +605,22 @@ export default function Profile() {
     )
   }
 
-  if (isLoadingProfileInfo) {
+  if (
+    isLoadingProfileInfo ||
+    loadingUpcomingEvents ||
+    loadingScenes ||
+    loadingProfileSkills ||
+    loadingFollowingInfo ||
+    loadingFollowers ||
+    loadingSimilarProfiles ||
+    loadingPosts ||
+    loadingGear ||
+    loadingWorkAvailability ||
+    loadingPortfolio ||
+    loadingEducation ||
+    loadingPartners ||
+    loadingTeachers
+  ) {
     return <LoadingSkeleton />
   }
 

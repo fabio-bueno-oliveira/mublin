@@ -43,16 +43,17 @@ import {
   IconWorld,
   IconMusicPlus,
   IconBrandApple,
+  IconBrandYoutube,
 } from '@tabler/icons-react'
 import AppNavbarMobile from '../components/AppNavbarMobile'
-import SimilarProjects from '../components/explore/SimilarProjects'
+// import SimilarProjects from '../components/explore/SimilarProjects'
 import ProjectProfileBadge from '../components/ProjectProfileBadge'
 import { SectionGigs, SectionPeople, BackstageAccess } from '../components/project'
 import { MEMBER_REQUEST_STATUS } from '../constants/projects'
 import { IconBrandMuso } from '../components/icons/IconBrandMuso'
 import dayjs from 'dayjs'
 import 'dayjs/locale/pt-br'
-import SocialLinks from '../components/profile/SocialLinks'
+// import SocialLinks from '../components/profile/SocialLinks'
 dayjs.locale('pt-br')
 
 const ADMIN_REQUEST_STATUS = {
@@ -580,7 +581,7 @@ export default function Project() {
               </Scroller>
             </Tabs.List>
           </Tabs>
-          <Group gap={6} mr="lg" visibleFrom="sm">
+          <Group gap={4} mr="lg" visibleFrom="sm">
             {project?.muso_ai_app_url && (
               <Tooltip label={`${project.name} no Muso.ai`} withArrow>
                 <ActionIcon
@@ -596,6 +597,26 @@ export default function Project() {
                   <IconBrandMuso
                     stroke={1.6}
                     color="#6BE7C8"
+                    style={{ width: '70%', height: '70%' }}
+                  />
+                </ActionIcon>
+              </Tooltip>
+            )}
+            {project?.instagram && (
+              <Tooltip label={`${project.name} no Instagram`} withArrow>
+                <ActionIcon
+                  component="a"
+                  href={`https://instagram.com/${project?.instagram}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  size="lg"
+                  variant="subtle"
+                  color="gray"
+                  aria-label={`${project.name} no Instagram (abre em nova aba)`}
+                >
+                  <IconBrandInstagram
+                    stroke={1.6}
+                    color="#C13584"
                     style={{ width: '70%', height: '70%' }}
                   />
                 </ActionIcon>
@@ -661,21 +682,21 @@ export default function Project() {
                 </ActionIcon>
               </Tooltip>
             )}
-            {project?.instagram && (
-              <Tooltip label={`${project.name} no Instagram`} withArrow>
+            {project?.youtube_handle && (
+              <Tooltip label={`${project.name} no Youtube`} withArrow>
                 <ActionIcon
                   component="a"
-                  href={`https://instagram.com/${project?.instagram}`}
+                  href={`https://www.youtube.com/${project.youtube_handle}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   size="lg"
                   variant="subtle"
                   color="gray"
-                  aria-label={`${project.name} no Instagram (abre em nova aba)`}
+                  aria-label={`${project.name} no Youtube (abre em nova aba)`}
                 >
-                  <IconBrandInstagram
+                  <IconBrandYoutube
                     stroke={1.6}
-                    color="#C13584"
+                    color="#FF0000"
                     style={{ width: '70%', height: '70%' }}
                   />
                 </ActionIcon>
@@ -1152,6 +1173,29 @@ export default function Project() {
                 Sobre
               </Title>
 
+              <Stack gap={2} mb="xs">
+                {project?.type && (
+                  <Text size="xs" c="dimmed">
+                    Tipo do projeto: {project.type}
+                  </Text>
+                )}
+                <Group gap={2}>
+                  {/* {project?.foundation_year && (
+                    <Text size="xs" c="dimmed">
+                      Início das atividades: {project.foundation_year}
+                    </Text>
+                  )} */}
+                  {projectLocation && (
+                    <Group gap={2} wrap="nowrap">
+                      <IconMapPin color="gray" size={12} stroke={2} />
+                      <Text size="xs" c="dimmed">
+                        {projectLocation}
+                      </Text>
+                    </Group>
+                  )}
+                </Group>
+              </Stack>
+
               <Stack gap="xs">
                 {project?.description ? (
                   <Spoiler
@@ -1193,7 +1237,7 @@ export default function Project() {
                 )}
 
                 {project?.is_verified && (
-                  <Group gap="sm" align="flex-start" wrap="nowrap">
+                  <Group gap="sm" mb={4} align="flex-start" wrap="nowrap">
                     <IconRosetteDiscountCheck
                       size={22}
                       color="var(--mantine-color-text)"
@@ -1209,7 +1253,7 @@ export default function Project() {
                         pessoas reais ligadas a ele.
                       </Text>
 
-                      {(project?.verified_at ||
+                      {/* {(project?.verified_at ||
                         project?.verified_method?.method_name_pt) && (
                         <Text size="xs" c="dimmed" mt={4}>
                           {[
@@ -1220,7 +1264,7 @@ export default function Project() {
                             .filter(Boolean)
                             .join(' · ')}
                         </Text>
-                      )}
+                      )} */}
                     </Box>
                   </Group>
                 )}
@@ -1329,50 +1373,29 @@ export default function Project() {
 
                 <Divider />
 
-                <Stack gap={4}>
-                  {project?.type && (
-                    <Text size="xs" c="dimmed">
-                      Tipo do projeto: {project.type}
-                    </Text>
-                  )}
-                  <Group>
-                    {project?.foundation_year && (
+                <Group gap={4} mt={2}>
+                  <Text size="xs" c="dimmed">
+                    {/* Cadastrado em {dayjs(project?.created_at).format('DD/MM/YYYY')} */}
+                    Cadastrado
+                  </Text>
+                  {project?.creator?.username && (
+                    <>
+                      <Avatar
+                        src={AVATAR_MINI2_PATH + project?.creator?.avatar}
+                        size={22}
+                        component={Link}
+                        to={`/${project?.creator?.username}`}
+                        title={project?.creator?.full_name}
+                      />
                       <Text size="xs" c="dimmed">
-                        Ano de fundação: {project.foundation_year}
+                        por{' '}
+                        <Text span fw={600}>
+                          {project?.creator?.username}
+                        </Text>
                       </Text>
-                    )}
-                    {projectLocation && (
-                      <Group gap={2} wrap="nowrap">
-                        <IconMapPin color="gray" size={12} stroke={2} />
-                        <Text size="xs" c="dimmed">
-                          {projectLocation}
-                        </Text>
-                      </Group>
-                    )}
-                  </Group>
-                  <Group gap={4} mt={4}>
-                    <Text size="xs">
-                      Cadastrado em {dayjs(project?.created_at).format('DD/MM/YYYY')}
-                    </Text>
-                    {project?.creator?.username && (
-                      <>
-                        <Avatar
-                          src={AVATAR_MINI2_PATH + project?.creator?.avatar}
-                          size={22}
-                          component={Link}
-                          to={`/${project?.creator?.username}`}
-                          title={project?.creator?.full_name}
-                        />
-                        <Text size="xs">
-                          por{' '}
-                          <Text span fw={600}>
-                            {project?.creator?.username}
-                          </Text>
-                        </Text>
-                      </>
-                    )}
-                  </Group>
-                </Stack>
+                    </>
+                  )}
+                </Group>
               </Stack>
             </Card>
           </Container>
