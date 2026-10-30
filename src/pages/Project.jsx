@@ -9,6 +9,7 @@ import {
   fetchProjectPeople,
   fetchProjectGenres,
   fetchRelatedProjects,
+  fetchProjectPictureRecent,
   fetchMyProjectAdminRequest,
   fetchProjectTourStatus,
 } from '../queries/projects'
@@ -48,7 +49,12 @@ import {
 import AppNavbarMobile from '../components/AppNavbarMobile'
 // import SimilarProjects from '../components/explore/SimilarProjects'
 import ProjectProfileBadge from '../components/ProjectProfileBadge'
-import { SectionGigs, SectionPeople, BackstageAccess } from '../components/project'
+import {
+  SectionGigs,
+  SectionPeople,
+  BackstageAccess,
+  SectionPictures,
+} from '../components/project'
 import { MEMBER_REQUEST_STATUS } from '../constants/projects'
 import { IconBrandMuso } from '../components/icons/IconBrandMuso'
 import dayjs from 'dayjs'
@@ -74,11 +80,12 @@ export default function Project() {
   const isMobile = useMediaQuery(`(max-width: ${em(750)})`)
 
   const [searchParams, setSearchParams] = useSearchParams()
-  const validTabs = ['overview', 'about', 'people', 'gigs', 'music']
+  const validTabs = ['overview', 'about', 'people', 'gigs', 'pictures', 'music']
   const section = searchParams.get('section')
   const activeTab = validTabs.includes(section) ? section : 'overview'
 
   const setActiveTab = (tab) => {
+    console.log(tab)
     setSearchParams((prev) => {
       const params = new URLSearchParams(prev)
 
@@ -165,6 +172,13 @@ export default function Project() {
   const { data: projectPeople = [], isLoading: loadingProjectPeople } = useQuery({
     queryKey: ['project-people', project?.id],
     queryFn: () => fetchProjectPeople(project?.id),
+    enabled: !!project?.id,
+    staleTime: 1000 * 60 * 5,
+  })
+
+  const { data: recentPicture = null, isLoading: isLoadingRecentPicture } = useQuery({
+    queryKey: ['project-recent-picture', project?.id],
+    queryFn: () => fetchProjectPictureRecent(project.id),
     enabled: !!project?.id,
     staleTime: 1000 * 60 * 5,
   })
@@ -287,6 +301,60 @@ export default function Project() {
     ?.replace('https://instagram.com/', '')
     ?.replace('instagram.com/', '')
     ?.trim()
+
+  const getSocialLinks = (project) => {
+    if (!project) return []
+    return [
+      {
+        key: 'muso',
+        href: project.muso_ai_app_url,
+        label: `${project.name} no Muso.ai`,
+        Icon: IconBrandMuso,
+        color: '#6BE7C8',
+      },
+      {
+        key: 'instagram',
+        href: project.instagram ? `https://instagram.com/${project.instagram}` : null,
+        label: `${project.name} no Instagram`,
+        Icon: IconBrandInstagram,
+        color: '#C13584',
+      },
+      {
+        key: 'apple',
+        href: project.apple_music_id
+          ? `https://music.apple.com/br/artist/${project.apple_music_id}`
+          : null,
+        label: `${project.name} na Apple Music`,
+        Icon: IconBrandApple,
+        color: '#a8a8a8',
+      },
+      {
+        key: 'spotify',
+        href: project.spotify_id
+          ? `https://open.spotify.com/intl-pt/artist/${project.spotify_id}`
+          : null,
+        label: `${project.name} no Spotify`,
+        Icon: IconBrandSpotify,
+        color: '#1ED760',
+      },
+      {
+        key: 'soundcloud',
+        href: project.soundcloud ? `https://soundcloud.com/${project.soundcloud}` : null,
+        label: `${project.name} no Soundcloud`,
+        Icon: IconBrandSoundcloud,
+        color: 'orange',
+      },
+      {
+        key: 'youtube',
+        href: project.youtube_handle
+          ? `https://www.youtube.com/${project.youtube_handle}`
+          : null,
+        label: `${project.name} no Youtube`,
+        Icon: IconBrandYoutube,
+        color: '#FF0000',
+      },
+    ].filter((link) => !!link.href)
+  }
 
   return (
     <>
@@ -557,151 +625,54 @@ export default function Project() {
          * ════════════════════════════════════════════════
          */}
 
-        <Group justify="space-between" mt="xs" mb="md">
+        <Group justify="space-between" mt="xs" mb="md" wrap="nowrap">
           <Tabs
-            mx={{ base: 0, sm: 'md' }}
             value={activeTab}
             onChange={setActiveTab}
             variant="default"
+            style={{ flex: 1, minWidth: 0 }}
+            mx={{ base: 0, sm: 'md' }}
           >
-            <Tabs.List>
-              <Scroller>
-                <Tabs.Tab value="overview">Visão geral</Tabs.Tab>
+            <Tabs.List style={{ flexWrap: 'nowrap' }}>
+              <Scroller type="scroll" style={{ flex: 1 }}>
+                <Group wrap="nowrap" gap={0}>
+                  <Tabs.Tab value="overview">Visão geral</Tabs.Tab>
 
-                <Tabs.Tab value="about">Sobre</Tabs.Tab>
+                  <Tabs.Tab value="about">Sobre</Tabs.Tab>
 
-                <Tabs.Tab value="people">
-                  Pessoas associadas{' '}
-                  {projectPeople?.length > 0 && `(${projectPeople.length})`}
-                </Tabs.Tab>
+                  <Tabs.Tab value="people">
+                    Pessoas {projectPeople?.length > 0 && `(${projectPeople.length})`}
+                  </Tabs.Tab>
+                  <Tabs.Tab value="pictures">Imagens</Tabs.Tab>
 
-                {project?.end_year > 0 && <Tabs.Tab value="gigs">Gigs</Tabs.Tab>}
+                  {project?.end_year > 0 && <Tabs.Tab value="gigs">Gigs</Tabs.Tab>}
 
-                {/* <Tabs.Tab value="music">Música</Tabs.Tab> */}
+                  {/* <Tabs.Tab value="music">Música</Tabs.Tab> */}
+                </Group>
               </Scroller>
             </Tabs.List>
           </Tabs>
-          <Group gap={4} mr="lg" visibleFrom="sm">
-            {project?.muso_ai_app_url && (
-              <Tooltip label={`${project.name} no Muso.ai`} withArrow>
+          <Group gap={4} mr="lg" visibleFrom="sm" style={{ flexShrink: 0 }}>
+            {getSocialLinks(project).map(({ key, href, label, Icon, color }) => (
+              <Tooltip key={key} label={label} withArrow>
                 <ActionIcon
                   component="a"
-                  href={project.muso_ai_app_url}
+                  href={href}
                   target="_blank"
                   rel="noopener noreferrer"
                   size="lg"
                   variant="subtle"
                   color="gray"
-                  aria-label={`${project.name} no Muso.ai (abre em nova aba)`}
+                  aria-label={`${label} (abre em nova aba)`}
                 >
-                  <IconBrandMuso
+                  <Icon
                     stroke={1.6}
-                    color="#6BE7C8"
+                    color={color}
                     style={{ width: '70%', height: '70%' }}
                   />
                 </ActionIcon>
               </Tooltip>
-            )}
-            {project?.instagram && (
-              <Tooltip label={`${project.name} no Instagram`} withArrow>
-                <ActionIcon
-                  component="a"
-                  href={`https://instagram.com/${project?.instagram}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  size="lg"
-                  variant="subtle"
-                  color="gray"
-                  aria-label={`${project.name} no Instagram (abre em nova aba)`}
-                >
-                  <IconBrandInstagram
-                    stroke={1.6}
-                    color="#C13584"
-                    style={{ width: '70%', height: '70%' }}
-                  />
-                </ActionIcon>
-              </Tooltip>
-            )}
-            {project?.apple_music_id && (
-              <Tooltip label={`${project.name} na Apple Music`} withArrow>
-                <ActionIcon
-                  component="a"
-                  href={`https://music.apple.com/br/artist/${project?.apple_music_id}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  size="lg"
-                  variant="subtle"
-                  color="gray"
-                  aria-label={`${project.name} no Apple Music (abre em nova aba)`}
-                >
-                  <IconBrandApple
-                    stroke={1.6}
-                    color="#a8a8a8"
-                    style={{ width: '70%', height: '70%' }}
-                  />
-                </ActionIcon>
-              </Tooltip>
-            )}
-            {project?.spotify_id && (
-              <Tooltip label={`${project.name} no Spotify`} withArrow>
-                <ActionIcon
-                  component="a"
-                  href={`https://open.spotify.com/intl-pt/artist/${project?.spotify_id}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  size="lg"
-                  variant="subtle"
-                  color="gray"
-                  aria-label={`${project.name} no Spotify (abre em nova aba)`}
-                >
-                  <IconBrandSpotify
-                    stroke={1.6}
-                    color="#1ED760"
-                    style={{ width: '70%', height: '70%' }}
-                  />
-                </ActionIcon>
-              </Tooltip>
-            )}
-            {project?.soundcloud && (
-              <Tooltip label={`${project.name} no Soundcloud`} withArrow>
-                <ActionIcon
-                  component="a"
-                  href={`https://soundcloud.com/${project?.soundcloud}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  size="lg"
-                  variant="subtle"
-                  color="gray"
-                  aria-label={`${project.name} no Soundcloud (abre em nova aba)`}
-                >
-                  <IconBrandSoundcloud
-                    stroke={1.6}
-                    color="orange"
-                    style={{ width: '70%', height: '70%' }}
-                  />
-                </ActionIcon>
-              </Tooltip>
-            )}
-            {project?.youtube_handle && (
-              <Tooltip label={`${project.name} no Youtube`} withArrow>
-                <ActionIcon
-                  component="a"
-                  href={`https://www.youtube.com/${project.youtube_handle}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  size="lg"
-                  variant="subtle"
-                  color="gray"
-                  aria-label={`${project.name} no Youtube (abre em nova aba)`}
-                >
-                  <IconBrandYoutube
-                    stroke={1.6}
-                    color="#FF0000"
-                    style={{ width: '70%', height: '70%' }}
-                  />
-                </ActionIcon>
-              </Tooltip>
-            )}
+            ))}
           </Group>
         </Group>
 
@@ -729,9 +700,26 @@ export default function Project() {
                 <Grid.Col span={{ base: 12, sm: 7 }}>
                   <Stack>
                     <Card withBorder radius="lg" px="lg" pt="md" pb={8} h={160}>
-                      <Title order={3} fw={600} size="17px" mb="xs">
-                        Visão geral
-                      </Title>
+                      <Group justify="space-between" mb="xs">
+                        <Title order={3} fw={600} size="17px">
+                          Visão geral
+                        </Title>
+                        {recentPicture?.id && (
+                          <Image
+                            w={24}
+                            h={24}
+                            radius="md"
+                            src={`https://ik.imagekit.io/mublin/projects/${project?.id}/${recentPicture?.file_name}?tr=w-54`}
+                            style={{
+                              cursor: 'pointer',
+                              boxSizing: 'content-box',
+                              border: '2px var(--mantine-color-dimmed) solid',
+                            }}
+                            alt={recentPicture?.caption || 'Foto do projeto'}
+                            onClick={() => setActiveTab('pictures')}
+                          />
+                        )}
+                      </Group>
 
                       {project?.description ? (
                         <>
@@ -1175,7 +1163,7 @@ export default function Project() {
 
               <Stack gap={2} mb="xs">
                 {project?.type && (
-                  <Text size="xs" c="dimmed">
+                  <Text size="sm" c="dimmed">
                     Tipo do projeto: {project.type}
                   </Text>
                 )}
@@ -1188,7 +1176,7 @@ export default function Project() {
                   {projectLocation && (
                     <Group gap={2} wrap="nowrap">
                       <IconMapPin color="gray" size={12} stroke={2} />
-                      <Text size="xs" c="dimmed">
+                      <Text size="sm" c="dimmed">
                         {projectLocation}
                       </Text>
                     </Group>
@@ -1414,6 +1402,14 @@ export default function Project() {
             myAdminRequestIsPending={myAdminRequestIsPending}
           />
         )}
+
+        {/*
+         * ════════════════════════════════════════════════
+         * IMAGES
+         * ════════════════════════════════════════════════
+         */}
+
+        {activeTab === 'pictures' && <SectionPictures projectId={project?.id} />}
 
         {/*
          * ════════════════════════════════════════════════

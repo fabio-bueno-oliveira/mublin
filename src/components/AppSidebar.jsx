@@ -150,6 +150,7 @@ export default function AppSidebar() {
                 const Icon = item.icon
                 return (
                   <UnstyledButton
+                    key={item.path}
                     gap={6}
                     align="center"
                     component={Link}

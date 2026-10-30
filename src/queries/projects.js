@@ -158,6 +158,43 @@ export async function fetchProjectGigs(projectId) {
   return data
 }
 
+export async function fetchProjectPictures(projectId) {
+  const { data, error } = await supabase
+    .from('project_pictures')
+    .select(
+      `
+      id,
+      file_name,
+      caption,
+      width, height,
+      sort_order
+    `,
+    )
+    .eq('project_id', projectId)
+    .order('sort_order', { ascending: true })
+
+  if (error) {
+    throw new Error(error.message)
+  }
+  return data
+}
+
+export async function fetchProjectPictureRecent(projectId) {
+  const { data, error } = await supabase
+    .from('project_pictures')
+    .select('id, file_name, caption, width, height, created_at')
+    .eq('project_id', projectId)
+    .order('created_at', { ascending: false })
+    .order('id', { ascending: false }) // desempate: inserções em lote podem ter o mesmo created_at
+    .limit(1)
+    .maybeSingle()
+
+  if (error) {
+    throw new Error(error.message)
+  }
+  return data
+}
+
 export async function fetchProjectAdmins(projectId) {
   const { data, error } = await supabase
     .from('project_members')
