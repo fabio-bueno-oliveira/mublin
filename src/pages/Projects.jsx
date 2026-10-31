@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react'
 import { Helmet } from 'react-helmet-async'
-import { Link } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useQuery } from '@tanstack/react-query'
 import { fetchUserAdminProjects, fetchUserPortfolio } from '../queries/user'
@@ -10,6 +10,7 @@ import {
   Container,
   NavLink,
   Tabs,
+  Button,
   Title,
   Text,
   Group,
@@ -17,7 +18,7 @@ import {
   TextInput,
   Avatar,
 } from '@mantine/core'
-import { IconDisc, IconSearch } from '@tabler/icons-react'
+import { IconDisc, IconPencil, IconSearch } from '@tabler/icons-react'
 
 const PROJECT_AVATAR_PATH = 'https://ik.imagekit.io/mublin/projects'
 const ARTISTS_PATH =
@@ -25,6 +26,7 @@ const ARTISTS_PATH =
 
 export default function MyProjects() {
   const { user, profile } = useAuth()
+  const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState('')
   const searchInputRef = useRef(null)
   const normalizedQuery = searchQuery.trim().toLowerCase()
@@ -166,6 +168,16 @@ export default function MyProjects() {
               </Tabs.Panel>
 
               <Tabs.Panel value="portfolio" mt="sm">
+                <Button
+                  size="xs"
+                  ml="xs"
+                  mb="sm"
+                  mt="xs"
+                  leftSection={<IconPencil size={16} />}
+                  onClick={() => navigate('/settings/portfolio')}
+                >
+                  Gerenciar meu portfolio
+                </Button>
                 {userPortfolio.length > 0 ? (
                   <>
                     {filteredPortfolio.length > 0 ? (

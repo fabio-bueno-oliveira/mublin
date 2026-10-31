@@ -85,7 +85,6 @@ export default function Project() {
   const activeTab = validTabs.includes(section) ? section : 'overview'
 
   const setActiveTab = (tab) => {
-    console.log(tab)
     setSearchParams((prev) => {
       const params = new URLSearchParams(prev)
 
@@ -643,9 +642,10 @@ export default function Project() {
                   <Tabs.Tab value="people">
                     Pessoas {projectPeople?.length > 0 && `(${projectPeople.length})`}
                   </Tabs.Tab>
+
                   <Tabs.Tab value="pictures">Imagens</Tabs.Tab>
 
-                  {project?.end_year > 0 && <Tabs.Tab value="gigs">Gigs</Tabs.Tab>}
+                  {!project?.end_year && <Tabs.Tab value="gigs">Gigs</Tabs.Tab>}
 
                   {/* <Tabs.Tab value="music">Música</Tabs.Tab> */}
                 </Group>
@@ -713,7 +713,7 @@ export default function Project() {
                             style={{
                               cursor: 'pointer',
                               boxSizing: 'content-box',
-                              border: '2px var(--mantine-color-dimmed) solid',
+                              border: '2px var(--mantine-color-text) solid',
                             }}
                             alt={recentPicture?.caption || 'Foto do projeto'}
                             onClick={() => setActiveTab('pictures')}
@@ -808,7 +808,7 @@ export default function Project() {
                                           {person.profile?.full_name}
                                         </Text>
 
-                                        <Text size="xs" c="dimmed" fw={500} lineClamp={1}>
+                                        <Text size="xs" lineClamp={1}>
                                           {person.roles
                                             ?.map((r) => r.role?.name_ptbr)
                                             .join(', ')}

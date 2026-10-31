@@ -5,6 +5,7 @@ import { fetchProductInfo, fetchProductOwners } from '../queries/gear'
 import {
   Container,
   Card,
+  Breadcrumbs,
   Avatar,
   Title,
   Text,
@@ -55,8 +56,8 @@ export default function GearItemPublic() {
   const PATH_PRODUCT_IMG =
     'https://ik.imagekit.io/mublin/products/tr:w-180,h-180,cm-pad_resize,bg-FFFFFF,fo-x/'
 
-  const PATH_BRAND_IMG =
-    'https://ik.imagekit.io/mublin/products/brands/tr:w-100,h-100,cm-pad_resize,bg-FFFFFF,fo-x/'
+  // const PATH_BRAND_IMG =
+  //   'https://ik.imagekit.io/mublin/products/brands/tr:w-100,h-100,cm-pad_resize,bg-FFFFFF,fo-x/'
 
   const metaDescription = product
     ? truncateDescription(
@@ -79,6 +80,10 @@ export default function GearItemPublic() {
   const ogImage = product?.picture
     ? PATH_PRODUCT_OG_IMG + encodeURIComponent(product.picture)
     : 'https://mublin.com/og-default.png'
+
+  const category = product?.product_categories?.name_ptbr
+  const brand = product?.brands
+  const series = product?.product_series?.name
 
   return (
     <>
@@ -113,17 +118,18 @@ export default function GearItemPublic() {
               size={90}
               alt={`Foto de ${product?.name}`}
               bg="white"
+              radius="md"
               styles={{
                 image: {
                   objectFit: 'contain',
-                  padding: 14,
+                  padding: 8,
                   backgroundColor: 'white',
                 },
               }}
             />
           )}
 
-          <Stack gap={0}>
+          <Stack gap={2}>
             {isLoadingItemDetails ? (
               <>
                 <Skeleton height={28} width={200} />
@@ -140,9 +146,19 @@ export default function GearItemPublic() {
                   radius="md"
                   alt={`Logo de ${product?.brands?.name}`}
                 /> */}
-                <Text size="md" c="dimmed" lh={1}>
-                  {product?.brands?.name}
-                </Text>
+                <Breadcrumbs separator="·" separatorMargin={4} c="dimmed">
+                  {category && (
+                    <Text size="sm" c="dimmed">
+                      {category}
+                    </Text>
+                  )}
+                  {brand?.name && <Text size="sm">{brand.name}</Text>}
+                  {series && (
+                    <Text size="sm" c="dimmed">
+                      Série {series}
+                    </Text>
+                  )}
+                </Breadcrumbs>
                 <Title
                   order={1}
                   fz={{
@@ -150,7 +166,7 @@ export default function GearItemPublic() {
                     sm: 30,
                   }}
                   fw={600}
-                  lineClamp={1}
+                  lineClamp={2}
                 >
                   {product?.name}
                 </Title>
@@ -216,7 +232,7 @@ export default function GearItemPublic() {
                           </Text>
                           {(owner.profiles?.cities?.name ||
                             owner.profiles?.regions?.uf) && (
-                            <Text size="xs" c="dimmed" lh={1}>
+                            <Text size="10px" c="dimmed" lh={1}>
                               {[owner.profiles.cities.name, owner.profiles.regions.uf]
                                 .filter(Boolean)
                                 .join('/')}
@@ -231,14 +247,14 @@ export default function GearItemPublic() {
         )}
 
         {/* CTA */}
-        <Card mt={owners.length > 0 ? 20 : 36} px="lg" py="md">
+        <Card mt={owners.length > 0 ? 16 : 36} px="lg" py="md">
           <SimpleGrid spacing="md" cols={{ base: 1, sm: 2, lg: 2 }}>
             <Stack gap={2}>
               <Text size="lg">
-                Entre pra ver mais sobre <b>{product?.name}</b> no Mublin
+                Entre pra ver quem usa <b>{product?.name}</b>
               </Text>
               <Text size="sm" c="dimmed">
-                Pessoas que usam esse item, gigs e muito mais
+                Acesse o Mublin pra ver detalhes, gigs e muito mais
               </Text>
             </Stack>
             <Group gap="sm" mb="xs">

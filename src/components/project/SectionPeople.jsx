@@ -168,25 +168,11 @@ export default function SectionPeople({
   ) : (
     <>
       <Container size="lg" px={{ base: 'sm', sm: 'md' }}>
-        <Stack gap="xl">
+        <Stack gap="lg">
           <Box>
             <Title mt="xs" order={3} fz="lg" fw={600} lh={1}>
               Administradores
             </Title>
-            <Text mt="xs" mb="xs" c="dimmed" size="xs">
-              É fundador ou faz parte do staff?{' '}
-              <Text
-                span
-                fw={500}
-                c="var(--mantine-color-text)"
-                style={{
-                  cursor: 'pointer',
-                }}
-                onClick={handleOpenClaimModal}
-              >
-                Quero ser administrador
-              </Text>
-            </Text>
 
             {loadingProjectAdmins ? (
               <Skeleton h={60} radius="md" />
@@ -204,14 +190,29 @@ export default function SectionPeople({
                 ))}
               </Group>
             ) : userIsAdmin ? null : myAdminRequestIsPending ? (
-              <Text c="dimmed" size="sm">
+              <Text c="dimmed" size="sm" mt="xs">
                 Nenhum administrador neste projeto. Sua solicitação está sendo processada
               </Text>
             ) : (
-              <Text c="dimmed" size="sm">
+              <Text c="dimmed" size="sm" mt="xs">
                 Nenhum administrador neste projeto
               </Text>
             )}
+
+            <Text mt={4} mb="xs" c="dimmed" size="xs">
+              É fundador ou faz parte do staff?{' '}
+              <Text
+                span
+                fw={500}
+                c="var(--mantine-color-text)"
+                style={{
+                  cursor: 'pointer',
+                }}
+                onClick={handleOpenClaimModal}
+              >
+                Quero ser administrador
+              </Text>
+            </Text>
           </Box>
 
           <Box>

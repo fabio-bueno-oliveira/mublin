@@ -15,6 +15,7 @@ import {
   Container,
   Grid,
   Box,
+  Breadcrumbs,
   Group,
   Flex,
   Stack,
@@ -258,6 +259,10 @@ export default function GearItem() {
     )
   }
 
+  const category = product?.product_categories?.name_ptbr
+  const brand = product?.brands
+  const series = product?.product_series?.name
+
   return (
     <>
       <Helmet>
@@ -292,34 +297,35 @@ export default function GearItem() {
               fit="contain"
             />
           </Anchor>
-          <Box>
-            <Text size="sm" c="dimmed" lh={1.3}>
-              {product?.product_categories?.name_ptbr}
-
-              {product?.product_categories?.name_ptbr && product?.brands?.name && ' · '}
-
-              {product?.brands?.name && (
-                <Text
-                  component={Link}
-                  to={`/brand/${product?.brands?.slug}`}
-                  style={{ display: 'inline', hover: { textDecoration: 'underline' } }}
-                  c="dimmed"
-                  inherit
-                  className="brand-link"
-                >
-                  {product?.brands?.name}
+          <Stack gap={4}>
+            <Breadcrumbs separator="·" separatorMargin={4} c="dimmed" fz="xs">
+              {category && (
+                <Text size="xs" c="dimmed">
+                  {category}
                 </Text>
               )}
-
-              {product?.brands?.name && product?.product_series?.name && ' · '}
-
-              {product?.product_series?.name}
-            </Text>
-            <Title order={1} fz="h3" fw={600} lh={1.2}>
+              {brand?.name && (
+                <Anchor
+                  component={Link}
+                  to={`/brand/${brand.slug}`}
+                  c="dimmed"
+                  fz="xs"
+                  underline="hover"
+                >
+                  {brand.name}
+                </Anchor>
+              )}
+              {series && (
+                <Text size="xs" c="dimmed">
+                  Série {series}
+                </Text>
+              )}
+            </Breadcrumbs>
+            <Title order={1} fz="h3" fw={600}>
               {product?.name}
             </Title>
             {product?.subtitle && (
-              <Text size="sm" lh={1.2} opacity={0.8}>
+              <Text size="sm" opacity={0.8}>
                 {product?.subtitle}
               </Text>
             )}
@@ -332,11 +338,11 @@ export default function GearItem() {
               </Group>
             )}
             {product?.is_discontinued && (
-              <Badge color="gray" variant="outline" size="xs" opacity={0.6}>
+              <Badge color="red" variant="light" size="xs">
                 Descontinuado pelo fabricante
               </Badge>
             )}
-          </Box>
+          </Stack>
         </Flex>
 
         <Group gap={6} mb={14}>
