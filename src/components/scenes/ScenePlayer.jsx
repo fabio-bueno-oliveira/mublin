@@ -1,10 +1,10 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, lazy } from 'react'
 import { Box, Group, Avatar, Text, ActionIcon, Portal } from '@mantine/core'
 import { IconX, IconChevronLeft, IconChevronRight } from '@tabler/icons-react'
 import { motion, AnimatePresence } from 'motion/react'
-import VideoPlayerNative from '../VideoPlayerNative'
 import { supabase } from '../../lib/supabaseClient'
 import { getSceneMediaUrl, getScenePosterUrl } from './sceneMedia'
+const VideoPlayerNative = lazy(() => import('../VideoPlayerNative'))
 
 const AVATAR_PATH =
   'https://ik.imagekit.io/mublin/tr:h-80,c-maintain_ratio/users/avatars/'

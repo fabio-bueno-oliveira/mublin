@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback, useMemo } from 'react'
+import { useEffect, useRef, useState, useCallback, useMemo, lazy } from 'react'
 import { Helmet } from 'react-helmet-async'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
@@ -30,9 +30,9 @@ import {
   IconChevronUp,
   IconChevronDown,
 } from '@tabler/icons-react'
-import VideoPlayerNative from '../components/VideoPlayerNative'
 import AppNavbarMobile from '../components/AppNavbarMobile'
 import { getSceneMediaUrl, getScenePosterUrl } from '../components/scenes/sceneMedia'
+const VideoPlayerNative = lazy(() => import('../components/VideoPlayerNative'))
 
 const AVATAR_PATH =
   'https://ik.imagekit.io/mublin/tr:h-80,c-maintain_ratio/users/avatars/'
