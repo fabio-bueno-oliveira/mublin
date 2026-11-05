@@ -342,10 +342,8 @@ export default function Event() {
                     size="xs"
                     leftSection={myInterest?.is_interested && <IconCheck size={16} />}
                     onClick={open}
-                    color={
-                      myInterest?.is_interested ? 'green.9' : 'var(--mantine-color-text)'
-                    }
-                    variant={myInterest?.is_interested ? 'filled' : 'light'}
+                    color={myInterest?.is_interested ? 'green.9' : 'mublinColor'}
+                    variant="filled"
                   >
                     {myInterest?.is_interested
                       ? 'Interesse registrado'

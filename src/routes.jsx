@@ -69,7 +69,7 @@ const Brand = lazy(() => import('./pages/Brand'))
 const NewGear = lazy(() => import('./pages/NewGear'))
 
 // -- Events pages
-const NewEvent = lazy(() => import('./pages/NewEvent'))
+const NewEvent = lazy(() => import('./pages/create/NewEvent'))
 const Event = lazy(() => import('./pages/Event'))
 const NewVenue = lazy(() => import('./pages/venues/NewVenue'))
 const Venue = lazy(() => import('./pages/venues/Venue'))

@@ -1,10 +1,10 @@
 import { useState, useRef } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { upload } from '@imagekit/react'
-import { useAuth } from '../hooks/useAuth'
-import { supabase } from '../lib/supabaseClient'
+import { useAuth } from '../../hooks/useAuth'
+import { supabase } from '../../lib/supabaseClient'
 import { useQuery } from '@tanstack/react-query'
-import { fetchEventTypes, searchVenues } from '../queries/events'
+import { fetchEventTypes, searchVenues } from '../../queries/events'
 import {
   Container,
   Flex,
@@ -226,10 +226,15 @@ export default function NewEvent() {
   const [isUploadingImage, setIsUploadingImage] = useState(false)
 
   const { data: eventTypes = [], isLoading: loadingEventTypes } = useQuery({
-    queryKey: ['event-types'],
+    queryKey: ['eventTypes'],
     queryFn: fetchEventTypes,
     staleTime: Infinity,
   })
+
+  const eventTypeOptions = eventTypes.map((t) => ({
+    value: String(t.id),
+    label: t.name_ptbr ?? t.name,
+  }))
 
   // ── Upload de imagem ────────────────────────────────────
 
@@ -361,302 +366,312 @@ export default function NewEvent() {
       return
     }
 
+    // Pega o registro já com o slug gerado pelo trigger
+    const { data: newEvent } = await supabase
+      .from('events')
+      .select('slug')
+      .eq('id', data.id)
+      .single()
+
     notifications.show({
       color: 'green',
       message: 'Evento criado com sucesso!',
       position: 'top-center',
     })
 
-    navigate(`/event/${data.slug}`)
+    navigate(`/event/${newEvent.slug}`)
   }
 
   // ── Render ──────────────────────────────────────────────
 
   return (
-    <Container size="sm" py="md" px={{ base: 'md', sm: 'lg' }}>
-      <Title order={1} fz="h3" fw={600} mb="lg">
-        Cadastrar novo evento
-      </Title>
+    <>
+      <title>Novo evento | Mublin</title>
+      <Container size="sm" py="md" px={{ base: 'md', sm: 'lg' }}>
+        <Title order={1} fz="h3" fw={600} mb="lg">
+          Cadastrar novo evento
+        </Title>
 
-      <Stack gap="sm">
-        {/* Imagem representativa do evento a ser criado */}
-        <Box>
-          {pictureFileName ? (
-            <Box style={{ position: 'relative', display: 'inline-block' }}>
-              <Image
-                src={`${EVENT_PICTURE_PATH}${pictureFileName}`}
-                radius="md"
-                maw={200}
-                mah={180}
-                fit="cover"
-              />
-              <ActionIcon
-                color="red"
-                variant="filled"
+        <Stack gap="sm">
+          {/* Imagem representativa do evento a ser criado */}
+          <Box>
+            {pictureFileName ? (
+              <Box style={{ position: 'relative', display: 'inline-block' }}>
+                <Image
+                  src={`${EVENT_PICTURE_PATH}${pictureFileName}`}
+                  radius="md"
+                  maw={200}
+                  mah={180}
+                  fit="cover"
+                />
+                <ActionIcon
+                  color="red"
+                  variant="filled"
+                  size="sm"
+                  radius="xl"
+                  style={{ position: 'absolute', top: 6, right: 6 }}
+                  onClick={handleRemoveImage}
+                >
+                  <IconX size={12} />
+                </ActionIcon>
+              </Box>
+            ) : (
+              <Button
+                variant="outline"
                 size="sm"
-                radius="xl"
-                style={{ position: 'absolute', top: 6, right: 6 }}
-                onClick={handleRemoveImage}
+                leftSection={
+                  isUploadingImage ? <Loader size={13} /> : <IconPhoto size={14} />
+                }
+                component="label"
+                htmlFor="event-image-input"
+                disabled={isUploadingImage}
               >
-                <IconX size={12} />
-              </ActionIcon>
-            </Box>
-          ) : (
-            <Button
-              variant="outline"
-              size="sm"
-              leftSection={
-                isUploadingImage ? <Loader size={13} /> : <IconPhoto size={14} />
+                {isUploadingImage ? 'Enviando...' : 'Adicionar imagem do evento'}
+              </Button>
+            )}
+            <input
+              ref={imageInputRef}
+              id="event-image-input"
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              style={{ display: 'none' }}
+              onChange={(e) => {
+                if (e.target.files?.[0]) {
+                  handleImageUpload(e.target.files[0])
+                }
+              }}
+            />
+          </Box>
+
+          {/* Nome e tipo */}
+          <TextInput
+            label="Nome do evento"
+            placeholder="Ex: Show de lançamento do álbum"
+            required
+            {...form.getInputProps('name')}
+          />
+
+          <Select
+            label="Tipo de evento"
+            placeholder="Selecione..."
+            required
+            data={eventTypeOptions}
+            disabled={loadingEventTypes}
+            rightSection={loadingEventTypes ? <Loader size="xs" /> : undefined}
+            {...form.getInputProps('eventTypeId')}
+          />
+
+          <Textarea
+            label="Descrição"
+            placeholder="Fale sobre o evento, atrações, programação..."
+            minRows={3}
+            autosize
+            maxRows={8}
+            {...form.getInputProps('description')}
+          />
+
+          <Divider label="Data e hora" labelPosition="left" />
+
+          <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
+            <DatePickerInput
+              label="Data de início"
+              placeholder="Selecione..."
+              required
+              leftSection={<IconCalendar size={14} />}
+              minDate={new Date()}
+              {...form.getInputProps('dateStart')}
+            />
+            <DatePickerInput
+              label="Data de fim"
+              placeholder="Selecione..."
+              leftSection={<IconCalendar size={14} />}
+              minDate={form.values.dateStart ?? new Date()}
+              {...form.getInputProps('dateEnd')}
+            />
+          </SimpleGrid>
+
+          <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
+            <TimeInput
+              label="Horário de início"
+              leftSection={<IconClock size={14} />}
+              {...form.getInputProps('timeStart')}
+            />
+            <TimeInput
+              label="Horário de fim"
+              leftSection={<IconClock size={14} />}
+              {...form.getInputProps('timeEnd')}
+            />
+          </SimpleGrid>
+
+          <Divider label="Local" labelPosition="left" />
+
+          <Radio.Group
+            value={form.values.isOnline ? 'online' : 'presencial'}
+            onChange={(value) => {
+              const checked = value === 'online'
+              form.setFieldValue('isOnline', checked)
+              if (checked) {
+                form.setFieldValue('venue', null)
               }
-              component="label"
-              htmlFor="event-image-input"
-              disabled={isUploadingImage}
-            >
-              {isUploadingImage ? 'Enviando...' : 'Adicionar imagem do evento'}
-            </Button>
+            }}
+          >
+            <Group gap="lg">
+              <Radio value="presencial" label="Evento presencial" />
+              <Radio value="online" label="Evento online" />
+            </Group>
+          </Radio.Group>
+
+          {!form.values.isOnline && (
+            <Box>
+              <Group mb={4} gap={10}>
+                <Text size="sm" fw={500}>
+                  Local ou Estabelecimento
+                </Text>
+                <Link to="/new/venue" className="noDecoration">
+                  <Text size="sm" fw={500}>
+                    Não encontrou? Cadastrar novo
+                  </Text>
+                </Link>
+              </Group>
+              <VenueCombobox
+                selected={form.values.venue}
+                onSelect={(item) => form.setFieldValue('venue', item)}
+                onClear={() => form.setFieldValue('venue', null)}
+              />
+            </Box>
           )}
-          <input
-            ref={imageInputRef}
-            id="event-image-input"
-            type="file"
-            accept="image/png,image/jpeg,image/webp"
-            style={{ display: 'none' }}
+
+          <Divider label="Recursos do evento" labelPosition="left" />
+
+          <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
+            <Switch
+              label="Oferece opções de alimentação"
+              description="Food truck, restaurante, praça de alimentação"
+              {...form.getInputProps('has_food_options', { type: 'checkbox' })}
+            />
+            <Switch
+              label="Terá Meet & Greet"
+              description="Encontro com artistas/convidados"
+              {...form.getInputProps('has_meet_and_greet', { type: 'checkbox' })}
+            />
+          </SimpleGrid>
+
+          <Divider label="Ingressos" labelPosition="left" />
+
+          <Switch
+            label="Evento gratuito"
+            checked={form.values.isFree}
             onChange={(e) => {
-              if (e.target.files?.[0]) {
-                handleImageUpload(e.target.files[0])
+              const checked = e.currentTarget.checked
+              form.setFieldValue('isFree', checked)
+              if (checked) {
+                form.setFieldValue('ticketPrice', '')
               }
             }}
           />
-        </Box>
 
-        {/* Nome e tipo */}
-        <TextInput
-          label="Nome do evento"
-          placeholder="Ex: Show de lançamento do álbum"
-          required
-          {...form.getInputProps('name')}
-        />
-
-        <Select
-          label="Tipo de evento"
-          placeholder="Selecione..."
-          required
-          data={eventTypes}
-          disabled={loadingEventTypes}
-          rightSection={loadingEventTypes ? <Loader size="xs" /> : undefined}
-          {...form.getInputProps('eventTypeId')}
-        />
-
-        <Textarea
-          label="Descrição"
-          placeholder="Fale sobre o evento, atrações, programação..."
-          minRows={3}
-          autosize
-          maxRows={8}
-          {...form.getInputProps('description')}
-        />
-
-        <Divider label="Data e hora" labelPosition="left" />
-
-        <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
-          <DatePickerInput
-            label="Data de início"
-            placeholder="Selecione..."
-            required
-            leftSection={<IconCalendar size={14} />}
-            minDate={new Date()}
-            {...form.getInputProps('dateStart')}
-          />
-          <DatePickerInput
-            label="Data de fim"
-            placeholder="Selecione..."
-            leftSection={<IconCalendar size={14} />}
-            minDate={form.values.dateStart ?? new Date()}
-            {...form.getInputProps('dateEnd')}
-          />
-        </SimpleGrid>
-
-        <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
-          <TimeInput
-            label="Horário de início"
-            leftSection={<IconClock size={14} />}
-            {...form.getInputProps('timeStart')}
-          />
-          <TimeInput
-            label="Horário de fim"
-            leftSection={<IconClock size={14} />}
-            {...form.getInputProps('timeEnd')}
-          />
-        </SimpleGrid>
-
-        <Divider label="Local" labelPosition="left" />
-
-        <Radio.Group
-          value={form.values.isOnline ? 'online' : 'presencial'}
-          onChange={(value) => {
-            const checked = value === 'online'
-            form.setFieldValue('isOnline', checked)
-            if (checked) {
-              form.setFieldValue('venue', null)
-            }
-          }}
-        >
-          <Group gap="lg">
-            <Radio value="presencial" label="Evento presencial" />
-            <Radio value="online" label="Evento online" />
-          </Group>
-        </Radio.Group>
-
-        {!form.values.isOnline && (
-          <Box>
-            <Group mb={4} gap={10}>
-              <Text size="sm" fw={500}>
-                Local ou Estabelecimento
-              </Text>
-              <Link to="/new/venue" className="noDecoration">
-                <Text size="sm" fw={500}>
-                  Não encontrou? Cadastrar novo
-                </Text>
-              </Link>
-            </Group>
-            <VenueCombobox
-              selected={form.values.venue}
-              onSelect={(item) => form.setFieldValue('venue', item)}
-              onClear={() => form.setFieldValue('venue', null)}
+          {!form.values.isFree && (
+            <NumberInput
+              label="Valor do ingresso (R$)"
+              placeholder="0,00"
+              min={0}
+              decimalScale={2}
+              fixedDecimalScale
+              leftSection={<IconTicket size={14} />}
+              {...form.getInputProps('ticketPrice')}
             />
-          </Box>
-        )}
+          )}
 
-        <Divider label="Recursos do evento" labelPosition="left" />
-
-        <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
-          <Switch
-            label="Oferece opções de alimentação"
-            description="Food truck, restaurante, praça de alimentação"
-            {...form.getInputProps('has_food_options', { type: 'checkbox' })}
-          />
-          <Switch
-            label="Terá Meet & Greet"
-            description="Encontro com artistas/convidados"
-            {...form.getInputProps('has_meet_and_greet', { type: 'checkbox' })}
-          />
-        </SimpleGrid>
-
-        <Divider label="Ingressos" labelPosition="left" />
-
-        <Switch
-          label="Evento gratuito"
-          checked={form.values.isFree}
-          onChange={(e) => {
-            const checked = e.currentTarget.checked
-            form.setFieldValue('isFree', checked)
-            if (checked) {
-              form.setFieldValue('ticketPrice', '')
-            }
-          }}
-        />
-
-        {!form.values.isFree && (
-          <NumberInput
-            label="Valor do ingresso (R$)"
-            placeholder="0,00"
-            min={0}
-            decimalScale={2}
-            fixedDecimalScale
-            leftSection={<IconTicket size={14} />}
-            {...form.getInputProps('ticketPrice')}
-          />
-        )}
-
-        <TextInput
-          label="Link para ingressos"
-          placeholder="https://..."
-          leftSection={<IconTicket size={14} />}
-          {...form.getInputProps('ticketsUrl')}
-        />
-
-        <Divider label="Configurações" labelPosition="left" />
-
-        <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
-          <Select
-            label="Idade mínima"
-            data={MIN_AGES}
-            value={form.values.minAge}
-            onChange={(v) => form.setFieldValue('minAge', v ?? '16')}
-          />
           <TextInput
-            label="Website do evento"
+            label="Link para ingressos"
             placeholder="https://..."
-            leftSection={<IconWorld size={14} />}
-            {...form.getInputProps('websiteUrl')}
+            leftSection={<IconTicket size={14} />}
+            {...form.getInputProps('ticketsUrl')}
           />
-        </SimpleGrid>
 
-        {/* Privacidade */}
-        <Box>
-          <Text size="sm" fw={500} mb={8}>
-            Privacidade
-          </Text>
-          <Stack gap="xs">
-            {PRIVACY_TYPES.map(({ value, label, description, icon: Icon }) => (
-              <Card
-                key={value}
-                padding="sm"
-                withBorder
-                orientation="horizontal"
-                style={(theme) => ({
-                  border: `1px solid ${form.values.privacyType === value ? theme.colors.violet[5] : theme.colors.gray[3]}`,
-                  cursor: 'pointer',
-                  transition: 'all 0.15s ease',
-                })}
-                onClick={() => form.setFieldValue('privacyType', value)}
-              >
-                <Card.Section inheritPadding px="xs" withBorder>
-                  <Flex h="100%" align="center">
-                    <Icon
-                      size={18}
-                      stroke={1.5}
-                      color={
-                        form.values.privacyType === value
-                          ? 'var(--mantine-color-violet-6)'
-                          : 'var(--mantine-color-dimmed)'
-                      }
-                    />
-                  </Flex>
-                </Card.Section>
-                <Card.Section inheritPadding px="xs" withBorder>
-                  <Box>
-                    <Text size="sm" fw={500}>
-                      {label}
-                    </Text>
-                    <Text size="xs" c="dimmed">
-                      {description}
-                    </Text>
-                  </Box>
-                </Card.Section>
-              </Card>
-            ))}
-          </Stack>
-        </Box>
+          <Divider label="Configurações" labelPosition="left" />
 
-        <Divider />
+          <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
+            <Select
+              label="Idade mínima"
+              data={MIN_AGES}
+              value={form.values.minAge}
+              onChange={(v) => form.setFieldValue('minAge', v ?? '16')}
+            />
+            <TextInput
+              label="Website do evento"
+              placeholder="https://..."
+              leftSection={<IconWorld size={14} />}
+              {...form.getInputProps('websiteUrl')}
+            />
+          </SimpleGrid>
 
-        <Group justify="flex-end">
-          {/* <Button
+          {/* Privacidade */}
+          <Box>
+            <Text size="sm" fw={500} mb={8}>
+              Privacidade
+            </Text>
+            <Stack gap="xs">
+              {PRIVACY_TYPES.map(({ value, label, description, icon: Icon }) => (
+                <Card
+                  key={value}
+                  padding="sm"
+                  withBorder
+                  orientation="horizontal"
+                  style={(theme) => ({
+                    border: `1px solid ${form.values.privacyType === value ? theme.colors.violet[5] : theme.colors.gray[3]}`,
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                  })}
+                  onClick={() => form.setFieldValue('privacyType', value)}
+                >
+                  <Card.Section inheritPadding px="xs" withBorder>
+                    <Flex h="100%" align="center">
+                      <Icon
+                        size={18}
+                        stroke={1.5}
+                        color={
+                          form.values.privacyType === value
+                            ? 'var(--mantine-color-violet-6)'
+                            : 'var(--mantine-color-dimmed)'
+                        }
+                      />
+                    </Flex>
+                  </Card.Section>
+                  <Card.Section inheritPadding px="xs" withBorder>
+                    <Box>
+                      <Text size="sm" fw={500}>
+                        {label}
+                      </Text>
+                      <Text size="xs" c="dimmed">
+                        {description}
+                      </Text>
+                    </Box>
+                  </Card.Section>
+                </Card>
+              ))}
+            </Stack>
+          </Box>
+
+          <Divider />
+
+          <Group justify="flex-end">
+            {/* <Button
             variant="default"
             onClick={() => navigate(-1)}
             disabled={form.submitting}
           >
             Cancelar
           </Button> */}
-          <Button
-            loading={form.submitting}
-            onClick={() => form.onSubmit(handleSubmit, handleValidationFailure)()}
-          >
-            Criar evento
-          </Button>
-        </Group>
-      </Stack>
-    </Container>
+            <Button
+              loading={form.submitting}
+              onClick={() => form.onSubmit(handleSubmit, handleValidationFailure)()}
+            >
+              Criar evento
+            </Button>
+          </Group>
+        </Stack>
+      </Container>
+    </>
   )
 }
