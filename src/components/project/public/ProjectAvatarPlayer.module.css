@@ -3,7 +3,8 @@
   flex-shrink: 0;
 }
 
-/* Área clicável: cobre o avatar inteiro */
+/* Área clicável: cobre o avatar inteiro, não só o badge.
+   O badge é filho do botão, então clicar nele também dispara o play. */
 .hit {
   position: absolute;
   inset: 0;
@@ -12,98 +13,126 @@
   border-radius: 50%;
   background: transparent;
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   -webkit-tap-highlight-color: transparent;
 }
 
 .hit:focus-visible {
   outline: 2px solid
     var(--mantine-color-mublinColor-filled, var(--mantine-primary-color-filled));
-  outline-offset: 5px;
+  outline-offset: 8px;
 }
 
-/* Botão central: fundo escuro translúcido + ícone branco funciona
-   sobre qualquer foto, nos temas claro e escuro. */
-.control {
-  width: 40px;
-  height: 40px;
+/* ───────── Anel degradê ───────── */
+
+.ring {
+  position: absolute;
+  pointer-events: none;
+  animation: ringIntro 1s ease-out both;
+  transition: filter 0.25s ease;
+}
+
+.track {
+  opacity: 1;
+  transition: opacity 0.35s ease;
+}
+
+/* Tocando: o anel completo vira trilho e o progresso corre por cima */
+.ringPlaying .track {
+  opacity: 0.22;
+}
+
+/* Giro curto ao aparecer, depois fica estático */
+@keyframes ringIntro {
+  from {
+    opacity: 0;
+    transform: rotate(-120deg) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: rotate(0) scale(1);
+  }
+}
+
+/* ───────── Badge de play (canto superior direito) ───────── */
+
+/* Camada externa: posição + reação ao hover */
+.badge {
+  position: absolute;
+  /* O badge é filho do botão: com pointer-events ativo, clicar nele
+     (inclusive na parte que sai do círculo da foto) aciona o play/pause. */
+  pointer-events: auto;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+/* Camada interna: aparência + animações de entrada */
+.badgeInner {
+  width: 100%;
+  height: 100%;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   color: #fff;
-  background: rgba(0, 0, 0, 0.55);
-  backdrop-filter: blur(2px);
-  opacity: 0;
-  transform: scale(0.85);
-  animation: appear 0.5s ease forwards;
-  transition:
-    opacity 0.25s ease,
-    transform 0.25s ease;
+  background: linear-gradient(
+    135deg,
+    var(--mantine-color-mublinColor-filled, var(--mantine-primary-color-filled)),
+    var(--mantine-color-grape-filled)
+  );
+  /* "corta" o anel e a foto, como o + do story do Instagram */
+  border: 2px solid var(--mantine-color-body);
+  box-sizing: border-box;
+  animation: badgePop 0.45s cubic-bezier(0.2, 1.4, 0.4, 1) var(--badge-delay, 0ms) both;
 }
 
-.hit:hover .control {
-  opacity: 1;
-  transform: scale(1.06);
-}
-
-/* Brilha duas vezes e então "descansa" visível, sem sumir */
+/* Depois do pop, brilha duas vezes e descansa */
 .glow {
   animation:
-    appear 0.5s ease forwards,
-    glow 1.6s ease-in-out 0.5s 2;
+    badgePop 0.45s cubic-bezier(0.2, 1.4, 0.4, 1) var(--badge-delay, 0ms) both,
+    badgeGlow 1.6s ease-in-out calc(var(--badge-delay, 0ms) + 450ms) 2;
 }
 
-@keyframes appear {
+@keyframes badgePop {
+  from {
+    opacity: 0;
+    transform: scale(0);
+  }
   to {
-    opacity: 0.85;
+    opacity: 1;
     transform: scale(1);
   }
 }
 
-@keyframes glow {
+@keyframes badgeGlow {
   0%,
   100% {
-    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+    box-shadow: 0 0 0 0 rgba(150, 120, 255, 0);
   }
   50% {
-    box-shadow:
-      0 0 0 8px rgba(255, 255, 255, 0.16),
-      0 0 18px 4px rgba(255, 255, 255, 0.35);
+    box-shadow: 0 0 0 5px rgba(150, 120, 255, 0.28);
+    box-shadow: 0 0 0 5px
+      color-mix(in srgb, var(--mantine-color-grape-filled) 35%, transparent);
   }
 }
 
-/* Anel de progresso */
-.ring {
-  position: absolute;
-  pointer-events: none;
-  transform: rotate(-90deg);
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.ringActive {
-  opacity: 1;
-}
-
-.track {
-  stroke: var(--mantine-color-default-border);
-}
-
-.progress {
-  stroke: var(--mantine-color-mublinColor-filled, var(--mantine-primary-color-filled));
+/* Hover só onde existe hover de verdade (desktop) */
+@media (hover: hover) {
+  .root:hover .ring {
+    filter: saturate(1.3) brightness(1.1);
+  }
+  .root:hover .badge {
+    transform: scale(1.12);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .control,
+  .ring,
+  .badgeInner,
   .glow {
     animation: none;
-    opacity: 0.85;
-    transform: none;
-    transition: none;
   }
+  .badge,
+  .track,
   .ring {
     transition: none;
   }

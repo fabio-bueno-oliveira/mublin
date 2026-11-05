@@ -23,6 +23,7 @@ import {
   Stack,
   Button,
   Tooltip,
+  Pill,
 } from '@mantine/core'
 import { IconRoad, IconArrowRight, IconMapPin, IconCalendar } from '@tabler/icons-react'
 import { IconShieldCheckMublin } from '../components/icons/IconShieldCheckMublin'
@@ -254,19 +255,11 @@ export default function ProjectPublic() {
                 </Text>
               </Group>
             )}
+
             {isEnded ? (
-              <Badge
-                mt={4}
-                color="red"
-                variant="light"
-                tt="none"
-                fw={500}
-                px={6}
-                size="sm"
-                w="fit-content"
-              >
+              <Pill size="xs" mt={3} w="fit-content">
                 Encerrou atividades em {project?.end_year}
-              </Badge>
+              </Pill>
             ) : (
               <Box>
                 {tourStatus?.isOnTour && (
