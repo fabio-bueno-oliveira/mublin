@@ -24,6 +24,7 @@ import {
   IconBrandApple,
   IconBrandSoundcloud,
 } from '@tabler/icons-react'
+import { IconBrandMuso } from '../icons/IconBrandMuso'
 
 const AVATAR_MINI2_PATH =
   'https://ik.imagekit.io/mublin/tr:h-22,c-maintain_ratio/users/avatars/'
@@ -63,11 +64,6 @@ export default function SectionAbout({ project, isLoading }) {
           </Title>
 
           <Stack gap={2} mb="xs">
-            {project?.type && (
-              <Text size="sm" c="dimmed">
-                Tipo do projeto: {project.type}
-              </Text>
-            )}
             <Group gap={2}>
               {/* {project?.foundation_year && (
                     <Text size="xs" c="dimmed">

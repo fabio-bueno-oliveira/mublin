@@ -2,14 +2,17 @@ import { Helmet } from 'react-helmet-async'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import {
-  fetchProjectPublicDetails,
+  fetchPublicProjectDetails,
+  fetchPublicProjectPeople,
   fetchProjectGenres,
   fetchRelatedProjects,
   fetchProjectTourStatus,
 } from '../queries/projects'
 import {
   Container,
+  Flex,
   Card,
+  Box,
   Avatar,
   Title,
   Text,
@@ -17,81 +20,79 @@ import {
   Skeleton,
   Group,
   Stack,
-  SimpleGrid,
   Button,
-  UnstyledButton,
-  Scroller,
+  Tooltip,
 } from '@mantine/core'
-// import { useDisclosure } from '@mantine/hooks'
-import {
-  IconRoad,
-  IconArrowRight,
-  IconMapPin,
-  IconMusic,
-  IconCalendar,
-  IconShieldCheckFilled,
-} from '@tabler/icons-react'
+import { IconRoad, IconArrowRight, IconMapPin, IconCalendar } from '@tabler/icons-react'
+import { IconShieldCheckMublin } from '../components/icons/IconShieldCheckMublin'
+import ProjectPeopleTeaserBlock from '../components/project/public/ProjectPeopleTeaserBlock'
+import RelatedProjectsBlock from '../components/project/public/RelatedProjectsBlock'
+import FadedBio from '../components/project/public/FadedBio'
 import { truncateDescription } from '../utils/formatter'
 
-export default function Project() {
+export default function ProjectPublic() {
   const { slug } = useParams()
   const navigate = useNavigate()
-
-  // const [ctaOpened, { close: closeCta }] = useDisclosure(true)
 
   const {
     data: project,
     isLoading,
     isError,
   } = useQuery({
-    queryKey: ['project', slug],
-    queryFn: () => fetchProjectPublicDetails(slug),
+    queryKey: ['public-project', slug],
+    queryFn: () => fetchPublicProjectDetails(slug),
     enabled: !!slug,
     staleTime: 1000 * 60 * 5,
     retry: 1,
   })
 
-  const { data: projectGenres = [], isLoading: loadingProjectGenres } = useQuery({
-    queryKey: ['project-genres', project?.id],
+  const { data: people = [], isLoading: isLoadingPeople } = useQuery({
+    queryKey: ['public-project-people', project?.id],
+    queryFn: () => fetchPublicProjectPeople(project?.id),
+    enabled: !!project?.id,
+    staleTime: 1000 * 60 * 5,
+  })
+
+  const { data: genres = [], isLoading: isLoadingGenres } = useQuery({
+    queryKey: ['public-project-genres', project?.id],
     queryFn: () => fetchProjectGenres(project?.id),
     enabled: !!project?.id,
     staleTime: 1000 * 60 * 5,
   })
 
-  const { data: relatedProjects = [], isLoading: loadingRelatedProjects } = useQuery({
-    queryKey: ['project-related', project?.id],
+  const { data: relatedProjects = [], isLoading: isLoadingRelatedProjects } = useQuery({
+    queryKey: ['public-project-related', project?.id],
     queryFn: () => fetchRelatedProjects(project?.id),
     enabled: !!project?.id,
     staleTime: 1000 * 60 * 5,
   })
 
   const { data: tourStatus } = useQuery({
-    queryKey: ['project-tour-status', project?.id],
+    queryKey: ['public-project-tour-status', project?.id],
     queryFn: () => fetchProjectTourStatus(project.id),
     enabled: !!project?.id,
     staleTime: 1000 * 60 * 2,
   })
 
   const validGenreNames =
-    projectGenres?.map((g) => g?.genre?.name_ptbr || g?.name_ptbr).filter(Boolean) ?? []
+    genres?.map((g) => g?.genre?.name_ptbr || g?.name_ptbr).filter(Boolean) ?? []
 
   if (!isLoading && (isError || !project)) {
     return (
-      <Container size="md" py="xl">
-        <Text c="dimmed" ta="center">
-          Projeto não encontrado.
-        </Text>
-      </Container>
+      <>
+        <Helmet>
+          <meta name="robots" content="noindex" />
+        </Helmet>
+        <Container size="md" py="xl">
+          <Text c="dimmed" ta="center">
+            Projeto não encontrado.
+          </Text>
+        </Container>
+      </>
     )
   }
 
   const PROJECT_AVATAR_PATH = `https://ik.imagekit.io/mublin/projects/${project?.id}/tr:h-180,w-180,c-maintain_ratio/`
-  // const PROJECT_AVATAR_TEASER_PATH = `https://ik.imagekit.io/mublin/projects/${project?.id}/tr:h-176,w-176,c-maintain_ratio/`
-
-  const getRelatedAvatarUrl = (related) =>
-    related?.picture
-      ? `https://ik.imagekit.io/mublin/projects/${related.id}/tr:h-200,w-200,c-maintain_ratio/${related.picture}`
-      : null
 
   const city = project?.cities
 
@@ -110,107 +111,45 @@ export default function Project() {
       )
     : ''
 
+  const isEnded = project?.end_year > 0
+
+  const projectUrl = `https://mublin.com/project/${encodeURIComponent(slug)}`
+
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'MusicGroup',
+    name: project?.name,
+    url: projectUrl,
+    description: metaDescription,
+    ...(project?.picture && { image: PROJECT_AVATAR_PATH + project?.picture }),
+    ...(validGenreNames.length > 0 && { genre: validGenreNames }),
+    ...(project?.start_year && { foundingDate: String(project?.start_year) }),
+    ...(project?.end_year && { dissolutionDate: String(project?.end_year) }),
+  }
+
   return (
     <>
       {project && (
         <Helmet>
-          <title>{`${project.name} | Mublin`}</title>
-
+          <title>{`${project?.name} | Mublin`}</title>
           <meta name="description" content={metaDescription} />
-
-          <link
-            rel="canonical"
-            href={`https://mublin.com/project/${encodeURIComponent(project.slug)}`}
-          />
-
-          <meta property="og:type" content="profile" />
+          <link rel="canonical" href={projectUrl} />
+          <meta property="og:type" content="website" />
           <meta property="og:site_name" content="Mublin" />
-          <meta property="og:title" content={`${project.name} | Mublin`} />
-
+          <meta property="og:title" content={`${project?.name} | Mublin`} />
           <meta property="og:description" content={metaDescription} />
-
-          <meta
-            property="og:url"
-            content={`https://mublin.com/project/${encodeURIComponent(project.slug)}`}
-          />
-
-          {project.picture && (
+          <meta property="og:url" content={projectUrl} />
+          <meta property="og:locale" content="pt_BR" />
+          {project?.picture && (
             <meta property="og:image" content={PROJECT_AVATAR_PATH + project.picture} />
           )}
+          <script type="application/ld+json">
+            {JSON.stringify(jsonLd).replace(/</g, '\\u003c')}
+          </script>
         </Helmet>
       )}
 
-      {/* Modal CTA - abre automaticamente igual Instagram */}
-      {/* <Modal
-        opened={ctaOpened}
-        onClose={closeCta}
-        centered
-        radius="lg"
-        size="sm"
-        withCloseButton
-        overlayProps={{
-          backgroundOpacity: 0.8,
-          blur: 3,
-        }}
-      >
-        <Stack align="center" gap="sm" pt="md">
-          <Center>
-            {isLoading || loadingProjectGenres ? (
-              <Skeleton circle height={88} width={88} />
-            ) : (
-              <Avatar
-                size={88}
-                src={
-                  project?.picture ? PROJECT_AVATAR_TEASER_PATH + project.picture : null
-                }
-              />
-            )}
-          </Center>
-          <Stack gap={4} align="center">
-            <Text ta="center" size="lg" fw={300} lh={1.2}>
-              Veja a página completa de{' '}
-              <Text span fw={600}>
-                {slug}
-              </Text>
-            </Text>
-            {project?.type?.name_ptbr && (
-              <Text ta="center" size="xs" c="dimmed" lineClamp={1}>
-                {project.type.name_ptbr}
-                {validGenreNames.length > 0 && (
-                  <Text span> · {validGenreNames.join(', ')}</Text>
-                )}
-              </Text>
-            )}
-            <Text ta="center" size="sm" c="dimmed" mt={6} maw={300}>
-              Entre para ver pessoas relacionadas, gigs e muito mais no Mublin
-            </Text>
-          </Stack>
-
-          <Stack w="100%" gap="xs" mt={4}>
-            <Button
-              size="sm"
-              radius="xl"
-              fullWidth
-              rightSection={<IconArrowRight size={16} />}
-              onClick={() => navigate('/signup')}
-            >
-              Criar conta grátis
-            </Button>
-            <Button
-              variant="subtle"
-              color="var(--mantine-color-text)"
-              size="sm"
-              radius="xl"
-              fullWidth
-              onClick={() => navigate('/login')}
-            >
-              Entrar
-            </Button>
-          </Stack>
-        </Stack>
-      </Modal> */}
-
-      <Container px="lg" size="md" mt={{ base: 22, sm: 30 }}>
+      <Container px="lg" size="md" mt={{ base: 20, sm: 26 }}>
         <Group wrap="nowrap" px="xs">
           {isLoading ? (
             <Skeleton circle height={90} width={90} />
@@ -218,40 +157,20 @@ export default function Project() {
             <Avatar
               src={project?.picture ? PROJECT_AVATAR_PATH + project.picture : null}
               size={90}
-              alt={`Foto ${project?.type?.name_ptbr} ${project?.name}`}
+              alt={['Foto', project?.type?.name_ptbr, project?.name]
+                .filter(Boolean)
+                .join(' ')}
             />
           )}
 
           <Stack gap={0}>
-            {isLoading || loadingProjectGenres ? (
+            {isLoading || isLoadingGenres ? (
               <>
                 <Skeleton height={28} width={200} />
                 <Skeleton height={16} width={120} mt={4} />
               </>
             ) : (
               <>
-                {/* TOUR BADGES - nova lógica */}
-                {tourStatus?.isOnTour && (
-                  <Badge mb={4} color="green" leftSection={<IconRoad size={14} />}>
-                    Em turnê • {tourStatus.activeTours[0].title}
-                  </Badge>
-                )}
-                {!tourStatus?.isOnTour && tourStatus?.isUpcomingSoon && (
-                  <Badge
-                    color="yellow"
-                    variant="light"
-                    leftSection={<IconCalendar size={14} />}
-                    px={5}
-                    mb={4}
-                  >
-                    Turnê em breve •{' '}
-                    {/* {tourStatus.nextDate &&
-                      new Date(tourStatus.nextDate).toLocaleDateString(
-                        'pt-BR',
-                      )}{' '} */}
-                    {tourStatus.upcomingTours[0].days_until} dias
-                  </Badge>
-                )}
                 <Group gap={7} wrap="nowrap">
                   <Title
                     order={1}
@@ -260,20 +179,27 @@ export default function Project() {
                       sm: 32,
                     }}
                     fw={650}
-                    lts="-0.025em"
-                    lineClamp={1}
+                    lh={1.2}
                   >
                     {project?.name}
                   </Title>
                   {project?.is_verified && (
-                    <IconShieldCheckFilled
-                      size={22}
-                      color="var(--mantine-color-text)"
-                      title="Projeto verificado"
-                      style={{
-                        flexShrink: 0,
-                      }}
-                    />
+                    <Tooltip
+                      label="Verificado por pessoas relacionadas"
+                      withArrow
+                      color="dark"
+                    >
+                      <Box component="span" style={{ display: 'inline-flex' }}>
+                        <IconShieldCheckMublin
+                          size={22}
+                          color="var(--mantine-color-mublinColor-3)"
+                          title="Projeto verificado"
+                          style={{
+                            flexShrink: 0,
+                          }}
+                        />
+                      </Box>
+                    </Tooltip>
                   )}
                 </Group>
                 <Group gap={6} wrap="nowrap">
@@ -283,7 +209,7 @@ export default function Project() {
                     </Text>
                   )}
 
-                  {validGenreNames.length > 0 && (
+                  {!isLoadingGenres && validGenreNames.length > 0 && (
                     <Group gap={6} visibleFrom="sm" wrap="nowrap">
                       <Text size="sm" c="dimmed">
                         ·
@@ -299,16 +225,62 @@ export default function Project() {
             {projectLocation && (
               <Group gap={2} wrap="nowrap">
                 <IconMapPin color="gray" size={12} stroke={2} />
-                <Text size="xs" c="dimmed">
-                  {projectLocation}{' '}
+                <Text
+                  size="xs"
+                  c="dimmed"
+                  truncate="end"
+                  lh={1.5}
+                  style={{ maxWidth: 200 }}
+                >
+                  {projectLocation}
+                  {'  '}
                   {project?.cities?.countries?.name === 'Brazil' && '🇧🇷'}
                 </Text>
               </Group>
             )}
+            {isEnded ? (
+              <Badge
+                mt={4}
+                color="red"
+                variant="light"
+                tt="none"
+                fw={500}
+                px={6}
+                size="sm"
+                w="fit-content"
+              >
+                Encerrou atividades em {project?.end_year}
+              </Badge>
+            ) : (
+              <Box>
+                {tourStatus?.isOnTour && (
+                  <Badge mb={4} color="green" leftSection={<IconRoad size={14} />}>
+                    Em turnê • {tourStatus.activeTours[0].title}
+                  </Badge>
+                )}
+                {!tourStatus?.isOnTour && tourStatus?.isUpcomingSoon && (
+                  <Badge
+                    variant="gradient"
+                    gradient={{ from: 'grape.9', to: 'mublinColor.9', deg: 190 }}
+                    leftSection={<IconCalendar size={12} />}
+                    px={6}
+                    mb={4}
+                    size="md"
+                  >
+                    Turnê em breve •{' '}
+                    {/* {tourStatus.nextDate &&
+                      new Date(tourStatus.nextDate).toLocaleDateString(
+                        'pt-BR',
+                      )}{' '} */}
+                    {tourStatus?.upcomingTours[0]?.days_until} dias
+                  </Badge>
+                )}
+              </Box>
+            )}
           </Stack>
         </Group>
 
-        <Stack gap={6} mt="md">
+        <Box mt="md">
           {isLoading ? (
             <Stack gap="xs" px="xs">
               <Skeleton height={10} width="40%" hiddenFrom="sm" />
@@ -316,109 +288,51 @@ export default function Project() {
               <Skeleton height={14} width="75%" />
             </Stack>
           ) : (
-            <Stack gap={6} px="xs">
-              {validGenreNames && (
-                <Group gap={4} hiddenFrom="sm">
-                  <IconMusic color="gray" size={12} />
-                  <Text size="xs" c="dimmed">
-                    {validGenreNames.join(', ')}
-                  </Text>
-                </Group>
-              )}
-              {project?.description && (
-                <Text size="sm" lineClamp={3}>
-                  {project.description}
-                </Text>
-              )}
-              {/* {project?.end_year && (
-                <Text c="dimmed" size="11px" mt={4} mb={2}>
-                  {project?.name} encerrou as atividades no ano de {project?.end_year}
-                </Text>
-              )} */}
-            </Stack>
+            project?.description && <FadedBio text={project.description} />
           )}
-        </Stack>
-
-        {/* Projetos relacionados */}
-        {(loadingRelatedProjects || relatedProjects.length > 0) && (
-          <Stack gap="sm" mt="md" px="xs">
-            <Text size="xs" fw={500} c="dimmed">
-              Projetos relacionados
-            </Text>
-            <Scroller>
-              <Group wrap="nowrap" gap="xs" align="flex-start">
-                {loadingRelatedProjects
-                  ? [1, 2, 3].map((i) => (
-                      <Stack key={i} gap={6} align="center" w={84}>
-                        <Skeleton circle height={64} width={64} />
-                        <Skeleton height={10} width={56} />
-                      </Stack>
-                    ))
-                  : relatedProjects.map((related) => (
-                      <UnstyledButton
-                        key={related.id}
-                        onClick={() => navigate(`/project/${related.slug}`)}
-                        aria-label={`Ver projeto ${related.name}`}
-                        w={80}
-                      >
-                        <Stack gap={3} align="center">
-                          <Avatar
-                            src={getRelatedAvatarUrl(related)}
-                            size={50}
-                            alt={`Foto de perfil do projeto/artista ${related.name}`}
-                          />
-                          <Text
-                            w={79}
-                            size="xs"
-                            ta="center"
-                            lineClamp={1}
-                            title={related.name}
-                          >
-                            {related.name}
-                          </Text>
-                          <Text size="10px" c="dimmed">
-                            {related?.type}
-                          </Text>
-                        </Stack>
-                      </UnstyledButton>
-                    ))}
-              </Group>
-            </Scroller>
-          </Stack>
-        )}
+        </Box>
 
         {/* CTA */}
-        <Card mt={relatedProjects.length > 0 ? 20 : 36} px="lg" py="md">
-          <SimpleGrid spacing="md" cols={{ base: 1, sm: 2, lg: 2 }}>
+        <Card mt="md" px="lg" py="md">
+          <Flex
+            direction={{ base: 'column', sm: 'row' }}
+            justify="space-between"
+            align={{ base: 'flex-start', sm: 'center' }}
+            gap="md"
+          >
             <Stack gap={2}>
               <Text size="lg">
-                Entre pra ver mais sobre <b>{project?.name}</b> no Mublin
+                Entre para ver mais sobre <b>{project?.name}</b> no Mublin
               </Text>
-              <Text size="sm" c="dimmed">
+              <Text size="sm" c="dimmed" visibleFrom="sm">
                 Pessoas relacionadas, gigs e muito mais
               </Text>
             </Stack>
-            <Group gap="sm" mb="xs">
-              <Button
-                variant="outline"
-                color="var(--mantine-color-text)"
-                size="sm"
-                radius="xl"
-                onClick={() => navigate('/login')}
-              >
-                Entrar
-              </Button>
-              <Button
-                size="sm"
-                radius="xl"
-                rightSection={<IconArrowRight size={14} />}
-                onClick={() => navigate('/signup')}
-              >
-                Criar conta grátis
-              </Button>
-            </Group>
-          </SimpleGrid>
+
+            <Button
+              variant="filled"
+              color="mublinColor"
+              size="sm"
+              radius="xl"
+              style={{ flexShrink: 0 }}
+              onClick={() => navigate(`/signup?from=project&block=cta&project=${slug}`)}
+              rightSection={<IconArrowRight size={14} />}
+            >
+              Veja gigs, staff, músicos e mais
+            </Button>
+          </Flex>
         </Card>
+
+        <ProjectPeopleTeaserBlock
+          project={project}
+          people={people}
+          isLoading={isLoadingPeople}
+        />
+
+        <RelatedProjectsBlock
+          relatedProjects={relatedProjects}
+          isLoading={isLoadingRelatedProjects}
+        />
       </Container>
     </>
   )

@@ -21,6 +21,7 @@ const Login = lazy(() => import('./pages/Login'))
 const Signup = lazy(() => import('./pages/Signup'))
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'))
 const ResetPassword = lazy(() => import('./pages/ResetPassword'))
+const ProjectPublicBlocksPreview = lazy(() => import('./pages/ProjectPublicBlocks'))
 
 // ── Authenticated pages ───────────────────────────
 const Menu = lazy(() => import('./pages/Menu')) // for mobile devices
@@ -128,6 +129,7 @@ export const router = createBrowserRouter([
       { path: 'forgot-password', element: <ForgotPassword /> },
       { path: 'reset-password', element: <ResetPassword /> },
       { path: 'auth/callback', element: <AuthCallback /> },
+      { path: '/preview/project-public', element: <ProjectPublicBlocksPreview /> },
     ],
   },
   // ── Projetos, Artistas, Personalidades ─────────

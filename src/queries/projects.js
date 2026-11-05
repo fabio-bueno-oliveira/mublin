@@ -69,37 +69,6 @@ export async function fetchProjectDetails(slug) {
   }
 }
 
-export async function fetchProjectPublicDetails(slug) {
-  const { data, error } = await supabase
-    .from('projects')
-    .select(
-      `
-      id,
-      name,
-      slug,
-      picture,
-      description,
-      end_year,
-      is_public,
-      is_verified,
-      genres ( id, name_ptbr ),
-      type:project_types ( name_ptbr ),
-      activity_status,
-      cities ( name, regions ( name, uf ), countries ( name, name_ptbr ) ),
-      status:project_statuses ( description_ptbr, color )
-    `,
-    )
-    .eq('slug', slug)
-    .eq('is_public', true)
-    .eq('is_active', true)
-    .single()
-
-  if (error) {
-    throw new Error(error.message)
-  }
-  return data
-}
-
 export async function fetchProjectDetailsById(projectId) {
   const { data, error } = await supabase
     .from('projects')
@@ -908,4 +877,74 @@ export async function fetchProjectActiveTours(projectId) {
 export async function isProjectOnTour(projectId) {
   const status = await fetchProjectTourStatus(projectId)
   return status.isOnTour
+}
+
+// QUERIES FOR PUBLIC PAGES
+
+export async function fetchPublicProjectDetails(slug) {
+  const { data, error } = await supabase
+    .from('projects')
+    .select(
+      `
+      id,
+      name,
+      slug,
+      picture,
+      description,
+      end_year,
+      is_verified,
+      genres ( id, name_ptbr ),
+      type:project_types ( name_ptbr ),
+      cities ( name, regions ( name, uf ), countries ( name, name_ptbr ) )
+    `,
+    )
+    .eq('slug', slug)
+    .eq('is_public', true)
+    .eq('is_active', true)
+    .single()
+
+  if (error) {
+    throw new Error(error.message)
+  }
+  return data
+}
+
+export async function fetchPublicProjectPeople(
+  projectId,
+  { limit, orderBy = 'created_at', ascending = false } = {},
+) {
+  let query = supabase
+    .from('portfolio')
+    .select(
+      `
+      id,
+      is_currently_working,
+      profile:profiles (
+        id,
+        full_name,
+        username,
+        avatar
+      ),
+      roles:portfolio_roles (
+        role:roles (
+          id,
+          name_ptbr
+        )
+      )
+    `,
+    )
+    .eq('project_id', projectId)
+    .order(orderBy, { ascending })
+
+  if (limit) {
+    query = query.limit(limit)
+  }
+
+  const { data, error } = await query
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  return data
 }
