@@ -7,6 +7,7 @@ import {
   fetchProjectGenres,
   fetchRelatedProjects,
   fetchProjectTourStatus,
+  fetchProjectAudioPreview,
 } from '../queries/projects'
 import {
   Container,
@@ -25,9 +26,12 @@ import {
 } from '@mantine/core'
 import { IconRoad, IconArrowRight, IconMapPin, IconCalendar } from '@tabler/icons-react'
 import { IconShieldCheckMublin } from '../components/icons/IconShieldCheckMublin'
-import ProjectPeopleTeaserBlock from '../components/project/public/ProjectPeopleTeaserBlock'
-import RelatedProjectsBlock from '../components/project/public/RelatedProjectsBlock'
-import FadedBio from '../components/project/public/FadedBio'
+import {
+  FadedBio,
+  ProjectPeopleTeaserBlock,
+  RelatedProjectsBlock,
+  ProjectAvatarPlayer,
+} from '../components/project/public/'
 import { truncateDescription } from '../utils/formatter'
 
 export default function ProjectPublic() {
@@ -65,6 +69,13 @@ export default function ProjectPublic() {
     queryFn: () => fetchRelatedProjects(project?.id),
     enabled: !!project?.id,
     staleTime: 1000 * 60 * 5,
+  })
+
+  const { data: audioPreview } = useQuery({
+    queryKey: ['public-project-audio-preview', project?.id],
+    queryFn: () => fetchProjectAudioPreview(project.id),
+    enabled: !!project?.id,
+    staleTime: 1000 * 60 * 10,
   })
 
   const { data: tourStatus } = useQuery({
@@ -154,12 +165,17 @@ export default function ProjectPublic() {
           {isLoading ? (
             <Skeleton circle height={90} width={90} />
           ) : (
-            <Avatar
-              src={project?.picture ? PROJECT_AVATAR_PATH + project.picture : null}
-              size={90}
+            <ProjectAvatarPlayer
+              imageSrc={project?.picture ? PROJECT_AVATAR_PATH + project.picture : null}
               alt={['Foto', project?.type?.name_ptbr, project?.name]
                 .filter(Boolean)
                 .join(' ')}
+              size={90}
+              src={audioPreview?.src}
+              songName={audioPreview?.songName}
+              onPlay={() => {
+                // aqui entra seu evento de analytics: 'project_preview_play'
+              }}
             />
           )}
 

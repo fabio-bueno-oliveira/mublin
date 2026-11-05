@@ -1,0 +1,110 @@
+.root {
+  position: relative;
+  flex-shrink: 0;
+}
+
+/* Área clicável: cobre o avatar inteiro */
+.hit {
+  position: absolute;
+  inset: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.hit:focus-visible {
+  outline: 2px solid
+    var(--mantine-color-mublinColor-filled, var(--mantine-primary-color-filled));
+  outline-offset: 5px;
+}
+
+/* Botão central: fundo escuro translúcido + ícone branco funciona
+   sobre qualquer foto, nos temas claro e escuro. */
+.control {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(2px);
+  opacity: 0;
+  transform: scale(0.85);
+  animation: appear 0.5s ease forwards;
+  transition:
+    opacity 0.25s ease,
+    transform 0.25s ease;
+}
+
+.hit:hover .control {
+  opacity: 1;
+  transform: scale(1.06);
+}
+
+/* Brilha duas vezes e então "descansa" visível, sem sumir */
+.glow {
+  animation:
+    appear 0.5s ease forwards,
+    glow 1.6s ease-in-out 0.5s 2;
+}
+
+@keyframes appear {
+  to {
+    opacity: 0.85;
+    transform: scale(1);
+  }
+}
+
+@keyframes glow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+  }
+  50% {
+    box-shadow:
+      0 0 0 8px rgba(255, 255, 255, 0.16),
+      0 0 18px 4px rgba(255, 255, 255, 0.35);
+  }
+}
+
+/* Anel de progresso */
+.ring {
+  position: absolute;
+  pointer-events: none;
+  transform: rotate(-90deg);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.ringActive {
+  opacity: 1;
+}
+
+.track {
+  stroke: var(--mantine-color-default-border);
+}
+
+.progress {
+  stroke: var(--mantine-color-mublinColor-filled, var(--mantine-primary-color-filled));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .control,
+  .glow {
+    animation: none;
+    opacity: 0.85;
+    transform: none;
+    transition: none;
+  }
+  .ring {
+    transition: none;
+  }
+}

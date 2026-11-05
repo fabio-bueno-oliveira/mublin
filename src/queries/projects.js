@@ -948,3 +948,37 @@ export async function fetchPublicProjectPeople(
 
   return data
 }
+
+const EXCERPTS_BUCKET = 'mublin-audio-excerpts'
+
+export async function fetchProjectAudioPreview(projectId) {
+  const { data, error } = await supabase
+    .from('audios')
+    .select(
+      `id, storage_path,
+       tracks!inner ( id, title, spotify_id )`,
+    )
+    .eq('project_id', projectId)
+    .eq('audio_type', 'excerpt')
+    .eq('status', 'approved')
+    .eq('is_active', true)
+    .eq('is_public', true)
+    .eq('tracks.is_public', true)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (error) throw new Error(error.message)
+  if (!data) return null
+
+  const { data: file } = supabase.storage
+    .from(EXCERPTS_BUCKET)
+    .getPublicUrl(data.storage_path)
+
+  return {
+    id: data.id,
+    src: file.publicUrl,
+    songName: data.tracks?.title ?? null,
+    spotifyId: data.tracks?.spotify_id ?? null,
+  }
+}
