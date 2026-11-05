@@ -362,3 +362,46 @@ export async function getSuggestedVenuesByProject(projectId) {
 
   return suggestions
 }
+
+// Busca o lineup oficial do evento (tabela event_lineup)
+export async function fetchEventLineup(eventId) {
+  if (!eventId) return []
+
+  const { data, error } = await supabase
+    .from('event_lineup')
+    .select(
+      `
+      id,
+      display_order,
+      is_headliner,
+      is_hidden,
+      project:projects (
+        id,
+        name,
+        slug,
+        picture,
+        type:project_types ( name_ptbr )
+      )
+    `,
+    )
+    .eq('event_id', eventId)
+    .eq('is_hidden', false)
+    .order('is_headliner', { ascending: false })
+    .order('display_order', { ascending: true, nullsFirst: false })
+    .order('created_at', { ascending: true })
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  return data.map((item) => ({
+    id: item.id,
+    display_order: item.display_order,
+    is_headliner: item.is_headliner,
+    project_id: item.project.id,
+    name: item.project.name,
+    slug: item.project.slug,
+    picture: item.project.picture,
+    type: item.project.type?.name_ptbr,
+  }))
+}

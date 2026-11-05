@@ -5,6 +5,7 @@ import { useParams, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   fetchEventDetails,
+  fetchEventLineup,
   fetchEventGigs,
   fetchEventAttendees,
   fetchInterestTypes,
@@ -60,6 +61,8 @@ const EVENTS_PATH =
   'https://ik.imagekit.io/mublin/events/tr:h-144,w-144,c-maintain_ratio/'
 const AVATAR_PATH =
   'https://ik.imagekit.io/mublin/tr:h-120,w-120,c-maintain_ratio/users/avatars/'
+const PROJECTS_PATH =
+  'https://ik.imagekit.io/mublin/tr:h-100,w-100,c-maintain_ratio/projects/'
 
 function EventMap({ latitude, longitude, venueName, addressLine }) {
   if (!latitude || !longitude) {
@@ -138,6 +141,11 @@ export default function Event() {
     queryFn: () => fetchEventDetails(slug),
     enabled: !!slug,
     staleTime: 1000 * 60 * 4,
+  })
+  const { data: lineup = [], isLoading: loadingLineup } = useQuery({
+    queryKey: ['event-lineup', event?.id],
+    queryFn: () => fetchEventLineup(event.id),
+    enabled: !!event?.id,
   })
   const { data: attendees = [] } = useQuery({
     queryKey: ['event-attendees', event?.id],
@@ -372,6 +380,22 @@ export default function Event() {
                   </>
                 )}
               </Paper>
+
+              <Group wrap="wrap" align="flex-start">
+                {lineup.map((item) => (
+                  <Stack w={50} gap={4} align="center" key={item.id}>
+                    <Avatar
+                      src={`${PROJECTS_PATH}${item.project_id}/${item.picture}`}
+                      size={50}
+                      component={Link}
+                      to={`/project/${item.slug}`}
+                    />
+                    <Text ta="center" size="xs">
+                      {item.name}
+                    </Text>
+                  </Stack>
+                ))}
+              </Group>
 
               {/* INTERESSADOS - SCROLLER */}
               <Paper withBorder radius="md" p="md">
