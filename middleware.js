@@ -13,6 +13,7 @@ const RESERVED_PATHS = new Set([
   'robots.txt',
   'project',
   'gear',
+  'song',
 ])
 
 const BOT_UA_REGEX =
@@ -39,13 +40,26 @@ function safeDecode(value) {
 }
 
 export default async function middleware(request) {
+  const url = new URL(request.url)
+  const segments = url.pathname.split('/').filter(Boolean)
+
+  // /song/:projectSlug (sem a música) -> página do projeto.
+  // Redirect de verdade (301) para qualquer visitante, bot ou não, antes do teste de User-Agent.
+  if (segments.length === 2 && segments[0] === 'song') {
+    const projectSlug = safeDecode(segments[1])
+
+    if (projectSlug) {
+      return Response.redirect(
+        new URL(`/project/${encodeURIComponent(projectSlug)}`, request.url),
+        301,
+      )
+    }
+  }
+
   const ua = request.headers.get('user-agent') || ''
   if (!BOT_UA_REGEX.test(ua)) {
     return next()
   }
-
-  const url = new URL(request.url)
-  const segments = url.pathname.split('/').filter(Boolean)
 
   let ogUrl = null
 
@@ -57,6 +71,17 @@ export default async function middleware(request) {
     if (value) {
       ogUrl = new URL(endpoint, request.url)
       ogUrl.searchParams.set(param, value)
+    }
+  }
+  // /song/:projectSlug/:songSlug -> song-og
+  else if (segments.length === 3 && segments[0] === 'song') {
+    const projectSlug = safeDecode(segments[1])
+    const songSlug = safeDecode(segments[2])
+
+    if (projectSlug && songSlug) {
+      ogUrl = new URL('/api/song-og', request.url)
+      ogUrl.searchParams.set('project', projectSlug)
+      ogUrl.searchParams.set('song', songSlug)
     }
   }
   // /:username -> profile-og

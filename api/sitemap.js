@@ -4,10 +4,15 @@
 // (a service role key NUNCA deve ser exposta no client — aqui ela roda só no servidor).
 // Update em 2026-10-12: adicionando "projects"
 // Update em 2026-10-21: adicionando "products" (gear)
+// Update em 2026-11-05: adicionando "songs" (tracks) e paginação das consultas (limite de 1000 linhas por request)
 
 import { createClient } from '@supabase/supabase-js'
 
 const SITE_URL = 'https://mublin.com'
+
+// O PostgREST do Supabase devolve no máximo 1000 linhas por request (padrão).
+// Sem paginar, o sitemap seria cortado em silêncio assim que uma tabela passasse disso.
+const PAGE_SIZE = 1000
 
 const escapeXml = (value) =>
   String(value)
@@ -25,6 +30,29 @@ const formatDate = (date) => {
   return Number.isNaN(parsed.getTime()) ? undefined : parsed.toISOString()
 }
 
+// Recebe uma função que monta a query (um builder novo a cada página) e junta todas as páginas.
+// A query precisa ter uma ordenação ESTÁVEL e única (ex.: slug único ou id), senão a
+// paginação pode repetir ou pular linhas.
+async function fetchAll(buildQuery) {
+  const rows = []
+
+  for (let from = 0; ; from += PAGE_SIZE) {
+    const { data, error } = await buildQuery().range(from, from + PAGE_SIZE - 1)
+
+    if (error) {
+      throw error
+    }
+
+    rows.push(...(data || []))
+
+    if (!data || data.length < PAGE_SIZE) {
+      break
+    }
+  }
+
+  return rows
+}
+
 export default async function handler(req, res) {
   try {
     const supabase = createClient(
@@ -38,49 +66,56 @@ export default async function handler(req, res) {
       },
     )
 
-    // Busca perfis, projetos e produtos simultaneamente
-    const [profilesResult, projectsResult, productsResult] = await Promise.all([
-      supabase
-        .from('profiles')
-        .select('username, updated_at')
-        .eq('is_public', true)
-        .eq('onboarding_completed', true)
-        .eq('is_fake_profile', false)
-        .eq('is_shadow_hidden', false)
-        .not('username', 'is', null)
-        .order('username', { ascending: true }),
+    // Busca perfis, projetos, produtos e músicas simultaneamente
+    const [profiles, projects, products, songs] = await Promise.all([
+      fetchAll(() =>
+        supabase
+          .from('profiles')
+          .select('username, updated_at')
+          .eq('is_public', true)
+          .eq('onboarding_completed', true)
+          .eq('is_fake_profile', false)
+          .eq('is_shadow_hidden', false)
+          .not('username', 'is', null)
+          .order('username', { ascending: true }),
+      ),
 
-      supabase
-        .from('projects')
-        .select('slug, updated_at')
-        .eq('is_public', true)
-        .eq('is_active', true)
-        .neq('project_type_id', 19)
-        .not('slug', 'is', null)
-        .order('slug', { ascending: true }),
+      fetchAll(() =>
+        supabase
+          .from('projects')
+          .select('slug, updated_at')
+          .eq('is_public', true)
+          .eq('is_active', true)
+          .neq('project_type_id', 19)
+          .not('slug', 'is', null)
+          .order('slug', { ascending: true }),
+      ),
 
-      supabase
-        .from('products')
-        .select('slug, updated_at')
-        .not('slug', 'is', null)
-        .order('slug', { ascending: true }),
+      fetchAll(() =>
+        supabase
+          .from('products')
+          .select('slug, updated_at')
+          .not('slug', 'is', null)
+          .order('slug', { ascending: true }),
+      ),
+
+      // Músicas: só faixas públicas, com slug, de projetos públicos e ativos
+      // (mesmas regras do projeto no sitemap). Ordena por id porque o slug
+      // da música é único só dentro do projeto.
+      fetchAll(() =>
+        supabase
+          .from('tracks')
+          .select(
+            'id, slug, created_at, updated_at, projects!inner ( slug, is_public, is_active, project_type_id )',
+          )
+          .eq('is_public', true)
+          .not('slug', 'is', null)
+          .eq('projects.is_public', true)
+          .eq('projects.is_active', true)
+          .neq('projects.project_type_id', 19)
+          .order('id', { ascending: true }),
+      ),
     ])
-
-    if (profilesResult.error) {
-      throw profilesResult.error
-    }
-
-    if (projectsResult.error) {
-      throw projectsResult.error
-    }
-
-    if (productsResult.error) {
-      throw productsResult.error
-    }
-
-    const profiles = profilesResult.data || []
-    const projects = projectsResult.data || []
-    const products = productsResult.data || []
 
     const staticUrls = [
       {
@@ -117,7 +152,22 @@ export default async function handler(req, res) {
         priority: '0.6',
       }))
 
-    const urls = [...staticUrls, ...profileUrls, ...projectUrls, ...productUrls]
+    const songUrls = songs
+      .filter((s) => s.slug?.trim() && s.projects?.slug?.trim())
+      .map((s) => ({
+        loc: `${SITE_URL}/song/${encodeURIComponent(s.projects.slug)}/${encodeURIComponent(s.slug)}`,
+        lastmod: formatDate(s.updated_at || s.created_at),
+        changefreq: 'monthly',
+        priority: '0.6',
+      }))
+
+    const urls = [
+      ...staticUrls,
+      ...profileUrls,
+      ...projectUrls,
+      ...productUrls,
+      ...songUrls,
+    ]
 
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">

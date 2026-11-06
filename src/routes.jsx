@@ -10,6 +10,7 @@ import AppSettingsLayout from './components/layouts/AppSettingsLayout'
 import ProfileRouter from './components/ProfileRouter'
 import ProjectRouter from './components/ProjectRouter'
 import GearRouter from './components/GearRouter'
+import SongRouter from './components/SongRouter'
 import AdminRoute from './pages/admin/AdminRoute'
 import AdminLayout from './pages/admin/AdminLayout'
 
@@ -144,6 +145,10 @@ export const router = createBrowserRouter([
   {
     path: 'gear/:slug',
     element: <GearRouter />,
+  },
+  {
+    path: 'song/:projectSlug/:songSlug',
+    element: <SongRouter />,
   },
   // ── Onboarding ──────────────────────────────────
   { path: 'onboarding', element: <Onboarding /> },
