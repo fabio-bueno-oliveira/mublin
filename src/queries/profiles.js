@@ -425,7 +425,7 @@ export async function fetchProfileEducation(profileId) {
       is_current,
       description,
       order_index,
-      institutions ( id, name, logo ),
+      institution:institutions ( id, name, logo, slug ),
       education_levels ( id, name_ptbr )
     `,
     )

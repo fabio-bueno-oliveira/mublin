@@ -36,7 +36,6 @@ import {
   IconBrandSpotify,
   IconBrandSoundcloud,
   IconRoad,
-  IconRosetteDiscountCheck,
   IconArrowRight,
   IconBriefcase2,
   IconChevronRight,
@@ -56,6 +55,7 @@ import {
 } from '../components/project'
 import { MEMBER_REQUEST_STATUS } from '../constants/projects'
 import { IconBrandMuso } from '../components/icons/IconBrandMuso'
+import { IconShieldCheckMublin } from '../components/icons/IconShieldCheckMublin'
 import dayjs from 'dayjs'
 import 'dayjs/locale/pt-br'
 // import SocialLinks from '../components/profile/SocialLinks'
@@ -527,9 +527,9 @@ export default function Project() {
                         </Title>
 
                         {project?.is_verified && (
-                          <IconRosetteDiscountCheck
-                            size={isMobile ? 21 : 22}
-                            color="var(--mantine-color-text)"
+                          <IconShieldCheckMublin
+                            size={22}
+                            color="var(--mantine-color-mublinColor-3)"
                             title="Projeto verificado"
                             style={{
                               flexShrink: 0,

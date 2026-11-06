@@ -26,6 +26,7 @@ import {
   IconBrandSoundcloud,
 } from '@tabler/icons-react'
 import { IconBrandMuso } from '../icons/IconBrandMuso'
+import { IconShieldCheckMublin } from '../icons/IconShieldCheckMublin'
 
 const AVATAR_MINI2_PATH =
   'https://ik.imagekit.io/mublin/tr:h-22,c-maintain_ratio/users/avatars/'
@@ -64,30 +65,26 @@ export default function SectionAbout({ project, isLoading }) {
             Sobre
           </Title>
 
-          <Stack gap={2} mb="xs">
-            <Group gap={2}>
-              {/* {project?.foundation_year && (
-                    <Text size="xs" c="dimmed">
-                      Início das atividades: {project.foundation_year}
-                    </Text>
-                  )} */}
-              {projectLocation && (
-                <Group gap={2} wrap="nowrap">
-                  <IconMapPin color="gray" size={12} stroke={2} />
-                  <Text size="sm" c="dimmed">
-                    {projectLocation}
-                  </Text>
-                  {project?.city?.countries?.name && (
-                    <Text size="sm" c="dimmed">
-                      ·{' '}
-                      {project?.city?.countries?.name_ptbr ??
-                        project?.city?.countries?.name}
-                    </Text>
-                  )}
-                </Group>
+          {/* {project?.foundation_year && (
+            <Text size="xs" c="dimmed">
+              Início das atividades: {project.foundation_year}
+            </Text>
+          )} */}
+
+          {projectLocation && (
+            <Group gap={2} wrap="nowrap" mb={6}>
+              <IconMapPin color="gray" size={12} stroke={2} />
+              <Text size="sm" c="dimmed">
+                {projectLocation}
+              </Text>
+              {project?.city?.countries?.name && (
+                <Text size="sm" c="dimmed">
+                  ·{' '}
+                  {project?.city?.countries?.name_ptbr ?? project?.city?.countries?.name}
+                </Text>
               )}
             </Group>
-          </Stack>
+          )}
 
           <Stack gap="xs">
             {project?.description ? (
@@ -131,12 +128,11 @@ export default function SectionAbout({ project, isLoading }) {
 
             {project?.is_verified && (
               <Group gap="sm" mb={4} align="flex-start" wrap="nowrap">
-                <IconRosetteDiscountCheck
+                <IconShieldCheckMublin
                   size={22}
-                  color="var(--mantine-color-text)"
-                  style={{ flexShrink: 0, marginTop: 1 }}
+                  color="var(--mantine-color-mublinColor-3)"
+                  title="Projeto verificado"
                 />
-
                 <Box>
                   <Text size="sm" fw={600} mb={4}>
                     Projeto verificado

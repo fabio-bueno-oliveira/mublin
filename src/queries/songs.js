@@ -25,15 +25,15 @@ export async function fetchSongDetails(slug) {
   return data
 }
 
-export async function fetchPublicSong(projectSlug, songSlug) {
+export async function fetchPublicSongDetails(projectSlug, songSlug) {
   const { data, error } = await supabase
     .from('tracks')
     .select(
       `
-      id, slug, title, duration_seconds, cover_image, release_year,
+      id, slug, title, duration_seconds, cover_image, release_year, bpm,
       projects!inner ( id, name, slug, picture ),
       musical_key:musical_keys ( name_pt, short_name ),
-      album:albums ( id, title ),
+      album:albums ( id, title, album_type, cover_image, release_year ),
       venue:venues ( id, name, cities ( name, regions ( name, uf ), countries ( name, name_ptbr ) ) )
       `,
     )

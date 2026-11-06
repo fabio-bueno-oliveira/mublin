@@ -4,6 +4,7 @@
 
 const SITE_URL = 'https://mublin.com'
 const IMAGEKIT_TRACKS = 'https://ik.imagekit.io/mublin/tracks'
+const IMAGEKIT_ALBUMS = 'https://ik.imagekit.io/mublin/albums'
 const IMAGEKIT_PROJECTS = 'https://ik.imagekit.io/mublin/projects'
 
 // URLs sempre montadas com os slugs que vêm do BANCO, não com os da URL acessada.
@@ -14,9 +15,9 @@ export const getSongUrl = (song) =>
   `${SITE_URL}/song/${encodeURIComponent(song.project.slug)}/${encodeURIComponent(song.slug)}`
 
 // Capa da música (ou null). Tamanho em px, quadrada.
-export const getSongCoverUrl = (song, size = 600) =>
+export const getSongCoverUrl = (song, size = 600, hasAlbum = false) =>
   song?.cover_image
-    ? `${IMAGEKIT_TRACKS}/tr:w-${size},h-${size},c-maintain_ratio/${song.cover_image}`
+    ? `${hasAlbum ? IMAGEKIT_ALBUMS : IMAGEKIT_TRACKS}/tr:w-${size},h-${size},c-maintain_ratio/${song.cover_image}`
     : null
 
 // 371 segundos -> "PT6M11S" (formato ISO 8601 que o schema.org exige)

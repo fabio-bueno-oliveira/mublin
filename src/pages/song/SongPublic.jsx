@@ -1,12 +1,11 @@
 import { Helmet } from 'react-helmet-async'
-import { Link, useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { fetchPublicSong, fetchPublicSongAudioPreview } from '../../queries/songs'
+import { fetchPublicSongDetails, fetchPublicSongAudioPreview } from '../../queries/songs'
 import {
   Container,
   Flex,
   Card,
-  Anchor,
   Title,
   Text,
   Skeleton,
@@ -38,7 +37,7 @@ export default function SongPagePublic() {
     isError,
   } = useQuery({
     queryKey: ['public-song', projectSlug, songSlug],
-    queryFn: () => fetchPublicSong(projectSlug, songSlug),
+    queryFn: () => fetchPublicSongDetails(projectSlug, songSlug),
     enabled: !!songSlug && !!projectSlug,
     staleTime: 1000 * 60 * 5,
     retry: 1,
@@ -66,7 +65,7 @@ export default function SongPagePublic() {
     )
   }
 
-  const TRACK_COVER_AVATAR_PATH = `https://ik.imagekit.io/mublin/tracks/tr:h-200,w-200,c-maintain_ratio/`
+  const CDN_PATH = 'https://ik.imagekit.io/mublin'
 
   const metaDescription = song
     ? truncateDescription(
@@ -76,6 +75,10 @@ export default function SongPagePublic() {
 
   const songUrl = song ? getSongUrl(song) : ''
   const jsonLd = song ? buildSongJsonLd(song) : null
+  const hasAlbum = song?.album?.id
+  const coverImage = hasAlbum
+    ? `${CDN_PATH}/albums/tr:h-200,w-200,c-maintain_ratio/${song?.album?.cover_image}`
+    : `${CDN_PATH}/tracks/tr:h-200,w-200,c-maintain_ratio/${song?.cover_image}`
 
   return (
     <>
@@ -91,7 +94,7 @@ export default function SongPagePublic() {
           <meta property="og:url" content={songUrl} />
           <meta property="og:locale" content="pt_BR" />
           {getSongCoverUrl(song) && (
-            <meta property="og:image" content={getSongCoverUrl(song)} />
+            <meta property="og:image" content={getSongCoverUrl(song, 600, hasAlbum)} />
           )}
           {jsonLd && (
             <script type="application/ld+json">
@@ -107,9 +110,9 @@ export default function SongPagePublic() {
             <Skeleton circle height={90} width={90} />
           ) : (
             <Avatar
-              src={song?.cover_image ? TRACK_COVER_AVATAR_PATH + song.cover_image : null}
-              size={90}
-              radius="md"
+              src={coverImage ? coverImage : null}
+              size={100}
+              radius={false}
               alt={song?.title || 'Capa da música'}
             />
           )}
@@ -162,9 +165,11 @@ export default function SongPagePublic() {
 
         <SimpleGrid cols={{ base: 2, sm: 4 }} my="lg">
           <Paper p="sm">
-            <Group gap={4}>
+            <Group gap={4} mb={2}>
               <IconClef size={18} />
-              <Title order={5}>Tom original:</Title>
+              <Title order={6} lh={1}>
+                Tom original:
+              </Title>
             </Group>
             {song?.musical_key?.name_pt && (
               <Text size="sm" c="dimmed">
@@ -173,23 +178,27 @@ export default function SongPagePublic() {
             )}
           </Paper>
           <Paper p="sm">
-            <Group gap={4}>
+            <Group gap={4} mb={2}>
               <IconMetronome size={18} />
-              <Title order={5}>BPM:</Title>
+              <Title order={6} lh={1}>
+                BPM:
+              </Title>
             </Group>
-            {/* {song?.bpm && (
+            {song?.bpm && (
               <Text size="sm" c="dimmed">
                 {song.bpm}
               </Text>
-            )} */}
-            <Anchor component={Link} to={`/login`} size="sm" c="mublinSecondary.5">
+            )}
+            {/* <Anchor component={Link} to={`/login`} size="sm" c="mublinSecondary.5">
               Fazer login para visualizar
-            </Anchor>
+            </Anchor> */}
           </Paper>
           <Paper p="sm">
-            <Group gap={4}>
+            <Group gap={4} mb={2}>
               <IconAdjustmentsFilled size={18} />
-              <Title order={5}>Local de gravação:</Title>
+              <Title order={6} lh={1}>
+                Local de gravação:
+              </Title>
             </Group>
             {song?.venue?.name ? (
               <Text size="sm" c="dimmed" lineClamp={2}>
@@ -202,17 +211,21 @@ export default function SongPagePublic() {
             )}
           </Paper>
           <Paper p="sm">
-            <Group gap={4}>
+            <Group gap={4} mb={2}>
               <IconDisc size={18} />
-              <Title order={5}>Álbum:</Title>
+              <Title order={6} lh={1}>
+                Álbum:
+              </Title>
             </Group>
             <Text size="sm" c="dimmed">
-              {song?.album?.name || 'Não disponível'}
+              {song?.album?.title
+                ? `${song.album.title}${song.album.album_type === 'single' ? ' (single)' : ''}`
+                : 'Não disponível'}
             </Text>
           </Paper>
         </SimpleGrid>
 
-        {/* <Title order={5}>Equipamentos utilizados:</Title>
+        {/* <Title order={6} lh={1}>Equipamentos utilizados:</Title>
         {song?.equipment?.length > 0 && (
           <Text size="sm" c="dimmed">
             {song.equipment.join(', ')}
