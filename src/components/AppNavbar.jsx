@@ -23,7 +23,6 @@ import {
   Combobox,
   Avatar, Image,
   Group, Box,
-  Badge,
   Menu,
   Text, 
   TextInput,
@@ -237,7 +236,7 @@ export default function AppNavbar({ children }) {
             {/* Logo + Nav items */}
             <Group gap="md">
               {children}
-              <Group gap={2}>
+              <Group gap={2} align="flex-end">
                 <Link to="/home">
                   <Image
                     src={colorScheme === 'light' ? MublinLogoBlack : MublinLogoWhite}
@@ -246,20 +245,9 @@ export default function AppNavbar({ children }) {
                     fit="contain"
                   />
                 </Link>
-                <Badge
-                  color="mColor2"
-                  size="sm"
-                  mt={4}
-                  px={6}
-                  py={1}
-                  component={Link}
-                  to="/home"
-                  tt="capitalize"
-                  style={{ cursor: 'pointer' }}
-                  lts={-0.5}
-                >
+                <Text pb={2} c="dimmed" size="10px" lts={-0.5}>
                   Beta
-                </Badge>
+                </Text>
               </Group>
             </Group>
 

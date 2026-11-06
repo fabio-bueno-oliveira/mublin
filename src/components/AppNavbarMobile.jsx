@@ -12,7 +12,6 @@ import {
   Image,
   ActionIcon,
   Text,
-  Badge,
   Indicator,
 } from '@mantine/core'
 import {
@@ -83,6 +82,7 @@ export default function AppNavbarMobile({
           <Group
             gap={3}
             mt={2}
+            align="flex-end"
             component={Link}
             to="/home"
             style={{
@@ -97,20 +97,9 @@ export default function AppNavbarMobile({
               w="auto"
               fit="contain"
             />
-            <Badge
-              color="dark"
-              size="md"
-              mt={3}
-              px={5}
-              py={1}
-              component={Link}
-              to="/home"
-              tt="capitalize"
-              style={{ cursor: 'pointer' }}
-              lts={-0.5}
-            >
+            <Text c="dimmed" size="10px" lts={-0.5}>
               Beta
-            </Badge>
+            </Text>
           </Group>
         )}
 
