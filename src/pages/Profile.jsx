@@ -1793,6 +1793,12 @@ export default function Profile() {
                             item.start_year,
                             item.is_current ? null : item.end_year,
                           )
+
+                          const institutionSlug = item.institution?.slug
+                          const institutionHref = institutionSlug
+                            ? `/institution/${institutionSlug}`
+                            : null
+
                           return (
                             <Group
                               key={item.id}
@@ -1800,17 +1806,49 @@ export default function Profile() {
                               align="flex-start"
                               wrap="nowrap"
                             >
-                              <Avatar
-                                radius="md"
-                                size={60}
-                                src={item.institutions?.logo || undefined}
-                              >
-                                <IconSchool size={24} />
-                              </Avatar>
+                              {institutionHref ? (
+                                <Anchor
+                                  component={Link}
+                                  to={institutionHref}
+                                  underline="never"
+                                >
+                                  <Avatar
+                                    radius="md"
+                                    size={60}
+                                    src={item.institution?.logo || undefined}
+                                  >
+                                    <IconSchool size={24} />
+                                  </Avatar>
+                                </Anchor>
+                              ) : (
+                                <Avatar
+                                  radius="md"
+                                  size={60}
+                                  src={item.institution?.logo || undefined}
+                                >
+                                  <IconSchool size={24} />
+                                </Avatar>
+                              )}
+
                               <Stack gap={1} style={{ flex: 1, minWidth: 0 }}>
-                                <Text size="sm" fw={600}>
-                                  {item.institution_name}
-                                </Text>
+                                {institutionHref ? (
+                                  <Anchor
+                                    component={Link}
+                                    to={institutionHref}
+                                    size="sm"
+                                    fw={600}
+                                    c="inherit"
+                                    underline="hover"
+                                    style={{ width: 'fit-content' }}
+                                  >
+                                    {item.institution_name}
+                                  </Anchor>
+                                ) : (
+                                  <Text size="sm" fw={600}>
+                                    {item.institution_name}
+                                  </Text>
+                                )}
+
                                 {(item.course_name || item.field_of_study) && (
                                   <Text size="xs" opacity={0.9}>
                                     {[item.course_name, item.field_of_study]
@@ -1818,6 +1856,7 @@ export default function Profile() {
                                       .join(' — ')}
                                   </Text>
                                 )}
+
                                 {(item.education_levels?.name_ptbr || period) && (
                                   <Text size="xs" c="dimmed">
                                     {[
@@ -1830,6 +1869,7 @@ export default function Profile() {
                                       .join(' · ')}
                                   </Text>
                                 )}
+
                                 {item.description && (
                                   <Spoiler
                                     maxHeight={42}

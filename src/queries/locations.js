@@ -76,6 +76,26 @@ export async function fetchVenueDetails(slug) {
   return data
 }
 
+export async function fetchInstitutionDetails(slug) {
+  const { data, error } = await supabase
+    .from('institutions')
+    .select(
+      `
+      id, name, slug, logo, 
+      website, 
+      type,
+      address, 
+      cities ( name, regions (name), countries ( name, name_ptbr ) )
+      `,
+    )
+    .eq('slug', slug)
+    .single()
+  if (error) {
+    throw new Error(error.message)
+  }
+  return data
+}
+
 // ── Novas funções usadas por tours ──
 
 export async function fetchCountries() {

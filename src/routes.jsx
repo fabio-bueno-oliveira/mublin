@@ -189,7 +189,7 @@ export const router = createBrowserRouter([
       { path: 'tour/:slug/edit', element: <EditTour /> },
       { path: 'new/venue', element: <NewVenue /> },
       { path: 'venue/:slug', element: <Venue /> },
-      { path: 'school/:slug', element: <Institution /> },
+      { path: 'institution/:slug', element: <Institution /> },
       { path: 'new/scene', element: <NewScene /> },
       { path: 'saved', element: <MySavedFavorites /> },
       { path: 'setlists', element: <SetlistEditor /> },

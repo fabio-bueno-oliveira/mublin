@@ -1,24 +1,24 @@
 import { useEffect } from 'react'
-import { Helmet } from 'react-helmet-async'
 import { useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { fetchVenueDetails } from '../queries/locations'
+import { fetchInstitutionDetails } from '../queries/locations'
 import AppNavbarMobile from '../components/AppNavbarMobile'
+import InstitutionAvatar from '../components/InstitutionAvatar'
 import {
   Container,
+  Center,
   Anchor,
   Title,
   Text,
   Stack,
   Skeleton,
   Avatar,
-  Center,
   Flex,
   Affix,
 } from '@mantine/core'
 
 const VENUES_PATH =
-  'https://ik.imagekit.io/mublin/venues/tr:h-200,w-200,c-maintain_ratio/'
+  'https://ik.imagekit.io/mublin/institutions/tr:h-200,w-200,c-maintain_ratio/'
 
 export default function Venue() {
   const { slug } = useParams()
@@ -28,85 +28,84 @@ export default function Venue() {
   }, [])
 
   const {
-    data: venue,
-    isLoading: loadingVenueDetails,
+    data: institution,
+    isLoading: loadingInstitutionDetails,
     isSuccess,
   } = useQuery({
-    queryKey: ['venue-details', slug],
-    queryFn: () => fetchVenueDetails(slug),
+    queryKey: ['institution-details', slug],
+    queryFn: () => fetchInstitutionDetails(slug),
     enabled: !!slug,
     staleTime: 1000 * 60 * 4,
   })
 
   return (
     <>
-      <Helmet>
-        <meta charSet="utf-8" />
-        <title>{venue?.name ? `${venue.name} · Mublin` : 'Mublin'}</title>
-        <link rel="canonical" href={`https://mublin.com/venue/${venue?.slug || ''}`} />
-        <meta
-          name="description"
-          content={`Informações de '${venue?.name || ''}' no Mublin`}
-        />
-      </Helmet>
+      <title>{institution?.name ? `${institution.name} | Mublin` : 'Mublin'}</title>
+      <link
+        rel="canonical"
+        href={`https://mublin.com/institution/${institution?.slug || ''}`}
+      />
+      <meta
+        name="description"
+        content={`Informações de '${institution?.name || ''}' no Mublin`}
+      />
 
       <Affix position={{ top: 0, left: 0 }} hiddenFrom="sm">
-        <AppNavbarMobile pageName="Figura mainstream" />
+        <AppNavbarMobile pageName="Instituição de ensino" />
       </Affix>
 
       <Container size="sm" py="xs" px={{ base: 'md', sm: 0 }} mt={{ base: 62, sm: 0 }}>
         <Stack gap="xs" mb="xl">
-          {loadingVenueDetails ? (
+          {loadingInstitutionDetails ? (
             <Center>
               <Skeleton radius="xl" height={100} width={100} />
             </Center>
           ) : (
             <>
-              {isSuccess && venue ? (
+              {isSuccess && institution ? (
                 <>
                   <Text ta="center" c="dimmed" size="13px" mb={6} visibleFrom="sm">
-                    Local ou Estabelecimento
+                    Instituição de ensino
                   </Text>
-                  <Center pos="relative">
-                    <Avatar
-                      size={100}
-                      radius="xl"
-                      src={
-                        venue?.picture_url ? VENUES_PATH + venue.picture_url : undefined
-                      }
-                      title={venue?.name}
-                      alt={venue?.name}
-                    />
+                  <Center pos="relative" mb={4}>
+                    <InstitutionAvatar institution={institution} size={100} />
                   </Center>
                   <Flex justify="center">
                     <Stack align="center" gap={2}>
                       <Title order={1} fz="h2">
-                        {venue?.name}
+                        {institution?.name}
                       </Title>
-                      <Text size="xs" opacity={0.8}>
-                        {venue?.venue_types.name} · Capacidade: {venue?.capacity} pessoas
+                      <Text mt="sm" size="sm" c="dimmed">
+                        {institution?.description}
                       </Text>
-                      <Text mt="md" size="sm" c="dimmed" lineClamp={2}>
-                        {venue?.description}
+                      <Text size="sm">{institution?.address}</Text>
+                      <Text size="sm" c="dimmed">
+                        {institution?.cities?.name}, {institution?.cities?.regions?.name}{' '}
+                        -{' '}
+                        {institution?.cities?.countries?.name_ptbr
+                          ? institution?.cities?.countries?.name_ptbr
+                          : institution?.cities?.countries?.name}
                       </Text>
-                      <Text size="sm" mt="lg">
-                        {venue?.address}, {venue?.address_number} - {venue?.neighborhood}
-                      </Text>
-                      <Text size="sm">
-                        {venue?.cities.name},{' '}
-                        {venue?.regions?.regions?.uf ?? venue?.regions?.regions?.name}
-                      </Text>
-                      <Anchor
-                        mt="md"
-                        size="xs"
-                        href={`https://instagram.com/${venue?.instagram_handle}`}
-                        target="_blank"
-                      >
-                        https://instagram.com/{venue?.instagram_handle}
-                      </Anchor>
-                      <Anchor mt="md" size="xs" href={venue?.website_url} target="_blank">
-                        {venue?.website_url}
-                      </Anchor>
+                      {institution?.instagram_handle && (
+                        <Anchor
+                          mt="md"
+                          size="xs"
+                          href={`https://instagram.com/${institution?.instagram_handle}`}
+                          target="_blank"
+                        >
+                          https://instagram.com/{institution?.instagram_handle}
+                        </Anchor>
+                      )}
+                      {institution?.website && (
+                        <Anchor
+                          mt="md"
+                          size="xs"
+                          href={institution.website}
+                          target="_blank"
+                        >
+                          {institution.website}
+                        </Anchor>
+                      )}
                     </Stack>
                   </Flex>
                 </>
