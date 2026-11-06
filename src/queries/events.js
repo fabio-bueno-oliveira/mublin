@@ -50,6 +50,7 @@ export async function fetchEventDetails(slug) {
       min_age,
       instagram_handle, website_url, tickets_url,
       event_type:event_types ( name ),
+      artwork:event_artworks ( filename ),
       privacy:event_privacy_types ( name ),
       author:profiles!events_author_id_fkey ( full_name, username, title, avatar, is_verified ),
       venue:venues (
@@ -63,6 +64,7 @@ export async function fetchEventDetails(slug) {
       `,
     )
     .eq('slug', slug)
+    .eq('artwork.is_active', true)
     .single()
 
   if (error) {

@@ -31,6 +31,7 @@ import {
   Stack,
   Flex,
   Affix,
+  ActionIcon,
   ThemeIcon,
   Spoiler,
   Paper,
@@ -41,6 +42,7 @@ import {
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { useDisclosure } from '@mantine/hooks'
+import { modals } from '@mantine/modals'
 import { useForm } from '@mantine/form'
 import {
   IconCircleCheck,
@@ -59,6 +61,7 @@ import dayjs from 'dayjs'
 
 const EVENTS_PATH =
   'https://ik.imagekit.io/mublin/events/tr:h-144,w-144,c-maintain_ratio/'
+const ARTWORK_PATH = 'https://ik.imagekit.io/mublin/events/tr:w-800,c-maintain_ratio/'
 const AVATAR_PATH =
   'https://ik.imagekit.io/mublin/tr:h-120,w-120,c-maintain_ratio/users/avatars/'
 const PROJECTS_PATH =
@@ -71,11 +74,11 @@ function EventMap({ latitude, longitude, venueName, addressLine }) {
   const bbox = `${longitude - 0.008}%2C${latitude - 0.008}%2C${longitude + 0.008}%2C${latitude + 0.008}`
   return (
     <Paper withBorder radius="md" style={{ overflow: 'hidden' }}>
-      <Box h={300}>
+      <Box h={220}>
         <iframe
           title={`Mapa - ${venueName}`}
           width="100%"
-          height="100%"
+          height="220"
           style={{ border: 0, display: 'block' }}
           loading="lazy"
           src={`https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${latitude}%2C${longitude}`}
@@ -252,6 +255,60 @@ export default function Event() {
     ? `${event.venue.address || ''}${event.venue.address_number ? `, ${event.venue.address_number}` : ''} - ${event.venue.neighborhood || ''} - ${event.venue.city?.name || ''}`
     : ''
 
+  const artworkSrc = event?.artwork?.[0]?.filename
+    ? `${ARTWORK_PATH}/${event.artwork[0].filename}`
+    : null
+  const openArtworkModal = () => {
+    if (!artworkSrc) return
+    modals.open({
+      withCloseButton: false,
+      padding: 0,
+      radius: 0,
+      withBorder: false,
+      centered: true,
+      size: 'auto',
+      overlayProps: {
+        blur: 8, // fundo desfocado
+        backgroundOpacity: 0.65,
+      },
+      styles: {
+        content: {
+          background: 'transparent',
+          boxShadow: 'none',
+          overflow: 'visible',
+        },
+        body: { padding: 0 },
+      },
+      children: (
+        <Box pos="relative">
+          <ActionIcon
+            aria-label="Fechar"
+            variant="filled"
+            color="dark"
+            radius="xl"
+            size="lg"
+            pos="absolute"
+            top={-12}
+            right={-12}
+            style={{ zIndex: 2 }}
+            onClick={() => modals.closeAll()}
+          >
+            <IconX size={18} />
+          </ActionIcon>
+          <Image
+            src={artworkSrc}
+            radius="md"
+            maw="90vw"
+            mah="88vh"
+            fit="contain"
+            style={{ cursor: 'zoom-out' }}
+            onClick={() => modals.closeAll()}
+          />
+        </Box>
+      ),
+    })
+  }
+
   return (
     <>
       <Helmet>
@@ -281,7 +338,7 @@ export default function Event() {
                     radius="lg"
                   />
                   <Stack gap={6}>
-                    <Group gap="xs">
+                    <Group gap={6}>
                       <Badge size="sm" variant="light" color="var(--mantine-color-text)">
                         {event.category?.name || 'Evento'}
                       </Badge>
@@ -381,12 +438,12 @@ export default function Event() {
                 )}
               </Paper>
 
-              <Group wrap="wrap" align="flex-start">
+              <Group gap="xs" wrap="wrap" align="flex-start">
                 {lineup.map((item) => (
-                  <Stack w={50} gap={4} align="center" key={item.id}>
+                  <Stack w={75} gap={4} align="center" key={item.id}>
                     <Avatar
                       src={`${PROJECTS_PATH}${item.project_id}/${item.picture}`}
-                      size={50}
+                      size={75}
                       component={Link}
                       to={`/project/${item.slug}`}
                     />
@@ -532,6 +589,16 @@ export default function Event() {
                   )}
                 </Stack>
               </Paper>
+
+              {artworkSrc && (
+                <Paper withBorder radius="md" p="md">
+                  <Image
+                    src={artworkSrc}
+                    style={{ cursor: 'zoom-in' }}
+                    onClick={openArtworkModal}
+                  />
+                </Paper>
+              )}
 
               <Box>
                 <Box p={{ base: 'lg', sm: 0 }}>
