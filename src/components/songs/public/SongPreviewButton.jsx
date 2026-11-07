@@ -1,19 +1,20 @@
 // src/components/songs/public/SongPreviewButton.jsx
-import { useId, useRef } from 'react'
+import { useRef } from 'react'
 import { Loader, Text, UnstyledButton } from '@mantine/core'
 import { IconPlayerPauseFilled, IconPlayerPlayFilled } from '@tabler/icons-react'
 import useAudioPreview from '../../../hooks/useAudioPreview'
 
 const SIZE = 18
-const STROKE = 2.5
+const STROKE = 2
 const CENTER = SIZE / 2
 const RADIUS = (SIZE - STROKE) / 2
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS
 
 /**
- * Botão "Ouvir prévia": ícone dentro de um mini anel degradê (mesma linguagem do
- * avatar do projeto). Em repouso o anel é completo; tocando, vira trilho e o
- * progresso corre por cima. Sem src (ou se o áudio falhar), não renderiza nada.
+ * Botão "Ouvir prévia": ícone dentro de um mini anel na cor do texto do tema
+ * (escuro no tema claro, claro no tema escuro). Em repouso o anel é completo;
+ * tocando, vira trilho apagado e o progresso corre por cima.
+ * Sem src (ou se o áudio falhar), não renderiza nada.
  *
  * Props: src, songName, delayMs, onPlay (1ª reprodução), onEnded
  */
@@ -25,7 +26,6 @@ export default function SongPreviewButton({
   onEnded,
 }) {
   const progressRef = useRef(null)
-  const gradientId = `song-ring-${useId().replace(/:/g, '')}`
 
   const {
     audioRef,
@@ -66,6 +66,7 @@ export default function SongPreviewButton({
         mt={6}
         style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}
       >
+        {/* O anel e o ícone herdam esta cor (currentColor), que acompanha o tema */}
         <span
           style={{
             position: 'relative',
@@ -74,6 +75,7 @@ export default function SongPreviewButton({
             display: 'inline-flex',
             alignItems: 'center',
             justifyContent: 'center',
+            color: 'var(--mantine-color-text)',
           }}
         >
           <svg
@@ -82,26 +84,13 @@ export default function SongPreviewButton({
             style={{ position: 'absolute', inset: 0 }}
             aria-hidden="true"
           >
-            <defs>
-              <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="1">
-                <stop
-                  offset="0%"
-                  style={{
-                    stopColor:
-                      'var(--mantine-color-text-filled, var(--mantine-color-text-filled))',
-                  }}
-                />
-                <stop offset="100%" style={{ stopColor: 'var(--mantine-color-text)' }} />
-              </linearGradient>
-            </defs>
-
             {/* Repouso: anel completo. Tocando: trilho apagado. */}
             <circle
               cx={CENTER}
               cy={CENTER}
               r={RADIUS}
               fill="none"
-              stroke={`url(#${gradientId})`}
+              stroke="currentColor"
               strokeWidth={STROKE}
               style={{ opacity: hasStarted ? 0.25 : 1, transition: 'opacity 0.3s ease' }}
             />
@@ -112,7 +101,7 @@ export default function SongPreviewButton({
               cy={CENTER}
               r={RADIUS}
               fill="none"
-              stroke={`url(#${gradientId})`}
+              stroke="currentColor"
               strokeWidth={STROKE}
               strokeLinecap="round"
               strokeDasharray={CIRCUMFERENCE}
@@ -122,7 +111,7 @@ export default function SongPreviewButton({
           </svg>
 
           {isBuffering ? (
-            <Loader size={12} color="var(--mantine-color-text)" />
+            <Loader size={9} color="currentColor" />
           ) : isPlaying ? (
             <IconPlayerPauseFilled size={10} />
           ) : (

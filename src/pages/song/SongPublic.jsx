@@ -76,6 +76,7 @@ export default function SongPagePublic() {
   const songUrl = song ? getSongUrl(song) : ''
   const jsonLd = song ? buildSongJsonLd(song) : null
   const hasAlbum = song?.album?.id
+  const projectImage = `${CDN_PATH}/projects/${song?.project?.id}/tr:h-100,w-100,c-maintain_ratio/${song?.project?.picture}`
   const coverImage = hasAlbum
     ? `${CDN_PATH}/albums/tr:h-200,w-200,c-maintain_ratio/${song?.album?.cover_image}`
     : `${CDN_PATH}/tracks/tr:h-200,w-200,c-maintain_ratio/${song?.cover_image}`
@@ -107,7 +108,7 @@ export default function SongPagePublic() {
       <Container px="lg" size="md" mt={{ base: 20, sm: 26 }}>
         <Group wrap="nowrap" px="xs">
           {isLoading ? (
-            <Skeleton circle height={90} width={90} />
+            <Skeleton radius={false} height={100} width={100} />
           ) : (
             <Avatar
               src={coverImage ? coverImage : null}
@@ -138,16 +139,20 @@ export default function SongPagePublic() {
                     {song?.title}
                   </Title>
                 </Group>
-                <Text size="sm">
-                  <Text span c="dimmed">
+                <Group gap={6} mb={4} align="center">
+                  <Text size="sm" c="dimmed">
                     por
-                  </Text>{' '}
-                  {song?.project?.name}
-                </Text>
-                {/* <Group gap={4} mt={6}>
-                  <IconCircleCaretRightFilled size={18} />
-                  <Text size="xs">Ouvir prévia</Text>
-                </Group> */}
+                  </Text>
+                  <Avatar
+                    size={20}
+                    radius="xl"
+                    src={song?.project?.picture ? projectImage : undefined}
+                    name={song?.project?.name}
+                  />
+                  <Text size="sm" fw={500}>
+                    {song?.project?.name}
+                  </Text>
+                </Group>
                 {audioPreview?.src && (
                   <SongPreviewButton
                     key={audioPreview.id}
@@ -164,63 +169,63 @@ export default function SongPagePublic() {
         </Group>
 
         <SimpleGrid cols={{ base: 2, sm: 4 }} my="lg">
-          <Paper p="sm">
-            <Group gap={4} mb={2}>
+          <Paper p="xs">
+            <Group gap={3} mb={4}>
               <IconClef size={18} />
               <Title order={6} lh={1}>
                 Tom original:
               </Title>
             </Group>
-            {song?.musical_key?.name_pt && (
-              <Text size="sm" c="dimmed">
-                {song.musical_key.name_pt} ({song.musical_key.short_name})
-              </Text>
-            )}
+            <Text size="sm" c="dimmed">
+              {isLoading
+                ? 'Carregando...'
+                : song?.musical_key?.name_pt
+                  ? `${song.musical_key.name_pt} (${song.musical_key.short_name})`
+                  : 'Não disponível'}
+            </Text>
           </Paper>
-          <Paper p="sm">
-            <Group gap={4} mb={2}>
+          <Paper p="xs">
+            <Group gap={3} mb={4}>
               <IconMetronome size={18} />
               <Title order={6} lh={1}>
                 BPM:
               </Title>
             </Group>
-            {song?.bpm && (
-              <Text size="sm" c="dimmed">
-                {song.bpm}
-              </Text>
-            )}
+            <Text size="sm" c="dimmed">
+              {isLoading ? 'Carregando...' : song?.bpm ? song?.bpm : 'Não disponível'}
+            </Text>
             {/* <Anchor component={Link} to={`/login`} size="sm" c="mublinSecondary.5">
               Fazer login para visualizar
             </Anchor> */}
           </Paper>
-          <Paper p="sm">
-            <Group gap={4} mb={2}>
+          <Paper p="xs">
+            <Group gap={3} mb={4}>
               <IconAdjustmentsFilled size={18} />
               <Title order={6} lh={1}>
                 Local de gravação:
               </Title>
             </Group>
-            {song?.venue?.name ? (
-              <Text size="sm" c="dimmed" lineClamp={2}>
-                {song?.venue?.name} ({song?.venue?.cities?.regions?.name})
-              </Text>
-            ) : (
-              <Text size="sm" c="dimmed">
-                Não disponível
-              </Text>
-            )}
+            <Text size="sm" c="dimmed" truncate="end">
+              {isLoading
+                ? 'Carregando...'
+                : song?.venue?.name
+                  ? `${song?.venue?.name} (${song?.venue?.cities?.regions?.name})`
+                  : 'Não disponível'}
+            </Text>
           </Paper>
-          <Paper p="sm">
-            <Group gap={4} mb={2}>
+          <Paper p="xs">
+            <Group gap={3} mb={4}>
               <IconDisc size={18} />
               <Title order={6} lh={1}>
                 Álbum:
               </Title>
             </Group>
-            <Text size="sm" c="dimmed">
-              {song?.album?.title
-                ? `${song.album.title}${song.album.album_type === 'single' ? ' (single)' : ''}`
-                : 'Não disponível'}
+            <Text size="sm" c="dimmed" truncate="end">
+              {isLoading
+                ? 'Carregando...'
+                : song?.album?.title
+                  ? `${song.album.title}${song.album.album_type === 'single' ? ' (single)' : ''} • ${song.album.release_year}`
+                  : 'Não disponível'}
             </Text>
           </Paper>
         </SimpleGrid>

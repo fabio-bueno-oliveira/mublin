@@ -438,21 +438,23 @@ export default function Event() {
                 )}
               </Paper>
 
-              <Group gap="xs" wrap="wrap" align="flex-start">
-                {lineup.map((item) => (
-                  <Stack w={75} gap={4} align="center" key={item.id}>
-                    <Avatar
-                      src={`${PROJECTS_PATH}${item.project_id}/${item.picture}`}
-                      size={75}
-                      component={Link}
-                      to={`/project/${item.slug}`}
-                    />
-                    <Text ta="center" size="xs">
-                      {item.name}
-                    </Text>
-                  </Stack>
-                ))}
-              </Group>
+              {lineup.length > 0 && (
+                <Group gap="xs" wrap="wrap" align="flex-start">
+                  {lineup.map((item) => (
+                    <Stack w={75} gap={4} align="center" key={item.id}>
+                      <Avatar
+                        src={`${PROJECTS_PATH}${item.project_id}/${item.picture}`}
+                        size={75}
+                        component={Link}
+                        to={`/project/${item.slug}`}
+                      />
+                      <Text ta="center" size="xs">
+                        {item.name}
+                      </Text>
+                    </Stack>
+                  ))}
+                </Group>
+              )}
 
               {/* INTERESSADOS - SCROLLER */}
               <Paper withBorder radius="md" p="md">
