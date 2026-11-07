@@ -6,13 +6,17 @@ import AppProfileLayout from './components/layouts/AppProfileLayout'
 import FullScreenLayout from './components/layouts/FullScreenLayout'
 import BackstageLayout from './components/layouts/BackstageLayout'
 import AppSettingsLayout from './components/layouts/AppSettingsLayout'
-// Route guards / shells (mantidos eager)
+// Route guards
+import AuthSwitch from './components/AuthSwitch'
 import ProfileRouter from './components/ProfileRouter'
-import ProjectRouter from './components/ProjectRouter'
-import GearRouter from './components/GearRouter'
-import SongRouter from './components/SongRouter'
 import AdminRoute from './pages/admin/AdminRoute'
 import AdminLayout from './pages/admin/AdminLayout'
+
+const Project = lazy(() => import('./pages/Project'))
+const ProjectPublic = lazy(() => import('./pages/ProjectPublic'))
+const GearItemPublic = lazy(() => import('./pages/GearItemPublic'))
+const Song = lazy(() => import('./pages/song/Song'))
+const SongPublic = lazy(() => import('./pages/song/SongPublic'))
 
 // ── Public pages ──────────────────────────────────
 const AuthCallback = lazy(() => import('./pages/AuthCallback'))
@@ -136,19 +140,16 @@ export const router = createBrowserRouter([
   // ── Projetos, Artistas, Personalidades ─────────
   {
     path: 'project/:slug',
-    element: <ProjectRouter />,
+    element: <AuthSwitch Private={Project} Public={ProjectPublic} />,
   },
   {
     path: 'artist/:slug',
-    element: <ProjectRouter />,
+    element: <AuthSwitch Private={Project} Public={ProjectPublic} />,
   },
-  {
-    path: 'gear/:slug',
-    element: <GearRouter />,
-  },
+  // ── Songs ──────────────────────────────────
   {
     path: 'song/:projectSlug/:songSlug',
-    element: <SongRouter />,
+    element: <AuthSwitch Private={Song} Public={SongPublic} />,
   },
   // ── Onboarding ──────────────────────────────────
   { path: 'onboarding', element: <Onboarding /> },
@@ -176,7 +177,10 @@ export const router = createBrowserRouter([
       { path: 'post/:id', element: <Post /> },
       { path: 'new/post', element: <NewPost /> },
       { path: 'gear', element: <Gear /> },
-      // { path: 'gear/:slug', element: <GearItem /> },
+      {
+        path: 'gear/:slug',
+        element: <AuthSwitch Private={GearItem} Public={GearItemPublic} />,
+      },
       { path: 'gear/:slug/zoom', element: <GearItemZoom /> },
       { path: 'gear/category/:slug', element: <GearCategory /> },
       { path: 'new/gear', element: <NewGear /> },
